@@ -217,3 +217,42 @@ respected.
 | Backdrop shader cost with many shapes | `BackdropGroup` single capture; group merging = one pass; perf criterion in §1 |
 | SSIM 0.97 unreachable on some scenes | Report lists per-scene scores; any scene below threshold is a tracked issue, not silently accepted |
 | Platform-view overhead in native mode | Opt-in only; documented |
+
+## 14. Amendments (2026-10-04, after SDK verification)
+
+Verified against the installed Flutter 3.47.6 SDK, Xcode 27 and the iOS 26.4
+SDK headers. These override the earlier sections where they conflict.
+
+1. **Blur and shadow move into the shader (§6 steps 2 and 6).** A backdrop
+   shader filter receives only the already-blurred texture when a blur is
+   composed before it, so it could not return the sharp backdrop outside a
+   merged shape. The shader therefore samples the sharp backdrop, does a
+   24-tap disc blur itself, and paints the soft shadow outside the shape in
+   the same pass. A single render object pushes one clip + one
+   `BackdropFilterLayer` per group; no `ImageFilter.compose`.
+2. **Reduce Transparency (§5, §9)** applies after mode resolution: an
+   effective `shader` or `degraded` mode becomes `opaque` (the shader with an
+   opaque flag, so merging still works). `native` is left alone because
+   UIKit already honours the setting itself.
+3. **Default light angle (§4)** is up-leading, `-3π/4` radians in y-down
+   screen space, and is not mirrored in RTL (matching iOS).
+4. **Reference app (§10)** is not a separate Xcode project: the example's
+   iOS Runner hosts the SwiftUI reference scenes and chooses Flutter or
+   SwiftUI from launch arguments. Both read the same `scenes.json` and the
+   same generated background PNGs, so the pixels behind the glass are
+   identical. Fidelity runs pin the **iOS 26.4** simulator runtime
+   (iPhone 17 Pro); iOS 27 differences are a later, separate pass.
+5. **Pressed state (§10)** is measured from motion recordings (frames held
+   mid-press), not static scenes, because SwiftUI's interactive glass only
+   reacts to real touches. Touches are injected with `idb`.
+6. **Native mode interactivity (§7):** the Flutter child sits above the
+   platform view and receives touches, so UIKit's own interactive highlight
+   does not run. The Flutter press spring drives the native view's frame
+   instead.
+7. **Material `glassId` (§8):** an appearing member fades in; a removed
+   member disappears immediately (no fade-out, because the widget is gone).
+8. **Fitted constants** live in `GlassConstants`, exported only from
+   `package:adaptive_liquid_glass/testing.dart`. The example app accepts a
+   constants JSON at launch, so the fitting loop needs no rebuilds.
+9. **Shapes over the limit (§6)** report a non-fatal `FlutterError` in debug
+   instead of an assertion, then render in their own implicit group.
