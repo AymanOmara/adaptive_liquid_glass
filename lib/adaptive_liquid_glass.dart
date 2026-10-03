@@ -2,3 +2,4 @@
 library;
 
 export 'src/core/glass.dart';
+export 'src/core/glass_shape.dart';
