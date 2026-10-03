@@ -1,0 +1,28 @@
+name: adaptive_liquid_glass
+description: >-
+  iOS 26 Liquid Glass for Flutter, measured against SwiftUI, with Material 3
+  counterparts on Android behind one API.
+version: 0.1.0-dev.1
+repository: https://github.com/aymanomara/adaptive_liquid_glass
+topics: [liquid-glass, cupertino, material, ui, shader]
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  plugin:
+    platforms:
+      ios:
+        pluginClass: AdaptiveLiquidGlassPlugin
+  shaders:
+    - shaders/liquid_glass.frag
