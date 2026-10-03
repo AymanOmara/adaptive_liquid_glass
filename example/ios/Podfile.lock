@@ -1,0 +1,28 @@
+PODS:
+  - adaptive_liquid_glass (0.0.1):
+    - Flutter
+  - Flutter (1.0.0)
+  - integration_test (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - adaptive_liquid_glass (from `.symlinks/plugins/adaptive_liquid_glass/ios`)
+  - Flutter (from `Flutter`)
+  - integration_test (from `.symlinks/plugins/integration_test/ios`)
+
+EXTERNAL SOURCES:
+  adaptive_liquid_glass:
+    :path: ".symlinks/plugins/adaptive_liquid_glass/ios"
+  Flutter:
+    :path: Flutter
+  integration_test:
+    :path: ".symlinks/plugins/integration_test/ios"
+
+SPEC CHECKSUMS:
+  adaptive_liquid_glass: 6c0ce189d18f368f32e09c41ef430180bf84bc58
+  Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
+  integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
+
+PODFILE CHECKSUM: 3ba3a73b1b12adcf321a227a745625fe0888cc82
+
+COCOAPODS: 1.17.0
