@@ -1,0 +1,82 @@
+import 'dart:math' as math;
+
+import 'package:flutter/widgets.dart';
+
+import 'glass.dart';
+import 'glass_constants.dart';
+import 'glass_render_mode.dart';
+
+/// App-wide defaults for Liquid Glass.
+@immutable
+class LiquidGlassThemeData {
+  /// Creates theme data.
+  const LiquidGlassThemeData({
+    this.lightAngle = -3 * math.pi / 4,
+    this.defaultGlass = Glass.regular,
+    this.defaultMode = GlassRenderMode.auto,
+    this.nativeEnabled = false,
+    this.constants = GlassConstants.standard,
+  });
+
+  /// Direction toward the light, radians, y-down screen space.
+  /// Default is up and to the left. Not mirrored in RTL.
+  final double lightAngle;
+
+  /// Glass used when a widget does not specify one.
+  final Glass defaultGlass;
+
+  /// Mode used when a widget does not specify one.
+  final GlassRenderMode defaultMode;
+
+  /// Whether `auto` may use Apple's native glass on iOS 26+.
+  final bool nativeEnabled;
+
+  /// Rendering constants. Override only for fidelity work.
+  final GlassConstants constants;
+
+  /// Returns a copy with the given fields replaced.
+  LiquidGlassThemeData copyWith({
+    double? lightAngle,
+    Glass? defaultGlass,
+    GlassRenderMode? defaultMode,
+    bool? nativeEnabled,
+    GlassConstants? constants,
+  }) =>
+      LiquidGlassThemeData(
+        lightAngle: lightAngle ?? this.lightAngle,
+        defaultGlass: defaultGlass ?? this.defaultGlass,
+        defaultMode: defaultMode ?? this.defaultMode,
+        nativeEnabled: nativeEnabled ?? this.nativeEnabled,
+        constants: constants ?? this.constants,
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      other is LiquidGlassThemeData &&
+      other.lightAngle == lightAngle &&
+      other.defaultGlass == defaultGlass &&
+      other.defaultMode == defaultMode &&
+      other.nativeEnabled == nativeEnabled &&
+      other.constants == constants;
+
+  @override
+  int get hashCode =>
+      Object.hash(lightAngle, defaultGlass, defaultMode, nativeEnabled, constants);
+}
+
+/// Provides [LiquidGlassThemeData] to descendants.
+class LiquidGlassTheme extends InheritedWidget {
+  /// Creates a theme scope.
+  const LiquidGlassTheme({super.key, required this.data, required super.child});
+
+  /// The theme data.
+  final LiquidGlassThemeData data;
+
+  /// Nearest theme data, or the defaults.
+  static LiquidGlassThemeData of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<LiquidGlassTheme>()?.data ??
+      const LiquidGlassThemeData();
+
+  @override
+  bool updateShouldNotify(LiquidGlassTheme oldWidget) => data != oldWidget.data;
+}

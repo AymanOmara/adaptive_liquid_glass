@@ -4,3 +4,4 @@ library;
 export 'src/core/glass.dart';
 export 'src/core/glass_render_mode.dart' show GlassRenderMode;
 export 'src/core/glass_shape.dart';
+export 'src/core/theme.dart';
