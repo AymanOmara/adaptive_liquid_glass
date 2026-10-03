@@ -92,4 +92,111 @@ void main() {
     expect(c[2], greaterThan(0), reason: 'uniform array indexing failed');
     expect(isGlobal || isLocal, isTrue);
   });
+
+  // Same filter, but inside an Opacity saveLayer whose subtree does not
+  // start at the screen origin: is the space screen-global or relative to
+  // the offscreen layer (origin 150,250, 200×200)?
+  testWidgets('backdrop shader texture space inside a saveLayer', (
+    tester,
+  ) async {
+    const opacity = 0.99;
+    final program = await ui.FragmentProgram.fromAsset('shaders/probe.frag');
+    final shader = program.fragmentShader();
+    for (var i = 0; i < 16; i++) {
+      shader.setFloat(2 + i, 0);
+    }
+    shader.setFloat(2 + 8, 0.25); // uArr[2].x
+
+    final key = GlobalKey();
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: key,
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: Stack(
+            children: [
+              const Positioned.fill(
+                child: ColoredBox(color: Color(0xFFFFFFFF)),
+              ),
+              Positioned(
+                left: 150,
+                top: 250,
+                width: 200,
+                height: 200,
+                child: Opacity(
+                  opacity: opacity,
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        left: 50,
+                        top: 50,
+                        width: 100,
+                        height: 100,
+                        child: ClipRect(
+                          child: BackdropFilter(
+                            filter: ui.ImageFilter.shader(shader),
+                            child: const SizedBox.expand(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final dpr = tester.view.devicePixelRatio;
+    final boundary =
+        key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    final image = await boundary.toImage(pixelRatio: dpr);
+    final data = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!;
+
+    // Undo the 0.99 opacity over the white backdrop: c' = a·c + (1 − a).
+    List<double> px(double x, double y) {
+      final i = ((y * dpr).round() * image.width + (x * dpr).round()) * 4;
+      return [
+        for (var c = 0; c < 3; c++)
+          (data.getUint8(i + c) / 255 - (1 - opacity)) / opacity,
+      ];
+    }
+
+    final c = px(250, 350);
+    final widthFromB = c[2] * 4096;
+    // ignore: avoid_print
+    print(
+      'PROBE saveLayer screenPx=${image.width}x${image.height} dpr=$dpr '
+      'center rgb=$c uSize.x≈$widthFromB',
+    );
+
+    bool matches(Offset origin, Size size) =>
+        (c[0] - (250 - origin.dx) * dpr / size.width).abs() < 0.01 &&
+        (c[1] - (350 - origin.dy) * dpr / size.height).abs() < 0.01 &&
+        (widthFromB - size.width).abs() < 24;
+    final screen = Size(image.width.toDouble(), image.height.toDouble());
+    final isGlobal = matches(Offset.zero, screen);
+    final isLayer = matches(const Offset(150, 250), const Size(600, 600));
+    final isLocal = matches(const Offset(200, 300), const Size(300, 300));
+    // ignore: avoid_print
+    print(
+      'PROBE saveLayer result: ${isGlobal
+          ? 'global'
+          : isLayer
+          ? 'layer-relative'
+          : isLocal
+          ? 'local'
+          : 'UNKNOWN'}',
+    );
+    expect(
+      isGlobal,
+      isTrue,
+      reason:
+          'kGlassTextureSpace assumes screen-global coordinates inside '
+          'saveLayers; see docs/superpowers/notes/shader-probe.md',
+    );
+  });
 }

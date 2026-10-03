@@ -26,6 +26,45 @@ Sample at logical (250, 350) = physical (750, 1050):
 - `uniform vec4` arrays compile under impellerc and index correctly
   (`uArr[2].x` read back as 0.25 → B channel non-zero).
 
+## Second case: inside an `Opacity` saveLayer (fix round 1)
+
+Same 100×100 `ClipRect` + `BackdropFilter` at global (200, 300). Its parent
+is a `Positioned` at left 150, top 250, 200×200, wrapping
+`Opacity(opacity: 0.99)`, so the offscreen layer does not start at the
+screen origin. Readback is unchanged: a full-screen `RepaintBoundary` at
+the origin.
+
+```
+PROBE saveLayer screenPx=1206x2622 dpr=3.0 center rgb=[0.6236878589819767, 0.40186175480293124, 0.29490988314517724] uSize.x≈1207.950881362646
+PROBE saveLayer result: global
+```
+
+The values are corrected for the opacity over white: c = (c′ − 0.01)/0.99.
+Raw bytes at (250,350) were 160,104,77. At physical (750, 1050):
+
+| hypothesis | R expected | G expected | uSize.x expected |
+|---|---|---|---|
+| screen-global (origin 0,0, 1206×2622) | 0.6219 | 0.4005 | 1206 |
+| layer-relative (origin 450,750 px, 600×600) | 0.5 | 0.5 | 600 |
+| filter-local (origin 600,900 px, 300×300) | 0.5 | 0.5 | 300 |
+| **measured** | **0.6237** | **0.4019** | **≈1208** |
+
+`FlutterFragCoord()` and `uSize` stay **screen-global** inside the
+saveLayer. They are not relative to the layer. The test asserts this, so a
+future engine change that makes them layer-relative will fail it.
+
+Not measured: `ShaderMask`, `ColorFiltered`, and route `FadeTransition`.
+They use the same saveLayer mechanism as `Opacity`, so the same result is
+expected, but it is unverified.
+
+## Readback rule for later tests
+
+Pixel readbacks must use a `RepaintBoundary` that covers the full screen
+at the origin, and `toImage(pixelRatio: dpr)`. "Global" means relative to
+the root render target. A boundary that does not start at the origin
+becomes its own root target when rasterised, which would shift the
+coordinates the shader sees.
+
 ## Readback method (and why not `takeScreenshot`)
 
 The first run used `binding.takeScreenshot` as the brief's test did. It printed:

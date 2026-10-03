@@ -11,6 +11,16 @@ enum GlassTextureSpace {
 
 /// Measured by `example/integration_test/probe_test.dart`; see
 /// `docs/superpowers/notes/shader-probe.md`.
+///
+/// Measured on iOS 26.4 / Impeller (Metal) for a `ClipRect` +
+/// `BackdropFilter` placed directly in the scene, and for the same filter
+/// inside an `Opacity` saveLayer whose subtree is offset from the screen
+/// origin. In both cases, coordinates and `uSize` are relative to the root
+/// render target (the screen, or a full-screen `toImage` at the origin),
+/// not to the saveLayer or the filter clip. Not measured: `ShaderMask`,
+/// `ColorFiltered`, route-transition `FadeTransition`, and rasterising a
+/// subtree that is not at the origin into an image. In that last case the
+/// image is the root target, so coordinates would be relative to it.
 const GlassTextureSpace kGlassTextureSpace = GlassTextureSpace.global;
 
 /// Maps a global logical rect into shader texture space.

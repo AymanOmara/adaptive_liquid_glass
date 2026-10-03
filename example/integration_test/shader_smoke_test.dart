@@ -102,5 +102,16 @@ void main() {
     // Far outside the shadow: untouched stripe values.
     final far = lum(const Offset(64, 164));
     expect(far == 0x10 || far == 0xF0, isTrue, reason: 'far=$far');
+    // Just outside the bottom edge, on a light stripe: the shadow darkens it.
+    // Stripe i (odd = light) spans [i, i + 1) × screenWidth / 40.
+    final stripe = tester.view.physicalSize.width / dpr / 40;
+    final nearEdge = lum(Offset(19.5 * stripe, shapeGlobal.bottom + 2));
+    // ignore: avoid_print
+    print('SMOKE mid=$mid far=$far nearEdge=$nearEdge');
+    expect(
+      nearEdge,
+      allOf(lessThan(0xF0), greaterThan(0x10)),
+      reason: 'shadow missing next to the shape',
+    );
   });
 }

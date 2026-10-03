@@ -111,18 +111,22 @@ void main() {
 
   float inside = 1.0 - smoothstep(-0.75, 0.75, d);
 
-  // Shadow outside the shape.
+  // Shadow outside the shape; full strength at the edge (max(d, 0)). It is
+  // computed for every pixel so the anti-aliased edge (|d| < 0.75) blends
+  // into the shadowed backdrop, not the bare one, with no bright ring.
+  float sr = max(C.x * 0.5, 1.0);
+  float dOut = max(d, 0.0);
+  float sh = C.y * exp(-(dOut * dOut) / (2.0 * sr * sr));
+  vec3 under = base.rgb * (1.0 - sh);
   if (inside <= 0.0) {
-    float sr = max(C.x * 0.5, 1.0);
-    float sh = C.y * exp(-(d * d) / (2.0 * sr * sr));
-    fragColor = vec4(base.rgb * (1.0 - sh), base.a);
+    fragColor = vec4(under, base.a);
     return;
   }
 
   // Opaque (Reduce Transparency).
   if (uGlobal.w > 0.5) {
     vec3 solid = mix(uOpaque.rgb, tint.rgb, tint.a);
-    fragColor = vec4(mix(base.rgb, solid, inside), 1.0);
+    fragColor = vec4(mix(under, solid, inside), 1.0);
     return;
   }
 
@@ -160,5 +164,5 @@ void main() {
     col += 0.25 * uTouch.z * exp(-dot(dt, dt) / (2.0 * gr * gr));
   }
 
-  fragColor = vec4(mix(base.rgb, clamp(col, 0.0, 1.0), inside), 1.0);
+  fragColor = vec4(mix(under, clamp(col, 0.0, 1.0), inside), 1.0);
 }

@@ -16,15 +16,22 @@ class GlassProgram {
   final ValueNotifier<ui.FragmentProgram?> _program = ValueNotifier(null);
   Future<void>? _loading;
 
-  /// The loaded program, or `null` until [load] completes.
+  /// The loaded program, or `null` until [load] succeeds.
   ValueListenable<ui.FragmentProgram?> get program => _program;
 
-  /// Starts loading (idempotent). Failures are reported and may be retried.
+  /// Starts loading (idempotent). A failure is reported to [FlutterError],
+  /// leaves [program] `null`, and lets a later call retry.
   Future<void> load() => _loading ??= ui.FragmentProgram.fromAsset(assetKey)
-          .then<void>((p) => _program.value = p)
-          .catchError((Object e, StackTrace s) {
+      .then<void>((p) => _program.value = p)
+      .catchError((Object e, StackTrace s) {
         _loading = null;
-        FlutterError.reportError(FlutterErrorDetails(
-            exception: e, stack: s, library: 'adaptive_liquid_glass'));
+        FlutterError.reportError(
+          FlutterErrorDetails(
+            exception: e,
+            stack: s,
+            library: 'adaptive_liquid_glass',
+            context: ErrorDescription('loading liquid_glass.frag'),
+          ),
+        );
       });
 }
