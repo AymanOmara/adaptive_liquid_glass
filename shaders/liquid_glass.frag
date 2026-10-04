@@ -9,7 +9,7 @@ uniform vec4 uGlobal2;     // smoothing px, cornerExponent, highContrast, -
 uniform vec4 uOpaque;      // rgb
 uniform vec4 uTouch;       // x, y, glow, glowRadius px
 uniform vec4 uRects[16];   // x, y, w, h px
-uniform vec4 uInfo[16];    // radius px, variant(0 regular, 1 clear), cornerExponent (0 = global), -
+uniform vec4 uInfo[16];    // radius px, variant(0 regular, 1 clear), cornerExponent (0 = global), fill scale
 uniform vec4 uTints[16];   // rgb, strength
 uniform vec4 uVar[8];      // per variant (regular A-D, then clear A-D):
                            //   A(lens decay px, band px, lens strength, disp) B(rimW, rimI, fillOpacity, dim)
@@ -74,6 +74,7 @@ void main() {
   float wsum = 0.0;
   float clearMix = 0.0;
   float halfMin = 0.0;  // half the shorter side, for the lens size factor
+  float fillScale = 0.0;  // per-shape fillOpacity factor (fill size scaling)
   vec4 tint = vec4(0.0);
   float d = 1e6;
   float wk = uGlobal2.x * 0.5 + 1.0;
@@ -88,6 +89,7 @@ void main() {
       wsum *= s;
       clearMix *= s;
       halfMin *= s;
+      fillScale *= s;
       tint *= s;
       dmin = e;
     }
@@ -95,10 +97,12 @@ void main() {
     wsum += w;
     clearMix += w * uInfo[i].y;
     halfMin += w * 0.5 * min(uRects[i].z, uRects[i].w);
+    fillScale += w * uInfo[i].w;
     tint += w * uTints[i];
   }
   clearMix /= wsum;
   halfMin /= wsum;
+  fillScale /= wsum;
   tint /= wsum;
 
   vec4 A = mix(uVar[0], uVar[4], clearMix);
@@ -155,7 +159,7 @@ void main() {
 
   float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));
   col = mix(vec3(luma), col, D.w);
-  col = mix(col, D.rgb, B.z);
+  col = mix(col, D.rgb, B.z * fillScale);
   col *= (1.0 - B.w);
   col = mix(col, tint.rgb, tint.a);
 

@@ -140,7 +140,7 @@ const int kGlassUniformFloats = 240;
 /// | 8–11    | uOpaque        | rgb                                       |
 /// | 12–15   | uTouch         | x, y, glow, glowRadius px                 |
 /// | 16–79   | uRects[16]     | x, y, w, h px                             |
-/// | 80–143  | uInfo[16]      | radius px, clear?, cornerExponent, -      |
+/// | 80–143  | uInfo[16]      | radius px, clear?, cornerExponent, fill scale |
 /// | 144–207 | uTints[16]     | rgb, strength                             |
 /// | 208–239 | uVar[8]        | regular A B C D, then clear A B C D       |
 ///
@@ -186,11 +186,16 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
       s.rect.width,
       s.rect.height,
     ]);
+    // Fill scale for this shape's size (fillSizeRef / fillSizeDrop).
+    final halfMin = math.min(s.rect.width, s.rect.height) / 2 / dpr;
+    final fillScale = v.fillSizeRef > 0
+        ? 1 - v.fillSizeDrop * (1 - math.min(1.0, halfMin / v.fillSizeRef))
+        : 1.0;
     f.setAll(80 + i * 4, [
       s.radius,
       s.variant == GlassVariant.clear ? 1 : 0,
       s.cornerExponent ?? u.constants.cornerExponent,
-      0,
+      fillScale,
     ]);
     final tint = s.tint;
     if (tint != null) {

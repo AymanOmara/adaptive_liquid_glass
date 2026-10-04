@@ -25,12 +25,13 @@ GlassFrameUniforms frame(
   Color? opaque,
   Offset? touch,
   double glow = 0,
+  GlassConstants constants = GlassConstants.standard,
 }) => GlassFrameUniforms(
   shapes: shapes,
   devicePixelRatio: 3,
   lightAngle: -2,
   smoothing: 60,
-  constants: GlassConstants.standard,
+  constants: constants,
   opaqueColor: opaque,
   touch: touch,
   glow: glow,
@@ -47,8 +48,28 @@ void main() {
       10,
       0,
       GlassConstants.standard.cornerExponent,
-      0,
+      1, // fill scale: no size scaling in the standard constants
     ]);
+  });
+
+  test('per-shape fill scale in uInfo.w follows fillSizeRef/fillSizeDrop', () {
+    final c = GlassConstants.fromJson({
+      'regular': {'fillSizeRef': 40.0, 'fillSizeDrop': 0.2},
+      'clear': {'fillSizeRef': 0.0, 'fillSizeDrop': 0.5},
+    });
+    final f = packGlassUniforms(
+      frame(constants: c, [
+        // 60 x 120 px at dpr 3: half the shorter side 10 pt -> 1 - 0.2 x 0.75.
+        s(const Rect.fromLTWH(0, 0, 60, 120)),
+        // Half side 50 pt >= 40: unscaled.
+        s(const Rect.fromLTWH(0, 0, 300, 600)),
+        // fillSizeRef 0 disables the scaling.
+        s(const Rect.fromLTWH(0, 0, 60, 60), v: GlassVariant.clear),
+      ]),
+    );
+    expect(f[83], closeTo(0.85, 1e-9));
+    expect(f[87], 1);
+    expect(f[91], 1);
   });
 
   test('per-shape corner exponent is packed into uInfo.z', () {

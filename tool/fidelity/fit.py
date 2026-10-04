@@ -39,7 +39,7 @@ REF = ROOT / "build/fidelity/baseline-v2"
 SCALE = SPEC["device"]["scale"]
 
 KEYS = ["blurSigma", "blurSizeRef", "lensBand", "lensStrength", "lensDecay", "lensSizeRef", "dispersion",
-        "rimWidth", "rimIntensity", "fillOpacity", "fillR", "fillG", "fillB", "saturation", "dim",
+        "rimWidth", "rimIntensity", "fillOpacity", "fillSizeRef", "fillSizeDrop", "fillR", "fillG", "fillB", "saturation", "dim",
         "shadowRadius", "shadowOpacity", "tintStrength"]
 BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
           # Task 17b: frost sigma x min(1, halfMin / blurSizeRef) (pt); 0 = off.
@@ -47,8 +47,11 @@ BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
           # Lens v3 (pt); Task 15c measured 6.4-6.5 and 38.4 (regular) / 0 (clear).
           "lensDecay": (0.5, 20), "lensSizeRef": (0, 100),
           "dispersion": (0, 0.6), "rimWidth": (0.3, 4), "rimIntensity": (0, 1.5),
-          "fillOpacity": (0, 1), "fillR": (0, 1), "fillG": (0, 1), "fillB": (0, 1),
-          "saturation": (0, 1.5), "dim": (0, 0.6), "shadowRadius": (0, 40),
+          "fillOpacity": (0, 1),
+          # Task 17b: fillOpacity x (1 - drop x (1 - min(1, halfMin / ref))).
+          "fillSizeRef": (0, 200), "fillSizeDrop": (0, 0.8),
+          "fillR": (0, 1), "fillG": (0, 1), "fillB": (0, 1),
+          "saturation": (0, 2.5), "dim": (0, 0.6), "shadowRadius": (0, 40),
           "shadowOpacity": (0, 0.5),
           # The shader mixes toward the tint by tintStrength x alpha; SwiftUI's
           # mix is ~0.6 at alpha 0.6 (Task 17b), so allow > 1.

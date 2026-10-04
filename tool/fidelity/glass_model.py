@@ -182,6 +182,17 @@ def blurred_window(bg, sigma_px, box):
     return _blurred_cached(key, round(float(sigma_px), 4), tuple(int(v) for v in box))
 
 
+def fill_size_factor(shape, v):
+    """Per-shape fillOpacity factor as packGlassUniforms writes uInfo.w
+    (Task 17b): 1 - fillSizeDrop * (1 - min(1, halfMin / fillSizeRef)), 1 when
+    fillSizeRef <= 0. `shape` in logical px (scene units)."""
+    ref = float(v["fillSizeRef"])
+    if ref <= 0:
+        return 1.0
+    half_min = 0.5 * min(shape["w"], shape["h"])
+    return 1.0 - float(v["fillSizeDrop"]) * (1.0 - min(1.0, half_min / ref))
+
+
 def group_blur_sigma(scene, constants):
     """Frost sigma (pt) of the group's one composed blur, as the renderer
     picks it (Task 17b): per drawn shape `blurSigma * min(1, halfMin /
@@ -315,8 +326,10 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     # Tint strength per shape uses that shape's variant set (as the packer).
     tint = 0.0
     clear_mix = 0.0
+    fill_scale = 0.0  # uInfo.w: per-shape fill size factor, blended
     for w, s, src in zip(weights, shapes, scene["shapes"]):
         v = constants[variant_key(src, brightness)]
+        fill_scale = fill_scale + w * fill_size_factor(src, v)
         if s["tint"] is not None:
             rgb, a = s["tint"]
             tint = tint + w[..., None] * np.concatenate([rgb, [v["tintStrength"] * a]])
@@ -375,7 +388,8 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     Dm, Bm, tim = D[m], B[m], tint[m]
     luma = (col * LUMA).sum(-1, keepdims=True)
     col = luma + (col - luma) * Dm[:, 3:4]
-    col = col + (Dm[:, :3] - col) * Bm[:, 2:3]
+    fsm = np.broadcast_to(fill_scale, g["d"].shape)[m][:, None]
+    col = col + (Dm[:, :3] - col) * (Bm[:, 2:3] * fsm)
     col = col * (1.0 - Bm[:, 3:4])
     col = col + (tim[:, :3] - col) * tim[:, 3:4]
 

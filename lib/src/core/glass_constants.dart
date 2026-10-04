@@ -50,6 +50,8 @@ class GlassVariantConstants {
     required this.rimIntensity,
     required this.fillColor,
     required this.fillOpacity,
+    this.fillSizeRef = 0,
+    this.fillSizeDrop = 0,
     required this.saturation,
     required this.dim,
     required this.shadowRadius,
@@ -73,6 +75,8 @@ class GlassVariantConstants {
     rimIntensity: _d(j, 'rimIntensity', base.rimIntensity),
     fillColor: _color(j, 'fillColor', base.fillColor),
     fillOpacity: _d(j, 'fillOpacity', base.fillOpacity),
+    fillSizeRef: _d(j, 'fillSizeRef', base.fillSizeRef),
+    fillSizeDrop: _d(j, 'fillSizeDrop', base.fillSizeDrop),
     saturation: _d(j, 'saturation', base.saturation),
     dim: _d(j, 'dim', base.dim),
     shadowRadius: _d(j, 'shadowRadius', base.shadowRadius),
@@ -138,6 +142,20 @@ class GlassVariantConstants {
   /// How far the content is mixed toward [fillColor] (0 = untouched).
   final double fillOpacity;
 
+  /// Shapes whose half shorter side is below this get a weaker fill:
+  /// [fillOpacity] × (1 − [fillSizeDrop] × (1 − min(1, halfMin /
+  /// fillSizeRef))). 0 disables it.
+  ///
+  /// SwiftUI washes small regular glass less than large glass (Task 17b,
+  /// measured from the coded captures: the contrast kept behind a 20 pt
+  /// half-size shape is about 0.30 against 0.25 behind a 150 pt one, and
+  /// dark capsules come out visibly lighter than dark rectangles).
+  final double fillSizeRef;
+
+  /// Fraction of [fillOpacity] lost on a vanishingly small shape (see
+  /// [fillSizeRef]).
+  final double fillSizeDrop;
+
   /// Saturation of the content behind the glass (1 = unchanged, 0 = grey).
   final double saturation;
 
@@ -166,6 +184,8 @@ class GlassVariantConstants {
     'rimIntensity': rimIntensity,
     'fillColor': _hex(fillColor),
     'fillOpacity': fillOpacity,
+    'fillSizeRef': fillSizeRef,
+    'fillSizeDrop': fillSizeDrop,
     'saturation': saturation,
     'dim': dim,
     'shadowRadius': shadowRadius,
@@ -294,6 +314,8 @@ class GlassConstants {
       rimIntensity: 0.245,
       fillColor: Color(0xFFFEFEFE),
       fillOpacity: 0.6336,
+      fillSizeRef: 0,
+      fillSizeDrop: 0,
       saturation: 1.4994,
       dim: 0.0002,
       shadowRadius: 20.9154,
@@ -312,6 +334,8 @@ class GlassConstants {
       rimIntensity: 0.8805,
       fillColor: Color(0xFFFDFCFC),
       fillOpacity: 0.1762,
+      fillSizeRef: 0,
+      fillSizeDrop: 0,
       saturation: 1.2711,
       dim: 0.0027,
       shadowRadius: 35.898,
@@ -330,6 +354,8 @@ class GlassConstants {
       rimIntensity: 0.3516,
       fillColor: Color(0xFF1F1A19),
       fillOpacity: 0.6025,
+      fillSizeRef: 0,
+      fillSizeDrop: 0,
       saturation: 1.4994,
       dim: 0.0865,
       shadowRadius: 21.0601,
@@ -348,6 +374,8 @@ class GlassConstants {
       rimIntensity: 0.406,
       fillColor: Color(0xFFFDFAFB),
       fillOpacity: 0.1778,
+      fillSizeRef: 0,
+      fillSizeDrop: 0,
       saturation: 1.2332,
       dim: 0.0006,
       shadowRadius: 13.0732,

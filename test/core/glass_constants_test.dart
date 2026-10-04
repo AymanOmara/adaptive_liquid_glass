@@ -103,6 +103,22 @@ void main() {
     expect(c.clear.hashCode == GlassConstants.standard.clear.hashCode, isFalse);
   });
 
+  test('fillSizeRef and fillSizeDrop read, override, round-trip, compare', () {
+    final c = GlassConstants.fromJson({
+      'regularDark': {'fillSizeRef': 60.0, 'fillSizeDrop': 0.25},
+    });
+    expect(c.regularDark.fillSizeRef, 60);
+    expect(c.regularDark.fillSizeDrop, 0.25);
+    expect(
+      c.regularDark.fillOpacity,
+      GlassConstants.standard.regularDark.fillOpacity,
+    );
+    expect(c.regularDark.toJson()['fillSizeRef'], 60);
+    expect(c.regularDark.toJson()['fillSizeDrop'], 0.25);
+    expect(GlassConstants.fromJson(c.toJson()), c);
+    expect(c == GlassConstants.standard, isFalse);
+  });
+
   test('different fill colours are not equal', () {
     final a = GlassConstants.fromJson({
       'regular': {'fillColor': '#000000'},

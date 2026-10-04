@@ -117,3 +117,21 @@ def test_render_uses_size_scaled_blur():
     assert np.array_equal(ia, ib)
     ic, _ = render_window(bg, scene, STANDARD)
     assert not np.array_equal(ia, ic)
+
+
+def test_fill_scales_with_shape_size():
+    """Task 17b: fillOpacity x (1 - fillSizeDrop x (1 - min(1, halfMin /
+    fillSizeRef))) per shape (packed in uInfo.w, blended like halfMin)."""
+    from glass_model import render_window
+    bg = np.random.default_rng(2).random((2622, 1206, 3))
+    scene = _scene("regular-circle-photo-dark")  # halfMin 36 pt
+    a = json.loads(json.dumps(STANDARD))
+    a["regularDark"].update(fillSizeRef=72.0, fillSizeDrop=0.4)  # -> x 0.8
+    b = json.loads(json.dumps(STANDARD))
+    b["regularDark"].update(fillSizeRef=0.0, fillSizeDrop=0.4,
+                            fillOpacity=STANDARD["regularDark"]["fillOpacity"] * 0.8)
+    ia, _ = render_window(bg, scene, a)
+    ib, _ = render_window(bg, scene, b)
+    assert np.abs(ia - ib).max() <= 1 / 255 + 1e-9
+    ic, _ = render_window(bg, scene, STANDARD)
+    assert np.abs(ia - ic).max() > 10 / 255
