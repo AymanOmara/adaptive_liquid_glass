@@ -116,7 +116,7 @@ class GlassMemberState extends State<GlassMember>
   );
 
   /// The registry this member is registered with; null when it is not
-  /// drawn by the group's backdrop or when it overflowed.
+  /// drawn by the group's backdrop or native layer, or when it overflowed.
   GlassRegistry? _registry;
 
   /// The scope's registry last seen, registered with or not.
@@ -155,7 +155,9 @@ class GlassMemberState extends State<GlassMember>
     }
     _settled = scope.settled;
     entry.container = ConcentricScope.maybeOf(context);
-    final target = scope.rendering == GlassMemberRendering.backdrop
+    final target =
+        scope.rendering == GlassMemberRendering.backdrop ||
+            scope.rendering == GlassMemberRendering.native
         ? scope.registry
         : null;
     if (!identical(target, _scopeRegistry)) {
@@ -291,7 +293,8 @@ class GlassMemberState extends State<GlassMember>
         opaqueColor: scope.opaqueColor,
         child: widget.child,
       ),
-      GlassMemberRendering.backdrop => ConcentricScope(
+      GlassMemberRendering.backdrop ||
+      GlassMemberRendering.native => ConcentricScope(
         entry: entry,
         child: GlassMemberBox(
           entry: entry,

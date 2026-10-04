@@ -4,10 +4,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
-import '../core/glass.dart';
 import '../core/glass_constants.dart';
-import '../core/glass_shape.dart';
-import '../group/glass_entry.dart';
+import '../group/entry_geometry.dart';
 import '../group/glass_registry.dart';
 import 'glass_program.dart';
 import 'glass_uniforms.dart';
@@ -205,58 +203,21 @@ class RenderGlassBackdrop extends RenderProxyBox {
     super.dispose();
   }
 
-  /// A morphing or ghost entry draws its group-local `morphRect`.
-  Rect _baseGlobalRect(GlassEntry e, Matrix4 toGlobal) {
-    final morph = e.morphRect;
-    if (morph != null) return MatrixUtils.transformRect(toGlobal, morph);
-    final box = e.box!;
-    return MatrixUtils.transformRect(
-      box.getTransformTo(null),
-      e.shape.resolveRect(box.size),
-    );
-  }
-
-  double _baseRadius(GlassEntry e, Rect baseGlobal) {
-    final c = e.container;
-    final shape = e.shape;
-    double? concentric;
-    if (shape is ConcentricGlassShape && c != null && c.isLaidOut) {
-      final cBox = c.box!;
-      concentric = concentricRadius(
-        container: MatrixUtils.transformRect(
-          cBox.getTransformTo(null),
-          c.shape.resolveRect(cBox.size),
-        ),
-        containerRadius: c.shape.resolveRadius(cBox.size),
-        child: baseGlobal,
-        minimum: shape.minimum,
-      );
-    }
-    return shape.resolveRadius(baseGlobal.size, concentricRadius: concentric);
-  }
-
   GlassBackdropDebugFrame? _buildFrame() {
     final dpr = _config.devicePixelRatio;
     final toGlobal = getTransformTo(null);
     final fromGlobal = Matrix4.tryInvert(toGlobal);
     if (fromGlobal == null) return null;
 
-    final drawn = <(GlassEntry, Rect, double)>[];
-    for (final e in _registry.entries) {
-      if (!(e.isLaidOut || e.isGhost) ||
-          e.glass.variant == GlassVariant.identity) {
-        continue;
-      }
-      final base = _baseGlobalRect(e, toGlobal);
-      if (!base.isFinite || base.isEmpty) continue;
-      final radius = _baseRadius(e, base) * e.press.radiusScale;
-      final pressed = e.press.apply(base);
-      e.lastDrawnLocal = MatrixUtils.transformRect(fromGlobal, pressed);
-      drawn.add((e, pressed, radius));
+    final drawn = collectEntryGeometry(_registry, toGlobal);
+    for (final g in drawn) {
+      g.entry.lastDrawnLocal = MatrixUtils.transformRect(fromGlobal, g.drawn);
     }
     if (drawn.isEmpty) return null;
 
-    final union = drawn.map((d) => d.$2).reduce((a, b) => a.expandToInclude(b));
+    final union = drawn
+        .map((g) => g.drawn)
+        .reduce((a, b) => a.expandToInclude(b));
     final c = _config.constants;
     final shadow = [
       c.regular,
@@ -272,23 +233,24 @@ class RenderGlassBackdrop extends RenderProxyBox {
     final origin = MatrixUtils.transformPoint(toGlobal, localBounds.topLeft);
 
     final shapes = mergeUnions([
-      for (final (e, rect, radius) in drawn)
+      for (final g in drawn)
         GlassShapeUniform(
           rect: toTextureSpace(
-            rect,
+            g.drawn,
             filterOriginGlobal: origin,
             devicePixelRatio: dpr,
           ),
-          radius: radius * dpr,
-          variant: e.glass.variant,
-          tint: e.glass.tintColor,
-          unionId: e.unionId,
+          radius: g.radius * dpr,
+          variant: g.entry.glass.variant,
+          tint: g.entry.glass.tintColor,
+          unionId: g.entry.unionId,
         ),
     ]);
 
     Offset? touch;
     var glow = 0.0;
-    for (final (e, _, _) in drawn) {
+    for (final g in drawn) {
+      final e = g.entry;
       final p = e.press.touch;
       final box = e.box;
       if (box == null) continue; // ghosts have no touch

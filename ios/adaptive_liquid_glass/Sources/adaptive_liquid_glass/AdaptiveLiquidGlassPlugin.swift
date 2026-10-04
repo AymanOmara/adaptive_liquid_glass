@@ -13,6 +13,9 @@ public class AdaptiveLiquidGlassPlugin: NSObject, FlutterPlugin, FlutterStreamHa
       name: "adaptive_liquid_glass/reduce_transparency",
       binaryMessenger: registrar.messenger())
     events.setStreamHandler(instance)
+    registrar.register(
+      GlassViewFactory(messenger: registrar.messenger()),
+      withId: "adaptive_liquid_glass/native_glass")
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {

@@ -6,6 +6,7 @@ import '../core/glass_render_mode.dart';
 import '../core/render_mode_resolver.dart';
 import '../core/shape_border.dart';
 import '../core/theme.dart';
+import '../native/native_glass_layer.dart';
 import '../platform/glass_platform.dart';
 import '../shader/glass_program.dart';
 import '../shader/render_glass_backdrop.dart';
@@ -22,6 +23,9 @@ enum GlassMemberRendering {
 
   /// Each member is a blur-only surface.
   degraded,
+
+  /// Registered with the group's native (UIKit) glass layer, iOS 26+.
+  native,
 }
 
 /// Shares a group's registry and resolved mode with its members.
@@ -119,8 +123,9 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
   late final GlassMorphController _morph = GlassMorphController(
     vsync: this,
     registry: _registry,
-    // The group's first render object: the backdrop when members register
-    // with it, so morph rects share the renderer's local space.
+    // The group's first render object: the backdrop (or the native layer's
+    // stack) when members register with it, so morph rects share the
+    // renderer's local space.
     groupBox: () => _active ? context.findRenderObject() as RenderBox? : null,
     motion: () => _active
         ? context
@@ -221,9 +226,8 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
         environment.shaderSupported
             ? GlassMemberRendering.backdrop
             : GlassMemberRendering.degraded,
-      // Task 13 gives native its own path.
-      EffectiveGlassMode.shader ||
-      EffectiveGlassMode.native => GlassMemberRendering.backdrop,
+      EffectiveGlassMode.shader => GlassMemberRendering.backdrop,
+      EffectiveGlassMode.native => GlassMemberRendering.native,
     };
 
     final Widget scoped = GlassGroupScope(
@@ -236,6 +240,13 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
       scrollable: Scrollable.maybeOf(context),
       child: widget.child,
     );
+    if (rendering == GlassMemberRendering.native) {
+      return NativeGlassLayer(
+        registry: _registry,
+        spacing: widget.spacing,
+        child: scoped,
+      );
+    }
     if (rendering != GlassMemberRendering.backdrop) return scoped;
 
     return GlassBackdrop(
