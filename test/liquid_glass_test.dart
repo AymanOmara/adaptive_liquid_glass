@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/core/shape_border.dart';
@@ -215,12 +217,19 @@ void main() {
       ),
     );
     const c = GlassConstants.standard;
+    // 40 x 40 members: half the shorter side is 20 (blurSizeRef scaling).
+    double sigma(GlassVariantConstants v) => v.blurSizeRef > 0
+        ? v.blurSigma * math.min(1.0, 20 / v.blurSizeRef)
+        : v.blurSigma;
     await t.pumpWidget(group(Brightness.light, [Glass.clear]));
-    expect(backdropOf(t).debugLastFrame!.blurSigma, c.clear.blurSigma);
+    expect(backdropOf(t).debugLastFrame!.blurSigma, sigma(c.clear));
     await t.pumpWidget(group(Brightness.light, [Glass.clear, Glass.regular]));
-    expect(backdropOf(t).debugLastFrame!.blurSigma, c.regular.blurSigma);
+    expect(
+      backdropOf(t).debugLastFrame!.blurSigma,
+      math.max(sigma(c.clear), sigma(c.regular)),
+    );
     await t.pumpWidget(group(Brightness.dark, [Glass.regular]));
-    expect(backdropOf(t).debugLastFrame!.blurSigma, c.regularDark.blurSigma);
+    expect(backdropOf(t).debugLastFrame!.blurSigma, sigma(c.regularDark));
   }, variant: ios);
 
   testWidgets('frost blur scales down on shapes smaller than blurSizeRef', (

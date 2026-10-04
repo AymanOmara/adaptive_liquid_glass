@@ -9,21 +9,15 @@ from compare import load, region_for, score
 from glass_model import render
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-# Flutter captures with the lens v3 build and the standard constants (Task 15c).
-BASE = ROOT / "build/fidelity/lens-v3"
+# Flutter captures of the shipped build with no -constants (Task 17b final run).
+BASE = ROOT / "build/fidelity/final"
 SPEC = json.loads((ROOT / "tool/scenes/scenes.json").read_text())
 STANDARD = json.loads((ROOT / "tool/fidelity/standard_constants.json").read_text())
 
-PARITY_SCENES = [
-    "regular-capsule-photo-light",
-    "clear-rect28-text-dark",
-    "regular-circle-photo-dark",
-    "merge-gap16-photo-light",
-    "clear-capsule-photo-dark",
-]
+PARITY_SCENES = [s["id"] for s in SPEC["scenes"]]  # all 75
 
 
-@pytest.mark.skipif(not BASE.exists(), reason="needs build/fidelity/lens-v3 captures")
+@pytest.mark.skipif(not BASE.exists(), reason="needs build/fidelity/final captures")
 @pytest.mark.parametrize("scene_id", PARITY_SCENES)
 def test_model_matches_flutter_output(scene_id):
     scene = next(s for s in SPEC["scenes"] if s["id"] == scene_id)

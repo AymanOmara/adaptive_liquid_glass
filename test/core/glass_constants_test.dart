@@ -49,33 +49,34 @@ void main() {
     expect(GlassConstants.fromJson(c.toJson()), c);
   });
 
-  test('standard v3: measured lens (Task 15c) + Task 17 fit', () {
-    const c = GlassConstants.standard;
-    // Lens v3, decoded from SwiftUI (identical in light and dark).
-    for (final v in [c.regular, c.regularDark]) {
-      expect(v.lensBand, 18.03);
-      expect(v.lensStrength, -2.609);
-      expect(v.lensDecay, 6.43);
-      expect(v.lensSizeRef, 38.37);
-      expect(v.dispersion, 0);
-    }
-    for (final v in [c.clear, c.clearDark]) {
-      expect(v.lensBand, 18.42);
-      expect(v.lensStrength, -2.529);
-      expect(v.lensDecay, 6.52);
-      expect(v.lensSizeRef, 0);
-      expect(v.dispersion, 0);
-    }
-    // The rest comes from the Task 17 fit (build/fidelity/fit/best.json).
-    expect(c.regular.blurSigma, 5.1888);
-    expect(c.regular.fillColor, const Color(0xFFFEFEFE));
-    expect(c.regular.fillOpacity, 0.6336);
-    expect(c.regularDark.fillColor, const Color(0xFF1F1A19));
-    expect(c.clear.blurSigma, 1.3764);
-    expect(c.clearDark.fillColor, const Color(0xFFFDFAFB));
-    expect(c.cornerExponent, 2.0);
-    expect(c.mergeFactor, 1.0);
-  });
+  test(
+    'standard v4: Task 17b fit on lens v3 with size-dependent frost/fill',
+    () {
+      const c = GlassConstants.standard;
+      // Fitted on the NumPy model against SwiftUI (build/fidelity/fit17b),
+      // device-verified: 41/75 scenes, median SSIM 0.981, median ΔE 1.50.
+      expect(c.regular.blurSigma, 5.9236);
+      expect(c.regular.blurSizeRef, 59.9762);
+      expect(c.regular.fillOpacity, 0.6804);
+      expect(c.regular.fillSizeRef, 43.9952);
+      expect(c.regular.fillSizeDrop, 0.1268);
+      expect(c.regular.tintStrength, 1.0219);
+      expect(c.regularDark.blurSigma, 11.4482);
+      expect(c.regularDark.fillSizeDrop, 0.799);
+      expect(c.regularDark.fillColor, const Color(0xFF191818));
+      expect(c.clear.blurSigma, 1.3993);
+      expect(c.clear.blurSizeRef, 0);
+      expect(c.clear.fillSizeRef, 0);
+      expect(c.clearDark.lensSizeRef, 28.86);
+      expect(c.cornerExponent, 2.0);
+      expect(c.mergeFactor, 0.8);
+      // The lens stays near the Task 15c measurement in every set.
+      for (final v in [c.regular, c.regularDark, c.clear, c.clearDark]) {
+        expect(v.lensStrength * v.lensBand, closeTo(-47, 3));
+        expect(v.lensDecay, closeTo(6.4, 0.6));
+      }
+    },
+  );
 
   test('lensDecay and lensSizeRef read, override and compare', () {
     final c = GlassConstants.fromJson({

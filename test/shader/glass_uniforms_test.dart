@@ -39,7 +39,14 @@ GlassFrameUniforms frame(
 
 void main() {
   test('layout size and header', () {
-    final f = packGlassUniforms(frame([s(const Rect.fromLTWH(1, 2, 30, 40))]));
+    final f = packGlassUniforms(
+      frame(
+        [s(const Rect.fromLTWH(1, 2, 30, 40))],
+        constants: GlassConstants.fromJson({
+          'regular': {'fillSizeRef': 0.0},
+        }),
+      ),
+    );
     expect(f.length, 240);
     expect(f.sublist(0, 4), [1, 3, -2, 0]);
     expect(f.sublist(4, 8), [60, GlassConstants.standard.cornerExponent, 0, 0]);
@@ -48,7 +55,7 @@ void main() {
       10,
       0,
       GlassConstants.standard.cornerExponent,
-      1, // fill scale: no size scaling in the standard constants
+      1, // fill scale: fillSizeRef 0 disables size scaling
     ]);
   });
 
