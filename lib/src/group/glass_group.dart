@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
@@ -6,6 +8,8 @@ import '../core/glass_render_mode.dart';
 import '../core/render_mode_resolver.dart';
 import '../core/shape_border.dart';
 import '../core/theme.dart';
+import '../foreground/glass_backdrop_source.dart';
+import '../foreground/glass_foreground.dart';
 import '../native/native_glass_layer.dart';
 import '../platform/glass_platform.dart';
 import '../shader/glass_program.dart';
@@ -120,6 +124,10 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
   /// object lookups are not allowed then, and no ghost should start.
   bool _active = true;
 
+  Timer? _sampler;
+  Brightness? _sampled;
+  bool _sampling = false;
+
   late final GlassMorphController _morph = GlassMorphController(
     vsync: this,
     registry: _registry,
@@ -144,6 +152,7 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
     GlassPlatform.instance.ensureStarted();
     GlassPlatform.instance.environment.addListener(_onEnvironment);
     GlassProgram.instance.load();
+    GlassBackdropSources.instance.revision.addListener(_onSources);
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _morph.markSettled();
@@ -164,6 +173,48 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
   }
 
   void _onEnvironment() => setState(() {});
+
+  void _onSources() {
+    if (mounted && _active) setState(() {});
+  }
+
+  void _updateSampler(GlassMemberRendering rendering) {
+    final want =
+        (rendering == GlassMemberRendering.backdrop ||
+            rendering == GlassMemberRendering.native) &&
+        GlassBackdropSources.instance.boundaries.isNotEmpty;
+    if (want && _sampler == null) {
+      _sampler = Timer.periodic(
+        const Duration(milliseconds: 250),
+        (_) => _sample(),
+      );
+    } else if (!want) {
+      _sampler?.cancel();
+      _sampler = null;
+    }
+  }
+
+  Future<void> _sample() async {
+    if (_sampling || !mounted || !_active) return;
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.attached || !box.hasSize) return;
+    _sampling = true;
+    try {
+      final region = MatrixUtils.transformRect(
+        box.getTransformTo(null),
+        Offset.zero & box.size,
+      );
+      for (final b in GlassBackdropSources.instance.boundaries) {
+        final l = await sampleLuminance(b, region);
+        if (l == null) continue;
+        final next = l >= 0.5 ? Brightness.light : Brightness.dark;
+        if (mounted && next != _sampled) setState(() => _sampled = next);
+        break;
+      }
+    } finally {
+      _sampling = false;
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -202,6 +253,8 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
       l.removeListener(_registry.markNeedsPaint);
     }
     GlassPlatform.instance.environment.removeListener(_onEnvironment);
+    GlassBackdropSources.instance.revision.removeListener(_onSources);
+    _sampler?.cancel();
     _morph.dispose();
     _registry.dispose();
     super.dispose();
@@ -230,7 +283,9 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
       EffectiveGlassMode.native => GlassMemberRendering.native,
     };
 
-    final Widget scoped = GlassGroupScope(
+    _updateSampler(rendering);
+
+    Widget scoped = GlassGroupScope(
       registry: _registry,
       rendering: rendering,
       constants: theme.constants,
@@ -240,6 +295,10 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
       scrollable: Scrollable.maybeOf(context),
       child: widget.child,
     );
+    final sampled = _sampled;
+    if (sampled != null) {
+      scoped = GlassForeground(backgroundBrightness: sampled, child: scoped);
+    }
     if (rendering == GlassMemberRendering.native) {
       return NativeGlassLayer(
         registry: _registry,
