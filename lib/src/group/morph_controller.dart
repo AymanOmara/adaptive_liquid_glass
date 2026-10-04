@@ -59,7 +59,8 @@ class GlassMorphController {
     final id = e.glassId;
     if (id == null || !_settled || _disposed) return;
     final previous = _tracks[id];
-    final from = previous != null && previous.ghost
+    // A ghost, or an old view frozen at its last rect while it unmounts.
+    final from = previous != null && previous.entry.isGhost
         ? previous.entry.morphRect
         : null;
     if (previous != null) _finish(id, removeGhost: true);
@@ -153,7 +154,9 @@ class GlassMorphController {
     var bestD = double.infinity;
     for (final o in registry.entries) {
       final r = o.lastDrawnLocal;
-      if (identical(o, self) || r == null) continue;
+      if (identical(o, self) || r == null || o.isGhost || o.box == null) {
+        continue;
+      }
       final d = target == null ? 0.0 : (r.center - target.center).distance;
       if (d < bestD) {
         bestD = d;
@@ -217,7 +220,9 @@ class GlassMorphController {
       registry.unregister(e);
       registry.onRemoved = hook;
     } else {
-      e.morphRect = null;
+      // A box-less entry is an old view frozen at its last rect until it
+      // unregisters; keep drawing it there.
+      if (e.box != null) e.morphRect = null;
       e.contentOpacity.value = 1;
       registry.markNeedsPaint();
     }

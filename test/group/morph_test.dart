@@ -3,6 +3,7 @@ import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:adaptive_liquid_glass/src/shader/render_glass_backdrop.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -88,10 +89,14 @@ void main() {
     await t.pump();
     await t.pumpWidget(scene(showB: true));
     expect(shapes(t), hasLength(1)); // hidden on its first frame
+    await t.pump(); // spring starts: drawn at 'a'
+    final start = shapes(t);
+    expect(start, hasLength(2));
     await t.pump(const Duration(milliseconds: 50));
     final mid = shapes(t);
     expect(mid, hasLength(2));
     final dpr = t.view.devicePixelRatio;
+    expect(mid[1].left, greaterThan(start[1].left)); // moving toward 80
     expect(mid[1].left, lessThan(80 * dpr)); // still travelling from 'a'
     await t.pumpAndSettle();
     expect(shapes(t)[1].left, closeTo(80 * dpr, 0.5));
@@ -105,6 +110,14 @@ void main() {
     await t.pump();
     await t.pumpWidget(scene(showB: false));
     expect(shapes(t), hasLength(2)); // ghost
+    final dpr = t.view.devicePixelRatio;
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 50));
+    final s = shapes(t);
+    expect(s, hasLength(2));
+    // Shrinking toward 'a''s centre: b's centre started 80 away.
+    expect(s[1].width, lessThan(60 * dpr));
+    expect((s[1].center - s[0].center).distance, lessThan(80 * dpr));
     await t.pumpAndSettle();
     expect(shapes(t), hasLength(1));
   }, variant: ios);
@@ -118,6 +131,7 @@ void main() {
     await t.pump();
     await t.pump(const Duration(milliseconds: 50));
     final dpr = t.view.devicePixelRatio;
+    expect(shapes(t), hasLength(2)); // no ghost of the old view
     final b = shapes(t)[1];
     expect(b.left, greaterThan(80 * dpr));
     expect(b.left, lessThan(240 * dpr));
@@ -169,5 +183,18 @@ void main() {
     await t.pumpAndSettle();
     expect(t.takeException(), isNull);
     expect(t.binding.hasScheduledFrame, isFalse);
+  }, variant: ios);
+
+  testWidgets('content composites only while fading', (t) async {
+    env();
+    await t.pumpWidget(scene(showB: false));
+    await t.pump();
+    expect(t.layers.whereType<OpacityLayer>(), isEmpty); // settled
+    await t.pumpWidget(scene(showB: true));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 50));
+    expect(t.layers.whereType<OpacityLayer>(), hasLength(1)); // mid-fade
+    await t.pumpAndSettle();
+    expect(t.layers.whereType<OpacityLayer>(), isEmpty);
   }, variant: ios);
 }

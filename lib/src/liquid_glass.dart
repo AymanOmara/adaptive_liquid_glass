@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
@@ -138,9 +139,11 @@ class GlassMemberState extends State<GlassMember>
   bool _first = true;
   bool _settled = false;
 
-  /// Box and morph rect held while deactivated (restored on reparent).
+  /// Box, morph rect and press held while deactivated (restored on
+  /// reparent).
   RenderBox? _heldBox;
   Rect? _heldMorph;
+  GlassPressGeometry _heldPress = GlassPressGeometry.identity;
 
   @override
   void didChangeDependencies() {
@@ -215,9 +218,12 @@ class GlassMemberState extends State<GlassMember>
         entry.box != null) {
       _heldBox = entry.box;
       _heldMorph = entry.morphRect;
+      _heldPress = entry.press;
+      // `last` already includes the press; do not apply it twice.
       entry
         ..box = null
-        ..morphRect = last;
+        ..morphRect = last
+        ..press = GlassPressGeometry.identity;
       _registry!.markNeedsPaint();
     }
     super.deactivate();
@@ -230,9 +236,11 @@ class GlassMemberState extends State<GlassMember>
     if (held != null) {
       entry
         ..box = held
-        ..morphRect = _heldMorph;
+        ..morphRect = _heldMorph
+        ..press = _heldPress;
       _heldBox = null;
       _heldMorph = null;
+      _heldPress = GlassPressGeometry.identity;
       _registry?.markNeedsPaint();
     }
   }
@@ -296,11 +304,8 @@ class GlassMemberState extends State<GlassMember>
 
   /// The child as drawn on the glass: faded during `glassId` morphs and,
   /// for interactive glass, wrapped in the press transform.
-  Widget buildContent(BuildContext context) => ValueListenableBuilder<double>(
-    valueListenable: entry.contentOpacity,
-    // Always an Opacity (a no-op at 1): toggling the wrapper would
-    // remount the content when a fade ends.
-    builder: (_, v, child) => Opacity(opacity: v, child: child),
+  Widget buildContent(BuildContext context) => _ContentFade(
+    opacity: entry.contentOpacity,
     child: _pressContent(context),
   );
 
@@ -419,5 +424,91 @@ class RenderGlassMember extends RenderProxyBox {
       });
     }
     _lastTransform = t;
+  }
+}
+
+/// Fades member content during morphs. Fixed tree depth (no remount when a
+/// fade ends), no rebuild per tick, and no layer outside a fade.
+class _ContentFade extends SingleChildRenderObjectWidget {
+  const _ContentFade({required this.opacity, super.child});
+
+  final ValueListenable<double> opacity;
+
+  @override
+  _RenderContentFade createRenderObject(BuildContext context) =>
+      _RenderContentFade(opacity);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderContentFade r) =>
+      r.opacity = opacity;
+}
+
+class _RenderContentFade extends RenderProxyBox {
+  _RenderContentFade(this._opacity) : _alpha = _alphaOf(_opacity.value);
+
+  static int _alphaOf(double v) => (v.clamp(0.0, 1.0) * 255).round();
+
+  ValueListenable<double> _opacity;
+  set opacity(ValueListenable<double> value) {
+    if (identical(value, _opacity)) return;
+    if (attached) _opacity.removeListener(_update);
+    _opacity = value;
+    if (attached) _opacity.addListener(_update);
+    _update();
+  }
+
+  int _alpha;
+
+  bool get _composites => child != null && _alpha > 0 && _alpha < 255;
+
+  void _update() {
+    final a = _alphaOf(_opacity.value);
+    if (a == _alpha) return;
+    final was = _composites;
+    final wasVisible = _alpha > 0;
+    _alpha = a;
+    if (was != _composites) markNeedsCompositingBitsUpdate();
+    if (wasVisible != (_alpha > 0)) markNeedsSemanticsUpdate();
+    markNeedsPaint();
+  }
+
+  @override
+  bool get alwaysNeedsCompositing => _composites;
+
+  @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    _opacity.addListener(_update);
+    _update();
+  }
+
+  @override
+  void detach() {
+    _opacity.removeListener(_update);
+    super.detach();
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    if (child == null || _alpha == 0) {
+      layer = null;
+      return;
+    }
+    if (_alpha == 255) {
+      layer = null;
+      super.paint(context, offset);
+      return;
+    }
+    layer = context.pushOpacity(
+      offset,
+      _alpha,
+      super.paint,
+      oldLayer: layer as OpacityLayer?,
+    );
+  }
+
+  @override
+  void visitChildrenForSemantics(RenderObjectVisitor visitor) {
+    if (_alpha > 0) super.visitChildrenForSemantics(visitor);
   }
 }
