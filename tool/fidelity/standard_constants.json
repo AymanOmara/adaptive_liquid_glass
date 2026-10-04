@@ -1,0 +1,9 @@
+{
+  "regular": {"blurSigma": 12, "lensBand": 14, "lensStrength": 0.35, "dispersion": 0.15, "rimWidth": 1.2, "rimIntensity": 0.55, "fillColor": "#FFFFFF", "fillOpacity": 0.30, "saturation": 0.75, "dim": 0, "shadowRadius": 12, "shadowOpacity": 0.12, "tintStrength": 0.35},
+  "clear": {"blurSigma": 2, "lensBand": 14, "lensStrength": 0.35, "dispersion": 0.15, "rimWidth": 1.2, "rimIntensity": 0.6, "fillColor": "#FFFFFF", "fillOpacity": 0.05, "saturation": 1.0, "dim": 0.2, "shadowRadius": 12, "shadowOpacity": 0.10, "tintStrength": 0.35},
+  "regularDark": {"blurSigma": 12, "lensBand": 14, "lensStrength": 0.35, "dispersion": 0.15, "rimWidth": 1.2, "rimIntensity": 0.4, "fillColor": "#1C1C1E", "fillOpacity": 0.55, "saturation": 0.75, "dim": 0, "shadowRadius": 12, "shadowOpacity": 0.2, "tintStrength": 0.35},
+  "clearDark": {"blurSigma": 2, "lensBand": 14, "lensStrength": 0.35, "dispersion": 0.15, "rimWidth": 1.2, "rimIntensity": 0.45, "fillColor": "#000000", "fillOpacity": 0.20, "saturation": 1.0, "dim": 0.3, "shadowRadius": 12, "shadowOpacity": 0.18, "tintStrength": 0.35},
+  "cornerExponent": 4,
+  "mergeFactor": 1.0,
+  "motion": {"pressScale": 0.1, "pressStretch": 0.08, "glowRadius": 60, "pressResponse": 0.35, "pressDamping": 0.65, "morphResponse": 0.45, "morphDamping": 0.75}
+}
