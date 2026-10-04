@@ -33,6 +33,8 @@ open build/fidelity/<run>/report.html
 
 - `CONSTANTS='{"regular":{...}}'` passes `-constants` to the Flutter renderer only.
 - `RENDERERS="flutter"` recaptures one side (default `"flutter swiftui"`).
+- `SCENES=tool/scenes/measure.json` captures another scene list (it must be
+  synced into `example/assets/` and is passed to both hosts as `-sceneFile`).
 - `SKIP_BUILD=1` reuses the installed app. `SETTLE=<s>` changes the wait before
   each screenshot (default 2.5 s). `UDID`, `BUNDLE` override the device and app.
 
@@ -129,3 +131,27 @@ $F score       --start build/fidelity/fitted.json [--scenes <prefix>]
 
 `--only KEY[,KEY]` frees a subset; `--procs` sets the worker count. The loss is
 the mean of `(1 − SSIM)·10 + ΔE/2` over the stage's scenes.
+
+## Lens measurement (Task 15c)
+
+`tool/scenes/measure.json` (`gen_measure.py`) holds 10 base scenes (capsule,
+circle, rect16, rect28 × regular, clear in light; capsule × regular, clear in
+dark), each over the 16 coordinate-code backgrounds of `gen_backgrounds.py`
+(`gen_backgrounds.py codes` writes only those). A code is a grey sinusoid along
+x or y, period 128 or 160 px, in four phase steps. Per pixel, the four steps
+give the sampled coordinate as a phase, `atan2(I3 - I1, I0 - I2)`, which a
+per-channel affine colour change and any symmetric blur cannot move; the two
+periods beat at 640 px to pick the fringe order.
+
+```bash
+SCENES=tool/scenes/measure.json RENDERERS=swiftui tool/fidelity/capture.sh build/fidelity/measure-v1
+tool/fidelity/.venv/bin/python tool/fidelity/measure_lens.py build/fidelity/measure-v1 \
+    --out build/fidelity/measure-v1/an --charts <dir>
+```
+
+It prints per-scene profiles (peak, band, mirroring, dispersion, and the
+decode error outside the glass, which must stay near 0), writes
+`lens-<renderer>.json`, `field-*.npz` and `lens-fit-<renderer>.json` (one
+`lens_v3` least-squares fit per variant on the decoded field), and charts.
+`--renderer flutter` decodes Flutter captures of the same scenes.
+

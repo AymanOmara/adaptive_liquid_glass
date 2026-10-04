@@ -47,7 +47,8 @@ for gap in [4, 16, 30]:
         "shapes": [a, b],
     })
 
-OUT.write_text(json.dumps(
-    {"device": {"width": W, "height": H, "scale": 3}, "scenes": scenes, "motion": []},
-    indent=2) + "\n")
-print(len(scenes), "scenes")
+if __name__ == "__main__":
+    OUT.write_text(json.dumps(
+        {"device": {"width": W, "height": H, "scale": 3}, "scenes": scenes, "motion": []},
+        indent=2) + "\n")
+    print(len(scenes), "scenes")

@@ -68,11 +68,13 @@ class Scene {
   /// Glass shapes, in paint order.
   final List<SceneShape> shapes;
 
-  /// Loads every scene from `assets/scenes.json`, keyed by id.
-  static Future<Map<String, Scene>> loadAll() async {
-    final j = jsonDecode(
-      await rootBundle.loadString('assets/scenes.json'),
-    ) as Map<String, Object?>;
+  /// Loads every scene from [asset] (default `assets/scenes.json`), keyed by
+  /// id.
+  static Future<Map<String, Scene>> loadAll([
+    String asset = 'assets/scenes.json',
+  ]) async {
+    final j =
+        jsonDecode(await rootBundle.loadString(asset)) as Map<String, Object?>;
     return {
       for (final s
           in (j['scenes']! as List<Object?>).cast<Map<Object?, Object?>>())

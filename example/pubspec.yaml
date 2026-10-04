@@ -59,6 +59,7 @@ flutter:
   assets:
     - assets/backgrounds/
     - assets/scenes.json
+    - assets/measure.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:

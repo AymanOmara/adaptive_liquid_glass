@@ -94,6 +94,33 @@ def field(shapes, x, y, k):
     return d
 
 
+# --- lens v3 (measured, Task 15c) ---------------------------------------------
+
+
+def lens_v3(depth, half_min, amp, decay, band, size_ref):
+    """Normal displacement (px, negative = samples inward) at `depth` px inside
+    the outline, as decoded from SwiftUI (tool/fidelity/measure_lens.py):
+
+        s  = min(1, half_min / size_ref)   (1 when size_ref <= 0)
+        v  = max(exp(-depth / (decay s)) - exp(-band / decay), 0) / (1 - exp(-band / decay))
+        dn = -amp * s * v
+
+    i.e. an exponential falloff cut to zero at `band`, and a geometrically
+    similar (uniformly scaled) profile on shapes whose half of the shorter
+    side is below `size_ref`. All lengths in the same unit (px here)."""
+    depth = np.asarray(depth, dtype=np.float64)
+    half_min = np.asarray(half_min, dtype=np.float64)
+    if np.ndim(size_ref) == 0 and size_ref <= 0:
+        s = np.ones_like(half_min)
+    else:
+        s = np.where(np.asarray(size_ref) > 0,
+                     np.minimum(1.0, half_min / np.maximum(size_ref, 1e-6)), 1.0)
+    ls = np.maximum(decay * s, 1e-3)
+    e = np.exp(-np.maximum(band, 1e-3) / np.maximum(decay, 1e-3))
+    v = np.maximum(np.exp(-depth / ls) - e, 0.0) / (1.0 - e)
+    return -amp * s * v
+
+
 # --- blur -------------------------------------------------------------------
 
 

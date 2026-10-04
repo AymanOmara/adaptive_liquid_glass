@@ -1,0 +1,134 @@
+"""Coordinate-coded backgrounds and the lens-field decoder (Task 15c)."""
+import json
+import pathlib
+import sys
+
+import numpy as np
+import pytest
+from scipy.ndimage import gaussian_filter, map_coordinates
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "tool/scenes"))
+
+import gen_backgrounds as gb  # noqa: E402
+import measure_lens as ml  # noqa: E402
+
+H, W = 160, 400  # small synthetic canvas
+
+
+def code_stack(axis, h=H, w=W):
+    """The 16 code backgrounds (as float images) on an h x w canvas."""
+    return {name: np.asarray(gb.code(axis_, period, step, w, h), np.float64) / 255.0
+            for name, (axis_, period, step) in gb.CODES.items() if axis_ == axis}
+
+
+def test_code_set_is_two_axes_two_periods_four_steps():
+    assert len(gb.CODES) == 16
+    assert {p for _, p, _ in gb.CODES.values()} == {128, 160}
+    img = np.asarray(gb.code("x", 128, 0, W, H), np.float64) / 255.0
+    assert img.shape == (H, W, 3)
+    assert np.all(img[..., 0] == img[..., 2])  # grey: R = G = B
+    assert np.all(img[0] == img[-1])  # x code is constant down a column
+    lo, hi = 0.5 - gb.CODE_AMP, 0.5 + gb.CODE_AMP
+    assert img.min() >= lo - 1 / 255 and img.max() <= hi + 1 / 255
+    # One period: value repeats every 128 px.
+    assert np.allclose(img[0, :128], img[0, 128:256])
+
+
+def test_decode_of_untouched_backgrounds_is_identity():
+    xs = code_stack("x")
+    ys = code_stack("y")
+    dec = ml.decode({**xs, **ys})
+    py, px = np.mgrid[0:H, 0:W] + 0.5
+    assert np.abs(dec["sx"][..., 1] - px).max() < 0.15
+    assert np.abs(dec["sy"][..., 1] - py).max() < 0.15
+
+
+def _warp(img, sx, sy):
+    """Samples img (pixel centres at i + 0.5) at (sx, sy), bilinear."""
+    return np.stack([map_coordinates(img[..., c], [sy - 0.5, sx - 0.5], order=1, mode="nearest")
+                     for c in range(3)], -1)
+
+
+def test_decode_recovers_displacement_through_blur_affine_and_saturation():
+    rng = np.random.default_rng(1)
+    py, px = np.mgrid[0:H, 0:W] + 0.5
+    # Smooth field with displacement up to 40 px (beyond a fine half period).
+    dx = 40 * np.sin(px / 70.0) * np.cos(py / 50.0)
+    dy = 25 * np.cos(px / 90.0)
+    a = np.array([0.35, 0.40, 0.30])
+    b = np.array([0.55, 0.50, 0.60])
+    sat = 1.4
+    sigma = 15.0
+    out = {}
+    for name, img in {**code_stack("x"), **code_stack("y")}.items():
+        blurred = np.stack([gaussian_filter(img[..., c], sigma, mode="nearest") for c in range(3)], -1)
+        col = _warp(blurred, px + dx, py + dy)
+        luma = (col * [0.2126, 0.7152, 0.0722]).sum(-1, keepdims=True)
+        col = luma + (col - luma) * sat
+        col = col * a + b
+        col = np.round(np.clip(col + rng.normal(0, 0.4 / 255, col.shape), 0, 1) * 255) / 255
+        out[name] = col
+    dec = ml.decode(out)
+    m = (slice(30, -30), slice(60, -60))  # away from the clamped canvas edge
+    for c in range(3):
+        assert np.median(np.abs(dec["sx"][..., c] - (px + dx))[m]) < 0.3
+        assert np.median(np.abs(dec["sy"][..., c] - (py + dy))[m]) < 0.3
+        assert np.percentile(np.abs(dec["sx"][..., c] - (px + dx))[m], 99) < 1.5
+    # The two periods' modulation ratio recovers the blur sigma.
+    assert np.median(dec["sigma_x"][m]) == pytest.approx(sigma, abs=1.5)
+    # Linearity residual is near zero for an affine pipeline.
+    assert np.median(np.abs(dec["resid_x"][m])) < 0.05
+
+
+def test_measure_scene_matrix():
+    spec = json.loads((ROOT / "tool/scenes/measure.json").read_text())
+    ids = [s["id"] for s in spec["scenes"]]
+    assert len(ids) == len(set(ids)) == 10 * 16
+    bases = {i.split("--")[0] for i in ids}
+    assert bases == {
+        f"{v}-{s}-light" for v in ("regular", "clear")
+        for s in ("capsule", "circle", "rect16", "rect28")} | {
+        "regular-capsule-dark", "clear-capsule-dark"}
+    assert {s["background"] for s in spec["scenes"]} == set(gb.CODES)
+
+
+def test_shape_geometry_depth_and_normal():
+    shape = {"x": 10, "y": 20, "w": 100, "h": 40, "shape": "capsule", "radius": 0}
+    g = ml.shape_geometry(shape, scale=1, px=np.array([60.0, 60.0, 10.5]),
+                          py=np.array([20.5, 40.0, 40.0]))
+    assert g["depth"] == pytest.approx([0.5, 20.0, 0.5], abs=1e-6)
+    assert g["nx"][0] == pytest.approx(0, abs=1e-6) and g["ny"][0] == pytest.approx(-1)
+    assert g["nx"][2] == pytest.approx(-1)
+
+
+def test_lens_v3_profile_shape():
+    from glass_model import lens_v3
+    d = np.array([0.0, 10.0, 54.0, 80.0])
+    # Large shape: unscaled profile, -A at the edge, 0 at and beyond the band.
+    v = lens_v3(d, half_min=300.0, amp=140.0, decay=19.0, band=54.0, size_ref=115.0)
+    assert v[0] == pytest.approx(-140.0)
+    assert -140 < v[1] < -50
+    assert v[2] == pytest.approx(0.0, abs=1e-9) and v[3] == 0.0
+    # Shapes smaller than size_ref get a geometrically similar, smaller lens.
+    s = 57.5 / 115.0
+    small = lens_v3(d * s, half_min=57.5, amp=140.0, decay=19.0, band=54.0, size_ref=115.0)
+    assert small == pytest.approx(v * s)
+    # size_ref 0 disables the scaling.
+    assert lens_v3(d, 10.0, 140.0, 19.0, 54.0, 0.0) == pytest.approx(v)
+
+
+def test_fit_lens_recovers_synthetic_parameters():
+    from glass_model import lens_v3
+    rng = np.random.default_rng(2)
+    samples = []
+    for half in (84.0, 108.0, 210.0):
+        depth = rng.uniform(2, half, 4000)
+        dn = lens_v3(depth, half, 141.0, 19.3, 54.0, 115.0) + rng.normal(0, 0.5, depth.size)
+        samples.append((depth, np.full(depth.size, half), dn))
+    p = ml.fit_lens(samples)
+    assert p["amp"] == pytest.approx(141.0, rel=0.02)
+    assert p["decay"] == pytest.approx(19.3, rel=0.03)
+    assert p["band"] == pytest.approx(54.0, rel=0.03)
+    assert p["size_ref"] == pytest.approx(115.0, rel=0.03)
+    assert p["rms"] < 0.7

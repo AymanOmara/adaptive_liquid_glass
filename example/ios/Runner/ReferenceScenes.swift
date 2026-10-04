@@ -22,8 +22,10 @@ enum ReferenceAssets {
     return Bundle.main.path(forResource: key, ofType: nil)
   }
 
+  /// `-sceneFile <asset>` picks another scene list (for example
+  /// `assets/measure.json`); the default is the fidelity matrix.
   static func scene(id: String) -> RefScene? {
-    guard let p = path("assets/scenes.json"),
+    guard let p = path(LaunchArgs.arg("sceneFile") ?? "assets/scenes.json"),
           let data = FileManager.default.contents(atPath: p),
           let file = try? JSONDecoder().decode(RefFile.self, from: data) else { return nil }
     return file.scenes.first { $0.id == id }
@@ -92,8 +94,8 @@ extension Color {
   }
 }
 
-/// Launch arguments (`-scene`, `-renderer`, `-constants`, `-motion`) shared by
-/// both renderers.
+/// Launch arguments (`-scene`, `-renderer`, `-constants`, `-motion`,
+/// `-sceneFile`) shared by both renderers.
 enum LaunchArgs {
   static func arg(_ name: String) -> String? {
     let a = ProcessInfo.processInfo.arguments
@@ -103,7 +105,8 @@ enum LaunchArgs {
 
   static var all: [String: String?] {
     ["scene": arg("scene"), "renderer": arg("renderer"),
-     "constants": arg("constants"), "motion": arg("motion")]
+     "constants": arg("constants"), "motion": arg("motion"),
+     "sceneFile": arg("sceneFile")]
   }
 
   /// `-renderer swiftui -scene <id>`: replaces the Flutter root view

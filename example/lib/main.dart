@@ -20,7 +20,9 @@ Future<void> main() async {
       : GlassConstants.fromJson(
           (jsonDecode(args.constants!) as Map).cast<String, Object?>(),
         );
-  final scenes = await Scene.loadAll();
+  final scenes = args.sceneFile == null
+      ? await Scene.loadAll()
+      : await Scene.loadAll(args.sceneFile!);
   final scene = args.scene == null ? null : scenes[args.scene];
   if (args.scene != null && scene == null) {
     // Never fall back to the demo: a capture would score the wrong screen.

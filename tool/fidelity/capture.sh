@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Usage: tool/fidelity/capture.sh <run-dir> [scene-id-prefix]
 # Env: CONSTANTS='{"regular":{...}}'  RENDERERS="flutter swiftui"  SKIP_BUILD=1
+#      SCENES=tool/scenes/measure.json (scene list; default tool/scenes/scenes.json)
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 UDID="${UDID:-E7A87B4A-3E48-44F8-A588-704D56774FF0}"
@@ -8,6 +9,8 @@ BUNDLE="${BUNDLE:-com.aymanomara.adaptiveLiquidGlassExample}"
 OUT="${1:?run dir}"
 PREFIX="${2:-}"
 RENDERERS="${RENDERERS:-flutter swiftui}"
+SCENES="${SCENES:-tool/scenes/scenes.json}"
+ASSET="assets/$(basename "$SCENES")"
 
 # The fidelity bars are defined on one device and runtime only.
 python3 - "$UDID" <<'PY' || exit 1
@@ -27,18 +30,18 @@ for r in $RENDERERS; do
   [[ "$r" == flutter || "$r" == swiftui ]] || { echo "capture.sh: unknown renderer '$r'" >&2; exit 1; }
 done
 
-ids=$(python3 - "$PREFIX" <<'PY'
+ids=$(python3 - "$PREFIX" "$SCENES" <<'PY'
 import json, sys
-prefix = sys.argv[1]
-ids = [s["id"] for s in json.load(open("tool/scenes/scenes.json"))["scenes"] if s["id"].startswith(prefix)]
+prefix, path = sys.argv[1], sys.argv[2]
+ids = [s["id"] for s in json.load(open(path))["scenes"] if s["id"].startswith(prefix)]
 if not ids:
-    sys.exit(f"capture.sh: no scene id in tool/scenes/scenes.json starts with '{prefix}'")
+    sys.exit(f"capture.sh: no scene id in {path} starts with '{prefix}'")
 print("\n".join(ids))
 PY
 ) || exit 1
 # The app bundles its own copy; a stale one would make ids unknown at launch.
-cmp -s tool/scenes/scenes.json example/assets/scenes.json ||
-  { echo "capture.sh: example/assets/scenes.json is stale; run tool/scenes/sync_example.sh" >&2; exit 1; }
+cmp -s "$SCENES" "example/$ASSET" ||
+  { echo "capture.sh: example/$ASSET is stale; run tool/scenes/sync_example.sh" >&2; exit 1; }
 
 mkdir -p "$OUT"
 xcrun simctl boot "$UDID" 2>/dev/null || true
@@ -52,7 +55,8 @@ for id in $ids; do
   for r in $RENDERERS; do
     xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
     extra=()
-    [[ "$r" == flutter && -n "${CONSTANTS:-}" ]] && extra=(-constants "$CONSTANTS")
+    [[ "$ASSET" != assets/scenes.json ]] && extra=(-sceneFile "$ASSET")
+    [[ "$r" == flutter && -n "${CONSTANTS:-}" ]] && extra+=(-constants "$CONSTANTS")
     xcrun simctl launch "$UDID" "$BUNDLE" -scene "$id" -renderer "$r" ${extra[@]+"${extra[@]}"} >/dev/null ||
       { echo "capture.sh: launch failed for scene '$id' renderer '$r'" >&2; exit 1; }
     sleep "${SETTLE:-2.5}"
