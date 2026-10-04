@@ -107,12 +107,43 @@ enum LaunchArgs {
   }
 
   /// `-renderer swiftui -scene <id>`: replaces the Flutter root view
-  /// controller with the SwiftUI reference scene.
+  /// controller with the SwiftUI reference scene. If that is impossible the
+  /// screen turns solid magenta with the reason, so a capture can never pass
+  /// Flutter off as the SwiftUI reference.
   static func installReferenceScene(in window: UIWindow?) {
-    guard arg("renderer") == "swiftui", #available(iOS 26.0, *),
-          let window, let id = arg("scene"), let scene = ReferenceAssets.scene(id: id),
-          let bg = ReferenceAssets.image(scene.background) else { return }
+    guard arg("renderer") == "swiftui", let window else { return }
+    guard #available(iOS 26.0, *) else {
+      return fail(window, "SwiftUI reference needs iOS 26 or later")
+    }
+    guard let id = arg("scene") else { return fail(window, "-renderer swiftui without -scene") }
+    guard let scene = ReferenceAssets.scene(id: id) else {
+      return fail(window, "scene not found: \(id)")
+    }
+    guard let bg = ReferenceAssets.image(scene.background) else {
+      return fail(window, "background missing: \(scene.background)")
+    }
     window.rootViewController = UIHostingController(
       rootView: ReferenceSceneView(scene: scene, background: bg))
+  }
+
+  private static func fail(_ window: UIWindow, _ message: String) {
+    NSLog("ReferenceScenes: %@", message)
+    let vc = UIViewController()
+    vc.view.backgroundColor = .magenta
+    let label = UILabel()
+    label.text = "REFERENCE FAILED: \(message)"
+    label.textColor = .red
+    label.backgroundColor = .white
+    label.numberOfLines = 0
+    label.textAlignment = .center
+    label.font = .boldSystemFont(ofSize: 24)
+    label.translatesAutoresizingMaskIntoConstraints = false
+    vc.view.addSubview(label)
+    NSLayoutConstraint.activate([
+      label.centerYAnchor.constraint(equalTo: vc.view.centerYAnchor),
+      label.leadingAnchor.constraint(equalTo: vc.view.leadingAnchor, constant: 16),
+      label.trailingAnchor.constraint(equalTo: vc.view.trailingAnchor, constant: -16),
+    ])
+    window.rootViewController = vc
   }
 }

@@ -22,6 +22,28 @@ Future<void> main() async {
         );
   final scenes = await Scene.loadAll();
   final scene = args.scene == null ? null : scenes[args.scene];
+  if (args.scene != null && scene == null) {
+    // Never fall back to the demo: a capture would score the wrong screen.
+    // Show a solid magenta error screen (like the SwiftUI host) and throw.
+    final message = 'Unknown -scene ${args.scene}';
+    runApp(
+      ColoredBox(
+        color: const Color(0xFFFF00FF),
+        child: Center(
+          child: Text(
+            'SCENE FAILED: $message',
+            textDirection: TextDirection.ltr,
+            style: const TextStyle(
+              color: Color(0xFFFF0000),
+              backgroundColor: Color(0xFFFFFFFF),
+              fontSize: 24,
+            ),
+          ),
+        ),
+      ),
+    );
+    throw StateError(message);
+  }
   runApp(
     LiquidGlassTheme(
       data: LiquidGlassThemeData(constants: constants),

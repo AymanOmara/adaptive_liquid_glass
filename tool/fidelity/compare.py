@@ -36,45 +36,72 @@ def load(path):
     return np.asarray(Image.open(path).convert("RGB"), dtype=np.float64) / 255.0
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("run_dir", type=pathlib.Path)
-    ap.add_argument("--no-fail", action="store_true")
-    args = ap.parse_args()
+def load_spec():
+    return json.loads((ROOT / "tool/scenes/scenes.json").read_text())
 
-    spec = json.loads((ROOT / "tool/scenes/scenes.json").read_text())
+
+def run(run_dir, no_fail=False, spec=None, prefix=""):
+    """Scores every scene in `run_dir`; returns the process exit code.
+
+    A scene missing either screenshot is reported as missing and fails the
+    run, as does a run with nothing scored (unless `no_fail`). `prefix`
+    limits the run to scene ids starting with it, as `capture.sh` does.
+    """
+    run_dir = pathlib.Path(run_dir)
+    spec = spec or load_spec()
     scale = spec["device"]["scale"]
-    rows = []
-    for scene in spec["scenes"]:
-        f = args.run_dir / f"{scene['id']}.flutter.png"
-        s = args.run_dir / f"{scene['id']}.swiftui.png"
+    rows, missing = [], []
+    for scene in (s for s in spec["scenes"] if s["id"].startswith(prefix)):
+        f = run_dir / f"{scene['id']}.flutter.png"
+        s = run_dir / f"{scene['id']}.swiftui.png"
         if not (f.exists() and s.exists()):
+            missing.append(scene["id"])
             continue
         a, b = load(f), load(s)
+        if a.shape != b.shape:
+            raise ValueError(f"{scene['id']}: flutter {a.shape} != swiftui {b.shape}")
         x0, y0, x1, y1 = region_for(scene, scale, a.shape[1], a.shape[0])
         r = score(a[y0:y1, x0:x1], b[y0:y1, x0:x1])
         diff = (np.abs(a[y0:y1, x0:x1] - b[y0:y1, x0:x1]).mean(axis=2) * 4).clip(0, 1)
-        Image.fromarray((diff * 255).astype(np.uint8)).save(args.run_dir / f"{scene['id']}.diff.png")
+        Image.fromarray((diff * 255).astype(np.uint8)).save(run_dir / f"{scene['id']}.diff.png")
         rows.append({"id": scene["id"], **r, "region": [x0, y0, x1, y1]})
 
-    (args.run_dir / "report.json").write_text(json.dumps(rows, indent=2))
+    passed = sum(r["pass"] for r in rows)
+    (run_dir / "report.json").write_text(json.dumps(
+        {"scored": len(rows), "passed": passed, "missing": missing, "scenes": rows},
+        indent=2))
     cells = "".join(
         f"<tr class={'ok' if r['pass'] else 'bad'}><td>{html.escape(r['id'])}</td>"
         f"<td>{r['ssim']:.4f}</td><td>{r['delta_e']:.2f}</td>"
         f"<td><img src='{r['id']}.flutter.png'></td><td><img src='{r['id']}.swiftui.png'></td>"
         f"<td><img src='{r['id']}.diff.png'></td></tr>" for r in rows)
-    (args.run_dir / "report.html").write_text(
+    missing_html = (f"<p class=bad>{len(missing)} missing: "
+                    f"{html.escape(', '.join(missing))}</p>" if missing else "")
+    (run_dir / "report.html").write_text(
         "<meta charset=utf-8><style>img{width:200px}.bad{background:#fdd}"
         "td{padding:4px;font:13px system-ui}</style>"
-        f"<p>{sum(r['pass'] for r in rows)}/{len(rows)} pass "
-        f"(SSIM ≥ {SSIM_MIN}, ΔE ≤ {DELTA_E_MAX})</p>"
+        f"<p>{passed}/{len(rows)} pass "
+        f"(SSIM ≥ {SSIM_MIN}, ΔE ≤ {DELTA_E_MAX})</p>{missing_html}"
         f"<table><tr><th>scene<th>SSIM<th>ΔE<th>Flutter<th>SwiftUI<th>diff</tr>{cells}</table>")
     failed = [r["id"] for r in rows if not r["pass"]]
-    print(f"{len(rows) - len(failed)}/{len(rows)} pass")
+    print(f"{passed}/{len(rows)} pass, {len(missing)} missing")
     for i in failed:
         print("FAIL", i)
-    if failed and not args.no_fail:
-        sys.exit(1)
+    for i in missing:
+        print("MISSING", i)
+    if not rows:
+        print("ERROR: no scene had both screenshots", file=sys.stderr)
+    bad = bool(failed or missing or not rows)
+    return 1 if bad and not no_fail else 0
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("run_dir", type=pathlib.Path)
+    ap.add_argument("--no-fail", action="store_true")
+    ap.add_argument("--prefix", default="", help="only scenes whose id starts with this")
+    args = ap.parse_args()
+    sys.exit(run(args.run_dir, args.no_fail, prefix=args.prefix))
 
 
 if __name__ == "__main__":

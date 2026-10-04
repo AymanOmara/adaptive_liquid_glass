@@ -25,7 +25,7 @@ tool/scenes/sync_example.sh                                     # copies it to e
 ```bash
 export LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8   # CocoaPods under Ruby 4 needs this
 tool/fidelity/capture.sh build/fidelity/<run>            # builds, installs, captures all scenes
-tool/fidelity/.venv/bin/python tool/fidelity/compare.py build/fidelity/<run> [--no-fail]
+tool/fidelity/.venv/bin/python tool/fidelity/compare.py build/fidelity/<run> [--no-fail] [--prefix <id-prefix>]
 open build/fidelity/<run>/report.html
 ```
 
@@ -55,8 +55,20 @@ inflated by 12 pt, at @3x) and scores Flutter against SwiftUI:
 
 `report.html` lists every scene (failing rows in red) with both screenshots and
 a diff image (absolute difference ×4, white = large). `report.json` has the same
-numbers plus the pixel region. Without `--no-fail` the script exits 1 if any
-scene misses the bars.
+numbers (`{"scored", "passed", "missing", "scenes": [...]}`, each scene with
+its pixel region). Without `--no-fail` the script exits 1 if any scene misses
+the bars, if any scene lacks either screenshot (listed as `MISSING` and in
+`missing`), or if nothing was scored. After a partial capture
+(`capture.sh <run> <prefix>`), pass the same `--prefix` so the rest of the
+matrix does not count as missing.
+
+Fail-loud guards: `capture.sh` refuses a simulator that is not an iPhone 17 Pro
+on iOS 26.4, a prefix that matches no scene, an unknown renderer, and a stale
+`example/assets/scenes.json`. It also names the scene and renderer if a launch or
+screenshot fails. In the app, an unknown `-scene` (Flutter) or a failed SwiftUI
+reference swap (unknown scene, missing background, iOS < 26) shows a solid
+magenta screen with a red error label instead of falling back, so such a capture
+can never score well.
 
 ## Capture format and alignment (measured 2026-10-04)
 
