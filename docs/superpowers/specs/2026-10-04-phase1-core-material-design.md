@@ -256,3 +256,27 @@ SDK headers. These override the earlier sections where they conflict.
    constants JSON at launch, so the fitting loop needs no rebuilds.
 9. **Shapes over the limit (§6)** report a non-fatal `FlutterError` in debug
    instead of an assertion, then render in their own implicit group.
+
+## 15. Amendment: shader model v2 (2026-10-04, after the first fidelity baseline)
+
+The first full baseline (0/75 scenes passing; median SSIM 0.688, median ΔE 14.7) and
+side-by-side crops against SwiftUI showed four differences that no constant could fit,
+because the shader had no parameter for them. These changes override §6 and §14.1 where
+they conflict:
+
+1. **Per-shape corner exponent.** Capsules and circles use exact circular arcs, like
+   SwiftUI's `Capsule()` and `Circle()`. Only rectangles use the fitted continuous-corner
+   exponent.
+2. **Frost is a real blur composed before the shader**:
+   `ImageFilter.compose(outer: shader, inner: blur)`. The shader returns premultiplied colour
+   with alpha: transparent outside the shape except the shadow. `BackdropFilterLayer`'s
+   srcOver blend keeps the sharp backdrop outside the shape. This replaces the in-shader
+   24-tap blur, which could not reach SwiftUI's blur radius without aliasing. A group mixing
+   regular and clear glass uses a single blur radius, the largest of its members'.
+3. **Fill colour and saturation.** Each constant set gains `fillColor`, `fillOpacity` (which
+   replaces `lumaLift`) and `saturation`. This lets the glass wash toward white in light mode
+   and toward dark grey in dark mode, and mute the colours behind it, as SwiftUI does.
+4. **Merge factor.** The smooth-union radius is `mergeFactor × spacing`, with `mergeFactor`
+   fitted, instead of a fixed 2×.
+
+The public widget API is unchanged.
