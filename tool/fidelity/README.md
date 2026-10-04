@@ -92,6 +92,7 @@ can never score well.
 | `build/fidelity/baseline` | v1 (in-shader 24-tap blur, global corner exponent, `lumaLift`, smoothing 2×spacing) | 0/75 | 0.688 | 14.7 | 0.702 | 15.1 |
 | `build/fidelity/baseline-v2` | v2 (spec §15: per-shape corners, composed frost blur, fill colour + saturation, `mergeFactor`) | 0/75 | 0.924 | 10.1 | 0.874 | 10.9 |
 | `build/fidelity/lens-v3` | v2 + lens v3 (Task 15c), standard constants = measured lens + Task 17 fit | 20/75 | 0.948 | 2.80 | 0.944 | 5.1 |
+| `build/fidelity/final` | v2 + lens v3 + size-dependent frost and fill (Task 17b), shipped `GlassConstants.standard` (no `-constants`) | 41/75 | 0.981 | 1.50 | 0.964 | 1.69 |
 
 In v2, 65 of the 75 scenes improved in SSIM and 62 in ΔE. Regular glass now
 sits at a median SSIM of 0.939 and ΔE of 7.0. Clear glass in dark mode got
@@ -106,7 +107,11 @@ clamped), the shader
 runs at pixel centres in encoded sRGB, and the result is composited
 premultiplied srcOver onto the sharp background inside the backdrop clip.
 `test_glass_model.py` checks it against the device captures in
-`build/fidelity/lens-v3` (bar: SSIM ≥ 0.99 and ΔE ≤ 1.0 per scene).
+`build/fidelity/final` on all 75 scenes (bar: SSIM ≥ 0.99 and ΔE ≤ 1.0 per
+scene; Task 17b: min SSIM 0.9955, max ΔE 0.32). The frost sigma per group is
+`group_blur_sigma` (largest per-shape `blurSigma·min(1, halfMin/blurSizeRef)`)
+and the per-shape fill factor is `fill_size_factor`, as the renderer and
+packer compute them.
 
 **Blur kernel** (Task 15c, replaces the Task 17 `blurScale` table): a least
 squares fit of a free symmetric kernel to a σ 1.38 pt device capture gave a
@@ -123,18 +128,23 @@ F="tool/fidelity/.venv/bin/python tool/fidelity/fit.py"
 $F corner      --start tool/fidelity/standard_constants.json --out build/fidelity/fit/s1.json
 $F regular     --start build/fidelity/fit/s1.json --out build/fidelity/fit/s2.json --restarts 20
 $F regularDark --start ... ; $F clear --start ... ; $F clearDark --start ...
-$F tinted      --start ... ; $F merge --start ... --out build/fidelity/fitted.json
+$F tinted      --start ... ; $F merge --start ... 
+$F polishRegular --start ... --only blurSigma,blurSizeRef,fillOpacity,fillSizeRef,fillSizeDrop,saturation,tintStrength \
+    --out build/fidelity/fitted.json   # joint fit over regular-*, tinted-*, merge-*
 $F score       --start build/fidelity/fitted.json [--scenes <prefix>]
 ```
 
-`--only KEY[,KEY]` frees a subset; `--procs` sets the worker count. The loss is
+`--only KEY[,KEY]` frees a subset; `--procs` sets the worker count; `--seed`
+changes the random restarts. Per-scene status of the shipped constants:
+`docs/superpowers/notes/fidelity-status.md`. The loss is
 the mean of `(1 − SSIM)·10 + ΔE/2` over the stage's scenes.
 
 ## Lens measurement (Task 15c)
 
-`tool/scenes/measure.json` (`gen_measure.py`) holds 10 base scenes (capsule,
+`tool/scenes/measure.json` (`gen_measure.py`) holds 18 base scenes (capsule,
 circle, rect16, rect28 × regular, clear in light; capsule × regular, clear in
-dark), each over the 16 coordinate-code backgrounds of `gen_backgrounds.py`
+dark; and a Task 17b size series of radius-16 rects with half-sizes 20, 50,
+100 and 150 pt × regular, clear), each over the 16 coordinate-code backgrounds of `gen_backgrounds.py`
 (`gen_backgrounds.py codes` writes only those). A code is a grey sinusoid along
 x or y, period 128 or 160 px, in four phase steps. Per pixel, the four steps
 give the sampled coordinate as a phase, `atan2(I3 - I1, I0 - I2)`, which a
