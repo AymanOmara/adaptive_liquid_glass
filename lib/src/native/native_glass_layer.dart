@@ -39,6 +39,9 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
   MethodChannel? _channel;
   bool _scheduled = false;
 
+  /// The last payload sent, to skip identical pushes.
+  Map<String, Object?>? _lastSent;
+
   @override
   void initState() {
     super.initState();
@@ -62,7 +65,16 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
   }
 
   /// Coalesces registry changes into one push after the frame's layout.
+  ///
+  /// A change reported during post-frame callbacks (a member that moved
+  /// without the group repainting) comes after layout and paint already, so
+  /// it is pushed now instead of a frame later.
   void _schedule() {
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.postFrameCallbacks) {
+      if (mounted) _push();
+      return;
+    }
     if (_scheduled) return;
     _scheduled = true;
     SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -73,11 +85,8 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
   }
 
   void _push() {
-    final channel = _channel;
     final box = context.findRenderObject() as RenderBox?;
-    if (channel == null || box == null || !box.attached || !box.hasSize) {
-      return;
-    }
+    if (box == null || !box.attached || !box.hasSize) return;
     final toGlobal = box.getTransformTo(null);
     final fromGlobal = Matrix4.tryInvert(toGlobal);
     if (fromGlobal == null) return;
@@ -85,7 +94,8 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
     for (final g in collectEntryGeometry(widget.registry, toGlobal)) {
       final local = MatrixUtils.transformRect(fromGlobal, g.drawn);
       // Same contract as the shader renderer: where the entry was drawn,
-      // in group-local coordinates (used for removal ghosts).
+      // in group-local coordinates (used for removal ghosts). Recorded even
+      // before the platform view exists.
       g.entry.lastDrawnLocal = local;
       final r = local.shift(const Offset(kNativeOverhang, kNativeOverhang));
       final shape = g.entry.shape;
@@ -104,17 +114,42 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
         'interactive': glass.isInteractive,
       });
     }
-    channel.invokeMethod<void>('setShapes', {
+    final channel = _channel;
+    if (channel == null) return;
+    final payload = <String, Object?>{
       'spacing': widget.spacing,
       'shapes': shapes,
-    });
+    };
+    final last = _lastSent;
+    if (last != null && _samePayload(last, payload)) return;
+    _lastSent = payload;
+    channel.invokeMethod<void>('setShapes', payload);
+  }
+
+  static bool _samePayload(Map<String, Object?> a, Map<String, Object?> b) {
+    if (a['spacing'] != b['spacing']) return false;
+    final sa = a['shapes']! as List<Map<String, Object?>>;
+    final sb = b['shapes']! as List<Map<String, Object?>>;
+    if (sa.length != sb.length) return false;
+    for (var i = 0; i < sa.length; i++) {
+      final x = sa[i];
+      final y = sb[i];
+      if (x.length != y.length) return false;
+      for (final k in x.keys) {
+        if (x[k] != y[k]) return false;
+      }
+    }
+    return true;
   }
 
   @override
   Widget build(BuildContext context) {
     // Physical left/top/right/bottom on purpose: this is geometry, not
     // reading order, so it is correct in RTL too.
+    // Passthrough: the group's child sees the group's own constraints, as
+    // in the shader and material paths.
     return Stack(
+      fit: StackFit.passthrough,
       clipBehavior: Clip.none,
       children: [
         Positioned(
@@ -122,20 +157,25 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
           top: -kNativeOverhang,
           right: -kNativeOverhang,
           bottom: -kNativeOverhang,
-          child: UiKitView(
-            viewType: 'adaptive_liquid_glass/native_glass',
-            creationParams: <String, Object?>{
-              'spacing': widget.spacing,
-              'shapes': const <Object?>[],
-            },
-            creationParamsCodec: const StandardMessageCodec(),
-            hitTestBehavior: PlatformViewHitTestBehavior.transparent,
-            onPlatformViewCreated: (id) {
-              _channel = MethodChannel(
-                'adaptive_liquid_glass/native_glass_$id',
-              );
-              _push();
-            },
+          // Glass is visual only: UIKit interaction is off, and the view must
+          // never take part in Flutter hit testing or the gesture arena.
+          child: IgnorePointer(
+            child: UiKitView(
+              viewType: 'adaptive_liquid_glass/native_glass',
+              creationParams: <String, Object?>{
+                'spacing': widget.spacing,
+                'shapes': const <Object?>[],
+              },
+              creationParamsCodec: const StandardMessageCodec(),
+              hitTestBehavior: PlatformViewHitTestBehavior.transparent,
+              onPlatformViewCreated: (id) {
+                _channel = MethodChannel(
+                  'adaptive_liquid_glass/native_glass_$id',
+                );
+                _lastSent = null;
+                _push();
+              },
+            ),
           ),
         ),
         widget.child,

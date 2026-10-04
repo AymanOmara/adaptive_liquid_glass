@@ -32,6 +32,7 @@ final class GlassPlatformView: NSObject, FlutterPlatformView {
   private var container: UIVisualEffectView?
   private var glassViews: [UIVisualEffectView] = []
   private var lastStyles: [String] = []
+  private var lastSpacing: Double?
 
   init(frame: CGRect, viewId: Int64, args: [String: Any], messenger: FlutterBinaryMessenger) {
     root = UIView(frame: frame)
@@ -67,9 +68,14 @@ final class GlassPlatformView: NSObject, FlutterPlatformView {
   private func apply(_ args: [String: Any]) {
     guard #available(iOS 26.0, *), let container else { return }
     let spacing = args["spacing"] as? Double ?? 0
-    let effect = UIGlassContainerEffect()
-    effect.spacing = spacing
-    container.effect = effect
+    // Replacing the container effect restarts UIKit's merging; do it only
+    // when the spacing actually changes.
+    if spacing != lastSpacing {
+      let effect = UIGlassContainerEffect()
+      effect.spacing = spacing
+      container.effect = effect
+      lastSpacing = spacing
+    }
 
     let shapes = args["shapes"] as? [[String: Any]] ?? []
     while glassViews.count < shapes.count {
