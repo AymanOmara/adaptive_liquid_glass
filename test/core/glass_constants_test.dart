@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/testing.dart';
 import 'package:flutter/material.dart';
@@ -104,5 +107,29 @@ void main() {
     expect(c.of(GlassVariant.identity), c.regular);
     expect(c.of(GlassVariant.regular, Brightness.dark), c.regularDark);
     expect(c.of(GlassVariant.clear, Brightness.dark), c.clearDark);
+  });
+
+  test('standard matches tool/fidelity/standard_constants.json', () {
+    // The NumPy model fills missing keys from that file, so it must stay the
+    // exact JSON form of GlassConstants.standard.
+    final file = jsonDecode(
+      File('tool/fidelity/standard_constants.json').readAsStringSync(),
+    );
+    void same(Object? a, Object? b, String path) {
+      if (a is Map) {
+        expect(b, isA<Map<Object?, Object?>>(), reason: path);
+        expect((b! as Map).keys.toSet(), a.keys.toSet(), reason: path);
+        for (final k in a.keys) {
+          same(a[k], (b as Map)[k], '$path.$k');
+        }
+      } else if (a is num) {
+        expect(b, isA<num>(), reason: path);
+        expect((b! as num).toDouble(), a.toDouble(), reason: path);
+      } else {
+        expect(b, a, reason: path);
+      }
+    }
+
+    same(GlassConstants.standard.toJson(), file, 'standard');
   });
 }

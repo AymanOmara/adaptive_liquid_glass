@@ -10,6 +10,7 @@ physical-pixel grid, with FlutterFragCoord at pixel centres (x + 0.5).
 """
 import functools
 import json
+import pathlib
 
 import numpy as np
 from scipy.ndimage import convolve1d, map_coordinates
@@ -18,11 +19,8 @@ from scipy.ndimage import convolve1d, map_coordinates
 # captures): a Gaussian of the requested sigma, truncated at radius
 # round((sigma - 0.5) * sqrt(3)) px and renormalised. The truncation is what
 # made the effective blur look 0.81-0.95x narrower (the Task 17 blurScale
-# table, now retired). `blur_scale` stays as an optional override.
-
-
-def blur_scale_for(sigma):
-    return 1.0
+# table, now retired). `render(..., blur_scale=k)` still scales sigma for
+# experiments; the default is 1.
 
 
 def impeller_kernel(sigma_px):
@@ -30,6 +28,29 @@ def impeller_kernel(sigma_px):
     x = np.arange(-r, r + 1)
     k = np.exp(-0.5 * (x / sigma_px) ** 2)
     return k / k.sum()
+
+
+_STANDARD_PATH = pathlib.Path(__file__).with_name("standard_constants.json")
+
+
+@functools.lru_cache(maxsize=1)
+def _standard():
+    return json.loads(_STANDARD_PATH.read_text())
+
+
+def resolve_constants(constants):
+    """`constants` with every missing key filled from standard_constants.json,
+    with GlassConstants.fromJson's partial-override semantics (per variant set,
+    per motion key, and top-level scalars)."""
+    std = _standard()
+    out = {}
+    for k, v in std.items():
+        given = constants.get(k)
+        if isinstance(v, dict):
+            out[k] = {**v, **(given or {})}
+        else:
+            out[k] = v if given is None else given
+    return out
 
 
 LIGHT_ANGLE = -3 * np.pi / 4  # LiquidGlassThemeData default (up-left)
@@ -115,7 +136,7 @@ def lens_v3(depth, half_min, amp, decay, band, size_ref):
     i.e. an exponential falloff cut to zero at `band`, and a geometrically
     similar (uniformly scaled) profile on shapes whose half of the shorter
     side is below `size_ref`. All lengths in the same unit (px here)."""
-    depth = np.asarray(depth, dtype=np.float64)
+    depth = np.maximum(np.asarray(depth, dtype=np.float64), 0.0)  # as the shader
     half_min = np.asarray(half_min, dtype=np.float64)
     if np.ndim(size_ref) == 0 and size_ref <= 0:
         s = np.ones_like(half_min)
@@ -124,7 +145,7 @@ def lens_v3(depth, half_min, amp, decay, band, size_ref):
                      np.minimum(1.0, half_min / np.maximum(size_ref, 1e-6)), 1.0)
     ls = np.maximum(decay * s, 1e-3)
     e = np.exp(-np.maximum(band, 1e-3) / np.maximum(decay, 1e-3))
-    v = np.maximum(np.exp(-depth / ls) - e, 0.0) / (1.0 - e)
+    v = np.maximum(np.exp(-depth / ls) - e, 0.0) / np.maximum(1.0 - e, 1e-6)
     return -amp * s * v
 
 
@@ -200,12 +221,12 @@ def _uvar(constants, brightness, scale):
     for base in ("regular", "clear"):
         v = constants[base + ("Dark" if brightness == "dark" else "")]
         res.append({
-            "A": np.array([v.get("lensDecay", 0.0) * scale, v["lensBand"] * scale,
+            "A": np.array([v["lensDecay"] * scale, v["lensBand"] * scale,
                            v["lensStrength"], v["dispersion"]]),
             "B": np.array([v["rimWidth"] * scale, v["rimIntensity"],
                            v["fillOpacity"], v["dim"]]),
             "C": np.array([v["shadowRadius"] * scale, v["shadowOpacity"],
-                           v["tintStrength"], v.get("lensSizeRef", 0.0) * scale]),
+                           v["tintStrength"], v["lensSizeRef"] * scale]),
             "D": np.concatenate([parse_hex(v["fillColor"]), [v["saturation"]]]),
         })
     return res
@@ -266,11 +287,12 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
                   light_angle=LIGHT_ANGLE, pad_pt=SCORE_PAD_PT):
     """Renders the shapes' bounds inflated by `pad_pt`; returns
     (image, (x0, y0, x1, y1)) in screen px."""
+    constants = resolve_constants(constants)
     bg = background
     H, W = bg.shape[:2]
     brightness = scene["brightness"]
     spacing = scene.get("spacing")
-    merge_factor = float(constants.get("mergeFactor", 1.0))
+    merge_factor = float(constants["mergeFactor"])
     g = _geometry(json.dumps(scene, sort_keys=True), float(constants["cornerExponent"]),
                   merge_factor, float(scale), W, H, float(pad_pt))
     bx0, by0, bx1, by1 = g["box"]
@@ -311,7 +333,7 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     sc = np.where(size_ref > 0, np.minimum(1.0, g["half_min"] / np.maximum(size_ref, 1e-6)), 1.0)
     cut = np.exp(-band / decay)
     t = np.maximum(np.exp(-np.maximum(depth, 0.0) / np.maximum(decay * sc, 1e-3)) - cut,
-                   0.0) / (1.0 - cut)  # profile weight v (also weights dispersion)
+                   0.0) / np.maximum(1.0 - cut, 1e-6)  # profile weight v (also weights dispersion)
     lens_amt = A[..., 2] * band * sc * t  # == lens_v3(depth, half_min, -strength*band, ...)
     spx = px + nx * lens_amt
     spy = py + ny * lens_amt
@@ -320,7 +342,7 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
 
     sigma = max(constants[variant_key(s, brightness)]["blurSigma"] for s in scene["shapes"])
     if blur_scale is None:
-        blur_scale = blur_scale_for(sigma)
+        blur_scale = 1.0
     reach = float(np.max(np.abs(lens_amt) * (1.0 + np.abs(A[..., 3])))) + 2.0
     reach = int(np.ceil(reach / TAP_BUCKET_PX)) * TAP_BUCKET_PX
     tx0, ty0 = bx0 - reach, by0 - reach
@@ -373,6 +395,7 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
 
 def render(background, scene, constants, scale=3.0, blur_scale=None, light_angle=LIGHT_ANGLE):
     """Returns `background` with the scene's glass drawn as Flutter does."""
+    constants = resolve_constants(constants)
     sets = [constants[n] for n in ("regular", "clear", "regularDark", "clearDark")]
     pad = max(SCORE_PAD_PT, 3 * max(v["shadowRadius"] for v in sets))
     win, (x0, y0, x1, y1) = render_window(background, scene, constants, scale,

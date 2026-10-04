@@ -80,10 +80,12 @@ class GlassVariantConstants {
 
   /// Gaussian sigma of the frost blur (logical px).
   ///
-  /// Applied as `ImageFilter.blur` composed before the glass shader. The
-  /// engine's effective sigma is somewhat smaller than requested (measured
-  /// 0.84–0.92× on Impeller/iOS for 2–20 px; see
-  /// `docs/superpowers/notes/shader-probe.md`); fitting absorbs this.
+  /// Applied as `ImageFilter.blur` composed before the glass shader.
+  /// Impeller blurs with a Gaussian of exactly this sigma, truncated at
+  /// radius `round((σ − 0.5)·√3)` physical px and renormalised (measured in
+  /// Task 15c). The truncation makes the effective blur 0.8–0.95× narrower
+  /// than the requested sigma (see `docs/superpowers/notes/shader-probe.md`);
+  /// fitting works with the requested value.
   final double blurSigma;
 
   /// Depth inside the outline where the edge lens ends (displacement 0).

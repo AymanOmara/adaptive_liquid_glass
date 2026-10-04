@@ -132,3 +132,16 @@ def test_fit_lens_recovers_synthetic_parameters():
     assert p["band"] == pytest.approx(54.0, rel=0.03)
     assert p["size_ref"] == pytest.approx(115.0, rel=0.03)
     assert p["rms"] < 0.7
+
+
+def test_field_samples_drop_fringe_order_disagreements(tmp_path):
+    n = 10
+    depth = np.full((1, n), 5.0)
+    gap = np.zeros((1, n, 3))
+    gap[0, :4, 1] = 40.0  # > P1/4: the two periods disagree on these
+    np.savez(tmp_path / "f.npz", px=np.zeros((1, n)), py=np.zeros((1, n)),
+             sx=np.zeros((1, n, 3)), sy=np.zeros((1, n, 3)), depth=depth,
+             nx=np.ones((1, n)), ny=np.zeros((1, n)), corner=np.zeros((1, n), bool),
+             clipped=np.zeros((1, n), bool), amp=np.ones((1, n)), gap=gap)
+    d, h, dn = ml.field_samples(tmp_path / "f.npz", 50.0, False, stride=1)
+    assert d.size == n - 4

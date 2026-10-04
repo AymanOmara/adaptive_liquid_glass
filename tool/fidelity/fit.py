@@ -26,7 +26,7 @@ from scipy.optimize import minimize
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from compare import load, region_for  # noqa: E402
-from glass_model import render_window  # noqa: E402
+from glass_model import render_window, resolve_constants  # noqa: E402
 from skimage.color import deltaE_ciede2000, rgb2lab  # noqa: E402
 from skimage.metrics import structural_similarity  # noqa: E402
 
@@ -35,10 +35,12 @@ SPEC = json.loads((ROOT / "tool/scenes/scenes.json").read_text())
 REF = ROOT / "build/fidelity/baseline-v2"
 SCALE = SPEC["device"]["scale"]
 
-KEYS = ["blurSigma", "lensBand", "lensStrength", "dispersion", "rimWidth", "rimIntensity",
-        "fillOpacity", "fillR", "fillG", "fillB", "saturation", "dim",
+KEYS = ["blurSigma", "lensBand", "lensStrength", "lensDecay", "lensSizeRef", "dispersion",
+        "rimWidth", "rimIntensity", "fillOpacity", "fillR", "fillG", "fillB", "saturation", "dim",
         "shadowRadius", "shadowOpacity", "tintStrength"]
 BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
+          # Lens v3 (pt); Task 15c measured 6.4-6.5 and 38.4 (regular) / 0 (clear).
+          "lensDecay": (0.5, 20), "lensSizeRef": (0, 100),
           "dispersion": (0, 0.6), "rimWidth": (0.3, 4), "rimIntensity": (0, 1.5),
           "fillOpacity": (0, 1), "fillR": (0, 1), "fillG": (0, 1), "fillB": (0, 1),
           "saturation": (0, 1.5), "dim": (0, 0.6), "shadowRadius": (0, 40),
@@ -260,7 +262,9 @@ def main():
     ap.add_argument("--hi", type=float, help="corner: scan end (default 6.0)")
     args = ap.parse_args()
 
-    c = json.loads(args.start.read_text())
+    # Missing keys (e.g. Task 17 stage files without the lens v3 keys) come
+    # from standard_constants.json, as GlassConstants.fromJson does.
+    c = resolve_constants(json.loads(args.start.read_text()))
     if args.stage == "score":
         scenes = [s for s in SPEC["scenes"] if s["id"].startswith(args.scenes)]
     else:

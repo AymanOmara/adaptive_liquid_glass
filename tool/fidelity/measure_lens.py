@@ -183,7 +183,8 @@ def profile(f, region="side", step=1.0, max_depth=None):
     g, dec = f["geo"], f["dec"]
     depth = g["depth"]
     nx, ny = g["nx"], g["ny"]
-    ok = ~f["clipped"] & (dec["amp_x"].min(-1) > 0.01) & (dec["amp_y"].min(-1) > 0.01)
+    ok = ~f["clipped"] & (dec["amp_x"].min(-1) > 0.01) & (dec["amp_y"].min(-1) > 0.01) & \
+        (dec["fringe_gap_x"].max(-1) <= MAX_FRINGE_GAP) & (dec["fringe_gap_y"].max(-1) <= MAX_FRINGE_GAP)
     if region == "side":
         ok &= ~g["corner"]
     elif region == "cap":
@@ -239,6 +240,9 @@ def summarise(prof):
 # --- lens fit -----------------------------------------------------------------
 
 FIT_MIN_DEPTH = 2.0  # px; the outer two pixels are the rim (low modulation)
+# The 128 and 160 px decodes must agree; beyond a quarter fine period the
+# pixel is a mixture (rim, anti-aliasing) rather than one sample.
+MAX_FRINGE_GAP = P1 / 4
 
 
 def fit_lens(samples, x0=(140.0, 19.0, 55.0, 100.0)):
@@ -265,6 +269,8 @@ def field_samples(npz, half_min, exclude_corners, stride=5):
     z = np.load(npz)
     dn = (z["sx"][..., 1] - z["px"]) * z["nx"] + (z["sy"][..., 1] - z["py"]) * z["ny"]
     m = (z["depth"] >= FIT_MIN_DEPTH) & ~z["clipped"] & (z["amp"] > 0.01)
+    if "gap" in z:
+        m &= z["gap"].max(-1) <= MAX_FRINGE_GAP
     if exclude_corners:
         m &= ~z["corner"]
     idx = np.flatnonzero(m)[::stride]
@@ -343,7 +349,8 @@ def main():
                             amp=np.minimum(f["dec"]["amp_x"].min(-1), f["dec"]["amp_y"].min(-1)),
                             sigma=0.5 * (f["dec"]["sigma_x"] + f["dec"]["sigma_y"]),
                             gain=f["dec"]["gain_x"], resid=f["dec"]["resid_x"],
-                            mean=f["dec"]["mean_x"])
+                            mean=f["dec"]["mean_x"],
+                            gap=np.maximum(f["dec"]["fringe_gap_x"], f["dec"]["fringe_gap_y"]))
         result[base] = {}
         for region in ("side", "cap", "all"):
             prof = profile(f, region)

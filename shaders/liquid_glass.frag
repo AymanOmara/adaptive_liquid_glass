@@ -144,7 +144,7 @@ void main() {
   float decay = max(A.x, 1e-3);
   float sc = C.w > 0.0 ? min(1.0, halfMin / C.w) : 1.0;
   float cut = exp(-band / decay);
-  float v = max(exp(-max(depth, 0.0) / max(decay * sc, 1e-3)) - cut, 0.0) / (1.0 - cut);
+  float v = max(exp(-max(depth, 0.0) / max(decay * sc, 1e-3)) - cut, 0.0) / max(1.0 - cut, 1e-6);
   float lensAmt = A.z * (1.0 - 0.5 * hc) * band * sc * v;
   vec2 sp = px + nrm * lensAmt;
 
