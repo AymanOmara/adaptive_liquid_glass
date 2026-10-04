@@ -5,3 +5,5 @@ export 'src/core/glass.dart';
 export 'src/core/glass_render_mode.dart' show GlassRenderMode;
 export 'src/core/glass_shape.dart';
 export 'src/core/theme.dart';
+export 'src/group/glass_group.dart' show GlassGroup;
+export 'src/liquid_glass.dart' show LiquidGlass;
