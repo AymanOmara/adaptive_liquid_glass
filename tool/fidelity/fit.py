@@ -38,12 +38,21 @@ SPEC = json.loads((ROOT / "tool/scenes/scenes.json").read_text())
 REF = ROOT / "build/fidelity/baseline-v2"
 SCALE = SPEC["device"]["scale"]
 
-KEYS = ["blurSigma", "blurSizeRef", "lensBand", "lensStrength", "lensDecay", "lensSizeRef", "dispersion",
+KEYS = ["blurSigma", "blurSizeRef", "frostWideSigma", "frostWideMixEdge", "frostWideMixCentre",
+        "frostWideSizeRef", "frostWideSizeDrop",
+        "lensBand", "lensStrength", "lensDecay", "lensSizeRef", "dispersion",
         "rimWidth", "rimIntensity", "fillOpacity", "fillSizeRef", "fillSizeDrop", "fillR", "fillG", "fillB", "saturation", "dim",
         "shadowRadius", "shadowOpacity", "tintStrength"]
 BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
           # Task 17b: frost sigma x min(1, halfMin / blurSizeRef) (pt); 0 = off.
           "blurSizeRef": (0, 200),
+          # Task 17c wide frost tail (pt / weights / pt), measured by
+          # measure_frost.py + jointfit: sigma of the 16-tap wide component and
+          # the weight w = mix(edge, centre, sampleDepth / halfMin) minus the
+          # size term; sigma 0 disables the tail.
+          "frostWideSigma": (0, 30), "frostWideMixEdge": (-1, 2),
+          "frostWideMixCentre": (-1, 2), "frostWideSizeRef": (0, 200),
+          "frostWideSizeDrop": (0, 5),
           # Lens v3 (pt); Task 15c measured 6.4-6.5 and 38.4 (regular) / 0 (clear).
           "lensDecay": (0.5, 20), "lensSizeRef": (0, 100),
           "dispersion": (0, 0.6), "rimWidth": (0.3, 4), "rimIntensity": (0, 1.5),

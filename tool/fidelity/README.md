@@ -93,6 +93,7 @@ can never score well.
 | `build/fidelity/baseline-v2` | v2 (spec §15: per-shape corners, composed frost blur, fill colour + saturation, `mergeFactor`) | 0/75 | 0.924 | 10.1 | 0.874 | 10.9 |
 | `build/fidelity/lens-v3` | v2 + lens v3 (Task 15c), standard constants = measured lens + Task 17 fit | 20/75 | 0.948 | 2.80 | 0.944 | 5.1 |
 | `build/fidelity/final` | v2 + lens v3 + size-dependent frost and fill (Task 17b), shipped `GlassConstants.standard` (no `-constants`) | 41/75 | 0.981 | 1.50 | 0.964 | 1.69 |
+| `build/fidelity/final` (Task 17c) | 17b + frost wide tail (`frostWide*`, sharp core + wide component from the coded captures), shipped `GlassConstants.standard` | 42/75 | 0.981 | 1.56 | 0.9655 | 1.71 |
 
 In v2, 65 of the 75 scenes improved in SSIM and 62 in ΔE. Regular glass now
 sits at a median SSIM of 0.939 and ΔE of 7.0. Clear glass in dark mode got
@@ -102,16 +103,24 @@ the starting constants; fitting (Task 17) comes next.
 ## Model parity and fitting (Task 17)
 
 `glass_model.py` is a NumPy port of `shaders/liquid_glass.frag` (v2 with lens
-v3): the composed blur is Impeller's kernel on the full background (edge
+v3 and the frost wide tail): the composed blur is Impeller's kernel on the
+full background (edge
 clamped), the shader
 runs at pixel centres in encoded sRGB, and the result is composited
 premultiplied srcOver onto the sharp background inside the backdrop clip.
 `test_glass_model.py` checks it against the device captures in
 `build/fidelity/final` on all 75 scenes (bar: SSIM ≥ 0.99 and ΔE ≤ 1.0 per
-scene; Task 17b: min SSIM 0.9955, max ΔE 0.32). The frost sigma per group is
+scene; Task 17c: min SSIM 0.9955, max ΔE 0.32). The frost sigma per group is
 `group_blur_sigma` (largest per-shape `blurSigma·min(1, halfMin/blurSizeRef)`)
 and the per-shape fill factor is `fill_size_factor`, as the renderer and
 packer compute them.
+
+**Frost wide tail** (Task 17c): `measure_frost.py` decodes the transfer
+function of SwiftUI's frost from captures over grey x-codes (periods 32-160
+px, four phase steps each) and the input→output tone curve from flat greys.
+`fit_frost.py` fits the sharp-core + wide-tail decomposition to those curves
+per variant set and writes `frostWide*`; only the tail was shipped (see
+`docs/superpowers/notes/fidelity-status.md`, "Fitting decisions").
 
 **Blur kernel** (Task 15c, replaces the Task 17 `blurScale` table): a least
 squares fit of a free symmetric kernel to a σ 1.38 pt device capture gave a
