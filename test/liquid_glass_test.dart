@@ -328,4 +328,45 @@ void main() {
     );
     expect(backdropOf(t).debugLastFrame!.uniforms.shapes, hasLength(1));
   }, variant: ios);
+
+  testWidgets('pressing interactive glass grows the shape and glows', (
+    t,
+  ) async {
+    env();
+    const r = Rect.fromLTWH(100, 100, 120, 40);
+    await t.pumpWidget(
+      at(
+        r,
+        LiquidGlass(
+          glass: Glass.regular.interactive(),
+          child: const SizedBox.expand(),
+        ),
+      ),
+    );
+    final before = backdropOf(t).debugLastFrame!.uniforms.shapes.single.rect;
+    final gesture = await t.startGesture(r.centerRight - const Offset(4, 0));
+    await t.pump(); // the spring's ticker starts on the first frame
+    await t.pump(const Duration(milliseconds: 400));
+    final pressed = backdropOf(t).debugLastFrame!.uniforms;
+    expect(pressed.shapes.single.rect.width, greaterThan(before.width));
+    expect(pressed.glow, greaterThan(0.5));
+    expect(pressed.touch, isNotNull);
+    await gesture.up();
+    await t.pumpAndSettle();
+    final after = backdropOf(t).debugLastFrame!.uniforms;
+    expect(after.shapes.single.rect, before);
+    expect(after.glow, 0);
+  }, variant: ios);
+
+  testWidgets('non-interactive glass ignores presses', (t) async {
+    env();
+    const r = Rect.fromLTWH(100, 100, 120, 40);
+    await t.pumpWidget(at(r, const LiquidGlass(child: SizedBox.expand())));
+    final before = backdropOf(t).debugLastFrame!.uniforms.shapes.single.rect;
+    final gesture = await t.startGesture(r.center);
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+    expect(backdropOf(t).debugLastFrame!.uniforms.shapes.single.rect, before);
+    await gesture.up();
+  }, variant: ios);
 }

@@ -10,6 +10,7 @@ import 'degraded/degraded_glass.dart';
 import 'group/glass_entry.dart';
 import 'group/glass_group.dart';
 import 'group/glass_registry.dart';
+import 'interaction/press_controller.dart';
 import 'material/material_glass.dart';
 import 'shader/glass_program.dart';
 
@@ -103,7 +104,8 @@ class GlassMember extends StatefulWidget {
 }
 
 /// State of [GlassMember]. Public so later tasks can extend behaviour.
-class GlassMemberState extends State<GlassMember> {
+class GlassMemberState extends State<GlassMember>
+    with SingleTickerProviderStateMixin {
   /// The registry record for this member.
   late final GlassEntry entry = GlassEntry(
     shape: widget.shape,
@@ -121,6 +123,15 @@ class GlassMemberState extends State<GlassMember> {
 
   /// Scroll positions between this member and its group's scrollable.
   final List<Listenable> _scrolls = [];
+
+  GlassPressController? _press;
+
+  GlassPressController _pressController(GlassGroupScope scope) => _press ??=
+      GlassPressController(vsync: this, motion: scope.constants.motion)
+        ..addListener(() {
+          entry.press = _press!.geometry();
+          _registry?.markNeedsPaint();
+        });
 
   bool _overflow = false;
   bool _fadeIn = false;
@@ -187,6 +198,7 @@ class GlassMemberState extends State<GlassMember> {
   @override
   void dispose() {
     _unsubscribeScrolls();
+    _press?.dispose();
     _registry?.unregister(entry);
     super.dispose();
   }
@@ -233,9 +245,32 @@ class GlassMemberState extends State<GlassMember> {
     };
   }
 
-  /// The child as drawn on the glass. Task 11 wraps it in the press
-  /// transform; Task 12 adds the morph fade.
-  Widget buildContent(BuildContext context) => widget.child;
+  /// The child as drawn on the glass. Interactive glass wraps it in the
+  /// press transform; Task 12 adds the morph fade.
+  Widget buildContent(BuildContext context) {
+    if (!widget.glass.isInteractive) {
+      entry.press = GlassPressGeometry.identity;
+      return widget.child;
+    }
+    final scope = GlassGroupScope.of(context);
+    final press = _pressController(scope)
+      ..motion = scope.constants.motion
+      ..reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (e) =>
+          press.down(e.localPosition, context.size ?? Size.zero),
+      onPointerMove: (e) => press.move(e.localPosition),
+      onPointerUp: (_) => press.up(),
+      onPointerCancel: (_) => press.up(),
+      child: AnimatedBuilder(
+        animation: press,
+        builder: (_, child) =>
+            Transform(transform: press.contentTransform(), child: child),
+        child: widget.child,
+      ),
+    );
+  }
 }
 
 /// Provides the enclosing glass entry to concentric descendants.
