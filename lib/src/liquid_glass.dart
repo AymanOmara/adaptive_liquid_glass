@@ -136,6 +136,11 @@ class GlassMemberState extends State<GlassMember>
   bool _overflow = false;
   bool _fadeIn = false;
   bool _first = true;
+  bool _settled = false;
+
+  /// Box and morph rect held while deactivated (restored on reparent).
+  RenderBox? _heldBox;
+  Rect? _heldMorph;
 
   @override
   void didChangeDependencies() {
@@ -145,6 +150,7 @@ class GlassMemberState extends State<GlassMember>
       _fadeIn = scope.settled && widget.glassId != null;
       _first = false;
     }
+    _settled = scope.settled;
     entry.container = ConcentricScope.maybeOf(context);
     final target = scope.rendering == GlassMemberRendering.backdrop
         ? scope.registry
@@ -195,11 +201,54 @@ class GlassMemberState extends State<GlassMember>
     _registry?.markNeedsPaint();
   }
 
+  /// Removal detaches the box during build, but the member unregisters only
+  /// when it is disposed, after paint. Keep drawing a morphing member at its
+  /// last rect in between, so its ghost (see `GlassMorphController`)
+  /// continues without a blank frame.
+  @override
+  void deactivate() {
+    final last = entry.lastDrawnLocal;
+    if (_registry != null &&
+        _settled &&
+        entry.glassId != null &&
+        last != null &&
+        entry.box != null) {
+      _heldBox = entry.box;
+      _heldMorph = entry.morphRect;
+      entry
+        ..box = null
+        ..morphRect = last;
+      _registry!.markNeedsPaint();
+    }
+    super.deactivate();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    final held = _heldBox;
+    if (held != null) {
+      entry
+        ..box = held
+        ..morphRect = _heldMorph;
+      _heldBox = null;
+      _heldMorph = null;
+      _registry?.markNeedsPaint();
+    }
+  }
+
   @override
   void dispose() {
+    _heldBox = null;
     _unsubscribeScrolls();
     _press?.dispose();
+    // Clear the box first so the morph controller recognises a ghost; a
+    // ghost shrinks unpressed.
+    entry
+      ..box = null
+      ..press = GlassPressGeometry.identity;
     _registry?.unregister(entry);
+    entry.contentOpacity.dispose();
     super.dispose();
   }
 
@@ -245,9 +294,17 @@ class GlassMemberState extends State<GlassMember>
     };
   }
 
-  /// The child as drawn on the glass. Interactive glass wraps it in the
-  /// press transform; Task 12 adds the morph fade.
-  Widget buildContent(BuildContext context) {
+  /// The child as drawn on the glass: faded during `glassId` morphs and,
+  /// for interactive glass, wrapped in the press transform.
+  Widget buildContent(BuildContext context) => ValueListenableBuilder<double>(
+    valueListenable: entry.contentOpacity,
+    // Always an Opacity (a no-op at 1): toggling the wrapper would
+    // remount the content when a fade ends.
+    builder: (_, v, child) => Opacity(opacity: v, child: child),
+    child: _pressContent(context),
+  );
+
+  Widget _pressContent(BuildContext context) {
     if (!widget.glass.isInteractive) {
       entry.press = GlassPressGeometry.identity;
       return widget.child;
@@ -258,8 +315,10 @@ class GlassMemberState extends State<GlassMember>
       ..reduceMotion = MediaQuery.disableAnimationsOf(context);
     return Listener(
       behavior: HitTestBehavior.translucent,
+      // The press maths measures the member box (GlassMemberBox), the
+      // same box the renderer draws.
       onPointerDown: (e) =>
-          press.down(e.localPosition, context.size ?? Size.zero),
+          press.down(e.localPosition, entry.box?.size ?? Size.zero),
       onPointerMove: (e) => press.move(e.localPosition),
       onPointerUp: (_) => press.up(),
       onPointerCancel: (_) => press.up(),

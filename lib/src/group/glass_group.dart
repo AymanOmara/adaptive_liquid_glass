@@ -10,6 +10,7 @@ import '../platform/glass_platform.dart';
 import '../shader/glass_program.dart';
 import '../shader/render_glass_backdrop.dart';
 import 'glass_registry.dart';
+import 'morph_controller.dart';
 
 /// How members of a group render themselves.
 enum GlassMemberRendering {
@@ -106,20 +107,55 @@ class GlassGroup extends StatefulWidget {
   State<GlassGroup> createState() => _GlassGroupState();
 }
 
-class _GlassGroupState extends State<GlassGroup> {
+class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
   final GlassRegistry _registry = GlassRegistry();
   final List<Listenable> _motion = [];
   bool _settled = false;
 
+  /// False between deactivate and activate/dispose: ancestor and render
+  /// object lookups are not allowed then, and no ghost should start.
+  bool _active = true;
+
+  late final GlassMorphController _morph = GlassMorphController(
+    vsync: this,
+    registry: _registry,
+    // The group's first render object: the backdrop when members register
+    // with it, so morph rects share the renderer's local space.
+    groupBox: () => _active ? context.findRenderObject() as RenderBox? : null,
+    motion: () => _active
+        ? context
+                  .findAncestorWidgetOfExactType<LiquidGlassTheme>()
+                  ?.data
+                  .constants
+                  .motion ??
+              GlassConstants.standard.motion
+        : GlassConstants.standard.motion,
+  );
+
   @override
   void initState() {
     super.initState();
+    _morph; // install the registry hooks before members register
     GlassPlatform.instance.ensureStarted();
     GlassPlatform.instance.environment.addListener(_onEnvironment);
     GlassProgram.instance.load();
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() => _settled = true);
+      if (!mounted) return;
+      _morph.markSettled();
+      setState(() => _settled = true);
     });
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    _active = true;
+  }
+
+  @override
+  void deactivate() {
+    _active = false;
+    super.deactivate();
   }
 
   void _onEnvironment() => setState(() {});
@@ -161,6 +197,7 @@ class _GlassGroupState extends State<GlassGroup> {
       l.removeListener(_registry.markNeedsPaint);
     }
     GlassPlatform.instance.environment.removeListener(_onEnvironment);
+    _morph.dispose();
     _registry.dispose();
     super.dispose();
   }

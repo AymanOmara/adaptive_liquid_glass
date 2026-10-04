@@ -9,6 +9,12 @@ class GlassRegistry extends ChangeNotifier {
 
   final List<GlassEntry> _entries = [];
 
+  /// Called after an entry is added.
+  void Function(GlassEntry entry)? onAdded;
+
+  /// Called after an entry is removed.
+  void Function(GlassEntry entry)? onRemoved;
+
   /// Registered entries in registration order.
   List<GlassEntry> get entries => List.unmodifiable(_entries);
 
@@ -28,13 +34,17 @@ class GlassRegistry extends ChangeNotifier {
       return false;
     }
     _entries.add(e);
+    onAdded?.call(e);
     notifyListeners();
     return true;
   }
 
   /// Removes [e] if present.
   void unregister(GlassEntry e) {
-    if (_entries.remove(e)) notifyListeners();
+    if (_entries.remove(e)) {
+      onRemoved?.call(e);
+      notifyListeners();
+    }
   }
 
   /// Asks the group to repaint (geometry or press state changed).

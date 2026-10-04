@@ -81,6 +81,15 @@ class GlassEntry {
   /// The enclosing glass, for `GlassShape.concentric`.
   GlassEntry? container;
 
+  /// Where the renderer last drew this entry, in group-local coordinates.
+  Rect? lastDrawnLocal;
+
+  /// Content opacity during morphs.
+  final ValueNotifier<double> contentOpacity = ValueNotifier(1);
+
+  /// A removed member still animating out.
+  bool get isGhost => box == null && morphRect != null;
+
   /// Whether [box] is attached and has a non-empty size.
   bool get isLaidOut {
     final b = box;

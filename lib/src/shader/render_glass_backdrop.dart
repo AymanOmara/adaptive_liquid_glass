@@ -205,6 +205,7 @@ class RenderGlassBackdrop extends RenderProxyBox {
     super.dispose();
   }
 
+  /// A morphing or ghost entry draws its group-local `morphRect`.
   Rect _baseGlobalRect(GlassEntry e, Matrix4 toGlobal) {
     final morph = e.morphRect;
     if (morph != null) return MatrixUtils.transformRect(toGlobal, morph);
@@ -242,11 +243,16 @@ class RenderGlassBackdrop extends RenderProxyBox {
 
     final drawn = <(GlassEntry, Rect, double)>[];
     for (final e in _registry.entries) {
-      if (!e.isLaidOut || e.glass.variant == GlassVariant.identity) continue;
+      if (!(e.isLaidOut || e.isGhost) ||
+          e.glass.variant == GlassVariant.identity) {
+        continue;
+      }
       final base = _baseGlobalRect(e, toGlobal);
       if (!base.isFinite || base.isEmpty) continue;
       final radius = _baseRadius(e, base) * e.press.radiusScale;
-      drawn.add((e, e.press.apply(base), radius));
+      final pressed = e.press.apply(base);
+      e.lastDrawnLocal = MatrixUtils.transformRect(fromGlobal, pressed);
+      drawn.add((e, pressed, radius));
     }
     if (drawn.isEmpty) return null;
 
@@ -284,10 +290,12 @@ class RenderGlassBackdrop extends RenderProxyBox {
     var glow = 0.0;
     for (final (e, _, _) in drawn) {
       final p = e.press.touch;
+      final box = e.box;
+      if (box == null) continue; // ghosts have no touch
       if (p != null && e.press.glow > glow) {
         glow = e.press.glow;
         touch = pointToTextureSpace(
-          MatrixUtils.transformPoint(e.box!.getTransformTo(null), p),
+          MatrixUtils.transformPoint(box.getTransformTo(null), p),
           filterOriginGlobal: origin,
           devicePixelRatio: dpr,
         );
