@@ -26,12 +26,13 @@ class GlassBackdropSources {
   ];
 
   void _add(GlobalKey k) {
+    if (_keys.contains(k)) return;
     _keys.add(k);
     _revision.value++;
   }
 
   void _remove(GlobalKey k) {
-    _keys.remove(k);
+    if (!_keys.remove(k)) return;
     _revision.value++;
   }
 }
@@ -57,6 +58,20 @@ class _GlassBackdropSourceState extends State<GlassBackdropSource> {
   void initState() {
     super.initState();
     GlassBackdropSources.instance._add(_key);
+  }
+
+  // Inactive elements have no render object to look up, so a source is
+  // registered only while active.
+  @override
+  void activate() {
+    super.activate();
+    GlassBackdropSources.instance._add(_key);
+  }
+
+  @override
+  void deactivate() {
+    GlassBackdropSources.instance._remove(_key);
+    super.deactivate();
   }
 
   @override

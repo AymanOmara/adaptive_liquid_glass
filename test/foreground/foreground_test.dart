@@ -70,6 +70,146 @@ void main() {
     expect(await run(t, const Color(0xFF000000)), Brightness.dark);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
+  const iosEnv = GlassEnvironment(
+    platform: TargetPlatform.iOS,
+    iosMajorVersion: 26,
+    reduceTransparency: false,
+    shaderSupported: true,
+  );
+
+  Future<void> settle(WidgetTester t) async {
+    for (var i = 0; i < 3; i++) {
+      await t.pump(const Duration(milliseconds: 300));
+      await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 200)),
+      );
+    }
+    await t.pump();
+  }
+
+  Widget glass(void Function(BuildContext) grab) => Positioned(
+    left: 50,
+    top: 50,
+    width: 100,
+    height: 40,
+    child: LiquidGlass(
+      child: Builder(
+        builder: (c) {
+          grab(c);
+          return const SizedBox.expand();
+        },
+      ),
+    ),
+  );
+
+  const black = ColoredBox(color: Color(0xFF000000));
+
+  testWidgets('source inside the group subtree does not throw', (t) async {
+    GlassPlatform.instance.debugEnvironment = iosEnv;
+    late BuildContext inner;
+    await t.pumpWidget(
+      host(
+        t,
+        GlassGroup(
+          child: Stack(
+            children: [
+              const Positioned.fill(child: GlassBackdropSource(child: black)),
+              glass((c) => inner = c),
+            ],
+          ),
+        ),
+      ),
+    );
+    await settle(t);
+    expect(t.takeException(), isNull);
+    expect(GlassForeground.backgroundBrightnessOf(inner), Brightness.dark);
+    await t.pumpWidget(const SizedBox());
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('source mounted after first frame is picked up', (t) async {
+    GlassPlatform.instance.debugEnvironment = iosEnv;
+    late BuildContext inner;
+    Widget tree({required bool withSource}) => host(
+      t,
+      Stack(
+        children: [
+          if (withSource)
+            const Positioned.fill(child: GlassBackdropSource(child: black)),
+          glass((c) => inner = c),
+        ],
+      ),
+    );
+    await t.pumpWidget(tree(withSource: false));
+    await t.pump(const Duration(milliseconds: 300));
+    await t.pumpWidget(tree(withSource: true));
+    await settle(t);
+    expect(t.takeException(), isNull);
+    expect(GlassForeground.backgroundBrightnessOf(inner), Brightness.dark);
+    await t.pumpWidget(const SizedBox());
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('removing the source clears the sampled brightness', (t) async {
+    GlassPlatform.instance.debugEnvironment = iosEnv;
+    late BuildContext inner;
+    Widget tree({required bool withSource}) => host(
+      t,
+      Stack(
+        children: [
+          if (withSource)
+            const Positioned.fill(child: GlassBackdropSource(child: black)),
+          glass((c) => inner = c),
+        ],
+      ),
+    );
+    await t.pumpWidget(tree(withSource: true));
+    await settle(t);
+    expect(GlassForeground.backgroundBrightnessOf(inner), Brightness.dark);
+    await t.pumpWidget(tree(withSource: false));
+    await t.pump();
+    expect(
+      GlassForeground.backgroundBrightnessOf(inner),
+      MediaQuery.platformBrightnessOf(inner),
+    );
+    expect(MediaQuery.platformBrightnessOf(inner), Brightness.light);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('prefers a source covering the glass region', (t) async {
+    GlassPlatform.instance.debugEnvironment = iosEnv;
+    late BuildContext inner;
+    await t.pumpWidget(
+      host(
+        t,
+        Stack(
+          children: [
+            const Positioned(
+              left: 300,
+              top: 300,
+              width: 50,
+              height: 50,
+              child: GlassBackdropSource(
+                child: ColoredBox(color: Color(0xFFFFFFFF)),
+              ),
+            ),
+            const Positioned.fill(child: GlassBackdropSource(child: black)),
+            glass((c) => inner = c),
+          ],
+        ),
+      ),
+    );
+    await settle(t);
+    expect(GlassForeground.backgroundBrightnessOf(inner), Brightness.dark);
+    await t.pumpWidget(const SizedBox());
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('no source → no periodic timer', (t) async {
+    GlassPlatform.instance.debugEnvironment = iosEnv;
+    await t.pumpWidget(host(t, Stack(children: [glass((_) {})])));
+    await t.pump(const Duration(seconds: 1));
+    expect(t.binding.transientCallbackCount, 0);
+    // flutter_test fails the test if a periodic timer is still pending when
+    // the widget tree is left mounted.
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
   testWidgets('no source → platform brightness', (t) async {
     late BuildContext inner;
     await t.pumpWidget(

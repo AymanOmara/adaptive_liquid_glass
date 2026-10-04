@@ -175,7 +175,17 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
   void _onEnvironment() => setState(() {});
 
   void _onSources() {
-    if (mounted && _active) setState(() {});
+    void rebuild() {
+      if (mounted && _active) setState(() {});
+    }
+
+    // Sources register from initState, i.e. during build: defer then.
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) => rebuild());
+    } else {
+      rebuild();
+    }
   }
 
   void _updateSampler(GlassMemberRendering rendering) {
@@ -191,6 +201,7 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
     } else if (!want) {
       _sampler?.cancel();
       _sampler = null;
+      _sampled = null;
     }
   }
 
