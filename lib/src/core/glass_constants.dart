@@ -15,15 +15,18 @@ GlassVariantConstants _v(
 double _d(Map<String, Object?> j, String k, double fallback) =>
     (j[k] as num?)?.toDouble() ?? fallback;
 
-/// Reads `"#RRGGBB"` (opaque) or an int ARGB value.
+/// Reads `"#RRGGBB"` or an int ARGB value. The result is always opaque (any
+/// alpha is dropped), so `toJson`'s `"#RRGGBB"` round-trips losslessly.
 Color _color(Map<String, Object?> j, String k, Color fallback) {
   final v = j[k];
   if (v == null) return fallback;
-  if (v is int) return Color(v);
+  Color opaque(int argb) => Color(0xFF000000 | (argb & 0xFFFFFF));
+  if (v is int) return opaque(v);
   if (v is String) {
     final hex = v.startsWith('#') ? v.substring(1) : v;
-    if (hex.length == 6) return Color(0xFF000000 | int.parse(hex, radix: 16));
-    if (hex.length == 8) return Color(int.parse(hex, radix: 16));
+    if (hex.length == 6 || hex.length == 8) {
+      return opaque(int.parse(hex, radix: 16));
+    }
   }
   throw FormatException('$k: expected "#RRGGBB" or an int ARGB, got $v');
 }
@@ -237,7 +240,7 @@ class GlassConstants {
     ),
   );
 
-  /// The shipped values. Fitted in Task 16 against `tool/scenes/scenes.json`.
+  /// The shipped values. Fitted in Task 17 against `tool/scenes/scenes.json`.
   static const GlassConstants standard = GlassConstants(
     regular: GlassVariantConstants(
       blurSigma: 12,

@@ -36,6 +36,16 @@ void main() {
     expect(c.toJson()['mergeFactor'], 1.5);
   });
 
+  test('fillColor is forced opaque so JSON round-trips losslessly', () {
+    final c = GlassConstants.fromJson({
+      'regular': {'fillColor': 0x80102030},
+      'clear': {'fillColor': '#40A0B0C0'},
+    });
+    expect(c.regular.fillColor, const Color(0xFF102030));
+    expect(c.clear.fillColor, const Color(0xFFA0B0C0));
+    expect(GlassConstants.fromJson(c.toJson()), c);
+  });
+
   test('standard v2 starting values', () {
     const c = GlassConstants.standard;
     expect(c.regular.fillColor, const Color(0xFFFFFFFF));

@@ -229,7 +229,9 @@ class RenderGlassBackdrop extends RenderProxyBox {
       c.regularDark,
       c.clearDark,
     ].map((v) => v.shadowRadius).reduce(math.max);
-    final margin = shadow * 2 + _config.spacing + 2;
+    // The smooth union bulges up to mergeFactor × spacing past the shapes.
+    final margin =
+        shadow * 2 + math.max(1.0, c.mergeFactor) * _config.spacing + 2;
     final localBounds = MatrixUtils.transformRect(
       fromGlobal,
       union,

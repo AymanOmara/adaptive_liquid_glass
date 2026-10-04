@@ -97,6 +97,29 @@ void main() {
     );
   }, variant: ios);
 
+  testWidgets('clip margin grows with mergeFactor > 1', (t) async {
+    env();
+    Widget group(GlassConstants c) => LiquidGlassTheme(
+      data: LiquidGlassThemeData(constants: c),
+      child: host(
+        const Center(
+          child: GlassGroup(
+            spacing: 10,
+            child: LiquidGlass(child: SizedBox(width: 50, height: 50)),
+          ),
+        ),
+      ),
+    );
+    await t.pumpWidget(group(GlassConstants.standard));
+    final base = backdropOf(t).debugLastFrame!.localBounds;
+    await t.pumpWidget(group(GlassConstants.fromJson({'mergeFactor': 3.0})));
+    final wide = backdropOf(t).debugLastFrame!.localBounds;
+    // margin = shadow × 2 + max(1, mergeFactor) × spacing + 2.
+    expect(wide.width - base.width, closeTo(2 * (3 - 1) * 10, 1e-6));
+    await t.pumpWidget(group(GlassConstants.fromJson({'mergeFactor': 0.5})));
+    expect(backdropOf(t).debugLastFrame!.localBounds.width, base.width);
+  }, variant: ios);
+
   testWidgets('capsules and circles use circular corners; rects the fitted '
       'exponent', (t) async {
     env();
