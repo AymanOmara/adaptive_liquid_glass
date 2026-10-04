@@ -75,7 +75,16 @@ void main() {
                 rect: filterBounds,
                 child: ClipRect(
                   child: BackdropFilter(
-                    filter: ui.ImageFilter.shader(shader),
+                    // Same composition as RenderGlassBackdrop: frost blur
+                    // (logical px) first, then the glass shader.
+                    filter: ui.ImageFilter.compose(
+                      outer: ui.ImageFilter.shader(shader),
+                      inner: ui.ImageFilter.blur(
+                        sigmaX: GlassConstants.standard.regular.blurSigma,
+                        sigmaY: GlassConstants.standard.regular.blurSigma,
+                        tileMode: TileMode.clamp,
+                      ),
+                    ),
                     child: const SizedBox.expand(),
                   ),
                 ),
@@ -106,8 +115,18 @@ void main() {
     // Stripe i (odd = light) spans [i, i + 1) × screenWidth / 40.
     final stripe = tester.view.physicalSize.width / dpr / 40;
     final nearEdge = lum(Offset(19.5 * stripe, shapeGlobal.bottom + 2));
+    // Frost uniformity across the centre row, inside the lens band.
+    final row = [
+      for (var x = shapeGlobal.left + 30; x <= shapeGlobal.right - 30; x += 1)
+        lum(Offset(x, shapeGlobal.center.dy)),
+    ];
+    final rowMin = row.reduce((a, b) => a < b ? a : b);
+    final rowMax = row.reduce((a, b) => a > b ? a : b);
     // ignore: avoid_print
-    print('SMOKE mid=$mid far=$far nearEdge=$nearEdge');
+    print(
+      'SMOKE mid=$mid far=$far nearEdge=$nearEdge '
+      'centreRow=[$rowMin, $rowMax]',
+    );
     expect(
       nearEdge,
       allOf(lessThan(0xF0), greaterThan(0x10)),

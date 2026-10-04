@@ -5,8 +5,10 @@ import 'package:adaptive_liquid_glass/src/degraded/degraded_glass.dart';
 import 'package:adaptive_liquid_glass/src/material/material_glass.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
+import 'package:adaptive_liquid_glass/src/shader/glass_uniforms.dart';
 import 'package:adaptive_liquid_glass/src/shader/render_glass_backdrop.dart';
 import 'package:adaptive_liquid_glass/src/shader/texture_space.dart';
+import 'package:adaptive_liquid_glass/testing.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -89,7 +91,113 @@ void main() {
     expect(find.byType(GlassBackdrop), findsOneWidget);
     final f = backdropOf(t).debugLastFrame!;
     expect(f.uniforms.shapes, hasLength(2));
-    expect(f.uniforms.smoothing, 2 * 10 * t.view.devicePixelRatio);
+    expect(
+      f.uniforms.smoothing,
+      GlassConstants.standard.mergeFactor * 10 * t.view.devicePixelRatio,
+    );
+  }, variant: ios);
+
+  testWidgets('capsules and circles use circular corners; rects the fitted '
+      'exponent', (t) async {
+    env();
+    await t.pumpWidget(
+      host(
+        const Center(
+          child: GlassGroup(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LiquidGlass(child: SizedBox(width: 80, height: 40)),
+                LiquidGlass(
+                  shape: GlassShape.rect(16),
+                  child: SizedBox(width: 80, height: 40),
+                ),
+                LiquidGlass(
+                  shape: GlassShape.circle(),
+                  child: SizedBox(width: 40, height: 40),
+                ),
+                LiquidGlass(
+                  shape: GlassShape.concentric(),
+                  child: SizedBox(width: 40, height: 40),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    final f = backdropOf(t).debugLastFrame!;
+    final packed = packGlassUniforms(f.uniforms);
+    expect(f.uniforms.shapes.map((s) => s.cornerExponent), [
+      2.0,
+      null,
+      2.0,
+      2.0,
+    ]);
+    expect(
+      [for (var i = 0; i < 4; i++) packed[80 + i * 4 + 2]],
+      [2.0, GlassConstants.standard.cornerExponent, 2.0, 2.0],
+    );
+  }, variant: ios);
+
+  testWidgets('concentric inside a container keeps the fitted exponent', (
+    t,
+  ) async {
+    env();
+    await t.pumpWidget(
+      at(
+        const Rect.fromLTWH(0, 0, 200, 100),
+        const GlassGroup(
+          child: LiquidGlass(
+            shape: GlassShape.rect(28),
+            child: Padding(
+              padding: EdgeInsetsDirectional.all(8),
+              child: LiquidGlass(
+                shape: GlassShape.concentric(),
+                child: SizedBox.expand(),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final shapes = backdropOf(t).debugLastFrame!.uniforms.shapes;
+    expect(shapes.map((s) => s.cornerExponent), [null, null]);
+  }, variant: ios);
+
+  testWidgets('frost blur sigma is the largest of the drawn variants', (
+    t,
+  ) async {
+    env();
+    Widget group(Brightness b, List<Glass> glasses) => MediaQuery(
+      data: MediaQueryData.fromView(
+        WidgetsBinding.instance.platformDispatcher.implicitView!,
+      ).copyWith(platformBrightness: b),
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(
+          child: GlassGroup(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final g in glasses)
+                  LiquidGlass(
+                    glass: g,
+                    child: const SizedBox(width: 40, height: 40),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    const c = GlassConstants.standard;
+    await t.pumpWidget(group(Brightness.light, [Glass.clear]));
+    expect(backdropOf(t).debugLastFrame!.blurSigma, c.clear.blurSigma);
+    await t.pumpWidget(group(Brightness.light, [Glass.clear, Glass.regular]));
+    expect(backdropOf(t).debugLastFrame!.blurSigma, c.regular.blurSigma);
+    await t.pumpWidget(group(Brightness.dark, [Glass.regular]));
+    expect(backdropOf(t).debugLastFrame!.blurSigma, c.regularDark.blurSigma);
   }, variant: ios);
 
   testWidgets('zero-size glass is skipped without errors', (t) async {

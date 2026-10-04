@@ -10,12 +10,14 @@ GlassShapeUniform s(
   GlassVariant v = GlassVariant.regular,
   Color? tint,
   Object? union,
+  double? exponent,
 }) => GlassShapeUniform(
   rect: r,
   radius: radius,
   variant: v,
   tint: tint,
   unionId: union,
+  cornerExponent: exponent,
 );
 
 GlassFrameUniforms frame(
@@ -37,11 +39,27 @@ GlassFrameUniforms frame(
 void main() {
   test('layout size and header', () {
     final f = packGlassUniforms(frame([s(const Rect.fromLTWH(1, 2, 30, 40))]));
-    expect(f.length, 232);
+    expect(f.length, 240);
     expect(f.sublist(0, 4), [1, 3, -2, 0]);
     expect(f.sublist(4, 8), [60, GlassConstants.standard.cornerExponent, 0, 0]);
     expect(f.sublist(16, 20), [1, 2, 30, 40]);
-    expect(f.sublist(80, 84), [10, 0, 0, 0]);
+    expect(f.sublist(80, 84), [
+      10,
+      0,
+      GlassConstants.standard.cornerExponent,
+      0,
+    ]);
+  });
+
+  test('per-shape corner exponent is packed into uInfo.z', () {
+    final f = packGlassUniforms(
+      frame([
+        s(const Rect.fromLTWH(0, 0, 10, 10), exponent: 2),
+        s(const Rect.fromLTWH(20, 0, 10, 10)),
+      ]),
+    );
+    expect(f[82], 2);
+    expect(f[86], GlassConstants.standard.cornerExponent);
   });
 
   test('variant constants are scaled to physical px', () {
@@ -57,7 +75,7 @@ void main() {
     expect(f.sublist(212, 216), [
       reg.rimWidth * 3,
       reg.rimIntensity,
-      reg.lumaLift,
+      reg.fillOpacity,
       reg.dim,
     ]);
     expect(f.sublist(216, 220), [
@@ -67,10 +85,28 @@ void main() {
       0,
     ]);
     expect(f.sublist(220, 224), [
+      reg.fillColor.r,
+      reg.fillColor.g,
+      reg.fillColor.b,
+      reg.saturation,
+    ]);
+    expect(f.sublist(224, 228), [
       clr.blurSigma * 3,
       clr.lensBand * 3,
       clr.lensStrength,
       clr.dispersion,
+    ]);
+    expect(f.sublist(228, 232), [
+      clr.rimWidth * 3,
+      clr.rimIntensity,
+      clr.fillOpacity,
+      clr.dim,
+    ]);
+    expect(f.sublist(236, 240), [
+      clr.fillColor.r,
+      clr.fillColor.g,
+      clr.fillColor.b,
+      clr.saturation,
     ]);
   });
 
@@ -125,10 +161,16 @@ void main() {
     expect(f.sublist(212, 216), [
       d.rimWidth,
       d.rimIntensity,
-      d.lumaLift,
+      d.fillOpacity,
       d.dim,
     ]);
-    expect(f[223 + 4], GlassConstants.standard.clearDark.dim);
+    expect(f.sublist(220, 224), [
+      d.fillColor.r,
+      d.fillColor.g,
+      d.fillColor.b,
+      d.saturation,
+    ]);
+    expect(f[231], GlassConstants.standard.clearDark.dim);
   });
 
   test('opaque and touch', () {
@@ -156,5 +198,13 @@ void main() {
     expect(out.first.rect, const Rect.fromLTWH(0, 0, 140, 40));
     expect(out.first.radius, 12);
     expect(out.last.rect, const Rect.fromLTWH(0, 100, 10, 10));
+  });
+
+  test('mergeUnions keeps the first shape\'s corner exponent', () {
+    final out = mergeUnions([
+      s(const Rect.fromLTWH(0, 0, 40, 40), union: 'a', exponent: 2),
+      s(const Rect.fromLTWH(100, 0, 40, 40), union: 'a'),
+    ]);
+    expect(out.single.cornerExponent, 2);
   });
 }

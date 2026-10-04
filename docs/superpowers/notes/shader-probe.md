@@ -101,3 +101,59 @@ impellerc reports `liquid_glass.frag` as incompatible with SkSL, because of
 dynamic uniform-array indexing (`index expression must be constant`). It is a
 warning: the shader will not load under the Skia backend. `ImageFilter.shader`
 needs Impeller anyway.
+
+## Third case: shader under a composed blur (shader model v2, 2026-10-04)
+
+Shader model v2 (spec §15) frosts with
+`ImageFilter.compose(outer: ImageFilter.shader(s), inner: ImageFilter.blur(σ, tileMode: clamp))`.
+`probe.frag` gained two modes for this: an exact readout (`uArr[3].y` = 1..4
+writes `FlutterFragCoord.x`, `.y`, `uSize.x`, `uSize.y` as low byte, high
+byte, fraction, so there is no 8-bit quantisation) and a pass-through
+(`uArr[3].x` = 1 returns `texture(uTexture, px / uSize)`).
+
+Exact readout at the clip's top-left and bottom-right pixels:
+
+```
+PROBE composed sigma=8.0  box=(200,300,300,400) fragX=[600.5, 899.5]  fragY=[900.5, 1199.5]  uSize=(1247, 2663) screen=1206x2622
+PROBE composed sigma=8.0  box=(40,600,340,660)  fragX=[120.5, 1019.5] fragY=[1800.5, 1979.5] uSize=(1247, 2663)
+PROBE composed sigma=20.0 box=(200,300,300,400) fragX=[600.5, 899.5]  fragY=[900.5, 1199.5]  uSize=(1303, 2719)
+PROBE composed sigma=20.0 box=(40,600,340,660)  fragX=[120.5, 1019.5] fragY=[1800.5, 1979.5] uSize=(1303, 2719)
+```
+
+(Without the blur, the same readout gives `uSize = (1206, 2622)`.)
+
+- `FlutterFragCoord()` stays **screen-global physical px** (pixel centres,
+  independent of the clip position and of σ).
+- `uSize` is **not** the screen size any more: it is the blurred input's
+  size, the screen grown by 41 px (σ = 8) or 97 px (σ = 20) on each axis.
+- The growth is on the **right and bottom only**: the texture origin stays
+  at the screen origin. A pass-through of a hard black|white edge at logical
+  x = 200 (and, separately, y = 350) comes back centred at 200.00 / 350.00
+  (σ = 8) and 200.08 / 350.08 (σ = 20). A left/top pad of even 20 px would
+  shift it by ≈ 7 logical px.
+
+So `tex(px) = texture(uTexture, px / uSize)` samples the pixel under `px`,
+and shape rects packed in screen-global texture space line up with
+`FlutterFragCoord`. The glass shader uses `uSize` only inside `tex()`, so
+the composition is safe. Nothing may treat `uSize` as the screen size.
+`probe_test.dart` asserts all of this.
+
+## Composed blur sigma unit
+
+The `composed blur sigma unit` probe blurs a hard edge at logical x = 200
+and measures the 15.87 % → 84.13 % rise (2σ) along a row:
+
+| requested σ (logical) | blur only (logical) | composed (logical) | ratio |
+|---|---|---|---|
+| 2  | 1.82  | 1.82  | 0.91 |
+| 8  | 7.34  | 7.23  | 0.90–0.92 |
+| 12 | 10.34 | 10.30 | 0.86 |
+| 20 | 16.84 | 16.84 | 0.84 |
+
+The unit is **logical px**: under the root dpr transform the engine scales
+σ by dpr (σ = 8 measured 21.7 physical px; a physical-px unit would have
+measured ≈ 7.3 / 3). Composing the shader does not change it. The engine's
+effective σ is 8–16 % below the requested value and the shortfall grows with
+σ. That is Impeller's kernel approximation, not a unit error. The renderer
+therefore passes `blurSigma` straight through (no dpr factor), and the fit
+absorbs the shortfall.

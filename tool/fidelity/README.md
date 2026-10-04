@@ -82,3 +82,15 @@ can never score well.
   of the screen, are 0 (best shift search: (0, 0)). Across all 75 baseline
   scenes, every pixel outside the glass bounds inflated by 60 pt is identical
   (mean 0, max 0).
+
+## Baselines (unfitted constants)
+
+| run | shader model | pass | median SSIM | median ΔE | mean SSIM | mean ΔE |
+|---|---|---|---|---|---|---|
+| `build/fidelity/baseline` | v1 (in-shader 24-tap blur, global corner exponent, `lumaLift`, smoothing 2×spacing) | 0/75 | 0.688 | 14.7 | 0.702 | 15.1 |
+| `build/fidelity/baseline-v2` | v2 (spec §15: per-shape corners, composed frost blur, fill colour + saturation, `mergeFactor`) | 0/75 | 0.924 | 10.1 | 0.874 | 10.9 |
+
+In v2, 65 of the 75 scenes improved in SSIM and 62 in ΔE. Regular glass now
+sits at a median SSIM of 0.939 and ΔE of 7.0. Clear glass in dark mode got
+worse: the worst scene is `clear-rect16-text-dark` at ΔE 25.4. Both runs use
+the starting constants; fitting (Task 17) comes next.

@@ -9,9 +9,15 @@ uniform vec4 uGlobal2;     // smoothing px, cornerExponent, highContrast, -
 uniform vec4 uOpaque;      // rgb
 uniform vec4 uTouch;       // x, y, glow, glowRadius px
 uniform vec4 uRects[16];   // x, y, w, h px
-uniform vec4 uInfo[16];    // radius px, variant(0 regular, 1 clear), -, -
+uniform vec4 uInfo[16];    // radius px, variant(0 regular, 1 clear), cornerExponent (0 = global), -
 uniform vec4 uTints[16];   // rgb, strength
-uniform vec4 uVar[6];      // per variant: A(blur, band, lens, disp) B(rimW, rimI, lift, dim) C(shadowR, shadowO, tintS, -)
+uniform vec4 uVar[8];      // per variant (regular A-D, then clear A-D):
+                           //   A(blur px [unused: composed blur], band, lens, disp) B(rimW, rimI, fillOpacity, dim)
+                           //   C(shadowR, shadowO, tintS, -) D(fillR, fillG, fillB, saturation)
+// uTexture is the backdrop already blurred by ImageFilter.blur (composed
+// before this shader). FlutterFragCoord is screen-global; uSize is the
+// blurred input's size, which may exceed the screen on the right/bottom, so
+// sampling at px / uSize still returns the pixel under px.
 uniform sampler2D uTexture;
 
 out vec4 fragColor;
@@ -22,21 +28,6 @@ vec4 tex(vec2 px) {
   uv.y = 1.0 - uv.y;
 #endif
   return texture(uTexture, uv);
-}
-
-vec4 blurred(vec2 px, float sigma) {
-  if (sigma < 0.5) return tex(px);
-  vec4 acc = vec4(0.0);
-  float wsum = 0.0;
-  for (int i = 0; i < 24; i++) {
-    float fi = float(i) + 0.5;
-    float rr = sqrt(fi / 24.0) * sigma * 2.5;
-    float a = fi * 2.39996323;
-    float w = exp(-(rr * rr) / (2.0 * sigma * sigma));
-    acc += tex(px + vec2(cos(a), sin(a)) * rr) * w;
-    wsum += w;
-  }
-  return acc / wsum;
 }
 
 float sdSuperellipseBox(vec2 p, vec2 halfSize, float r, float n) {
@@ -50,7 +41,8 @@ float sdSuperellipseBox(vec2 p, vec2 halfSize, float r, float n) {
 float shapeDist(int i, vec2 p) {
   vec4 rc = uRects[i];
   vec2 hs = rc.zw * 0.5;
-  return sdSuperellipseBox(p - (rc.xy + hs), hs, uInfo[i].x, uGlobal2.y);
+  float n = uInfo[i].z > 0.0 ? uInfo[i].z : uGlobal2.y;
+  return sdSuperellipseBox(p - (rc.xy + hs), hs, uInfo[i].x, n);
 }
 
 float smin(float a, float b, float k) {
@@ -69,10 +61,11 @@ float field(vec2 p) {
 }
 
 void main() {
+  // Output is premultiplied colour composited srcOver onto the sharp
+  // backdrop: transparent outside the shape except for the shadow.
   vec2 px = FlutterFragCoord().xy;
-  vec4 base = tex(px);
   int count = int(uGlobal.x);
-  if (count == 0) { fragColor = base; return; }
+  if (count == 0) { fragColor = vec4(0.0); return; }
 
   // Per-shape attributes blended by proximity (for merged regions).
   // Weights are shifted by the nearest distance (online softmax) so the
@@ -104,29 +97,30 @@ void main() {
   clearMix /= wsum;
   tint /= wsum;
 
-  vec4 A = mix(uVar[0], uVar[3], clearMix);
-  vec4 B = mix(uVar[1], uVar[4], clearMix);
-  vec4 C = mix(uVar[2], uVar[5], clearMix);
+  vec4 A = mix(uVar[0], uVar[4], clearMix);
+  vec4 B = mix(uVar[1], uVar[5], clearMix);
+  vec4 C = mix(uVar[2], uVar[6], clearMix);
+  vec4 D = mix(uVar[3], uVar[7], clearMix);
   float hc = uGlobal2.z;
 
   float inside = 1.0 - smoothstep(-0.75, 0.75, d);
 
   // Shadow outside the shape; full strength at the edge (max(d, 0)). It is
-  // computed for every pixel so the anti-aliased edge (|d| < 0.75) blends
-  // into the shadowed backdrop, not the bare one, with no bright ring.
+  // black at alpha `sh` over the untouched backdrop, and is also kept under
+  // the anti-aliased edge (|d| < 0.75) so no bright ring appears there.
   float sr = max(C.x * 0.5, 1.0);
   float dOut = max(d, 0.0);
   float sh = C.y * exp(-(dOut * dOut) / (2.0 * sr * sr));
-  vec3 under = base.rgb * (1.0 - sh);
+  vec4 shadow = vec4(0.0, 0.0, 0.0, sh) * (1.0 - inside);
   if (inside <= 0.0) {
-    fragColor = vec4(under, base.a);
+    fragColor = shadow;
     return;
   }
 
   // Opaque (Reduce Transparency).
   if (uGlobal.w > 0.5) {
     vec3 solid = mix(uOpaque.rgb, tint.rgb, tint.a);
-    fragColor = vec4(mix(under, solid, inside), 1.0);
+    fragColor = vec4(solid * inside, inside) + shadow;
     return;
   }
 
@@ -141,14 +135,14 @@ void main() {
   float lensAmt = A.z * (1.0 - 0.5 * hc) * t * t * band;
   vec2 sp = px + nrm * lensAmt;
 
-  vec4 g = blurred(sp, A.x);
-  vec3 col = g.rgb;
+  vec3 col = tex(sp).rgb;
   vec2 disp = nrm * lensAmt * A.w;
-  col.r = mix(col.r, blurred(sp + disp, A.x * 0.5).r, t);
-  col.b = mix(col.b, blurred(sp - disp, A.x * 0.5).b, t);
+  col.r = mix(col.r, tex(sp + disp).r, t);
+  col.b = mix(col.b, tex(sp - disp).b, t);
 
   float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));
-  col += B.z * (1.0 - luma);
+  col = mix(vec3(luma), col, D.w);
+  col = mix(col, D.rgb, B.z);
   col *= (1.0 - B.w);
   col = mix(col, tint.rgb, tint.a);
 
@@ -164,5 +158,5 @@ void main() {
     col += 0.25 * uTouch.z * exp(-dot(dt, dt) / (2.0 * gr * gr));
   }
 
-  fragColor = vec4(mix(under, clamp(col, 0.0, 1.0), inside), 1.0);
+  fragColor = vec4(clamp(col, 0.0, 1.0) * inside, inside) + shadow;
 }

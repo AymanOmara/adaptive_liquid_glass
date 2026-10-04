@@ -28,6 +28,25 @@ void main() {
     expect(find.byType(ClipPath), findsOneWidget);
   });
 
+  testWidgets('untinted fill is fillColor at fillOpacity', (t) async {
+    await t.pumpWidget(
+      host(
+        const DegradedGlass(
+          glass: Glass.regular,
+          shape: GlassShape.capsule(),
+          constants: GlassConstants.standard,
+          child: Text('hi'),
+        ),
+      ),
+    );
+    final box = t.widget<DecoratedBox>(find.byType(DecoratedBox));
+    final r = GlassConstants.standard.regular;
+    expect(
+      (box.decoration as ShapeDecoration).color,
+      r.fillColor.withValues(alpha: r.fillOpacity),
+    );
+  });
+
   testWidgets('opaque draws a solid shape and no backdrop', (t) async {
     await t.pumpWidget(
       host(

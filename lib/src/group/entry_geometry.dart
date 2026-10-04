@@ -10,7 +10,13 @@ import 'glass_registry.dart';
 @immutable
 class EntryGeometry {
   /// Creates geometry.
-  const EntryGeometry(this.entry, this.base, this.drawn, this.radius);
+  const EntryGeometry(
+    this.entry,
+    this.base,
+    this.drawn,
+    this.radius, {
+    this.circularCorners = false,
+  });
 
   /// The entry.
   final GlassEntry entry;
@@ -23,6 +29,11 @@ class EntryGeometry {
 
   /// Corner radius as drawn.
   final double radius;
+
+  /// Whether the corners are exact circular arcs (capsule, circle, or a
+  /// concentric shape with no container, which falls back to a capsule)
+  /// rather than continuous corners.
+  final bool circularCorners;
 }
 
 /// Drawable entries of [registry], laid-out members and ghosts alike.
@@ -71,7 +82,19 @@ List<EntryGeometry> collectEntryGeometry(
     final radius =
         shape.resolveRadius(base.size, concentricRadius: concentric) *
         e.press.radiusScale;
-    out.add(EntryGeometry(e, base, e.press.apply(base), radius));
+    final circular =
+        shape is CapsuleGlassShape ||
+        shape is CircleGlassShape ||
+        (shape is ConcentricGlassShape && concentric == null);
+    out.add(
+      EntryGeometry(
+        e,
+        base,
+        e.press.apply(base),
+        radius,
+        circularCorners: circular,
+      ),
+    );
   }
   return out;
 }

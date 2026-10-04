@@ -54,7 +54,7 @@ class DegradedGlass extends StatelessWidget {
 
     final fill = tint != null
         ? tint.withValues(alpha: c.tintStrength * tint.a)
-        : const Color(0xFFFFFFFF).withValues(alpha: c.lumaLift);
+        : c.fillColor.withValues(alpha: c.fillOpacity);
     return ClipPath(
       clipper: ShapeBorderClipper(shape: border),
       child: BackdropFilter(

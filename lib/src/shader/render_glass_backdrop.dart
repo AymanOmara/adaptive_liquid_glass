@@ -77,6 +77,7 @@ class GlassBackdropDebugFrame {
     this.uniforms,
     this.localBounds,
     this.filterOriginGlobal,
+    this.blurSigma,
   );
 
   /// Uniforms sent to the shader.
@@ -87,6 +88,9 @@ class GlassBackdropDebugFrame {
 
   /// Global logical position of the clip origin.
   final Offset filterOriginGlobal;
+
+  /// Sigma (logical px) of the frost blur composed before the shader.
+  final double blurSigma;
 }
 
 /// Paints the group's glass behind its child.
@@ -244,8 +248,16 @@ class RenderGlassBackdrop extends RenderProxyBox {
           variant: g.entry.glass.variant,
           tint: g.entry.glass.tintColor,
           unionId: g.entry.unionId,
+          cornerExponent: g.circularCorners ? 2.0 : null,
         ),
     ]);
+
+    // One blur per group: the largest sigma of the drawn variants. Known
+    // limitation: a group mixing regular and clear glass blurs the clear
+    // members as strongly as the regular ones.
+    final blurSigma = drawn
+        .map((g) => c.of(g.entry.glass.variant, _config.brightness).blurSigma)
+        .reduce(math.max);
 
     Offset? touch;
     var glow = 0.0;
@@ -269,7 +281,8 @@ class RenderGlassBackdrop extends RenderProxyBox {
         shapes: shapes,
         devicePixelRatio: dpr,
         lightAngle: _config.lightAngle,
-        smoothing: 2 * _config.spacing * dpr,
+        // Smooth-union radius: mergeFactor × spacing (physical px).
+        smoothing: c.mergeFactor * _config.spacing * dpr,
         constants: c,
         brightness: _config.brightness,
         highContrast: _config.highContrast,
@@ -279,6 +292,7 @@ class RenderGlassBackdrop extends RenderProxyBox {
       ),
       localBounds,
       origin,
+      blurSigma,
     );
   }
 
@@ -301,8 +315,27 @@ class RenderGlassBackdrop extends RenderProxyBox {
       shader.setFloat(kFirstUserFloat + i, floats[i]);
     }
     final backdrop = _backdrop.layer ??= BackdropFilterLayer();
+    // The frost blur runs before the shader. The blur's sigma is in logical
+    // px (the layer sits under the root dpr transform). Composing it keeps
+    // FlutterFragCoord screen-global; uSize becomes the blurred input's size
+    // (the screen grown right/bottom), so `px / uSize` still samples the
+    // pixel under `px` (probe_test.dart). The shader returns premultiplied
+    // colour that is transparent outside the shape except for the shadow,
+    // and srcOver keeps the sharp backdrop there.
+    final sigma = frame.blurSigma;
+    final shaderFilter = ui.ImageFilter.shader(shader);
     backdrop
-      ..filter = ui.ImageFilter.shader(shader)
+      ..filter = sigma > 0
+          ? ui.ImageFilter.compose(
+              outer: shaderFilter,
+              inner: ui.ImageFilter.blur(
+                sigmaX: sigma,
+                sigmaY: sigma,
+                tileMode: TileMode.clamp,
+              ),
+            )
+          : shaderFilter
+      ..blendMode = BlendMode.srcOver
       ..backdropKey = _backdropKey;
     _clip.layer = context.pushClipRect(
       needsCompositing,

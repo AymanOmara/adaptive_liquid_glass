@@ -20,6 +20,7 @@ class GlassShapeUniform {
     required this.variant,
     this.tint,
     this.unionId,
+    this.cornerExponent,
   });
 
   /// Shape bounds.
@@ -36,6 +37,11 @@ class GlassShapeUniform {
 
   /// Union identity; equal ids merge into one shape.
   final Object? unionId;
+
+  /// Superellipse exponent for this shape's corners; null uses
+  /// [GlassConstants.cornerExponent]. 2 gives exact circular arcs (capsules,
+  /// circles).
+  final double? cornerExponent;
 }
 
 /// Everything the shader needs for one frame.
@@ -67,7 +73,8 @@ class GlassFrameUniforms {
   /// Light direction, radians, y-down.
   final double lightAngle;
 
-  /// Smooth-min radius in physical px (group spacing × dpr).
+  /// Smooth-min radius in physical px
+  /// (`mergeFactor` × group spacing × dpr).
   final double smoothing;
 
   /// Rendering constants.
@@ -94,7 +101,8 @@ bool _drawable(GlassShapeUniform s) =>
     s.radius.isFinite;
 
 /// Merges shapes that share a non-null `unionId` into their bounding rect,
-/// keeping the smallest radius and the first shape's variant and tint.
+/// keeping the smallest radius and the first shape's variant, tint and
+/// corner exponent.
 List<GlassShapeUniform> mergeUnions(List<GlassShapeUniform> shapes) {
   final out = <GlassShapeUniform>[];
   final byId = <Object, int>{};
@@ -114,16 +122,36 @@ List<GlassShapeUniform> mergeUnions(List<GlassShapeUniform> shapes) {
       variant: prev.variant,
       tint: prev.tint,
       unionId: id,
+      cornerExponent: prev.cornerExponent,
     );
   }
   return out;
 }
 
-/// Packs [u] into the float layout documented in `shaders/liquid_glass.frag`.
+/// Number of user floats after `uSize`.
+const int kGlassUniformFloats = 240;
+
+/// Packs [u] into the float layout documented in `shaders/liquid_glass.frag`:
+///
+/// | floats  | uniform        | contents                                  |
+/// |---------|----------------|-------------------------------------------|
+/// | 0–3     | uGlobal        | count, dpr, lightAngle, opaque            |
+/// | 4–7     | uGlobal2       | smoothing px, cornerExponent, highContrast |
+/// | 8–11    | uOpaque        | rgb                                       |
+/// | 12–15   | uTouch         | x, y, glow, glowRadius px                 |
+/// | 16–79   | uRects[16]     | x, y, w, h px                             |
+/// | 80–143  | uInfo[16]      | radius px, clear?, cornerExponent, -      |
+/// | 144–207 | uTints[16]     | rgb, strength                             |
+/// | 208–239 | uVar[8]        | regular A B C D, then clear A B C D       |
+///
+/// Per variant: A = (blur px, lens band px, lens strength, dispersion),
+/// B = (rim width px, rim intensity, fillOpacity, dim),
+/// C = (shadow radius px, shadow opacity, tint strength, -),
+/// D = (fill r, g, b, saturation).
 List<double> packGlassUniforms(GlassFrameUniforms u) {
   final dpr = u.devicePixelRatio;
   final shapes = u.shapes.where(_drawable).take(_maxShapes).toList();
-  final f = List<double>.filled(232, 0);
+  final f = List<double>.filled(kGlassUniformFloats, 0);
 
   f[0] = shapes.length.toDouble();
   f[1] = dpr;
@@ -161,7 +189,7 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
     f.setAll(80 + i * 4, [
       s.radius,
       s.variant == GlassVariant.clear ? 1 : 0,
-      0,
+      s.cornerExponent ?? u.constants.cornerExponent,
       0,
     ]);
     final tint = s.tint;
@@ -181,9 +209,15 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
       v.lensStrength,
       v.dispersion,
     ]);
-    f.setAll(k + 4, [v.rimWidth * dpr, v.rimIntensity, v.lumaLift, v.dim]);
+    f.setAll(k + 4, [v.rimWidth * dpr, v.rimIntensity, v.fillOpacity, v.dim]);
     f.setAll(k + 8, [v.shadowRadius * dpr, v.shadowOpacity, v.tintStrength, 0]);
-    k += 12;
+    f.setAll(k + 12, [
+      v.fillColor.r,
+      v.fillColor.g,
+      v.fillColor.b,
+      v.saturation,
+    ]);
+    k += 16;
   }
   return f;
 }
