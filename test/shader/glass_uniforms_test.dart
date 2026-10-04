@@ -47,7 +47,7 @@ void main() {
         }),
       ),
     );
-    expect(f.length, 240);
+    expect(f.length, 256);
     expect(f.sublist(0, 4), [1, 3, -2, 0]);
     expect(f.sublist(4, 8), [60, GlassConstants.standard.cornerExponent, 0, 0]);
     expect(f.sublist(16, 20), [1, 2, 30, 40]);
@@ -112,7 +112,7 @@ void main() {
       reg.tintStrength,
       reg.lensSizeRef * 3,
     ]);
-    expect(f.sublist(232, 236), [
+    expect(f.sublist(240, 244), [
       clr.shadowRadius * 3,
       clr.shadowOpacity,
       clr.tintStrength,
@@ -124,24 +124,48 @@ void main() {
       reg.fillColor.b,
       reg.saturation,
     ]);
-    expect(f.sublist(224, 228), [
+    expect(f.sublist(232, 236), [
       clr.lensDecay * 3,
       clr.lensBand * 3,
       clr.lensStrength,
       clr.dispersion,
     ]);
-    expect(f.sublist(228, 232), [
+    expect(f.sublist(236, 240), [
       clr.rimWidth * 3,
       clr.rimIntensity,
       clr.fillOpacity,
       clr.dim,
     ]);
-    expect(f.sublist(236, 240), [
+    expect(f.sublist(244, 248), [
       clr.fillColor.r,
       clr.fillColor.g,
       clr.fillColor.b,
       clr.saturation,
     ]);
+  });
+
+  test('frost v2 constants pack into E and F (physical px)', () {
+    final c = GlassConstants.fromJson({
+      'regular': {
+        'frostWideSigma': 5.5,
+        'frostWideMixEdge': 0.3,
+        'frostWideMixCentre': 1.2,
+        'frostWideSizeRef': 70.0,
+        'frostWideSizeDrop': 1.4,
+      },
+      'clear': {
+        'frostWideSigma': 4.0,
+        'frostWideMixEdge': -0.1,
+        'frostWideMixCentre': 0.2,
+        'frostWideSizeRef': 0.0,
+        'frostWideSizeDrop': 0.5,
+      },
+    });
+    final f = packGlassUniforms(frame(const [], constants: c));
+    expect(f.sublist(224, 228), [5.5 * 3, 0.3, 1.2, 70 * 3]);
+    expect(f[228], 1.4);
+    expect(f.sublist(248, 252), [4.0 * 3, -0.1, 0.2, 0]);
+    expect(f[252], 0.5);
   });
 
   test('tint strength is tintStrength × alpha; clear variant index is 1', () {
@@ -204,7 +228,7 @@ void main() {
       d.fillColor.b,
       d.saturation,
     ]);
-    expect(f[231], GlassConstants.standard.clearDark.dim);
+    expect(f[239], GlassConstants.standard.clearDark.dim);
   });
 
   test('opaque and touch', () {

@@ -17,7 +17,15 @@ STANDARD = json.loads((ROOT / "tool/fidelity/standard_constants.json").read_text
 PARITY_SCENES = [s["id"] for s in SPEC["scenes"]]  # all 75
 
 
-@pytest.mark.skipif(not BASE.exists(), reason="needs build/fidelity/final captures")
+# Skips (all 75 cases, visibly in `pytest -rs`) when the captures are absent;
+# they are not committed. Recreate them with:
+#   RENDERERS=flutter tool/fidelity/capture.sh build/fidelity/final
+PARITY_SKIP = ("75-scene parity needs Flutter captures of the shipped build in "
+               "build/fidelity/final; run `RENDERERS=flutter tool/fidelity/capture.sh "
+               "build/fidelity/final` (see tool/fidelity/README.md)")
+
+
+@pytest.mark.skipif(not BASE.exists(), reason=PARITY_SKIP)
 @pytest.mark.parametrize("scene_id", PARITY_SCENES)
 def test_model_matches_flutter_output(scene_id):
     scene = next(s for s in SPEC["scenes"] if s["id"] == scene_id)
@@ -129,3 +137,58 @@ def test_fill_scales_with_shape_size():
     assert np.abs(ia - ib).max() <= 1 / 255 + 1e-9
     ic, _ = render_window(bg, scene, STANDARD)
     assert np.abs(ia - ic).max() > 10 / 255
+
+
+# --- frost v2 (Task 17c) ----------------------------------------------------
+
+
+def test_frost_taps_are_a_two_ring_gaussian_quadrature():
+    """16 taps on two rings (6 + 10) whose radii and weights are the 2-node
+    Gauss-Laguerre rule for a 2-D Gaussian: weights sum to 1, zero mean and
+    the Gaussian's second moment 2 sigma^2."""
+    from glass_model import frost_taps
+    t = frost_taps(10.0)
+    assert t.shape == (16, 3)
+    assert t[:, 2].sum() == pytest.approx(1.0)
+    assert np.abs((t[:, :2] * t[:, 2:3]).sum(0)).max() < 1e-9
+    assert ((t[:, 0] ** 2 + t[:, 1] ** 2) * t[:, 2]).sum() == pytest.approx(200.0)
+    r = np.hypot(t[:, 0], t[:, 1])
+    assert np.allclose(r[:6], 10 * np.sqrt(2 * (2 - np.sqrt(2))))
+    assert np.allclose(r[6:], 10 * np.sqrt(2 * (2 + np.sqrt(2))))
+
+
+def test_frost_wide_mix_weight():
+    """w = clamp(mix(edge, centre, sampleDepth / halfMin) - drop x max(0, 1 -
+    halfMin / sizeRef), 0, 1); sizeRef <= 0 disables the size term."""
+    from glass_model import frost_wide_mix
+    v = {"frostWideMixEdge": 0.3, "frostWideMixCentre": 1.3,
+         "frostWideSizeRef": 80.0, "frostWideSizeDrop": 2.0}
+    assert frost_wide_mix(0.0, 100.0, v) == pytest.approx(0.3)
+    assert frost_wide_mix(50.0, 100.0, v) == pytest.approx(0.8)
+    assert frost_wide_mix(100.0, 100.0, v) == pytest.approx(1.0)  # clamped
+    # halfMin 40 below sizeRef 80: minus 2 x 0.5.
+    assert frost_wide_mix(40.0, 40.0, v) == pytest.approx(0.3)
+    assert frost_wide_mix(0.0, 40.0, v) == pytest.approx(0.0)
+    v["frostWideSizeRef"] = 0.0
+    assert frost_wide_mix(0.0, 40.0, v) == pytest.approx(0.3)
+
+
+def test_frost_off_by_default_and_wide_mix_lowers_contrast():
+    from glass_model import render_window
+    x = np.arange(1206) + 0.5
+    bg = np.broadcast_to((0.5 + 0.35 * np.cos(2 * np.pi * x / 64))[None, :, None],
+                         (2622, 1206, 3)).copy()
+    scene = _scene("regular-rect16-photo-light")
+    off = json.loads(json.dumps(STANDARD))
+    for k in ("frostWideSigma", "frostWideMixEdge", "frostWideMixCentre",
+              "frostWideSizeRef", "frostWideSizeDrop"):
+        off["regular"][k] = 0.0
+    a, _ = render_window(bg, scene, STANDARD)
+    b, _ = render_window(bg, scene, off)
+    if all(STANDARD["regular"].get(k, 0) == 0 for k in ("frostWideMixEdge", "frostWideMixCentre")):
+        assert np.array_equal(a, b)  # zero mix: frost v1 output exactly
+    on = json.loads(json.dumps(off))
+    on["regular"].update(frostWideSigma=6.0, frostWideMixEdge=1.0, frostWideMixCentre=1.0)
+    c, _ = render_window(bg, scene, on)
+    inner = (slice(150, -150), slice(150, -150))
+    assert c[inner].std() < 0.8 * b[inner].std()

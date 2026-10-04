@@ -120,6 +120,53 @@ void main() {
     expect(c == GlassConstants.standard, isFalse);
   });
 
+  test('frost v2 keys default to 0, read, round-trip and compare', () {
+    const plain = GlassVariantConstants(
+      blurSigma: 1,
+      lensBand: 1,
+      lensStrength: 1,
+      lensDecay: 1,
+      lensSizeRef: 0,
+      dispersion: 0,
+      rimWidth: 1,
+      rimIntensity: 0,
+      fillColor: Color(0xFFFFFFFF),
+      fillOpacity: 0,
+      saturation: 1,
+      dim: 0,
+      shadowRadius: 0,
+      shadowOpacity: 0,
+      tintStrength: 0,
+    );
+    expect(plain.frostWideSigma, 0);
+    expect(plain.frostWideMixEdge, 0);
+    expect(plain.frostWideMixCentre, 0);
+    expect(plain.frostWideSizeRef, 0);
+    expect(plain.frostWideSizeDrop, 0);
+    final c = GlassConstants.fromJson({
+      'clearDark': {
+        'frostWideSigma': 4.5,
+        'frostWideMixEdge': 0.2,
+        'frostWideMixCentre': 0.9,
+        'frostWideSizeRef': 70.0,
+        'frostWideSizeDrop': 1.5,
+      },
+    });
+    expect(c.clearDark.frostWideSigma, 4.5);
+    expect(c.clearDark.frostWideMixEdge, 0.2);
+    expect(c.clearDark.frostWideMixCentre, 0.9);
+    expect(c.clearDark.frostWideSizeRef, 70);
+    expect(c.clearDark.frostWideSizeDrop, 1.5);
+    expect(c.clearDark.blurSigma, GlassConstants.standard.clearDark.blurSigma);
+    expect(c.clearDark.toJson()['frostWideMixCentre'], 0.9);
+    expect(GlassConstants.fromJson(c.toJson()), c);
+    expect(c == GlassConstants.standard, isFalse);
+    expect(
+      c.clearDark.hashCode == GlassConstants.standard.clearDark.hashCode,
+      isFalse,
+    );
+  });
+
   test('different fill colours are not equal', () {
     final a = GlassConstants.fromJson({
       'regular': {'fillColor': '#000000'},

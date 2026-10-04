@@ -11,9 +11,11 @@ uniform vec4 uTouch;       // x, y, glow, glowRadius px
 uniform vec4 uRects[16];   // x, y, w, h px
 uniform vec4 uInfo[16];    // radius px, variant(0 regular, 1 clear), cornerExponent (0 = global), fill scale
 uniform vec4 uTints[16];   // rgb, strength
-uniform vec4 uVar[8];      // per variant (regular A-D, then clear A-D):
+uniform vec4 uVar[12];     // per variant (regular A-F, then clear A-F):
                            //   A(lens decay px, band px, lens strength, disp) B(rimW, rimI, fillOpacity, dim)
                            //   C(shadowR, shadowO, tintS, lens size ref px) D(fillR, fillG, fillB, saturation)
+                           //   E(frost wide sigma px, wide mix edge, wide mix centre, wide size ref px)
+                           //   F(wide size drop, -, -, -)
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -105,10 +107,12 @@ void main() {
   fillScale /= wsum;
   tint /= wsum;
 
-  vec4 A = mix(uVar[0], uVar[4], clearMix);
-  vec4 B = mix(uVar[1], uVar[5], clearMix);
-  vec4 C = mix(uVar[2], uVar[6], clearMix);
-  vec4 D = mix(uVar[3], uVar[7], clearMix);
+  vec4 A = mix(uVar[0], uVar[6], clearMix);
+  vec4 B = mix(uVar[1], uVar[7], clearMix);
+  vec4 C = mix(uVar[2], uVar[8], clearMix);
+  vec4 D = mix(uVar[3], uVar[9], clearMix);
+  vec4 E = mix(uVar[4], uVar[10], clearMix);
+  vec4 F = mix(uVar[5], uVar[11], clearMix);
   float hc = uGlobal2.z;
 
   float inside = 1.0 - smoothstep(-0.75, 0.75, d);
@@ -152,7 +156,34 @@ void main() {
   float lensAmt = A.z * (1.0 - 0.5 * hc) * band * sc * v;
   vec2 sp = px + nrm * lensAmt;
 
+  // Frost v2, measured from SwiftUI (Task 17c, tool/fidelity/measure_frost.py):
+  // a sharp core plus a wide tail, (1 - w) G(core) + w G(core + wide). The
+  // texture is already blurred by the core sigma; the tail is 16 taps of it
+  // on two rings (6 + 10; the 2-node Gauss-Laguerre rule for a 2-D Gaussian
+  // of sigma E.x), so the input is low-passed and the sparse kernel does not
+  // alias. w follows the depth of the point the lens samples (the band shows
+  // the interior mirrored, with the interior's frost) relative to the half
+  // shorter side, minus a size term for small shapes. Cost: 16 extra taps,
+  // only where w > 0 (glass_model.py places them identically).
   vec3 col = tex(sp).rgb;
+  float hmw = max(halfMin, 1.0);
+  float wideW = E.y + (E.z - E.y) * (depth - lensAmt) / hmw;
+  if (E.w > 0.0) wideW -= F.x * max(0.0, 1.0 - hmw / E.w);
+  wideW = E.x > 0.0 ? clamp(wideW, 0.0, 1.0) : 0.0;
+  if (wideW > 0.0) {
+    vec3 ring1 = vec3(0.0);
+    for (int i = 0; i < 6; i++) {
+      float a = float(i) * 1.0471976;
+      ring1 += tex(sp + (E.x * 1.0823922) * vec2(cos(a), sin(a))).rgb;
+    }
+    vec3 ring2 = vec3(0.0);
+    for (int i = 0; i < 10; i++) {
+      float a = 0.31415927 + float(i) * 0.62831853;
+      ring2 += tex(sp + (E.x * 2.6131259) * vec2(cos(a), sin(a))).rgb;
+    }
+    vec3 wide = ring1 * (0.8535534 / 6.0) + ring2 * (0.1464466 / 10.0);
+    col = mix(col, wide, wideW);
+  }
   vec2 disp = nrm * lensAmt * A.w;
   col.r = mix(col.r, tex(sp + disp).r, v);
   col.b = mix(col.b, tex(sp - disp).b, v);

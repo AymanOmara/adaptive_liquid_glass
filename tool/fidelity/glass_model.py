@@ -182,6 +182,45 @@ def blurred_window(bg, sigma_px, box):
     return _blurred_cached(key, round(float(sigma_px), 4), tuple(int(v) for v in box))
 
 
+# --- frost v2 (Task 17c) -------------------------------------------------------
+#
+# SwiftUI's frost is a sharp core plus a wide tail whose weight grows with the
+# sampled point's depth (measure_frost.py): (1 - w) G(core) + w G(core (+) wide).
+# The composed ImageFilter.blur is the core; the shader adds the wide part as
+# 16 taps of the already blurred texture on two rings, the 2-node
+# Gauss-Laguerre rule for a 2-D Gaussian of sigma `frostWideSigma`.
+
+_SQ2 = np.sqrt(2.0)
+FROST_RINGS = ((6, 0.0, np.sqrt(2 * (2 - _SQ2)), (2 + _SQ2) / 4),
+               (10, np.pi / 10, np.sqrt(2 * (2 + _SQ2)), (2 - _SQ2) / 4))
+
+
+def frost_taps(sigma_px):
+    """(16, 3) array of tap (dx, dy, weight) for a wide Gaussian of
+    `sigma_px`, exactly as the shader's two loops place them."""
+    out = []
+    for n, phase, radius, weight in FROST_RINGS:
+        for i in range(n):
+            a = phase + i * 2 * np.pi / n
+            out.append((radius * sigma_px * np.cos(a), radius * sigma_px * np.sin(a), weight / n))
+    return np.array(out)
+
+
+def frost_wide_mix(sample_depth, half_min, v):
+    """Weight of the wide frost at a pixel whose lens sample lies
+    `sample_depth` inside a shape of half shorter side `half_min` (same
+    unit): mix(edge, centre, sample_depth / half_min) minus
+    frostWideSizeDrop x (1 - half_min / frostWideSizeRef) below the size ref,
+    clamped to [0, 1]."""
+    e, c = float(v["frostWideMixEdge"]), float(v["frostWideMixCentre"])
+    ref, drop = float(v["frostWideSizeRef"]), float(v["frostWideSizeDrop"])
+    hm = np.maximum(half_min, 1.0)
+    w = e + (c - e) * sample_depth / hm
+    if ref > 0:
+        w = w - drop * np.maximum(0.0, 1.0 - hm / ref)
+    return np.clip(w, 0.0, 1.0)
+
+
 def fill_size_factor(shape, v):
     """Per-shape fillOpacity factor as packGlassUniforms writes uInfo.w
     (Task 17b): 1 - fillSizeDrop * (1 - min(1, halfMin / fillSizeRef)), 1 when
@@ -253,6 +292,9 @@ def _uvar(constants, brightness, scale):
             "C": np.array([v["shadowRadius"] * scale, v["shadowOpacity"],
                            v["tintStrength"], v["lensSizeRef"] * scale]),
             "D": np.concatenate([parse_hex(v["fillColor"]), [v["saturation"]]]),
+            "E": np.array([v["frostWideSigma"] * scale, v["frostWideMixEdge"],
+                           v["frostWideMixCentre"], v["frostWideSizeRef"] * scale]),
+            "F": np.array([v["frostWideSizeDrop"], 0.0, 0.0, 0.0]),
         })
     return res
 
@@ -339,11 +381,11 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     uv = _uvar(constants, brightness, scale)
     if np.all(clear_mix == 0) or np.all(clear_mix == 1):
         u = uv[1] if np.all(clear_mix == 1) else uv[0]
-        A, B, C, D = u["A"], u["B"], u["C"], u["D"]
+        A, B, C, D, E, F = (u[n] for n in "ABCDEF")
     else:
         cm = np.asarray(clear_mix)[..., None]
-        A, B, C, D = (uv[0][n] * (1 - cm) + uv[1][n] * cm for n in "ABCD")
-    A, B, C, D = (np.broadcast_to(x, g["d"].shape + (4,)) for x in (A, B, C, D))
+        A, B, C, D, E, F = (uv[0][n] * (1 - cm) + uv[1][n] * cm for n in "ABCDEF")
+    A, B, C, D, E, F = (np.broadcast_to(x, g["d"].shape + (4,)) for x in (A, B, C, D, E, F))
 
     d, nx, ny, px, py = g["d"], g["nx"], g["ny"], g["px"], g["py"]
     inside = 1.0 - _smoothstep(-0.75, 0.75, d)
@@ -370,7 +412,14 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     sigma = group_blur_sigma(scene, constants)
     if blur_scale is None:
         blur_scale = 1.0
-    reach = float(np.max(np.abs(lens_amt) * (1.0 + np.abs(A[..., 3])))) + 2.0
+    # Frost v2: weight of the wide taps from the sampled point's depth.
+    hm = np.maximum(g["half_min"], 1.0)
+    wide_w = E[..., 1] + (E[..., 2] - E[..., 1]) * (depth - lens_amt) / hm
+    wide_w = wide_w - np.where(E[..., 3] > 0, F[..., 0] * np.maximum(
+        0.0, 1.0 - hm / np.maximum(E[..., 3], 1e-6)), 0.0)
+    wide_w = np.where(E[..., 0] > 0, np.clip(wide_w, 0.0, 1.0), 0.0)
+    wide_r = FROST_RINGS[1][2] * float(np.max(E[..., 0]))
+    reach = float(np.max(np.abs(lens_amt) * (1.0 + np.abs(A[..., 3])))) + wide_r + 2.0
     reach = int(np.ceil(reach / TAP_BUCKET_PX)) * TAP_BUCKET_PX
     tx0, ty0 = bx0 - reach, by0 - reach
     tex = blurred_window(bg, sigma * scale * blur_scale,
@@ -379,6 +428,14 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     sharp = bg[by0:by1, bx0:bx1]
     m = inside > 0  # the shader returns the shadow only where inside <= 0
     col = _sample(tex, tx0, ty0, spx[m], spy[m])
+    wm = wide_w[m]
+    if np.any(wm > 0):
+        unit = frost_taps(1.0)
+        sxm = E[..., 0][m]
+        wide = 0.0
+        for dx, dy, wt in unit:
+            wide = wide + wt * _sample(tex, tx0, ty0, spx[m] + dx * sxm, spy[m] + dy * sxm)
+        col = col + (wide - col) * wm[:, None]
     tm = t[m]
     r2 = _sample(tex, tx0, ty0, spx[m] + dxp[m], spy[m] + dyp[m])[:, 0]
     b2 = _sample(tex, tx0, ty0, spx[m] - dxp[m], spy[m] - dyp[m])[:, 2]

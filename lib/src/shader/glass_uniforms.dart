@@ -129,7 +129,7 @@ List<GlassShapeUniform> mergeUnions(List<GlassShapeUniform> shapes) {
 }
 
 /// Number of user floats after `uSize`.
-const int kGlassUniformFloats = 240;
+const int kGlassUniformFloats = 256;
 
 /// Packs [u] into the float layout documented in `shaders/liquid_glass.frag`:
 ///
@@ -142,12 +142,14 @@ const int kGlassUniformFloats = 240;
 /// | 16–79   | uRects[16]     | x, y, w, h px                             |
 /// | 80–143  | uInfo[16]      | radius px, clear?, cornerExponent, fill scale |
 /// | 144–207 | uTints[16]     | rgb, strength                             |
-/// | 208–239 | uVar[8]        | regular A B C D, then clear A B C D       |
+/// | 208–255 | uVar[12]       | regular A–F, then clear A–F               |
 ///
 /// Per variant: A = (lens decay px, lens band px, lens strength, dispersion),
 /// B = (rim width px, rim intensity, fillOpacity, dim),
 /// C = (shadow radius px, shadow opacity, tint strength, lens size ref px),
-/// D = (fill r, g, b, saturation).
+/// D = (fill r, g, b, saturation),
+/// E = (frost wide sigma px, wide mix edge, wide mix centre, wide size ref px),
+/// F = (wide size drop, -, -, -).
 List<double> packGlassUniforms(GlassFrameUniforms u) {
   final dpr = u.devicePixelRatio;
   final shapes = u.shapes.where(_drawable).take(_maxShapes).toList();
@@ -228,7 +230,14 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
       v.fillColor.b,
       v.saturation,
     ]);
-    k += 16;
+    f.setAll(k + 16, [
+      v.frostWideSigma * dpr,
+      v.frostWideMixEdge,
+      v.frostWideMixCentre,
+      v.frostWideSizeRef * dpr,
+    ]);
+    f[k + 20] = v.frostWideSizeDrop;
+    k += 24;
   }
   return f;
 }

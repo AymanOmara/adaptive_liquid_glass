@@ -41,6 +41,11 @@ class GlassVariantConstants {
   const GlassVariantConstants({
     required this.blurSigma,
     this.blurSizeRef = 0,
+    this.frostWideSigma = 0,
+    this.frostWideMixEdge = 0,
+    this.frostWideMixCentre = 0,
+    this.frostWideSizeRef = 0,
+    this.frostWideSizeDrop = 0,
     required this.lensBand,
     required this.lensStrength,
     required this.lensDecay,
@@ -66,6 +71,11 @@ class GlassVariantConstants {
   ) => GlassVariantConstants(
     blurSigma: _d(j, 'blurSigma', base.blurSigma),
     blurSizeRef: _d(j, 'blurSizeRef', base.blurSizeRef),
+    frostWideSigma: _d(j, 'frostWideSigma', base.frostWideSigma),
+    frostWideMixEdge: _d(j, 'frostWideMixEdge', base.frostWideMixEdge),
+    frostWideMixCentre: _d(j, 'frostWideMixCentre', base.frostWideMixCentre),
+    frostWideSizeRef: _d(j, 'frostWideSizeRef', base.frostWideSizeRef),
+    frostWideSizeDrop: _d(j, 'frostWideSizeDrop', base.frostWideSizeDrop),
     lensBand: _d(j, 'lensBand', base.lensBand),
     lensStrength: _d(j, 'lensStrength', base.lensStrength),
     lensDecay: _d(j, 'lensDecay', base.lensDecay),
@@ -103,6 +113,36 @@ class GlassVariantConstants {
   /// the shape's size). A group runs one blur, so it uses the largest
   /// member's σ.
   final double blurSizeRef;
+
+  /// Sigma of the wide frost tail added in the shader on top of the
+  /// [blurSigma] core (logical px; 0 disables the tail).
+  ///
+  /// SwiftUI's frost is a sharp core plus a wide tail (Task 17c, measured
+  /// with five code periods by `tool/fidelity/measure_frost.py`):
+  /// `(1 − w)·G(core) + w·G(core ⊕ tail)`. The composed blur is the core;
+  /// the shader samples the blurred texture 16 times on two rings (a 2-node
+  /// Gauss–Laguerre rule for a 2-D Gaussian of this sigma) and mixes that in
+  /// by the weight `w` of [frostWideMixEdge].
+  final double frostWideSigma;
+
+  /// Wide-tail weight where the lens samples at the outline; with
+  /// [frostWideMixCentre] it gives `w = mix(edge, centre, sampleDepth /
+  /// halfMin)`, minus the size term of [frostWideSizeRef], clamped to 0..1.
+  /// `sampleDepth` is the depth of the point the lens samples, so the band
+  /// (which mirrors the interior) gets the interior's weight.
+  final double frostWideMixEdge;
+
+  /// Wide-tail weight where the lens samples at the shape's centre line
+  /// (sample depth = half the shorter side); see [frostWideMixEdge].
+  final double frostWideMixCentre;
+
+  /// Shapes whose half shorter side is below this lose wide-tail weight:
+  /// `w −= `[frostWideSizeDrop]` × (1 − halfMin / frostWideSizeRef)`. 0
+  /// disables the size term.
+  final double frostWideSizeRef;
+
+  /// Wide-tail weight lost per unit of `1 − halfMin / `[frostWideSizeRef].
+  final double frostWideSizeDrop;
 
   /// Depth inside the outline where the edge lens ends (displacement 0).
   ///
@@ -175,6 +215,11 @@ class GlassVariantConstants {
   Map<String, Object> toJson() => {
     'blurSigma': blurSigma,
     'blurSizeRef': blurSizeRef,
+    'frostWideSigma': frostWideSigma,
+    'frostWideMixEdge': frostWideMixEdge,
+    'frostWideMixCentre': frostWideMixCentre,
+    'frostWideSizeRef': frostWideSizeRef,
+    'frostWideSizeDrop': frostWideSizeDrop,
     'lensBand': lensBand,
     'lensStrength': lensStrength,
     'lensDecay': lensDecay,
@@ -297,18 +342,25 @@ class GlassConstants {
     ),
   );
 
-  /// The shipped values (Task 17b): the edge lens measured from SwiftUI in
+  /// The shipped values (Task 17c): the edge lens measured from SwiftUI in
   /// Task 15c, refined together with every other constant by fitting the
   /// NumPy model (`tool/fidelity/fit.py`) to SwiftUI screenshots of
   /// `tool/scenes/scenes.json`; frost blur and fill scale with shape size as
-  /// measured from the coded captures. Device-verified on the reference
-  /// simulator: 41/75 scenes pass, median SSIM 0.981, median ΔE 1.50
-  /// (`docs/superpowers/notes/fidelity-status.md`).
+  /// measured from the coded captures, and the frost wide tail
+  /// (`frostWide*`, sharp core + wide component) from the Task 17c
+  /// measurement (`tool/fidelity/measure_frost.py`). Device-verified on the
+  /// reference simulator: 42/75 scenes pass, median SSIM 0.981, median ΔE
+  /// 1.56 (`docs/superpowers/notes/fidelity-status.md`).
   static const GlassConstants standard = GlassConstants(
-    // Device median SSIM/ΔE 0.988/1.63 (light, 5/12); tinted uses tintStrength.
+    // Device median SSIM/ΔE 0.988/1.65 (light, 6/12); tinted uses tintStrength.
     regular: GlassVariantConstants(
       blurSigma: 5.9236,
       blurSizeRef: 59.9762,
+      frostWideSigma: 7.0367,
+      frostWideMixEdge: 0.4052,
+      frostWideMixCentre: 0.9298,
+      frostWideSizeRef: 75.4199,
+      frostWideSizeDrop: 1.1423,
       lensBand: 18.2615,
       lensStrength: -2.6351,
       lensDecay: 6.1712,
@@ -326,10 +378,15 @@ class GlassConstants {
       shadowOpacity: 0.0494,
       tintStrength: 1.0219,
     ),
-    // Device median SSIM/ΔE 0.932/1.92 (4/12).
+    // Device median SSIM/ΔE 0.937/1.98 (4/12).
     clear: GlassVariantConstants(
       blurSigma: 1.3993,
       blurSizeRef: 0,
+      frostWideSigma: 3.7541,
+      frostWideMixEdge: -0.0591,
+      frostWideMixCentre: 0.1981,
+      frostWideSizeRef: 85.2463,
+      frostWideSizeDrop: 0.0002,
       lensBand: 18.442,
       lensStrength: -2.5235,
       lensDecay: 6.5573,
@@ -347,10 +404,15 @@ class GlassConstants {
       shadowOpacity: 0.0015,
       tintStrength: 0.35,
     ),
-    // Device median SSIM/ΔE 0.978/1.54 (7/12); tinted uses tintStrength.
+    // Device median SSIM/ΔE 0.978/1.59 (7/12); tinted uses tintStrength.
     regularDark: GlassVariantConstants(
       blurSigma: 11.4482,
       blurSizeRef: 81.7199,
+      frostWideSigma: 7.556,
+      frostWideMixEdge: 0.3985,
+      frostWideMixCentre: 0.908,
+      frostWideSizeRef: 79.2109,
+      frostWideSizeDrop: 1.2716,
       lensBand: 18.8261,
       lensStrength: -2.6267,
       lensDecay: 5.9001,
@@ -368,10 +430,15 @@ class GlassConstants {
       shadowOpacity: 0.0264,
       tintStrength: 1.0271,
     ),
-    // Device median SSIM/ΔE 0.936/1.91 (4/12).
+    // Device median SSIM/ΔE 0.941/2.00 (4/12).
     clearDark: GlassVariantConstants(
       blurSigma: 1.3799,
       blurSizeRef: 0,
+      frostWideSigma: 3.7534,
+      frostWideMixEdge: -0.0595,
+      frostWideMixCentre: 0.2011,
+      frostWideSizeRef: 84.2326,
+      frostWideSizeDrop: 0.0038,
       lensBand: 18.42,
       lensStrength: -2.529,
       lensDecay: 6.52,
@@ -390,7 +457,7 @@ class GlassConstants {
       tintStrength: 0.35,
     ),
     cornerExponent: 2,
-    // Merge scenes (device): median SSIM 0.978, ΔE 2.03.
+    // Merge scenes (device): median SSIM 0.979, ΔE 2.01.
     mergeFactor: 0.8,
     motion: GlassMotionConstants(
       pressScale: 0.1,
