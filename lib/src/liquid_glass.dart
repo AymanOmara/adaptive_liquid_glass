@@ -112,7 +112,16 @@ class GlassMemberState extends State<GlassMember> {
     unionId: widget.unionId,
   );
 
+  /// The registry this member is registered with; null when it is not
+  /// drawn by the group's backdrop or when it overflowed.
   GlassRegistry? _registry;
+
+  /// The scope's registry last seen, registered with or not.
+  GlassRegistry? _scopeRegistry;
+
+  /// Scroll positions between this member and its group's scrollable.
+  final List<Listenable> _scrolls = [];
+
   bool _overflow = false;
   bool _fadeIn = false;
   bool _first = true;
@@ -129,11 +138,39 @@ class GlassMemberState extends State<GlassMember> {
     final target = scope.rendering == GlassMemberRendering.backdrop
         ? scope.registry
         : null;
-    if (!identical(target, _registry)) {
+    if (!identical(target, _scopeRegistry)) {
       _registry?.unregister(entry);
-      _registry = target;
-      _overflow = target != null && !target.register(entry);
+      _scopeRegistry = target;
+      final registered = target != null && target.register(entry);
+      _overflow = target != null && !registered;
+      _registry = registered ? target : null;
     }
+    _subscribeScrolls(scope.scrollable);
+  }
+
+  void _onScroll() => _registry?.markNeedsPaint();
+
+  /// Scrolling inside the group moves this member without repainting the
+  /// group: viewports are repaint boundaries. Listen to every scrollable
+  /// between this member and the one the group already tracks.
+  void _subscribeScrolls(ScrollableState? groupScrollable) {
+    _unsubscribeScrolls();
+    if (_registry == null) return;
+    var scrollable = Scrollable.maybeOf(context);
+    while (scrollable != null && !identical(scrollable, groupScrollable)) {
+      _scrolls.add(scrollable.position);
+      scrollable = Scrollable.maybeOf(scrollable.context);
+    }
+    for (final l in _scrolls) {
+      l.addListener(_onScroll);
+    }
+  }
+
+  void _unsubscribeScrolls() {
+    for (final l in _scrolls) {
+      l.removeListener(_onScroll);
+    }
+    _scrolls.clear();
   }
 
   @override
@@ -149,6 +186,7 @@ class GlassMemberState extends State<GlassMember> {
 
   @override
   void dispose() {
+    _unsubscribeScrolls();
     _registry?.unregister(entry);
     super.dispose();
   }
@@ -274,14 +312,17 @@ class RenderGlassMember extends RenderProxyBox {
   @override
   void paint(PaintingContext context, Offset offset) {
     super.paint(context, offset);
-    // A repaint boundary between us and the group can move us without
-    // repainting the group; catch that one frame later.
+    // This member repainted at a new global transform. The group may not
+    // have repainted this frame (a repaint boundary sits between us), so
+    // refresh it one frame late; the post-frame markNeedsPaint schedules
+    // that frame. A boundary that only moves its layer does not re-run this
+    // paint at all: scrolling is covered by the scroll listeners in
+    // GlassGroup and GlassMemberState, and route motion by GlassGroup.
     final t = getTransformTo(null);
     if (_lastTransform != null && _lastTransform != t) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
         if (attached) registry.markNeedsPaint();
       });
-      SchedulerBinding.instance.ensureVisualUpdate();
     }
     _lastTransform = t;
   }

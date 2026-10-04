@@ -114,6 +114,7 @@ void main() {
   testWidgets('glass inside a scrolled list tracks its position', (t) async {
     env();
     final controller = ScrollController();
+    addTearDown(controller.dispose);
     await t.pumpWidget(
       host(
         ListView(
@@ -133,6 +134,8 @@ void main() {
         ),
       ),
     );
+    // Settle the group's post-frame rebuild so only the scroll repaints.
+    await t.pump();
     controller.jumpTo(50);
     await t.pump();
     final f = backdropOf(t).debugLastFrame!;
@@ -140,6 +143,51 @@ void main() {
     expect(global.top, 250);
     expect(f.uniforms.shapes.single.rect, expected(t, global, f));
   }, variant: ios);
+
+  for (final axis in Axis.values) {
+    testWidgets('glass scrolling inside its own group tracks its position '
+        '(${axis.name})', (t) async {
+      env();
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await t.pumpWidget(
+        host(
+          GlassGroup(
+            // The viewport is a repaint boundary: scrolling repaints it, not
+            // the group's backdrop.
+            child: ListView(
+              controller: controller,
+              scrollDirection: axis,
+              children: [
+                for (var i = 0; i < 20; i++)
+                  SizedBox(
+                    width: 100,
+                    height: 100,
+                    child: i == 3
+                        ? const LiquidGlass(
+                            key: ValueKey('g'),
+                            child: SizedBox.expand(),
+                          )
+                        : null,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+      // Let the group's post-frame `settled` rebuild happen first, so the
+      // only change in the next frame is the scroll.
+      await t.pump();
+      final before = backdropOf(t).debugLastFrame!;
+      controller.jumpTo(50);
+      await t.pump();
+      final f = backdropOf(t).debugLastFrame!;
+      final global = t.getRect(find.byKey(const ValueKey('g')));
+      expect(axis == Axis.vertical ? global.top : global.left, 250);
+      expect(f, isNot(same(before)));
+      expect(f.uniforms.shapes.single.rect, expected(t, global, f));
+    }, variant: ios);
+  }
 
   testWidgets('glass tracks a route transition', (t) async {
     env();

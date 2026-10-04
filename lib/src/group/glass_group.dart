@@ -34,6 +34,7 @@ class GlassGroupScope extends InheritedWidget {
     required this.opaqueColor,
     required this.settled,
     required this.requestedMode,
+    this.scrollable,
     required super.child,
   });
 
@@ -55,6 +56,12 @@ class GlassGroupScope extends InheritedWidget {
   /// The group's requested mode, reused for overflow groups.
   final GlassRenderMode? requestedMode;
 
+  /// The nearest `Scrollable` enclosing the group, or null.
+  ///
+  /// The group repaints when it or any outer scrollable moves. Members
+  /// listen to the scrollables between themselves and this one.
+  final ScrollableState? scrollable;
+
   /// Nearest scope or null.
   static GlassGroupScope? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<GlassGroupScope>();
@@ -69,7 +76,8 @@ class GlassGroupScope extends InheritedWidget {
       old.constants != constants ||
       old.opaqueColor != opaqueColor ||
       old.settled != settled ||
-      old.requestedMode != requestedMode;
+      old.requestedMode != requestedMode ||
+      old.scrollable != scrollable;
 }
 
 /// Merges nearby `LiquidGlass` descendants into one shape, like SwiftUI's
@@ -188,6 +196,7 @@ class _GlassGroupState extends State<GlassGroup> {
       opaqueColor: opaque,
       settled: _settled,
       requestedMode: widget.mode,
+      scrollable: Scrollable.maybeOf(context),
       child: widget.child,
     );
     if (rendering != GlassMemberRendering.backdrop) return scoped;

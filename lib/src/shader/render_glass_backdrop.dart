@@ -252,10 +252,13 @@ class RenderGlassBackdrop extends RenderProxyBox {
 
     final union = drawn.map((d) => d.$2).reduce((a, b) => a.expandToInclude(b));
     final c = _config.constants;
-    final margin =
-        math.max(c.regular.shadowRadius, c.clear.shadowRadius) * 2 +
-        _config.spacing +
-        2;
+    final shadow = [
+      c.regular,
+      c.clear,
+      c.regularDark,
+      c.clearDark,
+    ].map((v) => v.shadowRadius).reduce(math.max);
+    final margin = shadow * 2 + _config.spacing + 2;
     final localBounds = MatrixUtils.transformRect(
       fromGlobal,
       union,
