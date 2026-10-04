@@ -84,13 +84,36 @@ def test_decode_recovers_displacement_through_blur_affine_and_saturation():
 def test_measure_scene_matrix():
     spec = json.loads((ROOT / "tool/scenes/measure.json").read_text())
     ids = [s["id"] for s in spec["scenes"]]
-    assert len(ids) == len(set(ids)) == 18 * 16
-    bases = {i.split("--")[0] for i in ids}
-    assert bases == {
+    lens_bases = {
         f"{v}-{s}-light" for v in ("regular", "clear")
         for s in ("capsule", "circle", "rect16", "rect28")} | {
         "regular-capsule-dark", "clear-capsule-dark"} | {
         f"{v}-rect16-s{h}-light" for v in ("regular", "clear") for h in (20, 50, 100, 150)}
+    # Task 17c: dark size series (x codes only) and tone flats.
+    dark_bases = {f"{v}-{s}-dark" for v in ("regular", "clear")
+                  for s in ("circle", "rect16", "rect16-s20", "rect16-s50", "rect16-s100",
+                            "rect16-s150")}
+    tone_bases = {f"{v}-{s}-{b}" for v in ("regular", "clear") for s in ("rect16", "capsule")
+                  for b in ("light", "dark")}
+    # Class probes: 9 probe shapes x 2 appearances over mid grey, the capsule
+    # over 7 fine flats x 2, 4 circle extremes, 3 merge pairs x 2.
+    probe_bases = {f"regular-{s}-{b}" for b in ("light", "dark") for s in (
+        "circle56", "circle60", "circle64", "circle68", "capsule60", "capsule64",
+        "capsule68", "capsule72", "rect16-124x60", "merge4", "merge16", "merge30")}
+    assert len(ids) == len(set(ids)) == 18 * 28 + 12 * 20 + 8 * 16 + 18 + 14 + 4 + 6
+    # The Task 15c / 17b scenes keep their ids and order.
+    assert ids[:18 * 16] == [f"{b}--{c}" for b in dict.fromkeys(
+        i.split("--")[0] for i in ids[:18 * 16]) for c in gb.CODES]
+    bases = {i.split("--")[0] for i in ids}
+    assert bases == lens_bases | dark_bases | tone_bases | probe_bases | {
+        "regular-circle-light", "regular-circle-dark"}
+    for b in lens_bases:
+        assert {f"{b}--{c}" for c in [*gb.CODES, *gb.FROST_CODES]} <= set(ids)
+    for b in dark_bases:
+        assert {f"{b}--{c}" for c in [*gb.CODES, *gb.FROST_CODES] if c.startswith("code-x")} \
+            <= set(ids)
+    for b in tone_bases:
+        assert {f"{b}--{c}" for c in gb.FLATS} <= set(ids)
     # Size series (Task 17b): half the shorter side is the named size, and the
     # decode window (shape + 16 pt) stays on the 402 x 874 pt screen.
     for s in spec["scenes"]:
@@ -98,7 +121,8 @@ def test_measure_scene_matrix():
         if "-s" in s["id"].split("--")[0].split("rect16")[-1]:
             assert min(sh["w"], sh["h"]) / 2 == int(s["id"].split("-s")[1].split("-")[0])
         assert sh["x"] >= 16 and sh["y"] + sh["h"] + 16 <= 874 and sh["x"] + sh["w"] + 16 <= 402
-    assert {s["background"] for s in spec["scenes"]} == set(gb.CODES)
+    assert {s["background"] for s in spec["scenes"]} == \
+        set(gb.CODES) | set(gb.FROST_CODES) | set(gb.FLATS) | set(gb.PROBE_FLATS)
 
 
 def test_shape_geometry_depth_and_normal():

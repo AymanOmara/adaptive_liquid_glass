@@ -2,6 +2,7 @@
 # Usage: tool/fidelity/capture.sh <run-dir> [scene-id-prefix]
 # Env: CONSTANTS='{"regular":{...}}'  RENDERERS="flutter swiftui"  SKIP_BUILD=1
 #      SCENES=tool/scenes/measure.json (scene list; default tool/scenes/scenes.json)
+#      SKIP_EXISTING=1 (keep screenshots already in the run dir)
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 UDID="${UDID:-E7A87B4A-3E48-44F8-A588-704D56774FF0}"
@@ -53,6 +54,7 @@ fi
 
 for id in $ids; do
   for r in $RENDERERS; do
+    [[ -n "${SKIP_EXISTING:-}" && -e "$OUT/$id.$r.png" ]] && continue
     xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
     extra=()
     [[ "$ASSET" != assets/scenes.json ]] && extra=(-sceneFile "$ASSET")

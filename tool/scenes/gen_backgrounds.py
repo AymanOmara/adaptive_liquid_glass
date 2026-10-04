@@ -64,6 +64,30 @@ CODES = {
 }
 
 
+# Task 17c: shorter periods (x only) for the frost transfer function. The
+# phase steps cancel the mean and the sampled coordinate is already known
+# from the 128/160 pair, so each gives the modulation |MTF(P)| per pixel.
+FROST_PERIODS = (32, 48, 80)
+FROST_CODES = {
+    f"code-x-p{period}-k{step}": ("x", period, step)
+    for period in FROST_PERIODS for step in range(4)
+}
+
+# Task 17c: uniform greys (8-bit code values) for the tone response; a flat
+# field is unchanged by any blur or lens, so the glass interior shows the
+# pure input -> output curve.
+FLAT_LEVELS = (0, 8, 16, 26, 38, 51, 64, 77, 128, 179, 191, 204, 217, 230, 242, 255)
+FLATS = {f"flat-v{v:03d}": v for v in FLAT_LEVELS}
+# Finer levels around the luminance where small regular glass switches between
+# its light and dark material (Task 17c class probes).
+PROBE_FLAT_LEVELS = (41, 44, 47, 220, 223, 226, 229)
+PROBE_FLATS = {f"flat-v{v:03d}": v for v in PROBE_FLAT_LEVELS}
+
+
+def flat(value: int, w: int = W, h: int = H) -> Image.Image:
+    return Image.new("RGB", (w, h), (value, value, value))
+
+
 def code(axis: str, period: int, step: int, w: int = W, h: int = H) -> Image.Image:
     n = w if axis == "x" else h
     u = np.arange(n) + 0.5
@@ -88,12 +112,15 @@ def gradient() -> Image.Image:
 if __name__ == "__main__":
     import sys
 
-    # `gen_backgrounds.py codes` writes only the measurement codes.
+    # `gen_backgrounds.py codes` writes only the measurement codes and flats.
     only_codes = sys.argv[1:] == ["codes"]
     OUT.mkdir(parents=True, exist_ok=True)
     for name, fn in [] if only_codes else [("photo", photo), ("text", text), ("gradient", gradient)]:
         fn().save(OUT / f"{name}.png", optimize=True)
         print("wrote", OUT / f"{name}.png")
-    for name, (axis, period, step) in CODES.items():
+    for name, (axis, period, step) in {**CODES, **FROST_CODES}.items():
         code(axis, period, step).save(OUT / f"{name}.png", optimize=True)
+        print("wrote", OUT / f"{name}.png")
+    for name, value in {**FLATS, **PROBE_FLATS}.items():
+        flat(value).save(OUT / f"{name}.png", optimize=True)
         print("wrote", OUT / f"{name}.png")

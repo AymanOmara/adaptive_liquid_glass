@@ -347,6 +347,9 @@ def main():
     for base, (scene, caps) in base_scenes(spec).items():
         if not base.startswith(args.only):
             continue
+        caps = {bg: c for bg, c in caps.items() if bg in CODES}  # flats/frost: measure_frost.py
+        if len(caps) < len(CODES):
+            continue  # x-only bases (Task 17c dark series)
         if not all((args.run_dir / f"{c}.{args.renderer}.png").exists() for c in caps.values()):
             print("MISSING", base)
             continue
