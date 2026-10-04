@@ -94,3 +94,38 @@ In v2, 65 of the 75 scenes improved in SSIM and 62 in ΔE. Regular glass now
 sits at a median SSIM of 0.939 and ΔE of 7.0. Clear glass in dark mode got
 worse: the worst scene is `clear-rect16-text-dark` at ΔE 25.4. Both runs use
 the starting constants; fitting (Task 17) comes next.
+
+## Model parity and fitting (Task 17)
+
+`glass_model.py` is a NumPy port of `shaders/liquid_glass.frag` (v2): the
+composed blur is a Gaussian on the full background (edge clamped), the shader
+runs at pixel centres in encoded sRGB, and the result is composited
+premultiplied srcOver onto the sharp background inside the backdrop clip.
+`test_glass_model.py` checks it against the device captures in
+`build/fidelity/baseline-v2` (bar: SSIM ≥ 0.99 and ΔE ≤ 1.0 per scene).
+
+**blurScale** (model-only; not a shipped constant): Impeller's effective blur
+is narrower than the requested σ, and the ratio shrinks as σ grows. The model
+uses a piecewise-linear `blurScale(σ)`:
+
+| requested σ (pt) | 0–2 | 8 | 12 | ≥ 20 |
+|---|---|---|---|---|
+| blurScale | 0.95 | 0.89 | 0.83 | 0.81 |
+
+σ 2 and 12 were calibrated by the parity sweep; σ 8 and 20 follow the probe's
+measured trend. With this table all 75 baseline-v2 scenes reproduce at SSIM
+≥ 0.990 (median 0.9986) and ΔE ≤ 0.54.
+
+Fitting (each stage takes the previous stage's JSON):
+
+```bash
+F="tool/fidelity/.venv/bin/python tool/fidelity/fit.py"
+$F corner      --start tool/fidelity/standard_constants.json --out build/fidelity/fit/s1.json
+$F regular     --start build/fidelity/fit/s1.json --out build/fidelity/fit/s2.json --restarts 20
+$F regularDark --start ... ; $F clear --start ... ; $F clearDark --start ...
+$F tinted      --start ... ; $F merge --start ... --out build/fidelity/fitted.json
+$F score       --start build/fidelity/fitted.json [--scenes <prefix>]
+```
+
+`--only KEY[,KEY]` frees a subset; `--procs` sets the worker count. The loss is
+the mean of `(1 − SSIM)·10 + ΔE/2` over the stage's scenes.

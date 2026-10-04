@@ -38,7 +38,7 @@ SCALE = SPEC["device"]["scale"]
 KEYS = ["blurSigma", "lensBand", "lensStrength", "dispersion", "rimWidth", "rimIntensity",
         "fillOpacity", "fillR", "fillG", "fillB", "saturation", "dim",
         "shadowRadius", "shadowOpacity", "tintStrength"]
-BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-1, 1),
+BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
           "dispersion": (0, 0.6), "rimWidth": (0.3, 4), "rimIntensity": (0, 1.5),
           "fillOpacity": (0, 1), "fillR": (0, 1), "fillG": (0, 1), "fillB": (0, 1),
           "saturation": (0, 1.5), "dim": (0, 0.6), "shadowRadius": (0, 40),
