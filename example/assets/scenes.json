@@ -1,0 +1,1390 @@
+{
+  "device": {
+    "width": 402,
+    "height": 874,
+    "scale": 3
+  },
+  "scenes": [
+    {
+      "id": "regular-capsule-photo-light",
+      "background": "photo",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 56,
+          "shape": "capsule",
+          "radius": 0,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-capsule-photo-dark",
+      "background": "photo",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 56,
+          "shape": "capsule",
+          "radius": 0,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-circle-photo-light",
+      "background": "photo",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 72,
+          "h": 72,
+          "shape": "circle",
+          "radius": 0,
+          "x": 165.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-circle-photo-dark",
+      "background": "photo",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 72,
+          "h": 72,
+          "shape": "circle",
+          "radius": 0,
+          "x": 165.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-photo-light",
+      "background": "photo",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-photo-dark",
+      "background": "photo",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect28-photo-light",
+      "background": "photo",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 28,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect28-photo-dark",
+      "background": "photo",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 28,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-capsule-photo-light",
+      "background": "photo",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 56,
+          "shape": "capsule",
+          "radius": 0,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-capsule-photo-dark",
+      "background": "photo",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 56,
+          "shape": "capsule",
+          "radius": 0,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-circle-photo-light",
+      "background": "photo",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 72,
+          "h": 72,
+          "shape": "circle",
+          "radius": 0,
+          "x": 165.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-circle-photo-dark",
+      "background": "photo",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 72,
+          "h": 72,
+          "shape": "circle",
+          "radius": 0,
+          "x": 165.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-photo-light",
+      "background": "photo",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-photo-dark",
+      "background": "photo",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect28-photo-light",
+      "background": "photo",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 28,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect28-photo-dark",
+      "background": "photo",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 28,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "tinted-capsule-photo-light",
+      "background": "photo",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 56,
+          "shape": "capsule",
+          "radius": 0,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-capsule-photo-dark",
+      "background": "photo",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 56,
+          "shape": "capsule",
+          "radius": 0,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-circle-photo-light",
+      "background": "photo",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 72,
+          "h": 72,
+          "shape": "circle",
+          "radius": 0,
+          "x": 165.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-circle-photo-dark",
+      "background": "photo",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 72,
+          "h": 72,
+          "shape": "circle",
+          "radius": 0,
+          "x": 165.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-rect16-photo-light",
+      "background": "photo",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-rect16-photo-dark",
+      "background": "photo",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-rect28-photo-light",
+      "background": "photo",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 28,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-rect28-photo-dark",
+      "background": "photo",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 28,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "regular-capsule-text-light",
+      "background": "text",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 56,
+          "shape": "capsule",
+          "radius": 0,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-capsule-text-dark",
+      "background": "text",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 56,
+          "shape": "capsule",
+          "radius": 0,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-circle-text-light",
+      "background": "text",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 72,
+          "h": 72,
+          "shape": "circle",
+          "radius": 0,
+          "x": 165.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-circle-text-dark",
+      "background": "text",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 72,
+          "h": 72,
+          "shape": "circle",
+          "radius": 0,
+          "x": 165.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-text-light",
+      "background": "text",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-text-dark",
+      "background": "text",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect28-text-light",
+      "background": "text",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 28,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect28-text-dark",
+      "background": "text",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 28,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-capsule-text-light",
+      "background": "text",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 56,
+          "shape": "capsule",
+          "radius": 0,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-capsule-text-dark",
+      "background": "text",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 56,
+          "shape": "capsule",
+          "radius": 0,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-circle-text-light",
+      "background": "text",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 72,
+          "h": 72,
+          "shape": "circle",
+          "radius": 0,
+          "x": 165.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-circle-text-dark",
+      "background": "text",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 72,
+          "h": 72,
+          "shape": "circle",
+          "radius": 0,
+          "x": 165.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-text-light",
+      "background": "text",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-text-dark",
+      "background": "text",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect28-text-light",
+      "background": "text",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 28,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect28-text-dark",
+      "background": "text",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 28,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "tinted-capsule-text-light",
+      "background": "text",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 56,
+          "shape": "capsule",
+          "radius": 0,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-capsule-text-dark",
+      "background": "text",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 56,
+          "shape": "capsule",
+          "radius": 0,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-circle-text-light",
+      "background": "text",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 72,
+          "h": 72,
+          "shape": "circle",
+          "radius": 0,
+          "x": 165.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-circle-text-dark",
+      "background": "text",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 72,
+          "h": 72,
+          "shape": "circle",
+          "radius": 0,
+          "x": 165.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-rect16-text-light",
+      "background": "text",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-rect16-text-dark",
+      "background": "text",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-rect28-text-light",
+      "background": "text",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 28,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-rect28-text-dark",
+      "background": "text",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 28,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "regular-capsule-gradient-light",
+      "background": "gradient",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 56,
+          "shape": "capsule",
+          "radius": 0,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-capsule-gradient-dark",
+      "background": "gradient",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 56,
+          "shape": "capsule",
+          "radius": 0,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-circle-gradient-light",
+      "background": "gradient",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 72,
+          "h": 72,
+          "shape": "circle",
+          "radius": 0,
+          "x": 165.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-circle-gradient-dark",
+      "background": "gradient",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 72,
+          "h": 72,
+          "shape": "circle",
+          "radius": 0,
+          "x": 165.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-gradient-light",
+      "background": "gradient",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-gradient-dark",
+      "background": "gradient",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect28-gradient-light",
+      "background": "gradient",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 28,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect28-gradient-dark",
+      "background": "gradient",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 28,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-capsule-gradient-light",
+      "background": "gradient",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 56,
+          "shape": "capsule",
+          "radius": 0,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-capsule-gradient-dark",
+      "background": "gradient",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 56,
+          "shape": "capsule",
+          "radius": 0,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-circle-gradient-light",
+      "background": "gradient",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 72,
+          "h": 72,
+          "shape": "circle",
+          "radius": 0,
+          "x": 165.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-circle-gradient-dark",
+      "background": "gradient",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 72,
+          "h": 72,
+          "shape": "circle",
+          "radius": 0,
+          "x": 165.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-gradient-light",
+      "background": "gradient",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-gradient-dark",
+      "background": "gradient",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect28-gradient-light",
+      "background": "gradient",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 28,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect28-gradient-dark",
+      "background": "gradient",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 28,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "tinted-capsule-gradient-light",
+      "background": "gradient",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 56,
+          "shape": "capsule",
+          "radius": 0,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-capsule-gradient-dark",
+      "background": "gradient",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 56,
+          "shape": "capsule",
+          "radius": 0,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-circle-gradient-light",
+      "background": "gradient",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 72,
+          "h": 72,
+          "shape": "circle",
+          "radius": 0,
+          "x": 165.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-circle-gradient-dark",
+      "background": "gradient",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 72,
+          "h": 72,
+          "shape": "circle",
+          "radius": 0,
+          "x": 165.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-rect16-gradient-light",
+      "background": "gradient",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-rect16-gradient-dark",
+      "background": "gradient",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-rect28-gradient-light",
+      "background": "gradient",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 28,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "tinted-rect28-gradient-dark",
+      "background": "gradient",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 28,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": "#0A84FF99"
+        }
+      ]
+    },
+    {
+      "id": "merge-gap4-photo-light",
+      "background": "photo",
+      "brightness": "light",
+      "spacing": 20,
+      "shapes": [
+        {
+          "x": 139.0,
+          "y": 600,
+          "w": 60,
+          "h": 60,
+          "shape": "circle",
+          "radius": 0,
+          "variant": "regular",
+          "tint": null
+        },
+        {
+          "x": 203.0,
+          "y": 600,
+          "w": 60,
+          "h": 60,
+          "shape": "circle",
+          "radius": 0,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "merge-gap16-photo-light",
+      "background": "photo",
+      "brightness": "light",
+      "spacing": 20,
+      "shapes": [
+        {
+          "x": 133.0,
+          "y": 600,
+          "w": 60,
+          "h": 60,
+          "shape": "circle",
+          "radius": 0,
+          "variant": "regular",
+          "tint": null
+        },
+        {
+          "x": 209.0,
+          "y": 600,
+          "w": 60,
+          "h": 60,
+          "shape": "circle",
+          "radius": 0,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "merge-gap30-photo-light",
+      "background": "photo",
+      "brightness": "light",
+      "spacing": 20,
+      "shapes": [
+        {
+          "x": 126.0,
+          "y": 600,
+          "w": 60,
+          "h": 60,
+          "shape": "circle",
+          "radius": 0,
+          "variant": "regular",
+          "tint": null
+        },
+        {
+          "x": 216.0,
+          "y": 600,
+          "w": 60,
+          "h": 60,
+          "shape": "circle",
+          "radius": 0,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    }
+  ],
+  "motion": []
+}
