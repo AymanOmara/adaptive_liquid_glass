@@ -90,6 +90,19 @@ void main() {
     expect(c == GlassConstants.standard, isFalse);
   });
 
+  test('blurSizeRef reads, overrides, round-trips and compares', () {
+    final c = GlassConstants.fromJson({
+      'clear': {'blurSizeRef': 25.5},
+    });
+    expect(c.clear.blurSizeRef, 25.5);
+    expect(c.clear.blurSigma, GlassConstants.standard.clear.blurSigma);
+    expect(c.regular, GlassConstants.standard.regular);
+    expect(c.clear.toJson()['blurSizeRef'], 25.5);
+    expect(GlassConstants.fromJson(c.toJson()), c);
+    expect(c == GlassConstants.standard, isFalse);
+    expect(c.clear.hashCode == GlassConstants.standard.clear.hashCode, isFalse);
+  });
+
   test('different fill colours are not equal', () {
     final a = GlassConstants.fromJson({
       'regular': {'fillColor': '#000000'},

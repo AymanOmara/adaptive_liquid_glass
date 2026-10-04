@@ -255,8 +255,17 @@ def fit_lens(samples, x0=(140.0, 19.0, 55.0, 100.0)):
     h = np.concatenate([s[1] for s in samples])
     y = np.concatenate([s[2] for s in samples])
     f = lambda p: lens_v3(d, h, *p) - y
-    r = least_squares(f, x0, bounds=([0, 0.5, 2, 1], [600, 200, 400, 2000]),
-                      loss="soft_l1", f_scale=2.0)
+    # size_ref has no gradient while it sits below every shape's half-size
+    # (s = 1 everywhere), so restart from a knee at each measured half-size
+    # too and keep the lowest cost.
+    starts = [tuple(x0)] + [(*x0[:3], float(k)) for k in np.unique(h)]
+    best = None
+    for st in starts:
+        r = least_squares(f, st, bounds=([0, 0.5, 2, 1], [600, 200, 400, 2000]),
+                          loss="soft_l1", f_scale=2.0)
+        if best is None or r.cost < best.cost:
+            best = r
+    r = best
     res = f(r.x)
     return {"amp": float(r.x[0]), "decay": float(r.x[1]), "band": float(r.x[2]),
             "size_ref": float(r.x[3]), "rms": float(np.sqrt(np.mean(res ** 2))),

@@ -223,6 +223,45 @@ void main() {
     expect(backdropOf(t).debugLastFrame!.blurSigma, c.regularDark.blurSigma);
   }, variant: ios);
 
+  testWidgets('frost blur scales down on shapes smaller than blurSizeRef', (
+    t,
+  ) async {
+    env();
+    Widget group(GlassConstants c, List<double> sizes) => LiquidGlassTheme(
+      data: LiquidGlassThemeData(constants: c),
+      child: host(
+        Center(
+          child: GlassGroup(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final s in sizes)
+                  LiquidGlass(
+                    child: SizedBox(width: s * 2, height: s),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    final c = GlassConstants.fromJson({
+      'regular': {'blurSigma': 6.0, 'blurSizeRef': 40.0},
+    });
+    // Half the shorter side 10 -> sigma 6 x 10 / 40.
+    await t.pumpWidget(group(c, [20]));
+    expect(backdropOf(t).debugLastFrame!.blurSigma, closeTo(1.5, 1e-9));
+    // The group blurs with the largest member's sigma (half side 50 -> 6).
+    await t.pumpWidget(group(c, [20, 100]));
+    expect(backdropOf(t).debugLastFrame!.blurSigma, closeTo(6.0, 1e-9));
+    // blurSizeRef 0 disables the scaling.
+    final off = GlassConstants.fromJson({
+      'regular': {'blurSigma': 6.0, 'blurSizeRef': 0.0},
+    });
+    await t.pumpWidget(group(off, [20]));
+    expect(backdropOf(t).debugLastFrame!.blurSigma, 6.0);
+  }, variant: ios);
+
   testWidgets('zero-size glass is skipped without errors', (t) async {
     env();
     await t.pumpWidget(at(Rect.zero, const LiquidGlass(child: SizedBox())));

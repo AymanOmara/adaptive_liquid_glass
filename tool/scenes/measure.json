@@ -2884,6 +2884,2310 @@
           "tint": null
         }
       ]
+    },
+    {
+      "id": "regular-rect16-s20-light--code-x-p128-k0",
+      "background": "code-x-p128-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s20-light--code-x-p128-k1",
+      "background": "code-x-p128-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s20-light--code-x-p128-k2",
+      "background": "code-x-p128-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s20-light--code-x-p128-k3",
+      "background": "code-x-p128-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s20-light--code-x-p160-k0",
+      "background": "code-x-p160-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s20-light--code-x-p160-k1",
+      "background": "code-x-p160-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s20-light--code-x-p160-k2",
+      "background": "code-x-p160-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s20-light--code-x-p160-k3",
+      "background": "code-x-p160-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s20-light--code-y-p128-k0",
+      "background": "code-y-p128-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s20-light--code-y-p128-k1",
+      "background": "code-y-p128-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s20-light--code-y-p128-k2",
+      "background": "code-y-p128-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s20-light--code-y-p128-k3",
+      "background": "code-y-p128-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s20-light--code-y-p160-k0",
+      "background": "code-y-p160-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s20-light--code-y-p160-k1",
+      "background": "code-y-p160-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s20-light--code-y-p160-k2",
+      "background": "code-y-p160-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s20-light--code-y-p160-k3",
+      "background": "code-y-p160-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s50-light--code-x-p128-k0",
+      "background": "code-x-p128-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s50-light--code-x-p128-k1",
+      "background": "code-x-p128-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s50-light--code-x-p128-k2",
+      "background": "code-x-p128-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s50-light--code-x-p128-k3",
+      "background": "code-x-p128-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s50-light--code-x-p160-k0",
+      "background": "code-x-p160-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s50-light--code-x-p160-k1",
+      "background": "code-x-p160-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s50-light--code-x-p160-k2",
+      "background": "code-x-p160-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s50-light--code-x-p160-k3",
+      "background": "code-x-p160-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s50-light--code-y-p128-k0",
+      "background": "code-y-p128-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s50-light--code-y-p128-k1",
+      "background": "code-y-p128-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s50-light--code-y-p128-k2",
+      "background": "code-y-p128-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s50-light--code-y-p128-k3",
+      "background": "code-y-p128-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s50-light--code-y-p160-k0",
+      "background": "code-y-p160-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s50-light--code-y-p160-k1",
+      "background": "code-y-p160-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s50-light--code-y-p160-k2",
+      "background": "code-y-p160-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s50-light--code-y-p160-k3",
+      "background": "code-y-p160-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s100-light--code-x-p128-k0",
+      "background": "code-x-p128-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s100-light--code-x-p128-k1",
+      "background": "code-x-p128-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s100-light--code-x-p128-k2",
+      "background": "code-x-p128-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s100-light--code-x-p128-k3",
+      "background": "code-x-p128-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s100-light--code-x-p160-k0",
+      "background": "code-x-p160-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s100-light--code-x-p160-k1",
+      "background": "code-x-p160-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s100-light--code-x-p160-k2",
+      "background": "code-x-p160-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s100-light--code-x-p160-k3",
+      "background": "code-x-p160-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s100-light--code-y-p128-k0",
+      "background": "code-y-p128-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s100-light--code-y-p128-k1",
+      "background": "code-y-p128-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s100-light--code-y-p128-k2",
+      "background": "code-y-p128-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s100-light--code-y-p128-k3",
+      "background": "code-y-p128-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s100-light--code-y-p160-k0",
+      "background": "code-y-p160-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s100-light--code-y-p160-k1",
+      "background": "code-y-p160-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s100-light--code-y-p160-k2",
+      "background": "code-y-p160-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s100-light--code-y-p160-k3",
+      "background": "code-y-p160-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s150-light--code-x-p128-k0",
+      "background": "code-x-p128-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s150-light--code-x-p128-k1",
+      "background": "code-x-p128-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s150-light--code-x-p128-k2",
+      "background": "code-x-p128-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s150-light--code-x-p128-k3",
+      "background": "code-x-p128-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s150-light--code-x-p160-k0",
+      "background": "code-x-p160-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s150-light--code-x-p160-k1",
+      "background": "code-x-p160-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s150-light--code-x-p160-k2",
+      "background": "code-x-p160-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s150-light--code-x-p160-k3",
+      "background": "code-x-p160-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s150-light--code-y-p128-k0",
+      "background": "code-y-p128-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s150-light--code-y-p128-k1",
+      "background": "code-y-p128-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s150-light--code-y-p128-k2",
+      "background": "code-y-p128-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s150-light--code-y-p128-k3",
+      "background": "code-y-p128-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s150-light--code-y-p160-k0",
+      "background": "code-y-p160-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s150-light--code-y-p160-k1",
+      "background": "code-y-p160-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s150-light--code-y-p160-k2",
+      "background": "code-y-p160-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-s150-light--code-y-p160-k3",
+      "background": "code-y-p160-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s20-light--code-x-p128-k0",
+      "background": "code-x-p128-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s20-light--code-x-p128-k1",
+      "background": "code-x-p128-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s20-light--code-x-p128-k2",
+      "background": "code-x-p128-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s20-light--code-x-p128-k3",
+      "background": "code-x-p128-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s20-light--code-x-p160-k0",
+      "background": "code-x-p160-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s20-light--code-x-p160-k1",
+      "background": "code-x-p160-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s20-light--code-x-p160-k2",
+      "background": "code-x-p160-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s20-light--code-x-p160-k3",
+      "background": "code-x-p160-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s20-light--code-y-p128-k0",
+      "background": "code-y-p128-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s20-light--code-y-p128-k1",
+      "background": "code-y-p128-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s20-light--code-y-p128-k2",
+      "background": "code-y-p128-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s20-light--code-y-p128-k3",
+      "background": "code-y-p128-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s20-light--code-y-p160-k0",
+      "background": "code-y-p160-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s20-light--code-y-p160-k1",
+      "background": "code-y-p160-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s20-light--code-y-p160-k2",
+      "background": "code-y-p160-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s20-light--code-y-p160-k3",
+      "background": "code-y-p160-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 200,
+          "h": 40,
+          "shape": "rect",
+          "radius": 16,
+          "x": 101.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s50-light--code-x-p128-k0",
+      "background": "code-x-p128-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s50-light--code-x-p128-k1",
+      "background": "code-x-p128-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s50-light--code-x-p128-k2",
+      "background": "code-x-p128-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s50-light--code-x-p128-k3",
+      "background": "code-x-p128-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s50-light--code-x-p160-k0",
+      "background": "code-x-p160-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s50-light--code-x-p160-k1",
+      "background": "code-x-p160-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s50-light--code-x-p160-k2",
+      "background": "code-x-p160-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s50-light--code-x-p160-k3",
+      "background": "code-x-p160-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s50-light--code-y-p128-k0",
+      "background": "code-y-p128-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s50-light--code-y-p128-k1",
+      "background": "code-y-p128-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s50-light--code-y-p128-k2",
+      "background": "code-y-p128-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s50-light--code-y-p128-k3",
+      "background": "code-y-p128-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s50-light--code-y-p160-k0",
+      "background": "code-y-p160-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s50-light--code-y-p160-k1",
+      "background": "code-y-p160-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s50-light--code-y-p160-k2",
+      "background": "code-y-p160-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s50-light--code-y-p160-k3",
+      "background": "code-y-p160-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 100,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s100-light--code-x-p128-k0",
+      "background": "code-x-p128-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s100-light--code-x-p128-k1",
+      "background": "code-x-p128-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s100-light--code-x-p128-k2",
+      "background": "code-x-p128-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s100-light--code-x-p128-k3",
+      "background": "code-x-p128-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s100-light--code-x-p160-k0",
+      "background": "code-x-p160-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s100-light--code-x-p160-k1",
+      "background": "code-x-p160-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s100-light--code-x-p160-k2",
+      "background": "code-x-p160-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s100-light--code-x-p160-k3",
+      "background": "code-x-p160-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s100-light--code-y-p128-k0",
+      "background": "code-y-p128-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s100-light--code-y-p128-k1",
+      "background": "code-y-p128-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s100-light--code-y-p128-k2",
+      "background": "code-y-p128-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s100-light--code-y-p128-k3",
+      "background": "code-y-p128-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s100-light--code-y-p160-k0",
+      "background": "code-y-p160-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s100-light--code-y-p160-k1",
+      "background": "code-y-p160-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s100-light--code-y-p160-k2",
+      "background": "code-y-p160-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s100-light--code-y-p160-k3",
+      "background": "code-y-p160-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 300,
+          "h": 200,
+          "shape": "rect",
+          "radius": 16,
+          "x": 51.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s150-light--code-x-p128-k0",
+      "background": "code-x-p128-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s150-light--code-x-p128-k1",
+      "background": "code-x-p128-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s150-light--code-x-p128-k2",
+      "background": "code-x-p128-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s150-light--code-x-p128-k3",
+      "background": "code-x-p128-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s150-light--code-x-p160-k0",
+      "background": "code-x-p160-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s150-light--code-x-p160-k1",
+      "background": "code-x-p160-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s150-light--code-x-p160-k2",
+      "background": "code-x-p160-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s150-light--code-x-p160-k3",
+      "background": "code-x-p160-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s150-light--code-y-p128-k0",
+      "background": "code-y-p128-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s150-light--code-y-p128-k1",
+      "background": "code-y-p128-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s150-light--code-y-p128-k2",
+      "background": "code-y-p128-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s150-light--code-y-p128-k3",
+      "background": "code-y-p128-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s150-light--code-y-p160-k0",
+      "background": "code-y-p160-k0",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s150-light--code-y-p160-k1",
+      "background": "code-y-p160-k1",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s150-light--code-y-p160-k2",
+      "background": "code-y-p160-k2",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-s150-light--code-y-p160-k3",
+      "background": "code-y-p160-k3",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 360,
+          "h": 300,
+          "shape": "rect",
+          "radius": 16,
+          "x": 21.0,
+          "y": 540,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
     }
   ],
   "motion": []

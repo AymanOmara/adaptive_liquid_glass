@@ -68,3 +68,52 @@ def test_lens_v3_clamps_negative_depth():
     from glass_model import lens_v3
     v = lens_v3(np.array([-0.7, 0.0]), 300.0, 140.0, 19.0, 54.0, 0.0)
     assert v[0] == v[1] == pytest.approx(-140.0)
+
+
+def _scene(sid):
+    return json.loads(json.dumps(next(s for s in SPEC["scenes"] if s["id"] == sid)))
+
+
+def test_group_blur_sigma_scales_with_shape_size():
+    """Task 17b: effective sigma = blurSigma * min(1, halfMin / blurSizeRef)
+    per shape (blurSizeRef 0 disables it); the group blurs with the largest."""
+    from glass_model import group_blur_sigma
+    c = json.loads(json.dumps(STANDARD))
+    c["regular"]["blurSigma"] = 6.0
+    c["regular"]["blurSizeRef"] = 0.0
+    circle = _scene("regular-circle-photo-light")  # 72 pt: halfMin 36
+    assert group_blur_sigma(circle, c) == pytest.approx(6.0)
+    c["regular"]["blurSizeRef"] = 72.0
+    assert group_blur_sigma(circle, c) == pytest.approx(3.0)
+    c["regular"]["blurSizeRef"] = 30.0
+    assert group_blur_sigma(circle, c) == pytest.approx(6.0)
+    # Two members: a small regular circle and a large clear rect -> the max.
+    c["regular"]["blurSizeRef"] = 72.0
+    c["clear"]["blurSigma"] = 2.0
+    c["clear"]["blurSizeRef"] = 0.0
+    mixed = _scene("regular-circle-photo-light")
+    mixed["shapes"].append({**_scene("clear-rect16-photo-light")["shapes"][0], "y": 100})
+    assert group_blur_sigma(mixed, c) == pytest.approx(3.0)
+    c["clear"]["blurSigma"] = 4.0
+    assert group_blur_sigma(mixed, c) == pytest.approx(4.0)
+    # Dark scenes use the dark sets.
+    dark = _scene("regular-circle-photo-dark")
+    c["regularDark"]["blurSigma"] = 5.0
+    c["regularDark"]["blurSizeRef"] = 0.0
+    assert group_blur_sigma(dark, c) == pytest.approx(5.0)
+
+
+def test_render_uses_size_scaled_blur():
+    from glass_model import render_window
+    bg = np.random.default_rng(1).random((2622, 1206, 3))
+    scene = _scene("regular-circle-photo-light")
+    a = json.loads(json.dumps(STANDARD))
+    a["regular"]["blurSizeRef"] = 72.0  # halfMin 36 -> half the sigma
+    b = json.loads(json.dumps(STANDARD))
+    b["regular"]["blurSizeRef"] = 0.0
+    b["regular"]["blurSigma"] = STANDARD["regular"]["blurSigma"] / 2
+    ia, _ = render_window(bg, scene, a)
+    ib, _ = render_window(bg, scene, b)
+    assert np.array_equal(ia, ib)
+    ic, _ = render_window(bg, scene, STANDARD)
+    assert not np.array_equal(ia, ic)

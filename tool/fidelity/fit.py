@@ -9,6 +9,9 @@ Stages (spec §15 / Task 17 v2), each fed with the previous one's output:
     fit.py clearDark     --start S --out O   # clear-*-dark
     fit.py tinted        --start S --out O   # tintStrength of regular/regularDark
     fit.py merge         --start S --out O   # 1-D scan of mergeFactor
+    fit.py polishRegular --start S --out O   # regular + regularDark (all keys) on
+                                             # regular-*, tinted-*, merge-*
+    fit.py polishClear   --start S --out O   # clear + clearDark on clear-*
     fit.py score         --start S [--scenes PREFIX]   # per-scene numbers only
 
 Loss: mean over the stage's scenes of (1 - SSIM) * 10 + ΔE / 2, scored in
@@ -35,16 +38,21 @@ SPEC = json.loads((ROOT / "tool/scenes/scenes.json").read_text())
 REF = ROOT / "build/fidelity/baseline-v2"
 SCALE = SPEC["device"]["scale"]
 
-KEYS = ["blurSigma", "lensBand", "lensStrength", "lensDecay", "lensSizeRef", "dispersion",
+KEYS = ["blurSigma", "blurSizeRef", "lensBand", "lensStrength", "lensDecay", "lensSizeRef", "dispersion",
         "rimWidth", "rimIntensity", "fillOpacity", "fillR", "fillG", "fillB", "saturation", "dim",
         "shadowRadius", "shadowOpacity", "tintStrength"]
 BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
+          # Task 17b: frost sigma x min(1, halfMin / blurSizeRef) (pt); 0 = off.
+          "blurSizeRef": (0, 200),
           # Lens v3 (pt); Task 15c measured 6.4-6.5 and 38.4 (regular) / 0 (clear).
           "lensDecay": (0.5, 20), "lensSizeRef": (0, 100),
           "dispersion": (0, 0.6), "rimWidth": (0.3, 4), "rimIntensity": (0, 1.5),
           "fillOpacity": (0, 1), "fillR": (0, 1), "fillG": (0, 1), "fillB": (0, 1),
           "saturation": (0, 1.5), "dim": (0, 0.6), "shadowRadius": (0, 40),
-          "shadowOpacity": (0, 0.5), "tintStrength": (0, 1)}
+          "shadowOpacity": (0, 0.5),
+          # The shader mixes toward the tint by tintStrength x alpha; SwiftUI's
+          # mix is ~0.6 at alpha 0.6 (Task 17b), so allow > 1.
+          "tintStrength": (0, 1.6)}
 # Keys that cannot change the score of a family (no tinted shape in it).
 NO_TINT = [k for k in KEYS if k != "tintStrength"]
 
@@ -62,6 +70,10 @@ def scenes_for(stage):
         return [x for x in s if x["id"].startswith("tinted-")]
     if stage == "merge":
         return [x for x in s if x["id"].startswith("merge-gap")]
+    if stage == "polishRegular":  # every scene drawn with the regular sets
+        return [x for x in s if x["id"].startswith(("regular-", "tinted-", "merge-"))]
+    if stage == "polishClear":
+        return [x for x in s if x["id"].startswith("clear-")]
     raise ValueError(stage)
 
 
@@ -249,7 +261,8 @@ def fit_sets(pool, c, targets, keys, restarts, maxfev, seed=0):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("stage", choices=["corner", "regular", "regularDark", "clear", "clearDark",
-                                      "tinted", "merge", "score"])
+                                      "tinted", "merge", "polishRegular", "polishClear",
+                                      "score"])
     ap.add_argument("--start", type=pathlib.Path,
                     default=ROOT / "tool/fidelity/standard_constants.json")
     ap.add_argument("--out", type=pathlib.Path)
@@ -258,6 +271,7 @@ def main():
     ap.add_argument("--restarts", type=int, default=0)
     ap.add_argument("--maxfev", type=int, default=3000)
     ap.add_argument("--procs", type=int, default=8)
+    ap.add_argument("--seed", type=int, default=0, help="random-restart seed")
     ap.add_argument("--lo", type=float, help="corner: scan start (default 2.0)")
     ap.add_argument("--hi", type=float, help="corner: scan end (default 6.0)")
     args = ap.parse_args()
@@ -279,13 +293,20 @@ def main():
         elif args.stage == "tinted":
             keys = ["tintStrength"]
             # Light and dark tinted scenes depend on different sets; fit each.
+            if args.only:
+                keys = args.only.split(",")
             for t, br in (("regular", "light"), ("regularDark", "dark")):
                 sub = Pool([s["id"] for s in scenes if s["brightness"] == br], args.procs)
-                c = fit_sets(sub, c, [t], keys, 0, args.maxfev)
+                c = fit_sets(sub, c, [t], keys, args.restarts, args.maxfev, seed=args.seed)
                 sub.close()
+        elif args.stage in ("polishRegular", "polishClear"):
+            base = "regular" if args.stage == "polishRegular" else "clear"
+            keys = args.only.split(",") if args.only else (KEYS if base == "regular" else NO_TINT)
+            c = fit_sets(pool, c, [base, base + "Dark"], keys, args.restarts, args.maxfev,
+                         seed=args.seed)
         elif args.stage != "score":
             keys = args.only.split(",") if args.only else NO_TINT
-            c = fit_sets(pool, c, [args.stage], keys, args.restarts, args.maxfev)
+            c = fit_sets(pool, c, [args.stage], keys, args.restarts, args.maxfev, seed=args.seed)
         report(pool.scores(model_constants(c)), "after")
     finally:
         pool.close()

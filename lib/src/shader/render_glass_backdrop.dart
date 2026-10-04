@@ -254,11 +254,19 @@ class RenderGlassBackdrop extends RenderProxyBox {
         ),
     ]);
 
-    // One blur per group: the largest sigma of the drawn variants. Known
-    // limitation: a group mixing regular and clear glass blurs the clear
-    // members as strongly as the regular ones.
+    // One blur per group: the largest of the drawn shapes' sigmas, each
+    // scaled down on shapes smaller than blurSizeRef. Known limitation: a
+    // group mixing regular and clear (or large and small) glass blurs every
+    // member as strongly as the strongest one.
     final blurSigma = drawn
-        .map((g) => c.of(g.entry.glass.variant, _config.brightness).blurSigma)
+        .map((g) {
+          final v = c.of(g.entry.glass.variant, _config.brightness);
+          final ref = v.blurSizeRef;
+          final halfMin = g.drawn.shortestSide / 2;
+          return ref > 0
+              ? v.blurSigma * math.min(1.0, halfMin / ref)
+              : v.blurSigma;
+        })
         .reduce(math.max);
 
     Offset? touch;

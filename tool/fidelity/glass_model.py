@@ -182,6 +182,20 @@ def blurred_window(bg, sigma_px, box):
     return _blurred_cached(key, round(float(sigma_px), 4), tuple(int(v) for v in box))
 
 
+def group_blur_sigma(scene, constants):
+    """Frost sigma (pt) of the group's one composed blur, as the renderer
+    picks it (Task 17b): per drawn shape `blurSigma * min(1, halfMin /
+    blurSizeRef)` (halfMin = half the shorter side; blurSizeRef <= 0 means no
+    scaling), and the largest of those."""
+    out = 0.0
+    for s in scene["shapes"]:
+        v = constants[variant_key(s, scene["brightness"])]
+        ref = float(v["blurSizeRef"])
+        k = min(1.0, 0.5 * min(s["w"], s["h"]) / ref) if ref > 0 else 1.0
+        out = max(out, float(v["blurSigma"]) * k)
+    return out
+
+
 # --- render -----------------------------------------------------------------
 
 # The fit scores only compare.py's region (shape bounds + 12 pt), so it renders
@@ -340,7 +354,7 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     dxp = nx * lens_amt * A[..., 3]
     dyp = ny * lens_amt * A[..., 3]
 
-    sigma = max(constants[variant_key(s, brightness)]["blurSigma"] for s in scene["shapes"])
+    sigma = group_blur_sigma(scene, constants)
     if blur_scale is None:
         blur_scale = 1.0
     reach = float(np.max(np.abs(lens_amt) * (1.0 + np.abs(A[..., 3])))) + 2.0

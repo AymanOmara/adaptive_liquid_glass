@@ -84,12 +84,20 @@ def test_decode_recovers_displacement_through_blur_affine_and_saturation():
 def test_measure_scene_matrix():
     spec = json.loads((ROOT / "tool/scenes/measure.json").read_text())
     ids = [s["id"] for s in spec["scenes"]]
-    assert len(ids) == len(set(ids)) == 10 * 16
+    assert len(ids) == len(set(ids)) == 18 * 16
     bases = {i.split("--")[0] for i in ids}
     assert bases == {
         f"{v}-{s}-light" for v in ("regular", "clear")
         for s in ("capsule", "circle", "rect16", "rect28")} | {
-        "regular-capsule-dark", "clear-capsule-dark"}
+        "regular-capsule-dark", "clear-capsule-dark"} | {
+        f"{v}-rect16-s{h}-light" for v in ("regular", "clear") for h in (20, 50, 100, 150)}
+    # Size series (Task 17b): half the shorter side is the named size, and the
+    # decode window (shape + 16 pt) stays on the 402 x 874 pt screen.
+    for s in spec["scenes"]:
+        sh = s["shapes"][0]
+        if "-s" in s["id"].split("--")[0].split("rect16")[-1]:
+            assert min(sh["w"], sh["h"]) / 2 == int(s["id"].split("-s")[1].split("-")[0])
+        assert sh["x"] >= 16 and sh["y"] + sh["h"] + 16 <= 874 and sh["x"] + sh["w"] + 16 <= 402
     assert {s["background"] for s in spec["scenes"]} == set(gb.CODES)
 
 
@@ -145,3 +153,22 @@ def test_field_samples_drop_fringe_order_disagreements(tmp_path):
              clipped=np.zeros((1, n), bool), amp=np.ones((1, n)), gap=gap)
     d, h, dn = ml.field_samples(tmp_path / "f.npz", 50.0, False, stride=1)
     assert d.size == n - 4
+
+
+def test_fit_lens_finds_a_knee_near_the_smallest_shape():
+    """Clear glass scales only below ~87 px half-size (Task 17b size series);
+    from the default start the solver fell into size_ref ~ 10 px (rms 3.7)."""
+    from glass_model import lens_v3
+    rng = np.random.default_rng(3)
+    samples = []
+    for half in (60.0, 84.0, 108.0, 150.0, 210.0, 300.0, 450.0):
+        depth = rng.uniform(2, half, 4000)
+        dn = lens_v3(depth, half, 141.0, 19.6, 55.7, 86.6) + rng.normal(0, 0.5, depth.size)
+        # A few rim outliers, as in the device fields.
+        dn[:40] += rng.normal(0, 60, 40)
+        samples.append((depth, np.full(depth.size, half), dn))
+    # Started below every shape's half-size, size_ref has no gradient (s = 1
+    # everywhere); fit_lens must restart from several knees and keep the best.
+    p = ml.fit_lens(samples, x0=(140.0, 19.0, 55.0, 3.0))
+    assert p["size_ref"] == pytest.approx(86.6, rel=0.05)
+    assert p["amp"] == pytest.approx(141.0, rel=0.02)

@@ -40,6 +40,7 @@ class GlassVariantConstants {
   /// Creates variant constants.
   const GlassVariantConstants({
     required this.blurSigma,
+    this.blurSizeRef = 0,
     required this.lensBand,
     required this.lensStrength,
     required this.lensDecay,
@@ -62,6 +63,7 @@ class GlassVariantConstants {
     GlassVariantConstants base,
   ) => GlassVariantConstants(
     blurSigma: _d(j, 'blurSigma', base.blurSigma),
+    blurSizeRef: _d(j, 'blurSizeRef', base.blurSizeRef),
     lensBand: _d(j, 'lensBand', base.lensBand),
     lensStrength: _d(j, 'lensStrength', base.lensStrength),
     lensDecay: _d(j, 'lensDecay', base.lensDecay),
@@ -87,6 +89,16 @@ class GlassVariantConstants {
   /// than the requested sigma (see `docs/superpowers/notes/shader-probe.md`);
   /// fitting works with the requested value.
   final double blurSigma;
+
+  /// Shapes whose half shorter side is below this get a proportionally
+  /// smaller frost blur: σ = [blurSigma] × min(1, halfMin / blurSizeRef).
+  /// 0 disables the scaling.
+  ///
+  /// SwiftUI frosts small glass much less than large glass (measured in Task
+  /// 17b from the coded captures: regular σ grows roughly in proportion to
+  /// the shape's size). A group runs one blur, so it uses the largest
+  /// member's σ.
+  final double blurSizeRef;
 
   /// Depth inside the outline where the edge lens ends (displacement 0).
   ///
@@ -144,6 +156,7 @@ class GlassVariantConstants {
   /// JSON form; [fillColor] is written as `"#RRGGBB"`.
   Map<String, Object> toJson() => {
     'blurSigma': blurSigma,
+    'blurSizeRef': blurSizeRef,
     'lensBand': lensBand,
     'lensStrength': lensStrength,
     'lensDecay': lensDecay,
@@ -271,6 +284,7 @@ class GlassConstants {
   static const GlassConstants standard = GlassConstants(
     regular: GlassVariantConstants(
       blurSigma: 5.1888,
+      blurSizeRef: 0,
       lensBand: 18.03,
       lensStrength: -2.609,
       lensDecay: 6.43,
@@ -288,6 +302,7 @@ class GlassConstants {
     ),
     clear: GlassVariantConstants(
       blurSigma: 1.3764,
+      blurSizeRef: 0,
       lensBand: 18.42,
       lensStrength: -2.529,
       lensDecay: 6.52,
@@ -305,6 +320,7 @@ class GlassConstants {
     ),
     regularDark: GlassVariantConstants(
       blurSigma: 5.5203,
+      blurSizeRef: 0,
       lensBand: 18.03,
       lensStrength: -2.609,
       lensDecay: 6.43,
@@ -322,6 +338,7 @@ class GlassConstants {
     ),
     clearDark: GlassVariantConstants(
       blurSigma: 1.3799,
+      blurSizeRef: 0,
       lensBand: 18.42,
       lensStrength: -2.529,
       lensDecay: 6.52,
