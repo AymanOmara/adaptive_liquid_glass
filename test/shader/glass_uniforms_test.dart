@@ -67,7 +67,7 @@ void main() {
     final reg = GlassConstants.standard.regular;
     final clr = GlassConstants.standard.clear;
     expect(f.sublist(208, 212), [
-      reg.blurSigma * 3,
+      reg.lensDecay * 3,
       reg.lensBand * 3,
       reg.lensStrength,
       reg.dispersion,
@@ -82,7 +82,13 @@ void main() {
       reg.shadowRadius * 3,
       reg.shadowOpacity,
       reg.tintStrength,
-      0,
+      reg.lensSizeRef * 3,
+    ]);
+    expect(f.sublist(232, 236), [
+      clr.shadowRadius * 3,
+      clr.shadowOpacity,
+      clr.tintStrength,
+      clr.lensSizeRef * 3,
     ]);
     expect(f.sublist(220, 224), [
       reg.fillColor.r,
@@ -91,7 +97,7 @@ void main() {
       reg.saturation,
     ]);
     expect(f.sublist(224, 228), [
-      clr.blurSigma * 3,
+      clr.lensDecay * 3,
       clr.lensBand * 3,
       clr.lensStrength,
       clr.dispersion,

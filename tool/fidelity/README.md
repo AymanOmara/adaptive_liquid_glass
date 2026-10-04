@@ -85,12 +85,13 @@ can never score well.
   scenes, every pixel outside the glass bounds inflated by 60 pt is identical
   (mean 0, max 0).
 
-## Baselines (unfitted constants)
+## Baselines
 
 | run | shader model | pass | median SSIM | median ΔE | mean SSIM | mean ΔE |
 |---|---|---|---|---|---|---|
 | `build/fidelity/baseline` | v1 (in-shader 24-tap blur, global corner exponent, `lumaLift`, smoothing 2×spacing) | 0/75 | 0.688 | 14.7 | 0.702 | 15.1 |
 | `build/fidelity/baseline-v2` | v2 (spec §15: per-shape corners, composed frost blur, fill colour + saturation, `mergeFactor`) | 0/75 | 0.924 | 10.1 | 0.874 | 10.9 |
+| `build/fidelity/lens-v3` | v2 + lens v3 (Task 15c), standard constants = measured lens + Task 17 fit | 20/75 | 0.948 | 2.80 | 0.944 | 5.1 |
 
 In v2, 65 of the 75 scenes improved in SSIM and 62 in ΔE. Regular glass now
 sits at a median SSIM of 0.939 and ΔE of 7.0. Clear glass in dark mode got
@@ -99,24 +100,21 @@ the starting constants; fitting (Task 17) comes next.
 
 ## Model parity and fitting (Task 17)
 
-`glass_model.py` is a NumPy port of `shaders/liquid_glass.frag` (v2): the
-composed blur is a Gaussian on the full background (edge clamped), the shader
+`glass_model.py` is a NumPy port of `shaders/liquid_glass.frag` (v2 with lens
+v3): the composed blur is Impeller's kernel on the full background (edge
+clamped), the shader
 runs at pixel centres in encoded sRGB, and the result is composited
 premultiplied srcOver onto the sharp background inside the backdrop clip.
 `test_glass_model.py` checks it against the device captures in
-`build/fidelity/baseline-v2` (bar: SSIM ≥ 0.99 and ΔE ≤ 1.0 per scene).
+`build/fidelity/lens-v3` (bar: SSIM ≥ 0.99 and ΔE ≤ 1.0 per scene).
 
-**blurScale** (model-only; not a shipped constant): Impeller's effective blur
-is narrower than the requested σ, and the ratio shrinks as σ grows. The model
-uses a piecewise-linear `blurScale(σ)`:
-
-| requested σ (pt) | 0–2 | 8 | 12 | ≥ 20 |
-|---|---|---|---|---|
-| blurScale | 0.95 | 0.89 | 0.83 | 0.81 |
-
-σ 2 and 12 were calibrated by the parity sweep; σ 8 and 20 follow the probe's
-measured trend. With this table all 75 baseline-v2 scenes reproduce at SSIM
-≥ 0.990 (median 0.9986) and ΔE ≤ 0.54.
+**Blur kernel** (Task 15c, replaces the Task 17 `blurScale` table): a least
+squares fit of a free symmetric kernel to a σ 1.38 pt device capture gave a
+Gaussian of exactly the requested σ, truncated at radius
+`round((σ_px − 0.5)·√3)` and renormalised. The truncation is what made the
+effective blur look 0.81–0.95× narrower. With it, all 75 `lens-v3` scenes
+reproduce at SSIM ≥ 0.9958 (median 0.9984) and ΔE ≤ 0.38. σ above about 8 pt
+(where Impeller may downsample) is not re-verified.
 
 Fitting (each stage takes the previous stage's JSON):
 
@@ -155,3 +153,11 @@ decode error outside the glass, which must stay near 0), writes
 `lens_v3` least-squares fit per variant on the decoded field), and charts.
 `--renderer flutter` decodes Flutter captures of the same scenes.
 
+
+Result (iPhone 17 Pro, iOS 26.4): SwiftUI's edge displacement is along the
+normal only, the same in light and dark, with no measurable dispersion, and
+fits `lens_v3` to 1–2 px rms: amplitude 47 pt, decay 6.4–6.5 pt, cut-off band
+18.0–18.4 pt for both variants; regular glass shrinks the whole profile by
+`halfMin / 38.4 pt` on smaller shapes (clear does not, down to 28 pt). These are
+the shipped `lensStrength`, `lensBand`, `lensDecay` and `lensSizeRef`. Decoding
+Flutter captures of the same scenes returns the shipped values to within 0.3 %.

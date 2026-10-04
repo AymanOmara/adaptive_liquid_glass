@@ -42,6 +42,8 @@ class GlassVariantConstants {
     required this.blurSigma,
     required this.lensBand,
     required this.lensStrength,
+    required this.lensDecay,
+    required this.lensSizeRef,
     required this.dispersion,
     required this.rimWidth,
     required this.rimIntensity,
@@ -62,6 +64,8 @@ class GlassVariantConstants {
     blurSigma: _d(j, 'blurSigma', base.blurSigma),
     lensBand: _d(j, 'lensBand', base.lensBand),
     lensStrength: _d(j, 'lensStrength', base.lensStrength),
+    lensDecay: _d(j, 'lensDecay', base.lensDecay),
+    lensSizeRef: _d(j, 'lensSizeRef', base.lensSizeRef),
     dispersion: _d(j, 'dispersion', base.dispersion),
     rimWidth: _d(j, 'rimWidth', base.rimWidth),
     rimIntensity: _d(j, 'rimIntensity', base.rimIntensity),
@@ -82,13 +86,29 @@ class GlassVariantConstants {
   /// `docs/superpowers/notes/shader-probe.md`); fitting absorbs this.
   final double blurSigma;
 
-  /// Width of the refracting edge band.
+  /// Depth inside the outline where the edge lens ends (displacement 0).
+  ///
+  /// Lens v3 (measured from SwiftUI, Task 15c): at depth `d` the backdrop is
+  /// sampled `lensStrength × lensBand × s × v(d)` along the outward normal,
+  /// with `v(d) = (exp(-d / (lensDecay·s)) - exp(-lensBand / lensDecay)) /
+  /// (1 - exp(-lensBand / lensDecay))`, clamped at 0, and the size factor
+  /// `s` = min(1, half the shape's shorter side / [lensSizeRef]).
   final double lensBand;
 
-  /// Lens displacement as a fraction of [lensBand]; sign sets direction.
+  /// Edge displacement as a multiple of [lensBand]; negative samples inward
+  /// (SwiftUI: about -2.6, so the outer pixels show content from ~47 pt
+  /// inside, mirrored and compressed).
   final double lensStrength;
 
-  /// Red/blue split as a fraction of the lens displacement.
+  /// Exponential falloff length of the lens displacement.
+  final double lensDecay;
+
+  /// Shapes whose half shorter side is below this get a uniformly scaled-down
+  /// lens (band, decay and displacement × that ratio); 0 disables it.
+  final double lensSizeRef;
+
+  /// Red/blue split as a fraction of the lens displacement, weighted by the
+  /// lens profile (so it sits on the outer pixels). SwiftUI shows none.
   final double dispersion;
 
   /// Width of the specular rim.
@@ -124,6 +144,8 @@ class GlassVariantConstants {
     'blurSigma': blurSigma,
     'lensBand': lensBand,
     'lensStrength': lensStrength,
+    'lensDecay': lensDecay,
+    'lensSizeRef': lensSizeRef,
     'dispersion': dispersion,
     'rimWidth': rimWidth,
     'rimIntensity': rimIntensity,
@@ -240,69 +262,80 @@ class GlassConstants {
     ),
   );
 
-  /// The shipped values. Fitted in Task 17 against `tool/scenes/scenes.json`.
+  /// The shipped values: the edge lens measured from SwiftUI in Task 15c
+  /// (`tool/fidelity/measure_lens.py`), everything else fitted in Task 17
+  /// against `tool/scenes/scenes.json`. `tintStrength` and `mergeFactor` are
+  /// not fitted yet.
   static const GlassConstants standard = GlassConstants(
     regular: GlassVariantConstants(
-      blurSigma: 12,
-      lensBand: 14,
-      lensStrength: 0.35,
-      dispersion: 0.15,
-      rimWidth: 1.2,
-      rimIntensity: 0.55,
-      fillColor: Color(0xFFFFFFFF),
-      fillOpacity: 0.30,
-      saturation: 0.75,
-      dim: 0,
-      shadowRadius: 12,
-      shadowOpacity: 0.12,
+      blurSigma: 5.1888,
+      lensBand: 18.03,
+      lensStrength: -2.609,
+      lensDecay: 6.43,
+      lensSizeRef: 38.37,
+      dispersion: 0,
+      rimWidth: 1.3265,
+      rimIntensity: 0.245,
+      fillColor: Color(0xFFFEFEFE),
+      fillOpacity: 0.6336,
+      saturation: 1.4994,
+      dim: 0.0002,
+      shadowRadius: 20.9154,
+      shadowOpacity: 0.0492,
       tintStrength: 0.35,
     ),
     clear: GlassVariantConstants(
-      blurSigma: 2,
-      lensBand: 14,
-      lensStrength: 0.35,
-      dispersion: 0.15,
-      rimWidth: 1.2,
-      rimIntensity: 0.6,
-      fillColor: Color(0xFFFFFFFF),
-      fillOpacity: 0.05,
-      saturation: 1.0,
-      dim: 0.2,
-      shadowRadius: 12,
-      shadowOpacity: 0.10,
+      blurSigma: 1.3764,
+      lensBand: 18.42,
+      lensStrength: -2.529,
+      lensDecay: 6.52,
+      lensSizeRef: 0,
+      dispersion: 0,
+      rimWidth: 1.2368,
+      rimIntensity: 0.8805,
+      fillColor: Color(0xFFFDFCFC),
+      fillOpacity: 0.1762,
+      saturation: 1.2711,
+      dim: 0.0027,
+      shadowRadius: 35.898,
+      shadowOpacity: 0.0017,
       tintStrength: 0.35,
     ),
     regularDark: GlassVariantConstants(
-      blurSigma: 12,
-      lensBand: 14,
-      lensStrength: 0.35,
-      dispersion: 0.15,
-      rimWidth: 1.2,
-      rimIntensity: 0.4,
-      fillColor: Color(0xFF1C1C1E),
-      fillOpacity: 0.55,
-      saturation: 0.75,
-      dim: 0,
-      shadowRadius: 12,
-      shadowOpacity: 0.2,
+      blurSigma: 5.5203,
+      lensBand: 18.03,
+      lensStrength: -2.609,
+      lensDecay: 6.43,
+      lensSizeRef: 38.37,
+      dispersion: 0,
+      rimWidth: 1.3713,
+      rimIntensity: 0.3516,
+      fillColor: Color(0xFF1F1A19),
+      fillOpacity: 0.6025,
+      saturation: 1.4994,
+      dim: 0.0865,
+      shadowRadius: 21.0601,
+      shadowOpacity: 0.0262,
       tintStrength: 0.35,
     ),
     clearDark: GlassVariantConstants(
-      blurSigma: 2,
-      lensBand: 14,
-      lensStrength: 0.35,
-      dispersion: 0.15,
-      rimWidth: 1.2,
-      rimIntensity: 0.45,
-      fillColor: Color(0xFF000000),
-      fillOpacity: 0.20,
-      saturation: 1.0,
-      dim: 0.3,
-      shadowRadius: 12,
-      shadowOpacity: 0.18,
+      blurSigma: 1.3799,
+      lensBand: 18.42,
+      lensStrength: -2.529,
+      lensDecay: 6.52,
+      lensSizeRef: 0,
+      dispersion: 0,
+      rimWidth: 1.4229,
+      rimIntensity: 0.406,
+      fillColor: Color(0xFFFDFAFB),
+      fillOpacity: 0.1778,
+      saturation: 1.2332,
+      dim: 0.0006,
+      shadowRadius: 13.0732,
+      shadowOpacity: 0.0017,
       tintStrength: 0.35,
     ),
-    cornerExponent: 4,
+    cornerExponent: 2,
     motion: GlassMotionConstants(
       pressScale: 0.1,
       pressStretch: 0.08,

@@ -144,9 +144,9 @@ const int kGlassUniformFloats = 240;
 /// | 144–207 | uTints[16]     | rgb, strength                             |
 /// | 208–239 | uVar[8]        | regular A B C D, then clear A B C D       |
 ///
-/// Per variant: A = (blur px, lens band px, lens strength, dispersion),
+/// Per variant: A = (lens decay px, lens band px, lens strength, dispersion),
 /// B = (rim width px, rim intensity, fillOpacity, dim),
-/// C = (shadow radius px, shadow opacity, tint strength, -),
+/// C = (shadow radius px, shadow opacity, tint strength, lens size ref px),
 /// D = (fill r, g, b, saturation).
 List<double> packGlassUniforms(GlassFrameUniforms u) {
   final dpr = u.devicePixelRatio;
@@ -203,14 +203,20 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
     u.constants.of(GlassVariant.regular, u.brightness),
     u.constants.of(GlassVariant.clear, u.brightness),
   ]) {
+    // The frost blur is the composed ImageFilter, not a uniform.
     f.setAll(k, [
-      v.blurSigma * dpr,
+      v.lensDecay * dpr,
       v.lensBand * dpr,
       v.lensStrength,
       v.dispersion,
     ]);
     f.setAll(k + 4, [v.rimWidth * dpr, v.rimIntensity, v.fillOpacity, v.dim]);
-    f.setAll(k + 8, [v.shadowRadius * dpr, v.shadowOpacity, v.tintStrength, 0]);
+    f.setAll(k + 8, [
+      v.shadowRadius * dpr,
+      v.shadowOpacity,
+      v.tintStrength,
+      v.lensSizeRef * dpr,
+    ]);
     f.setAll(k + 12, [
       v.fillColor.r,
       v.fillColor.g,

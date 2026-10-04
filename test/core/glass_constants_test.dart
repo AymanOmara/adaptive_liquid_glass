@@ -46,26 +46,45 @@ void main() {
     expect(GlassConstants.fromJson(c.toJson()), c);
   });
 
-  test('standard v2 starting values', () {
+  test('standard v3: measured lens (Task 15c) + Task 17 fit', () {
     const c = GlassConstants.standard;
-    expect(c.regular.fillColor, const Color(0xFFFFFFFF));
-    expect(c.regular.fillOpacity, 0.30);
-    expect(c.regular.saturation, 0.75);
-    expect(c.regular.dim, 0);
-    expect(c.regular.blurSigma, 12);
-    expect(c.clear.fillOpacity, 0.05);
-    expect(c.clear.saturation, 1.0);
-    expect(c.clear.dim, 0.2);
-    expect(c.clear.blurSigma, 2);
-    expect(c.regularDark.fillColor, const Color(0xFF1C1C1E));
-    expect(c.regularDark.fillOpacity, 0.55);
-    expect(c.regularDark.dim, 0);
-    expect(c.regularDark.blurSigma, 12);
-    expect(c.clearDark.fillColor, const Color(0xFF000000));
-    expect(c.clearDark.fillOpacity, 0.20);
-    expect(c.clearDark.dim, 0.3);
-    expect(c.clearDark.blurSigma, 2);
+    // Lens v3, decoded from SwiftUI (identical in light and dark).
+    for (final v in [c.regular, c.regularDark]) {
+      expect(v.lensBand, 18.03);
+      expect(v.lensStrength, -2.609);
+      expect(v.lensDecay, 6.43);
+      expect(v.lensSizeRef, 38.37);
+      expect(v.dispersion, 0);
+    }
+    for (final v in [c.clear, c.clearDark]) {
+      expect(v.lensBand, 18.42);
+      expect(v.lensStrength, -2.529);
+      expect(v.lensDecay, 6.52);
+      expect(v.lensSizeRef, 0);
+      expect(v.dispersion, 0);
+    }
+    // The rest comes from the Task 17 fit (build/fidelity/fit/best.json).
+    expect(c.regular.blurSigma, 5.1888);
+    expect(c.regular.fillColor, const Color(0xFFFEFEFE));
+    expect(c.regular.fillOpacity, 0.6336);
+    expect(c.regularDark.fillColor, const Color(0xFF1F1A19));
+    expect(c.clear.blurSigma, 1.3764);
+    expect(c.clearDark.fillColor, const Color(0xFFFDFAFB));
+    expect(c.cornerExponent, 2.0);
     expect(c.mergeFactor, 1.0);
+  });
+
+  test('lensDecay and lensSizeRef read, override and compare', () {
+    final c = GlassConstants.fromJson({
+      'regular': {'lensDecay': 4.5, 'lensSizeRef': 20},
+    });
+    expect(c.regular.lensDecay, 4.5);
+    expect(c.regular.lensSizeRef, 20);
+    expect(c.regular.lensBand, GlassConstants.standard.regular.lensBand);
+    expect(c.regular.toJson()['lensDecay'], 4.5);
+    expect(c.regular.toJson()['lensSizeRef'], 20);
+    expect(GlassConstants.fromJson(c.toJson()), c);
+    expect(c == GlassConstants.standard, isFalse);
   });
 
   test('different fill colours are not equal', () {

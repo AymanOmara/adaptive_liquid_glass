@@ -1,4 +1,4 @@
-"""NumPy port of shaders/liquid_glass.frag (shader model v2, spec §15).
+"""NumPy port of shaders/liquid_glass.frag (shader model v2, spec §15, with lens v3 from Task 15c).
 
 `render(background, scene, constants, scale)` returns what the Flutter renderer
 draws for a static fidelity scene: the background blurred by the composed
@@ -12,19 +12,26 @@ import functools
 import json
 
 import numpy as np
-from scipy.ndimage import gaussian_filter, map_coordinates
+from scipy.ndimage import convolve1d, map_coordinates
 
-# Model-only calibration (not a shipped constant): the effective Impeller blur
-# sigma is a fraction of the requested one that shrinks as sigma grows. Points
-# at sigma 2 and 12 come from the parity test against baseline-v2 captures;
-# 8 and 20 follow the probe's measured trend (task-15b report). Linear in
-# between, flat outside. See README "Model parity".
-BLUR_SCALE_SIGMA = (0.0, 2.0, 8.0, 12.0, 20.0)
-BLUR_SCALE_VALUE = (0.95, 0.95, 0.89, 0.83, 0.81)
+# Impeller's blur kernel (measured in Task 15c by least squares on device
+# captures): a Gaussian of the requested sigma, truncated at radius
+# round((sigma - 0.5) * sqrt(3)) px and renormalised. The truncation is what
+# made the effective blur look 0.81-0.95x narrower (the Task 17 blurScale
+# table, now retired). `blur_scale` stays as an optional override.
 
 
 def blur_scale_for(sigma):
-    return float(np.interp(sigma, BLUR_SCALE_SIGMA, BLUR_SCALE_VALUE))
+    return 1.0
+
+
+def impeller_kernel(sigma_px):
+    r = max(1, int(round((sigma_px - 0.5) * np.sqrt(3))))
+    x = np.arange(-r, r + 1)
+    k = np.exp(-0.5 * (x / sigma_px) ** 2)
+    return k / k.sum()
+
+
 LIGHT_ANGLE = -3 * np.pi / 4  # LiquidGlassThemeData default (up-left)
 LUMA = np.array([0.2126, 0.7152, 0.0722])
 
@@ -134,16 +141,17 @@ _BG = {}
 
 
 def _blur_box(bg, sigma_px, box):
-    """Gaussian-blurs `bg` (edge clamped) and returns the window `box`."""
+    """Blurs `bg` (edge clamped) with impeller_kernel and returns the window
+    `box`."""
     x0, y0, x1, y1 = box
     h, w = bg.shape[:2]
-    m = int(np.ceil(4 * sigma_px)) + 2
+    k = impeller_kernel(sigma_px) if sigma_px > 0 else np.ones(1)
+    m = k.size // 2 + 2
     ys = np.clip(np.arange(y0 - m, y1 + m), 0, h - 1)
     xs = np.clip(np.arange(x0 - m, x1 + m), 0, w - 1)
     win = bg[np.ix_(ys, xs)]
     if sigma_px > 0:
-        win = np.stack([gaussian_filter(win[..., c], sigma_px, mode="nearest", truncate=4.0)
-                        for c in range(3)], -1)
+        win = convolve1d(convolve1d(win, k, axis=0, mode="nearest"), k, axis=1, mode="nearest")
     return win[m:m + (y1 - y0), m:m + (x1 - x0)]
 
 
@@ -192,12 +200,12 @@ def _uvar(constants, brightness, scale):
     for base in ("regular", "clear"):
         v = constants[base + ("Dark" if brightness == "dark" else "")]
         res.append({
-            "A": np.array([v["blurSigma"] * scale, v["lensBand"] * scale,
+            "A": np.array([v.get("lensDecay", 0.0) * scale, v["lensBand"] * scale,
                            v["lensStrength"], v["dispersion"]]),
             "B": np.array([v["rimWidth"] * scale, v["rimIntensity"],
                            v["fillOpacity"], v["dim"]]),
             "C": np.array([v["shadowRadius"] * scale, v["shadowOpacity"],
-                           v["tintStrength"], 0.0]),
+                           v["tintStrength"], v.get("lensSizeRef", 0.0) * scale]),
             "D": np.concatenate([parse_hex(v["fillColor"]), [v["saturation"]]]),
         })
     return res
@@ -237,12 +245,16 @@ def _geometry(scene_json, corner_exponent, merge_factor, scale, W, H, pad):
     wsum = sum(ws)
     weights = [w / wsum for w in ws]
 
+    # Half the shorter side, blended like the other attributes (lens size).
+    half_min = sum(w * 0.5 * min(s["rect"][2], s["rect"][3]) for w, s in zip(weights, shapes))
+
     # Normals by +-1 px central differences of the field.
     nx = field(shapes, px + 1, py, k) - field(shapes, px - 1, py, k) + 1e-6
     ny = field(shapes, px, py + 1, k) - field(shapes, px, py - 1, k) + 1e-6
     nl = np.sqrt(nx * nx + ny * ny)
     return {"box": (bx0, by0, bx1, by1), "px": px, "py": py, "d": d,
-            "nx": nx / nl, "ny": ny / nl, "weights": weights, "shapes": shapes}
+            "nx": nx / nl, "ny": ny / nl, "weights": weights, "shapes": shapes,
+            "half_min": half_min}
 
 
 def _smoothstep(e0, e1, x):
@@ -291,10 +303,16 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     sh = C[..., 1] * np.exp(-(d_out * d_out) / (2.0 * sr * sr))
     shadow_a = sh * (1.0 - inside)
 
+    # Lens v3 (shader: "Lens v3"); lens_v3 returns strength x band x s x v.
     depth = -d
     band = np.maximum(A[..., 1], 1.0)
-    t = np.clip(1.0 - depth / band, 0.0, 1.0)
-    lens_amt = A[..., 2] * t * t * band
+    decay = np.maximum(A[..., 0], 1e-3)
+    size_ref = C[..., 3]
+    sc = np.where(size_ref > 0, np.minimum(1.0, g["half_min"] / np.maximum(size_ref, 1e-6)), 1.0)
+    cut = np.exp(-band / decay)
+    t = np.maximum(np.exp(-np.maximum(depth, 0.0) / np.maximum(decay * sc, 1e-3)) - cut,
+                   0.0) / (1.0 - cut)  # profile weight v (also weights dispersion)
+    lens_amt = A[..., 2] * band * sc * t  # == lens_v3(depth, half_min, -strength*band, ...)
     spx = px + nx * lens_amt
     spy = py + ny * lens_amt
     dxp = nx * lens_amt * A[..., 3]
