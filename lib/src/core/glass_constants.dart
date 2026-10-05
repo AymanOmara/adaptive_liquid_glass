@@ -459,14 +459,29 @@ class GlassConstants {
     cornerExponent: 2,
     // Merge scenes (device): median SSIM 0.979, ΔE 2.01.
     mergeFactor: 0.8,
+    // Fitted to SwiftUI recordings (Task 16, iOS 26.4 simulator; bounding
+    // box over time of press/morph clips, tool/fidelity/compare_motion.py).
     motion: GlassMotionConstants(
-      pressScale: 0.1,
-      pressStretch: 0.08,
-      glowRadius: 60,
-      pressResponse: 0.35,
-      pressDamping: 0.65,
-      morphResponse: 0.45,
-      morphDamping: 0.75,
+      // Capsule 200×56 grows 6.6% (height +11–12 px of 176 px, light and
+      // dark), symmetrically: no shift toward the touch, stretch ≈ 0.01.
+      // SwiftUI scales small shapes more (72 pt circle: +22%), which one
+      // uniform factor cannot follow.
+      pressScale: 0.066,
+      pressStretch: 0.011,
+      // Gaussian σ of the touch glow: SwiftUI 42.7–44.5 pt; 41 measures
+      // 43.5 in Flutter. SwiftUI's glow is 3–10× fainter than the shader's
+      // fixed 0.25 amplitude.
+      glowRadius: 41,
+      // SwiftUI press-in (0.34, 0.52) and release (0.38, 0.57), mean
+      // (0.36, 0.54) over two runs; one spring serves both here, set so that
+      // Flutter measures the same mean (0.36, 0.54 ± 0.04).
+      pressResponse: 0.36,
+      pressDamping: 0.56,
+      // `withAnimation(.bouncy)` morphs measure (0.50, 0.72): `.bouncy`
+      // (response 0.5, bounce 0.3); Flutter at these values measures
+      // (0.50, 0.69).
+      morphResponse: 0.5,
+      morphDamping: 0.7,
     ),
   );
 

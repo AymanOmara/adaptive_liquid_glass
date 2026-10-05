@@ -63,7 +63,8 @@ void main() {
     addTearDown(c.dispose);
     c.down(const Offset(100, 20), const Size(100, 40));
     await t.pump(); // ticker starts on the first frame
-    await t.pump(const Duration(seconds: 1));
+    // Settle: the fitted press spring needs just over 1 s.
+    await t.pump(const Duration(seconds: 2));
     final g = c.geometry();
     expect(g.scaleX, 1);
     expect(g.scaleY, 1);
