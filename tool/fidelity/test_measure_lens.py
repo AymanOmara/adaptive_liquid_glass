@@ -102,6 +102,10 @@ def test_measure_scene_matrix():
         "capsule68", "capsule72", "rect16-124x60", "merge4", "merge16", "merge30")}
     # Task 9 adds rect16 x {regular, clear} x {light, dark} over the four
     # rotated gradients (bases shared with the lens scenes, new backgrounds).
+    # Task 17d review: 48 held-out robustness scenes ("holdout-..."), appended.
+    holdout = [i for i in ids if i.startswith("holdout-")]
+    assert len(holdout) == 48 and ids[-48:] == holdout
+    ids = ids[:-48]
     assert len(ids) == len(set(ids)) == 18 * 28 + 12 * 20 + 8 * 16 + 18 + 14 + 4 + 6 + 16
     # The Task 15c / 17b scenes keep their ids and order.
     assert ids[:18 * 16] == [f"{b}--{c}" for b in dict.fromkeys(
@@ -125,7 +129,7 @@ def test_measure_scene_matrix():
         assert sh["x"] >= 16 and sh["y"] + sh["h"] + 16 <= 874 and sh["x"] + sh["w"] + 16 <= 402
     assert {s["background"] for s in spec["scenes"]} == \
         set(gb.CODES) | set(gb.FROST_CODES) | set(gb.FLATS) | set(gb.PROBE_FLATS) \
-        | {f"gradient-r{d:03d}" for d in gb.GRADIENT_DEGREES}
+        | {f"gradient-r{d:03d}" for d in gb.GRADIENT_DEGREES} | {"text", "photo"}
 
 
 def test_shape_geometry_depth_and_normal():

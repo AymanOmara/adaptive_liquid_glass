@@ -85,6 +85,35 @@ for v in ("regular", "clear"):
         for deg in (0, 90, 180, 270):
             scenes.append(scene(v, "rect16", b, f"gradient-r{deg:03d}"))
 
+# Task 17d held-out robustness set (review fix round 1): scenes the fit never
+# saw, to catch over-fitting of the size- and phase-sensitive constants
+# (lensSizeRef, blurAspectPower, the clear lens grid). Ids "holdout-...".
+#  - capsules 200 pt wide at 50/60/64 pt height (the 56 pt capsule is in-set);
+#  - the worst in-set text scenes with the glass moved down 3 px and 7 px
+#    (equivalent to shifting the text background; the band mirrors text
+#    lines, so this changes their phase);
+#  - one wide rect 350 x 64 (radius 16): an aspect ratio outside the set.
+HOLDOUT = []
+for v in ("regular", "clear"):
+    for b in ("light", "dark"):
+        for bg in ("text", "photo"):
+            for h in (50, 60, 64):
+                spec = {"w": 200, "h": h, "shape": "capsule", "radius": 0}
+                HOLDOUT.append({"id": f"holdout-{v}-capsule{h}-{bg}-{b}", "background": bg,
+                                "brightness": b, "spacing": None,
+                                "shapes": [{**centred(spec, 560), "variant": v, "tint": None}]})
+            spec = {"w": 350, "h": 64, "shape": "rect", "radius": 16}
+            HOLDOUT.append({"id": f"holdout-{v}-rect350x64-{bg}-{b}", "background": bg,
+                            "brightness": b, "spacing": None,
+                            "shapes": [{**centred(spec, 560), "variant": v, "tint": None}]})
+        for sname in ("capsule", "rect28"):
+            for px in (3, 7):
+                HOLDOUT.append({"id": f"holdout-{v}-{sname}-text-{b}-dy{px}", "background": "text",
+                                "brightness": b, "spacing": None,
+                                "shapes": [{**centred(SHAPES[sname], 560 + px / 3), "variant": v,
+                                            "tint": None}]})
+scenes += HOLDOUT
+
 if __name__ == "__main__":
     OUT.write_text(json.dumps(
         {"device": {"width": W, "height": 874, "scale": 3}, "scenes": scenes, "motion": []},

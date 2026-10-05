@@ -163,9 +163,13 @@ def main():
     ap.add_argument("--prefix", default="", help="only scenes whose id starts with this")
     ap.add_argument("--floor", type=pathlib.Path,
                     help="noise.py result; adds report-only within-noise verdicts")
+    ap.add_argument("--scenes", type=pathlib.Path,
+                    help="scene list (default tool/scenes/scenes.json), e.g. measure.json "
+                         "with --prefix holdout- for the held-out set")
     args = ap.parse_args()
     floor = json.loads(args.floor.read_text()) if args.floor else None
-    sys.exit(run(args.run_dir, args.no_fail, prefix=args.prefix, floor=floor))
+    spec = json.loads(args.scenes.read_text()) if args.scenes else None
+    sys.exit(run(args.run_dir, args.no_fail, spec=spec, prefix=args.prefix, floor=floor))
 
 
 if __name__ == "__main__":
