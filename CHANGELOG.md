@@ -15,6 +15,7 @@
   the shader loads, then switches in place.
 * Android and the other non-shader paths no longer load the shader.
 * `concentricRadius` is no longer exported.
+* Android is declared as a supported platform (a Dart-only plugin entry).
 
 ## 0.1.0-dev.1
 
