@@ -67,6 +67,12 @@ Future<void> main() async {
       data: LiquidGlassThemeData(constants: constants, defaultMode: mode),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
+        theme: ThemeData(),
+        // The gallery follows the system brightness; scenes keep the light
+        // theme so harness captures stay unchanged.
+        darkTheme: scene == null
+            ? ThemeData(brightness: Brightness.dark)
+            : null,
         home: scene == null
             ? const Demo()
             : SceneView(

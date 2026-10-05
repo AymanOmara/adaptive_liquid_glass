@@ -27,6 +27,20 @@
 * `concentricRadius` is no longer exported.
 * Android is declared as a supported platform (a Dart-only plugin entry).
 
+* **Breaking:** `GlassMotionConstants.pressScale` is replaced by
+  `pressGrowthArea` and `pressScaleMax`: a pressed shape grows by about the
+  same area whatever its size (`sqrt(1 + pressGrowthArea / (w·h))`, capped),
+  as SwiftUI does, so small shapes grow more than large ones.
+* Press-in and release use separate springs (`releaseResponse`,
+  `releaseDamping`); press, release and morph springs, press stretch and
+  glow radius are refitted to lossless SwiftUI recordings.
+* Shader fidelity: every reference scene is at SSIM ≥ 0.95 against SwiftUI
+  (minimum 0.9532, median 0.983, median ΔE 1.09), with a per-variant tone
+  curve, anisotropic frost, a wide frost tail and a refitted clear lens.
+* Example: an Android host, a dark theme for the gallery, and motion-scene
+  harness entries (`-motion`, `-dump`); harness entries default to the
+  shader unless `-mode native` is passed.
+
 ## 0.1.0-dev.1
 
 * First development release: `LiquidGlass`, `GlassGroup`, `Glass`,

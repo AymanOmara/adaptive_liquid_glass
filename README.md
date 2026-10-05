@@ -294,3 +294,31 @@ Stack(
   ],
 )
 ```
+
+## Fidelity
+
+The shader is fitted against SwiftUI's own Liquid Glass, rendered on the
+reference simulator (iPhone 17 Pro, iOS 26.4), over 75 scenes (regular,
+clear and tinted glass; capsules, circles and rounded rectangles; photo,
+text and gradient backgrounds; light and dark; merged groups):
+
+| path | result |
+|---|---|
+| Shader (iOS < 26, or `mode: shader`) | every scene at SSIM ≥ 0.95 (minimum 0.9532); 46/75 pass the strict bars (SSIM ≥ 0.97 and ΔE ≤ 2.0); median SSIM 0.983, median ΔE 1.09 |
+| Native (iOS 26+, the default) | 75/75 at parity with SwiftUI (minimum SSIM 0.9996, maximum ΔE 0.05) |
+
+Press and morph motion uses SwiftUI's measured springs (press-in, release
+and `.bouncy` morph) and a size-dependent press growth. The harness lives in
+`tool/fidelity/` (see its README).
+
+## Known limitations
+
+- **Native mode, runtime light→dark flip:** on iOS 26, 71 of 72 measured
+  brightness flips at runtime match SwiftUI. One does not: a regular glass
+  capsule over a photo, flipped from light to dark, keeps part of Apple's
+  previous look (SSIM 0.84 against a dark launch, which matches). Apple's
+  glass appears to keep state from glass drawn earlier in the process; it
+  is not fixed by rebuilding the glass.
+- **Native interactive glass:** pressing native glass gets this package's
+  stretch and growth, but not SwiftUI's own touch glow.
+- **Shader glow:** the shader's touch glow is brighter than SwiftUI's.
