@@ -1,4 +1,5 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/cupertino.dart';
@@ -388,7 +389,14 @@ void main() {
   testWidgets('only the lens ends refract tabs; its middle and rims do not', (
     t,
   ) async {
-    shaderEnv();
+    // Without shader support the lens is native glass: the ends-only
+    // refraction and the sharp overlay apply.
+    GlassPlatform.instance.debugEnvironment = const GlassEnvironment(
+      platform: TargetPlatform.iOS,
+      iosMajorVersion: 26,
+      reduceTransparency: false,
+      shaderSupported: false,
+    );
     await t.pumpWidget(plainHost(_Harness(_picks())));
     final g = await t.startGesture(t.getCenter(find.text('History')));
     for (var i = 0; i < 20; i++) {
@@ -417,7 +425,14 @@ void main() {
   }, variant: ios);
 
   testWidgets('the sharp copy fades only towards the lens ends', (t) async {
-    shaderEnv();
+    // Without shader support the lens is native glass: the ends-only
+    // refraction and the sharp overlay apply.
+    GlassPlatform.instance.debugEnvironment = const GlassEnvironment(
+      platform: TargetPlatform.iOS,
+      iosMajorVersion: 26,
+      reduceTransparency: false,
+      shaderSupported: false,
+    );
     await t.pumpWidget(plainHost(_Harness(_picks())));
     final g = await t.startGesture(t.getCenter(find.text('History')));
     for (var i = 0; i < 20; i++) {

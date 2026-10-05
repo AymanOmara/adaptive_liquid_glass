@@ -717,6 +717,25 @@ class GlassConstants {
   /// (exponent 2), like SwiftUI's `Capsule()` and `Circle()`.
   final double cornerExponent;
 
+  /// Returns a copy with the given fields replaced.
+  GlassConstants copyWith({
+    GlassVariantConstants? regular,
+    GlassVariantConstants? clear,
+    GlassVariantConstants? regularDark,
+    GlassVariantConstants? clearDark,
+    double? cornerExponent,
+    double? mergeFactor,
+    GlassMotionConstants? motion,
+  }) => GlassConstants(
+    regular: regular ?? this.regular,
+    clear: clear ?? this.clear,
+    regularDark: regularDark ?? this.regularDark,
+    clearDark: clearDark ?? this.clearDark,
+    cornerExponent: cornerExponent ?? this.cornerExponent,
+    mergeFactor: mergeFactor ?? this.mergeFactor,
+    motion: motion ?? this.motion,
+  );
+
   /// Smooth-union radius as a multiple of the group's spacing.
   final double mergeFactor;
 

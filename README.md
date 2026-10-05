@@ -329,8 +329,12 @@ Stack(
 
 Tabs sit `itemWidth` (86.15, as on iOS) apart and move closer evenly when
 the bar would not fit, so five tabs fit a phone. Press, drag and release
-follow iOS 26's measured springs: the lens trails the finger, wobbles with
-its acceleration and bends the tabs at its rim. Give a tab an `activeIcon` for its selected
+follow iOS 26's measured springs: the lens trails the finger and wobbles with
+its acceleration. The lens is drawn with the package's shader, fitted to iOS
+26.4's tab lens: unfrosted, it refracts what lies just outside its edge into
+a band and splits colour there. So that the lens can refract the bar, the bar
+is shader glass too whenever the shader is available (pass `mode:` to force
+another path). Give a tab an `activeIcon` for its selected
 state. The selected tab takes `selectedColor` (default: the Cupertino theme's
 primary colour); the others take glass's readable colour. On Android it is a
 Material 3 `NavigationBar` in the same floating capsule. Each tab is a

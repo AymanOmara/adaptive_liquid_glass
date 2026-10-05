@@ -21,6 +21,7 @@ import '../core/theme.dart';
 import '../group/glass_group.dart';
 import '../liquid_glass.dart';
 import '../platform/glass_platform.dart';
+import 'tab_lens.dart';
 
 /// One tab of a [GlassTabBar]: an icon over a short label.
 @immutable
@@ -226,6 +227,16 @@ class _GlassTabBarState extends State<GlassTabBar>
   double _lastVelocity = 0;
   Duration _lastTick = Duration.zero;
 
+  /// Whether the lens is drawn with the package's shader (fitted to iOS's
+  /// tab lens); without shader support it is the requested glass.
+  bool _shaderLens = false;
+
+  /// The bar's path: with the shader lens the bar is shader glass too, so
+  /// the lens can refract it (native glass is invisible to the shader). An
+  /// explicit [GlassTabBar.mode] wins.
+  GlassRenderMode? get _barMode =>
+      widget.mode ?? (_shaderLens ? GlassRenderMode.shader : null);
+
   bool _placed = false;
   bool _held = false;
 
@@ -397,6 +408,7 @@ class _GlassTabBarState extends State<GlassTabBar>
       return ValueListenableBuilder<GlassEnvironment>(
         valueListenable: GlassPlatform.instance.environment,
         builder: (context, environment, _) {
+          _shaderLens = environment.shaderSupported;
           final mode = resolveGlassMode(
             requested: widget.mode ?? LiquidGlassTheme.of(context).defaultMode,
             environment: environment,
@@ -518,10 +530,10 @@ class _GlassTabBarState extends State<GlassTabBar>
             top: -growY,
             bottom: -growY,
             child: GlassGroup(
-              mode: widget.mode,
+              mode: _barMode,
               child: LiquidGlass(
                 glass: widget.glass,
-                mode: widget.mode,
+                mode: _barMode,
                 child: Center(
                   child: SizedBox(
                     width: _rowWidth,
@@ -564,7 +576,11 @@ class _GlassTabBarState extends State<GlassTabBar>
                         ),
                         if (lensShown)
                           ClipPath(
-                            clipper: _LensEnds(lens),
+                            // The shader lens bends the whole copy; native
+                            // glass only gets the ends (see _LensEnds).
+                            clipper: _shaderLens
+                                ? _Capsule(lens)
+                                : _LensEnds(lens),
                             child: Transform.scale(
                               scaleX: lerpDouble(1, _Metrics.magnifyX, t),
                               scaleY: lerpDouble(1, _Metrics.magnifyY, t),
@@ -582,19 +598,32 @@ class _GlassTabBarState extends State<GlassTabBar>
           if (lensShown)
             Positioned.fromRect(
               rect: lens.shift(const Offset(_Metrics.inset, _Metrics.inset)),
-              child: GlassGroup(
-                mode: widget.mode,
-                child: LiquidGlass(
-                  glass: Glass.clear,
-                  mode: widget.mode,
-                  child: const SizedBox.expand(),
-                ),
-              ),
+              child: _shaderLens
+                  ? withTabLens(
+                      context,
+                      const GlassGroup(
+                        mode: GlassRenderMode.shader,
+                        child: LiquidGlass(
+                          glass: Glass.clear,
+                          mode: GlassRenderMode.shader,
+                          child: SizedBox.expand(),
+                        ),
+                      ),
+                    )
+                  : GlassGroup(
+                      mode: widget.mode,
+                      child: LiquidGlass(
+                        glass: Glass.clear,
+                        mode: widget.mode,
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
             ),
-          // The lens's glass refracts and blurs the copy beneath it; iOS's
+          // Native clear glass refracts and blurs the copy beneath it; iOS's
           // lens keeps its middle sharp and bends only the rim, so a sharp
-          // copy goes on top, faded out towards the rim.
-          if (lensShown)
+          // copy goes on top, faded out towards the rim. (The shader lens
+          // keeps the middle sharp itself.)
+          if (lensShown && !_shaderLens)
             Positioned.fromRect(
               rect: lens.shift(const Offset(_Metrics.inset, _Metrics.inset)),
               child: IgnorePointer(
@@ -782,6 +811,22 @@ class _LensEnds extends CustomClipper<Path> {
 
   @override
   bool shouldReclip(_LensEnds old) => old.lens != lens;
+}
+
+/// Just [capsule].
+class _Capsule extends CustomClipper<Path> {
+  const _Capsule(this.capsule);
+
+  final Rect capsule;
+
+  @override
+  Path getClip(Size size) => Path()
+    ..addRRect(
+      RRect.fromRectAndRadius(capsule, Radius.circular(capsule.height / 2)),
+    );
+
+  @override
+  bool shouldReclip(_Capsule old) => old.capsule != capsule;
 }
 
 /// Everything but [hole] (a capsule); everything when it is null.
