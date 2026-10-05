@@ -168,6 +168,8 @@ struct Heartbeat: View {
 final class FrameDump: NSObject {
   static var shared: FrameDump?
 
+  #if targetEnvironment(simulator)
+  // Private API: compiled into simulator builds only.
   private typealias RenderDisplayFn = @convention(c) (
     UInt32, CFString, IOSurfaceRef, Int32, Int32
   ) -> Void
@@ -179,6 +181,7 @@ final class FrameDump: NSObject {
   private static let displayName: String =
     ((UIScreen.main.value(forKey: "_display") as? NSObject)?.value(forKey: "name") as? String)
     ?? "LCD"
+  #endif
 
   private let crop: CGRect
   private let count: Int
@@ -197,7 +200,9 @@ final class FrameDump: NSObject {
     crop = v.count >= 4 ? CGRect(x: v[0], y: v[1], width: v[2], height: v[3]) : .zero
     count = v.count >= 5 ? Int(v[4]) : 180
     super.init()
+    #if targetEnvironment(simulator)
     _ = Self.displayName  // UIKit: resolved on the main thread
+    #endif
     Self.link(self, #selector(mainTick), .main)
     // The capture waits for the render server (4–9 ms a frame, measured);
     // on the main thread that made the app miss display frames, so it runs
@@ -253,6 +258,7 @@ final class FrameDump: NSObject {
   }
 
   private func renderCrop() -> CGImage? {
+    #if targetEnvironment(simulator)
     let w = Int(crop.width), h = Int(crop.height)
     guard let fn = Self.renderDisplay,
       let surf = IOSurfaceCreate([
@@ -274,6 +280,9 @@ final class FrameDump: NSObject {
       bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue
         | CGBitmapInfo.byteOrder32Little.rawValue),
       provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)
+    #else
+    return nil  // device builds carry no private API; the dump is simulator-only
+    #endif
   }
 
   private func write(_ images: [CGImage], _ times: [Double], _ costs: [Double]) {

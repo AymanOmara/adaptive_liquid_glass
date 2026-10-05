@@ -208,8 +208,12 @@ def _align(idx, raw, a, b):
     if n:
         sub = (slice(None, None, 2), slice(None, None, 2))  # search on every 2nd pixel
         sa = [raw[a][k][sub] for k, _ in ia[:n]]
-        for sh in range(-SHIFT, SHIFT + 1):
-            for f in np.arange(PHASES) / PHASES:
+        # Simplest candidates first, so a tie keeps shift 0, phase 0.
+        cands = sorted(((sh, f) for sh in range(-SHIFT, SHIFT + 1)
+                        for f in np.arange(PHASES) / PHASES),
+                       key=lambda c: (abs(c[0]) + c[1], c[0]))
+        for sh, f in cands:
+            if True:
                 pairs = [(i, i + sh) for i in range(n)
                          if 0 <= i + sh and i + sh + (f > 0) < len(ib)]
                 if not pairs:
@@ -238,22 +242,37 @@ def _press_meta(m, scale, crop):
     return dx, dy, touch
 
 
-def _analyse(m, frames, bg, scale, crop):
-    """Per-renderer widths, springs and (press) amplitudes."""
+MIN_FIT = 4  # samples a spring fit needs
+
+
+def _analyse(m, frames, bg, scale, crop, held=()):
+    """Per-renderer widths, springs and (press) amplitudes. `held`: window
+    positions the capture held over a missed display frame, left out of the
+    fits."""
     boxes = [glass_bbox(f, bg) for f in frames]
     widths = [b[2] - b[0] if b else 0 for b in boxes]
     t = np.arange(len(frames)) / FPS
     out = {"widths": widths}
     if max(widths) - min(widths) <= 2:
         return out
+    keep = np.array([i not in held for i in range(len(frames))])
+    keep[0] = True  # the resting frame anchors every fit
+    tw, ww = t[keep], np.asarray(widths, float)[keep]
     if m["kind"] != "press":
-        out["spring"] = fit_spring(t, widths, full=True, floor=True)
+        if len(tw) >= MIN_FIT:
+            out["spring"] = fit_spring(tw, ww, full=True, floor=True)
         return out
     rel = min(int(round(m.get("hold_ms", 0) / 1000 * FPS)) + 1, len(frames) - 4)
-    out["spring_in"] = fit_spring(t[:rel], widths[:rel], full=True)
-    out["spring_out"] = fit_spring(t[rel:] - t[rel], widths[rel:], full=True)
+    ki, ko = keep[:rel], keep[rel:]
+    if ki.sum() >= MIN_FIT:
+        out["spring_in"] = fit_spring(t[:rel][ki], np.asarray(widths[:rel], float)[ki],
+                                      full=True)
+    if ko.sum() >= MIN_FIT:
+        out["spring_out"] = fit_spring(t[rel:][ko] - t[rel], np.asarray(widths[rel:], float)[ko],
+                                       full=True)
     dx, dy, touch = _press_meta(m, scale, crop)
-    held = [b for b in boxes[max(1, rel - 6):rel] if b]
+    held = [b for i, b in enumerate(boxes[max(1, rel - 6):rel], max(1, rel - 6))
+            if b and keep[i]]
     plateau = tuple(np.median(np.array(held), axis=0)) if held else None
     if boxes[0] and plateau:
         sc, st = press_amplitudes(boxes[0], plateau, dx, dy)
@@ -305,6 +324,19 @@ def _release_onsets(m, seqs):
             return None
         out[r] = p + k
     return out
+
+
+REPEAT_MAX = 2 / 255   # a frame this close to its predecessor repeats it
+MOVING_MIN = 0.05      # ... while the next frame moves on (max |Δ|)
+
+
+def _repeat(raw, k):
+    """Clip frame k repeats frame k − 1 while the clip is moving (k + 1
+    differs): a display frame the app did not render."""
+    if k < 1 or k + 1 >= len(raw):
+        return False
+    return (np.abs(raw[k] - raw[k - 1]).max() <= REPEAT_MAX
+            and np.abs(raw[k + 1] - raw[k]).max() > MOVING_MIN)
 
 
 def _score_pair(m, dirs, bg, scale, crop, frames):
@@ -362,7 +394,15 @@ def _score_pair(m, dirs, bg, scale, crop, frames):
         k in held[r] or (f > 0 and k + 1 in held[r]) for r in dirs for k, f in [idx[r][i]]))
     scored = [i for i in range(n) if i not in skip]
     worst = min(scored, key=lambda i: per[i]["ssim"]) if scored else None
-    analysis = {r: _analyse(m, s, bg, scale, crop) for r, s in own.items()}
+    own_held = {r: {i for i in range(frames) if min(start[r] + i, len(raw[r]) - 1) in held[r]}
+                for r in raw}
+    analysis = {r: _analyse(m, s, bg, scale, crop, own_held[r]) for r, s in own.items()}
+    # Repeated frames mid-motion that only one clip shows: the app missed a
+    # display frame in that take (seen in SwiftUI right after a build). In a
+    # noise run they make the floor fail; re-record that take.
+    rep_pos = {r: {i for i, (k, _) in enumerate(idx[r])
+                   if k not in held[r] and _repeat(raw[r], k)} for r in raw}
+    hitch = {r: sorted(rep_pos[r] - rep_pos[o]) for r, o in ((a, b), (b, a))}
     # A press must start at rest: a lost touch-up (seen once with idb)
     # leaves the first frame pressed. The recording's last frame is the
     # settled rest, unlike the window's, which a slow release may not reach.
@@ -387,6 +427,7 @@ def _score_pair(m, dirs, bg, scale, crop, frames):
         "pass": bool(scored and all(per[i]["pass"] for i in scored) and not unsettled),
         "unsettled": unsettled,
         "held_frames": skip,
+        "hitch": hitch,
         # Clip frame shown at each scored position (the phase-interpolated
         # neighbour's lower index), for strips.
         "clip_index": {r: [k for k, _ in v] for r, v in idx.items()},
@@ -446,11 +487,18 @@ def run(run_dir, spec=None, prefix="", background=_asset_background,
         label = o["id"] + (f" ({o['renderer']} A vs B)" if "renderer" in o else "")
         if o["unsettled"]:
             print(f"WARNING {label}: not at rest at the start ({o['unsettled']}); re-record")
+        if "renderer" in o and any(o["hitch"].values()):
+            print(f"HITCH {label}: a frame repeated mid-motion in one take only "
+                  f"({o['hitch']}); re-record that run before trusting the floor")
         held = f" ({len(o['held_frames'])} held, unscored)" if o["held_frames"] else ""
+        if o["worst"] is None:
+            scores = "no scored frames"
+        else:
+            scores = (f"worst #{o['worst_frame']} SSIM {o['worst']['ssim']:.4f} "
+                      f"ΔE {o['worst']['delta_e']:.2f} (bars {SSIM_MIN}/{DELTA_E_MAX}), "
+                      f"mean {o['mean_ssim']:.4f}/{o['mean_delta_e']:.2f}")
         print(f"{label}: {'PASS' if o['pass'] else 'FAIL'} "
-              f"{o['passed_frames']}/{o['frames'] - len(o['held_frames'])} frames{held}, worst #{o['worst_frame']} SSIM {o['worst']['ssim']:.4f} "
-              f"ΔE {o['worst']['delta_e']:.2f} (bars {SSIM_MIN}/{DELTA_E_MAX}), "
-              f"mean {o['mean_ssim']:.4f}/{o['mean_delta_e']:.2f}, "
+              f"{o['passed_frames']}/{o['frames'] - len(o['held_frames'])} frames{held}, {scores}, "
               f"onset offset {o['onset_offset']:+d}, shift {o['shift']:+.1f}"
               + (f", release offset {o['release_offset']:+d} shift {o['release_shift']:+.1f}"
                  if o.get("release_offset") is not None else ""))

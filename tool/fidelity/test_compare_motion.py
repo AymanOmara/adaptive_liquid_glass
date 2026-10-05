@@ -392,3 +392,95 @@ def test_run_noise_ref_reports_a_motion_with_no_common_renderer(tmp_path):
     assert run(a, spec=_MORPH_SPEC, background=lambda m, crop: bg, noise_ref=b) == 1
     rep = json.loads((a / "noise_report.json").read_text())
     assert rep == [{"id": "m", "missing": True, "pass": False}]
+
+
+def test_run_prints_no_scored_frames_when_every_frame_is_held(tmp_path, capsys):
+    bg = np.full((30, 40, 3), 0.2)
+    seq = _growing(bg, 2)
+    _write_frames(tmp_path / "frames/m.flutter", seq)
+    _write_frames(tmp_path / "frames/m.swiftui", seq)
+    (tmp_path / "m.swiftui.times.json").write_text(json.dumps({"held": list(range(len(seq)))}))
+    (tmp_path / "crop.json").write_text(json.dumps({"m": {"x": 0, "y": 0, "w": 40, "h": 30}}))
+    assert run(tmp_path, spec=_MORPH_SPEC, background=lambda m, crop: bg) == 1
+    rep = json.loads((tmp_path / "motion_report.json").read_text())[0]
+    assert rep["worst"] is None and rep["mean_ssim"] is None and rep["pass"] is False
+    assert "no scored frames" in capsys.readouterr().out
+
+
+def test_run_noise_ref_flags_a_hitch_in_one_take(tmp_path, capsys):
+    # Take B repeats one frame mid-motion (the app missed a display frame);
+    # take A does not. The noise report flags it: re-record before trusting
+    # the floor.
+    bg = np.full((30, 40, 3), 0.2)
+    seq = _growing(bg, 2)
+    hitch = seq[:6] + [seq[5]] + seq[6:]
+    a, b = tmp_path / "a", tmp_path / "b"
+    _write_frames(a / "frames/m.swiftui", seq)
+    _write_frames(b / "frames/m.swiftui", hitch)
+    for d in (a, b):
+        (d / "crop.json").write_text(json.dumps({"m": {"x": 0, "y": 0, "w": 40, "h": 30}}))
+    run(a, spec=_MORPH_SPEC, background=lambda m, crop: bg, noise_ref=b, no_fail=True)
+    rep = json.loads((a / "noise_report.json").read_text())[0]
+    assert rep["hitch"] == {"a": [], "b": [5]}
+    assert "HITCH" in capsys.readouterr().out
+
+
+def test_run_noise_ref_does_not_flag_a_repeat_both_takes_show(tmp_path):
+    bg = np.full((30, 40, 3), 0.2)
+    seq = _growing(bg, 2)
+    rep_seq = seq[:6] + [seq[5]] + seq[6:]
+    a, b = tmp_path / "a", tmp_path / "b"
+    _write_frames(a / "frames/m.swiftui", rep_seq)
+    _write_frames(b / "frames/m.swiftui", rep_seq)
+    for d in (a, b):
+        (d / "crop.json").write_text(json.dumps({"m": {"x": 0, "y": 0, "w": 40, "h": 30}}))
+    run(a, spec=_MORPH_SPEC, background=lambda m, crop: bg, noise_ref=b, no_fail=True)
+    rep = json.loads((a / "noise_report.json").read_text())[0]
+    assert rep["hitch"] == {"a": [], "b": []}
+
+
+def test_run_prefers_no_shift_on_a_tie(tmp_path):
+    # A static clip matches at every shift and phase: the alignment keeps 0.
+    bg = np.full((30, 40, 3), 0.2)
+    f = bg.copy()
+    f[10:20, 10:30] = 0.8
+    seq = [bg] * 2 + [f] * 12
+    _write_frames(tmp_path / "frames/m.flutter", seq)
+    _write_frames(tmp_path / "frames/m.swiftui", seq)
+    (tmp_path / "crop.json").write_text(json.dumps({"m": {"x": 0, "y": 0, "w": 40, "h": 30}}))
+    run(tmp_path, spec=_MORPH_SPEC, background=lambda m, crop: bg)
+    rep = json.loads((tmp_path / "motion_report.json").read_text())[0]
+    assert rep["shift"] == 0
+
+
+def test_analysis_ignores_held_frames(tmp_path):
+    # SwiftUI's capture held a rest frame in the middle of the press-in: the
+    # spring fit must not see it.
+    bg = np.full((30, 40, 3), 0.2)
+
+    def frame(half):
+        f = bg.copy()
+        f[10:20, 20 - half:20 + half] = 0.8
+        return f
+
+    def take(glitch):
+        hs = [6, 7, 8, 9, 10, 11, 12, 12, 12, 12, 12, 12, 12, 12]
+        fr = [frame(6)] * 3 + [frame(h) for h in hs]
+        if glitch:
+            fr[6] = frame(6)
+        return fr + [frame(12)] * 10
+
+    _write_frames(tmp_path / "frames/m.flutter", take(False))
+    _write_frames(tmp_path / "frames/m.swiftui", take(True))
+    (tmp_path / "m.swiftui.times.json").write_text(json.dumps({"held": [6]}))
+    (tmp_path / "crop.json").write_text(json.dumps({"m": {"x": 0, "y": 0, "w": 40, "h": 30}}))
+    spec = {"device": {"scale": 1},
+            "motion": [{"id": "m", "kind": "morph", "background": "x",
+                        "before": [{"x": 14, "y": 10, "w": 12, "h": 10}],
+                        "after": [{"x": 8, "y": 10, "w": 24, "h": 10}],
+                        "touch": {"x": 0, "y": 0}}]}
+    run(tmp_path, spec=spec, background=lambda m, crop: bg, frames=24)
+    rep = json.loads((tmp_path / "motion_report.json").read_text())[0]
+    fl, sw = rep["analysis"]["flutter"]["spring"], rep["analysis"]["swiftui"]["spring"]
+    assert sw["response"] == pytest.approx(fl["response"], rel=0.05)
+    assert sw["rms"] == pytest.approx(fl["rms"], abs=0.3)

@@ -115,4 +115,74 @@ void main() {
     await t.pump(const Duration(seconds: 6));
     expect(c.amount, 0);
   });
+
+  testWidgets('press again mid-release springs back up from where it was', (
+    t,
+  ) async {
+    final c = GlassPressController(
+      vsync: const TestVSync(),
+      motion: motion.motion,
+    );
+    addTearDown(c.dispose);
+    c.down(const Offset(50, 20), const Size(100, 40));
+    await t.pump();
+    await t.pump(const Duration(seconds: 1));
+    c.up();
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 100));
+    final mid = c.amount;
+    expect(mid, inExclusiveRange(0.05, 0.95));
+    c.down(const Offset(50, 20), const Size(100, 40));
+    await t.pump();
+    // Continuous: no jump at the interruption.
+    expect(c.amount, closeTo(mid, 0.05));
+    await t.pump(const Duration(seconds: 2));
+    expect(c.amount, closeTo(1, 0.01));
+  });
+
+  testWidgets('release mid-press returns to rest from where it was', (t) async {
+    final c = GlassPressController(
+      vsync: const TestVSync(),
+      motion: motion.motion,
+    );
+    addTearDown(c.dispose);
+    c.down(const Offset(50, 20), const Size(100, 40));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 60));
+    final mid = c.amount;
+    expect(mid, inExclusiveRange(0.05, 0.95));
+    c.up();
+    await t.pump();
+    expect(c.amount, closeTo(mid, 0.1));
+    await t.pump(const Duration(seconds: 3));
+    expect(c.amount, 0);
+    expect(c.geometry(), same(GlassPressGeometry.identity));
+  });
+
+  test('motion constants round-trip through JSON, new fields included', () {
+    final m = motion.motion;
+    final j = m.toJson();
+    for (final k in [
+      'pressGrowthArea',
+      'pressScaleMax',
+      'releaseResponse',
+      'releaseDamping',
+    ]) {
+      expect(j, contains(k));
+    }
+    expect(GlassMotionConstants.fromJson(j, m), m);
+    final other = GlassMotionConstants.fromJson({
+      'pressGrowthArea': 900.0,
+      'pressScaleMax': 1.2,
+      'releaseResponse': 0.5,
+      'releaseDamping': 0.9,
+    }, m);
+    expect(other.pressGrowthArea, 900);
+    expect(other.pressScaleMax, 1.2);
+    expect(other.releaseResponse, 0.5);
+    expect(other.releaseDamping, 0.9);
+    expect(other.pressResponse, m.pressResponse);
+    expect(GlassMotionConstants.fromJson(other.toJson(), m), other);
+    expect(GlassConstants.fromJson(GlassConstants.standard.toJson()).motion, m);
+  });
 }

@@ -10,6 +10,8 @@ import '../group/glass_entry.dart';
 /// Uniform scale of a box of [size] at full press: SwiftUI adds about the
 /// same area to every pressed shape (Task 16b, measured on circles 44–120 pt
 /// and capsules 120–300 pt), so small shapes grow more.
+///
+/// Internal: not exported from the package; public for tests only.
 double pressScaleFor(GlassMotionConstants motion, Size size) {
   final area = size.width * size.height;
   if (area <= 0) return motion.pressScaleMax;

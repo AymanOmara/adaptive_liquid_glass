@@ -212,14 +212,22 @@ scoring.
 aligned again at the touch-up (idb's hold timer jitters by frames), and each
 segment gets a sub-frame phase (the second clip is interpolated between
 neighbouring frames, one phase per segment), because SwiftUI animates from
-the touch time while the capture samples at display frames. The report
-gives `onset_offset` and `release_offset` (frames, Flutter minus SwiftUI)
-next to the refined `shift`/`release_shift`.
+the touch time while the capture samples at display frames. Every score is
+shift-refined: frames are compared after this alignment. The report keeps
+the raw timing apart: `onset_offset` and `release_offset` are the unaligned
+first-change differences (frames, Flutter minus SwiftUI; each take starts
+its capture 0.8 s before the touch, so they are the touch-to-pixels latency
+difference plus idb's touch jitter), and `shift`/`release_shift` are the
+refinements applied on top.
 
 **Noise floor.** `--noise-ref DIR` scores each renderer's clips of one run
 against the same renderer's clips of another (`noise_report.json`). Measured
-(Task 16b, SwiftUI against SwiftUI, two clean runs): 5 of 5 motions pass the
-static bars on every frame (worst SSIM 0.970, worst ΔE 1.03). A run that
-starts right after a build can show SwiftUI hitches (a repeated frame
-mid-motion) that fail 1–3 frames: record SwiftUI twice and check the floor
-before trusting a Flutter score.
+(Task 16b, SwiftUI against SwiftUI): runs B and C pass the static bars on
+every frame in 5 of 5 motions (worst SSIM 0.970, worst ΔE 1.03), but only
+after discarding run A, recorded right after a build, which had SwiftUI
+hitches (a frame repeated mid-motion): A against B passed 3 of 5 and C
+against A 2 of 5 (1–3 failing frames each). The 5 of 5 holds for clean takes
+only. `--noise-ref` flags this: a frame repeated mid-motion in one take but
+not the other prints `HITCH` (`hitch` in the report, window positions per
+take); re-record the hitching run before trusting the floor or a Flutter
+score.
