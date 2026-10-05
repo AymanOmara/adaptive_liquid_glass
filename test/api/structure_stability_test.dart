@@ -1,6 +1,7 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/group/glass_member.dart';
+import 'package:adaptive_liquid_glass/src/group/glass_member_box.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/foundation.dart';

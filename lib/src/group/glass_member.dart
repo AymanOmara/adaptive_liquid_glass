@@ -1,6 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import '../core/glass.dart';
@@ -14,8 +12,10 @@ import '../interaction/glass_pressable.dart';
 import '../interaction/press_controller.dart';
 import '../material/material_glass.dart';
 import '../shader/glass_program.dart';
+import 'content_fade.dart';
 import 'glass_entry.dart';
 import 'glass_group.dart';
+import 'glass_member_box.dart';
 import 'glass_registry.dart';
 import 'scroll_chain.dart';
 
@@ -70,7 +70,8 @@ class GlassMember extends StatefulWidget {
   State<GlassMember> createState() => GlassMemberState();
 }
 
-/// State of [GlassMember]. Public so later tasks can extend behaviour.
+/// State of [GlassMember]. Library-public so the widget and its tests can
+/// name the type; not exported by `adaptive_liquid_glass.dart`.
 class GlassMemberState extends State<GlassMember>
     with SingleTickerProviderStateMixin {
   /// The registry record for this member.
@@ -319,7 +320,7 @@ class GlassMemberState extends State<GlassMember>
 
   /// [content] as drawn on the glass: faded during `glassId` morphs and
   /// wrapped in the press transform (identity unless interactive).
-  Widget buildContent(BuildContext context, Widget content) => _ContentFade(
+  Widget buildContent(BuildContext context, Widget content) => ContentFade(
     opacity: entry.contentOpacity,
     child: _pressContent(context, content),
   );
@@ -360,180 +361,4 @@ class GlassMemberState extends State<GlassMember>
 
   static const AlwaysStoppedAnimation<double> _noPress =
       AlwaysStoppedAnimation<double>(0);
-}
-
-/// Provides the enclosing glass entry to concentric descendants.
-class ConcentricScope extends InheritedWidget {
-  /// Creates the scope.
-  const ConcentricScope({super.key, required this.entry, required super.child});
-
-  /// The enclosing glass.
-  final GlassEntry entry;
-
-  /// Nearest enclosing entry.
-  static GlassEntry? maybeOf(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<ConcentricScope>()?.entry;
-
-  @override
-  bool updateShouldNotify(ConcentricScope old) => old.entry != entry;
-}
-
-/// Hands its render box to the entry and reports geometry changes.
-class GlassMemberBox extends SingleChildRenderObjectWidget {
-  /// Creates the box.
-  const GlassMemberBox({
-    super.key,
-    required this.entry,
-    required this.registry,
-    super.child,
-  });
-
-  /// The member's entry.
-  final GlassEntry entry;
-
-  /// The member's registry.
-  final GlassRegistry registry;
-
-  @override
-  RenderGlassMember createRenderObject(BuildContext context) {
-    final r = RenderGlassMember(entry, registry);
-    entry.box = r;
-    return r;
-  }
-
-  @override
-  void updateRenderObject(
-    BuildContext context,
-    RenderGlassMember renderObject,
-  ) {
-    renderObject
-      ..entry = entry
-      ..registry = registry;
-    entry.box = renderObject;
-  }
-}
-
-/// See [GlassMemberBox].
-class RenderGlassMember extends RenderProxyBox {
-  /// Creates the render object.
-  RenderGlassMember(this.entry, this.registry);
-
-  /// The member's entry.
-  GlassEntry entry;
-
-  /// The member's registry.
-  GlassRegistry registry;
-
-  Matrix4? _lastTransform;
-
-  @override
-  void performLayout() {
-    final old = hasSize ? size : null;
-    super.performLayout();
-    if (old != size) registry.markNeedsPaint();
-  }
-
-  @override
-  void paint(PaintingContext context, Offset offset) {
-    super.paint(context, offset);
-    // This member repainted at a new global transform. The group may not
-    // have repainted this frame (a repaint boundary sits between us), so
-    // refresh it one frame late; the post-frame markNeedsPaint schedules
-    // that frame. A boundary that only moves its layer does not re-run this
-    // paint at all: scrolling is covered by the scroll listeners in
-    // GlassGroup and GlassMemberState, and route motion by GlassGroup.
-    final t = getTransformTo(null);
-    if (_lastTransform != null && _lastTransform != t) {
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        if (attached) registry.markNeedsPaint();
-      });
-    }
-    _lastTransform = t;
-  }
-}
-
-/// Fades member content during morphs. Fixed tree depth (no remount when a
-/// fade ends), no rebuild per tick, and no layer outside a fade.
-class _ContentFade extends SingleChildRenderObjectWidget {
-  const _ContentFade({required this.opacity, super.child});
-
-  final ValueListenable<double> opacity;
-
-  @override
-  _RenderContentFade createRenderObject(BuildContext context) =>
-      _RenderContentFade(opacity);
-
-  @override
-  void updateRenderObject(BuildContext context, _RenderContentFade r) =>
-      r.opacity = opacity;
-}
-
-class _RenderContentFade extends RenderProxyBox {
-  _RenderContentFade(this._opacity) : _alpha = _alphaOf(_opacity.value);
-
-  static int _alphaOf(double v) => (v.clamp(0.0, 1.0) * 255).round();
-
-  ValueListenable<double> _opacity;
-  set opacity(ValueListenable<double> value) {
-    if (identical(value, _opacity)) return;
-    if (attached) _opacity.removeListener(_update);
-    _opacity = value;
-    if (attached) _opacity.addListener(_update);
-    _update();
-  }
-
-  int _alpha;
-
-  bool get _composites => child != null && _alpha > 0 && _alpha < 255;
-
-  void _update() {
-    final a = _alphaOf(_opacity.value);
-    if (a == _alpha) return;
-    final was = _composites;
-    final wasVisible = _alpha > 0;
-    _alpha = a;
-    if (was != _composites) markNeedsCompositingBitsUpdate();
-    if (wasVisible != (_alpha > 0)) markNeedsSemanticsUpdate();
-    markNeedsPaint();
-  }
-
-  @override
-  bool get alwaysNeedsCompositing => _composites;
-
-  @override
-  void attach(PipelineOwner owner) {
-    super.attach(owner);
-    _opacity.addListener(_update);
-    _update();
-  }
-
-  @override
-  void detach() {
-    _opacity.removeListener(_update);
-    super.detach();
-  }
-
-  @override
-  void paint(PaintingContext context, Offset offset) {
-    if (child == null || _alpha == 0) {
-      layer = null;
-      return;
-    }
-    if (_alpha == 255) {
-      layer = null;
-      super.paint(context, offset);
-      return;
-    }
-    layer = context.pushOpacity(
-      offset,
-      _alpha,
-      super.paint,
-      oldLayer: layer as OpacityLayer?,
-    );
-  }
-
-  @override
-  void visitChildrenForSemantics(RenderObjectVisitor visitor) {
-    if (_alpha > 0) super.visitChildrenForSemantics(visitor);
-  }
 }
