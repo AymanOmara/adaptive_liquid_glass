@@ -34,8 +34,10 @@ void main() {
   test('borders use the continuous corner curve', () {
     final border = const GlassShape.rect(16).toBorder(box);
     expect(border, isA<RoundedSuperellipseBorder>());
-    expect((border as RoundedSuperellipseBorder).borderRadius,
-        BorderRadius.circular(16));
+    expect(
+      (border as RoundedSuperellipseBorder).borderRadius,
+      BorderRadius.circular(16),
+    );
   });
 
   test('concentricRadius subtracts the smallest inset', () {
