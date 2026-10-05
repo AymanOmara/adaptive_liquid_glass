@@ -158,7 +158,6 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
     _morph; // install the registry hooks before members register
     GlassPlatform.instance.ensureStarted();
     GlassPlatform.instance.environment.addListener(_onEnvironment);
-    GlassProgram.instance.load();
     GlassBackdropSources.instance.revision.addListener(_onSources);
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -298,6 +297,11 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
     };
 
     _updateSampler(rendering);
+    // Only the shader path needs the program (idempotent); the Material,
+    // degraded and native paths never load it.
+    if (rendering == GlassMemberRendering.backdrop) {
+      GlassProgram.instance.load();
+    }
 
     Widget scoped = GlassGroupScope(
       registry: _registry,

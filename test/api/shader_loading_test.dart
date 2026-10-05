@@ -105,4 +105,13 @@ void main() {
     expect(find.byType(_Stateful), findsOneWidget);
     expect(t.takeException(), isNull);
   }, variant: ios);
+
+  testWidgets('the Material path never loads the shader', (t) async {
+    // Loading for real fails under `flutter test` and reports an error.
+    GlassProgram.instance.debugReset();
+    shaderEnv();
+    await t.pumpWidget(appHost(const LiquidGlass(child: _Stateful())));
+    await t.pump();
+    expect(t.takeException(), isNull);
+  }, variant: android);
 }
