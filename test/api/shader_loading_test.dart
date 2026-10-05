@@ -1,6 +1,7 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/core/shape_border.dart';
+import 'package:adaptive_liquid_glass/src/degraded/glass_loading_surface.dart';
 import 'package:adaptive_liquid_glass/src/group/glass_member.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
@@ -25,11 +26,13 @@ class _StatefulState extends State<_Stateful> {
   Widget build(BuildContext context) => const SizedBox(width: 120, height: 44);
 }
 
-Finder _inMember(Type type) =>
-    find.descendant(of: find.byType(GlassMember), matching: find.byType(type));
+RenderGlassLoadingSurface _surface(WidgetTester t) =>
+    t.renderObject(find.byType(GlassLoadingSurface));
 
-bool _blurOn(WidgetTester t) =>
-    t.widget<BackdropFilter>(_inMember(BackdropFilter)).enabled;
+bool _blurOn(WidgetTester t) {
+  final s = _surface(t);
+  return s.enabled && s.opaqueColor == null;
+}
 
 void main() {
   setUp(() {
@@ -79,11 +82,8 @@ void main() {
       shaderSupported: true,
     );
     await t.pumpWidget(plainHost(const LiquidGlass(child: _Stateful())));
-    final box = t.widget<DecoratedBox>(_inMember(DecoratedBox).first);
-    expect(
-      (box.decoration as ShapeDecoration).color,
-      opaqueGlassColor(Brightness.light),
-    );
+    expect(_surface(t).enabled, isTrue);
+    expect(_surface(t).opaqueColor, opaqueGlassColor(Brightness.light));
   }, variant: ios);
 
   testWidgets('native glass does not wait for the shader', (t) async {

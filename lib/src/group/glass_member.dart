@@ -7,6 +7,7 @@ import '../core/glass.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
 import '../degraded/degraded_glass.dart';
+import '../degraded/glass_loading_surface.dart';
 import '../foreground/glass_foreground.dart';
 import '../foreground/glass_label_style.dart';
 import '../interaction/glass_pressable.dart';
@@ -95,6 +96,9 @@ class GlassMemberState extends State<GlassMember>
   GlassPressController _pressController(GlassGroupScope scope) => _press ??=
       GlassPressController(vsync: this, motion: scope.constants.motion)
         ..addListener(() {
+          // A spring still settling after the glass stopped being
+          // interactive must not deform it.
+          if (!widget.glass.isInteractive) return;
           entry.press = _press!.geometry();
           _registry?.markNeedsPaint();
         });
@@ -247,6 +251,7 @@ class GlassMemberState extends State<GlassMember>
         fadeIn: _fadeIn,
         adaptiveForeground: widget.adaptiveForeground,
         onPressed: widget.onPressed,
+        pressable: true,
         child: widget.child,
       ),
       GlassMemberRendering.degraded => DegradedGlass(
@@ -273,12 +278,18 @@ class GlassMemberState extends State<GlassMember>
 
   /// Blur-only glass on the shader path until the shader program loads,
   /// so the first frames are not bare content and `LiquidGlass.precache`
-  /// stays optional. The tree is the same before and after, so the switch
-  /// keeps the content's state and layout.
+  /// stays optional. The tree is the same before and after (and with or
+  /// without Reduce Transparency), so the switch keeps the content's state
+  /// and layout; once off it adds no layer.
+  ///
+  /// It sits outside the content fade and the press transform on purpose:
+  /// it is a transient stand-in for the backdrop's own drawing, which
+  /// neither fades nor stretches with the content. Morphs start after the
+  /// first frame, by which time the shader has usually loaded.
   Widget _untilShaderLoads(GlassGroupScope scope, Widget content) =>
       ValueListenableBuilder<Object?>(
         valueListenable: glassShaderProgram,
-        builder: (context, program, content) => DegradedGlass(
+        builder: (context, program, content) => GlassLoadingSurface(
           glass: widget.glass,
           shape: widget.shape,
           constants: scope.constants,
@@ -302,46 +313,52 @@ class GlassMemberState extends State<GlassMember>
         : widget.child,
   );
 
-  Widget _pressable(Widget child) {
-    final onPressed = widget.onPressed;
-    return onPressed == null
-        ? child
-        : GlassPressable(onPressed: onPressed, child: child);
-  }
+  /// Always present, so toggling `onPressed` keeps the child mounted.
+  Widget _pressable(Widget child) =>
+      GlassPressable(onPressed: widget.onPressed, child: child);
 
-  /// [content] as drawn on the glass: faded during `glassId` morphs and,
-  /// for interactive glass, wrapped in the press transform.
+  /// [content] as drawn on the glass: faded during `glassId` morphs and
+  /// wrapped in the press transform (identity unless interactive).
   Widget buildContent(BuildContext context, Widget content) => _ContentFade(
     opacity: entry.contentOpacity,
     child: _pressContent(context, content),
   );
 
+  /// The listener and transform are built either way, at a fixed depth, so
+  /// toggling interactivity keeps the content mounted; when not interactive
+  /// they do nothing (an identity transform paints no layer).
   Widget _pressContent(BuildContext context, Widget content) {
-    if (!widget.glass.isInteractive) {
-      entry.press = GlassPressGeometry.identity;
-      return content;
-    }
     final scope = GlassGroupScope.of(context);
-    final press = _pressController(scope)
-      ..motion = scope.constants.motion
-      ..reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final press = widget.glass.isInteractive
+        ? (_pressController(scope)
+            ..motion = scope.constants.motion
+            ..reduceMotion = MediaQuery.disableAnimationsOf(context))
+        : null;
+    if (press == null) entry.press = GlassPressGeometry.identity;
     return Listener(
-      behavior: HitTestBehavior.translucent,
+      behavior: press == null
+          ? HitTestBehavior.deferToChild
+          : HitTestBehavior.translucent,
       // The press maths measures the member box (GlassMemberBox), the
       // same box the renderer draws.
-      onPointerDown: (e) =>
-          press.down(e.localPosition, entry.box?.size ?? Size.zero),
-      onPointerMove: (e) => press.move(e.localPosition),
-      onPointerUp: (_) => press.up(),
-      onPointerCancel: (_) => press.up(),
+      onPointerDown: press == null
+          ? null
+          : (e) => press.down(e.localPosition, entry.box?.size ?? Size.zero),
+      onPointerMove: press == null ? null : (e) => press.move(e.localPosition),
+      onPointerUp: press == null ? null : (_) => press.up(),
+      onPointerCancel: press == null ? null : (_) => press.up(),
       child: AnimatedBuilder(
-        animation: press,
-        builder: (_, child) =>
-            Transform(transform: press.contentTransform(), child: child),
+        animation: press ?? _noPress,
+        builder: (_, child) => Transform(
+          transform: press?.contentTransform() ?? Matrix4.identity(),
+          child: child,
+        ),
         child: content,
       ),
     );
   }
+
+  static const Listenable _noPress = AlwaysStoppedAnimation<double>(0);
 }
 
 /// Provides the enclosing glass entry to concentric descendants.

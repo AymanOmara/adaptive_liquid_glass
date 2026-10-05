@@ -137,7 +137,8 @@ void main() {
         ),
       ),
     );
-    expect(find.byType(InkWell), findsNothing);
+    final ink = t.widget<InkWell>(find.byType(InkWell));
+    expect(ink.splashFactory, NoSplash.splashFactory);
     await t.tap(find.text('Go'));
     expect(taps, 1);
   }, variant: android);

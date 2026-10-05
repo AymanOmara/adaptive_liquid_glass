@@ -4,7 +4,6 @@ import '../core/glass.dart';
 import '../core/glass_shape.dart';
 import '../core/shape_border.dart';
 import '../foreground/glass_label_style.dart';
-import '../interaction/glass_pressable.dart';
 
 /// Material 3 rendering of a glass member (spec §8).
 class MaterialGlass extends StatelessWidget {
@@ -16,6 +15,7 @@ class MaterialGlass extends StatelessWidget {
     this.fadeIn = false,
     this.adaptiveForeground = false,
     this.onPressed,
+    this.pressable = false,
     required this.child,
   });
 
@@ -33,6 +33,11 @@ class MaterialGlass extends StatelessWidget {
 
   /// Makes the surface a button; see `LiquidGlass.onPressed`.
   final VoidCallback? onPressed;
+
+  /// Always build the ink-well structure, even with nothing to press, so
+  /// toggling [onPressed] or interactivity keeps [child] mounted.
+  /// `LiquidGlass` sets it; a bare surface without it has no ink well.
+  final bool pressable;
 
   /// Content.
   final Widget child;
@@ -79,23 +84,32 @@ class MaterialGlass extends StatelessWidget {
     return surface;
   }
 
-  /// Interactive glass ripples (InkWell); a plain surface with [onPressed]
-  /// still taps, focuses and activates, without a ripple.
+  /// Interactive glass ripples (InkWell); with [onPressed] the surface is a
+  /// button. A non-interactive surface with [onPressed] still taps,
+  /// focuses and activates, without a ripple.
   Widget _pressable(Widget content) {
     final onPressed = this.onPressed;
-    if (!glass.isInteractive) {
-      return onPressed == null
-          ? content
-          : GlassPressable(onPressed: onPressed, child: content);
+    final ripple = glass.isInteractive;
+    if (!pressable && onPressed == null) {
+      return ripple
+          ? InkWell(onTap: () {}, excludeFromSemantics: true, child: content)
+          : content;
     }
-    if (onPressed == null) {
-      return InkWell(onTap: () {}, excludeFromSemantics: true, child: content);
-    }
+    final enabled = onPressed != null;
     return Semantics(
-      container: true,
-      button: true,
-      enabled: true,
-      child: InkWell(onTap: onPressed, child: content),
+      container: enabled,
+      button: enabled ? true : null,
+      enabled: enabled ? true : null,
+      child: InkWell(
+        onTap: onPressed ?? (ripple ? () {} : null),
+        excludeFromSemantics: !enabled,
+        canRequestFocus: enabled,
+        splashFactory: ripple ? null : NoSplash.splashFactory,
+        overlayColor: ripple
+            ? null
+            : const WidgetStatePropertyAll(Colors.transparent),
+        child: content,
+      ),
     );
   }
 }
