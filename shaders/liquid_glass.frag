@@ -243,9 +243,14 @@ void main() {
     vec3 wide = ring1 * (0.8535534 / 6.0) + ring2 * (0.1464466 / 10.0);
     col = mix(col, wide, wideW);
   }
+  // The dispersed red/blue taps carry the core channel's full frost offset
+  // (post-lens blur + wide mix), so dispersion 0 is an exact no-op and a
+  // grey backdrop stays grey (the offset must be measured after the wide
+  // mix, not before it).
+  vec3 coreOff = col - tex(sp).rgb;
   vec2 disp = nrm * lensAmt * A.w;
-  col.r = mix(col.r, tex(sp + disp).r, v);
-  col.b = mix(col.b, tex(sp - disp).b, v);
+  col.r = mix(col.r, tex(sp + disp).r + coreOff.r, v);
+  col.b = mix(col.b, tex(sp - disp).b + coreOff.b, v);
 
   float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));
   col = mix(vec3(luma), col, D.w);

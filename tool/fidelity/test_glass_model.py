@@ -328,3 +328,12 @@ def test_tone_lift_lifts_small_dark_shapes_only():
         b, _ = render_window(bg, sc, c)
         assert (b.sum() > a.sum()) == lifted
 
+
+def test_dispersion_keeps_post_blur_offset():
+    """Red/blue single taps carry the post-lens blur offset: a grey backdrop
+    stays grey with dispersion and post blur on."""
+    bg = np.repeat(np.random.default_rng(5).random((2622, 1206, 1)), 3, -1)
+    c = json.loads(json.dumps(STANDARD))
+    c["clear"].update(postBlurShare=0.3, dispersion=0.0, fillColor="#FFFFFF")
+    out, _ = render_window(bg, _scene("clear-rect16-text-light"), c)
+    assert np.abs(out[..., 0] - out[..., 1]).max() <= 1 / 255 + 1e-9

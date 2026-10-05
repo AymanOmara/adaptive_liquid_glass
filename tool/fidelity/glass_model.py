@@ -532,11 +532,16 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
         for dx, dy, wt in unit:
             wide = wide + wt * _sample(tex, tx0, ty0, spx[m] + dx * sxm, spy[m] + dy * sxm)
         col = col + (wide - col) * wm[:, None]
+    # Dispersion replaces red/blue by single taps; carry the core channel's
+    # full frost offset (post-lens blur + wide mix) over to them, so
+    # dispersion 0 is an exact no-op and a grey backdrop stays grey. The
+    # offset is measured after the wide mix, matching the shader.
+    core_off = col - _sample(tex, tx0, ty0, spx[m], spy[m])
     tm = t[m]
     r2 = _sample(tex, tx0, ty0, spx[m] + dxp[m], spy[m] + dyp[m])[:, 0]
     b2 = _sample(tex, tx0, ty0, spx[m] - dxp[m], spy[m] - dyp[m])[:, 2]
-    col[:, 0] += (r2 - col[:, 0]) * tm
-    col[:, 2] += (b2 - col[:, 2]) * tm
+    col[:, 0] += (r2 + core_off[:, 0] - col[:, 0]) * tm
+    col[:, 2] += (b2 + core_off[:, 2] - col[:, 2]) * tm
 
     Dm, Bm, tim = D[m], B[m], tint[m]
     luma = (col * LUMA).sum(-1, keepdims=True)
