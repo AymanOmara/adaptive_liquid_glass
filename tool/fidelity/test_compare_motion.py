@@ -263,3 +263,62 @@ def test_run_reports_missing_recordings(tmp_path):
     assert run(tmp_path, spec=spec, background=lambda m, c: None) == 1
     rep = json.loads((tmp_path / "motion_report.json").read_text())[0]
     assert rep["missing"] is True
+
+
+def _growing(bg, lead):
+    frames = [bg] * lead
+    for k in range(12):
+        f = bg.copy()
+        half = 5 + min(k, 8)
+        f[10:20, 20 - half:20 + half] = 0.8
+        frames.append(f)
+    return frames
+
+
+_MORPH_SPEC = {"device": {"scale": 1},
+               "motion": [{"id": "m", "kind": "morph", "background": "x",
+                           "before": [{"x": 15, "y": 10, "w": 10, "h": 10}],
+                           "after": [{"x": 7, "y": 10, "w": 26, "h": 10}],
+                           "touch": {"x": 0, "y": 0}}]}
+
+
+def test_run_reports_the_onset_offset_in_frames(tmp_path):
+    bg = np.full((30, 40, 3), 0.2)
+    _write_frames(tmp_path / "frames/m.flutter", _growing(bg, 5))
+    _write_frames(tmp_path / "frames/m.swiftui", _growing(bg, 3))
+    (tmp_path / "crop.json").write_text(json.dumps({"m": {"x": 0, "y": 0, "w": 40, "h": 30}}))
+    run(tmp_path, spec=_MORPH_SPEC, background=lambda m, crop: bg)
+    rep = json.loads((tmp_path / "motion_report.json").read_text())[0]
+    assert rep["onset_offset"] == 2  # Flutter's first change, frames after SwiftUI's
+
+
+def test_run_noise_ref_scores_each_renderer_against_the_other_run(tmp_path):
+    # Run A has both renderers, run B only SwiftUI: the noise report pairs
+    # A's SwiftUI clip with B's, and writes noise_report.json only.
+    bg = np.full((30, 40, 3), 0.2)
+    a, b = tmp_path / "a", tmp_path / "b"
+    _write_frames(a / "frames/m.swiftui", _growing(bg, 2))
+    _write_frames(a / "frames/m.flutter", _growing(bg, 2)[:-6])
+    _write_frames(b / "frames/m.swiftui", _growing(bg, 6))
+    for d in (a, b):
+        (d / "crop.json").write_text(json.dumps({"m": {"x": 0, "y": 0, "w": 40, "h": 30}}))
+    code = run(a, spec=_MORPH_SPEC, background=lambda m, crop: bg, noise_ref=b)
+    assert code == 0
+    assert not (a / "motion_report.json").exists()
+    rep = json.loads((a / "noise_report.json").read_text())
+    assert [(o["id"], o["renderer"]) for o in rep] == [("m", "swiftui")]
+    assert rep[0]["onset"] == {"a": 2, "b": 6}
+    assert rep[0]["pass"] is True
+    assert set(rep[0]["analysis"]) == {"a", "b"}
+
+
+def test_run_noise_ref_reports_a_motion_with_no_common_renderer(tmp_path):
+    bg = np.full((30, 40, 3), 0.2)
+    a, b = tmp_path / "a", tmp_path / "b"
+    _write_frames(a / "frames/m.flutter", _growing(bg, 2))
+    _write_frames(b / "frames/m.swiftui", _growing(bg, 2))
+    for d in (a, b):
+        (d / "crop.json").write_text(json.dumps({"m": {"x": 0, "y": 0, "w": 40, "h": 30}}))
+    assert run(a, spec=_MORPH_SPEC, background=lambda m, crop: bg, noise_ref=b) == 1
+    rep = json.loads((a / "noise_report.json").read_text())
+    assert rep == [{"id": "m", "missing": True, "pass": False}]

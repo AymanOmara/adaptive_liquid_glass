@@ -3,11 +3,13 @@ frame against the static bars; fits SwiftUI-style springs and press
 amplitudes for each renderer.
 
 Usage: compare_motion.py <run-dir> [--prefix ID] [--no-fail] [--strips DIR]
+       compare_motion.py <run-a> --noise-ref <run-b>
 
-Frames come from h264 recordings (record_motion.sh decodes them as BT.709
-limited range); the codec alone costs about 0.04 SSIM against a screenshot,
-so read the bars against a SwiftUI-vs-SwiftUI noise run: record SwiftUI twice
-(RENDERERS=swiftui) and score one run's clips as "flutter" against the other.
+Frames come from record_motion.sh: lossless screen captures by default, or
+h264 recordings (DUMP=0; the codec alone costs about 0.04 SSIM). Read the
+bars against the measurement floor: `--noise-ref` scores each renderer's
+clips of one run against the same renderer's clips of another
+(noise_report.json).
 """
 import argparse
 import json
@@ -241,90 +243,125 @@ def _analyse(m, frames, bg, scale, crop):
     return out
 
 
+def _score_pair(m, dirs, bg, scale, crop, frames):
+    """Aligns and scores the two clips of `dirs` ({label: frame dir}, the
+    first label is scored against the second) and analyses each."""
+    a, b = dirs
+    raw = {r: _load_frames(d) for r, d in dirs.items()}
+    onset = {r: first_change(f) for r, f in raw.items()}
+    # Window starts one frame before the onset (the last resting frame).
+    seqs = {r: raw[r][max(0, onset[r] - 1):] for r in raw}
+    # Springs and amplitudes come from each clip's own window (its first
+    # frame is its last resting frame); the shift below only aligns the
+    # frames that are scored against each other.
+    own = {r: (s + [s[-1]] * (frames - len(s)))[:frames] for r, s in seqs.items()}
+    n0 = min(frames, len(seqs[a]), len(seqs[b]))
+    shift = _refine_shift(seqs[a], seqs[b], n0)
+    if shift > 0:
+        seqs[b] = seqs[b][shift:]
+    elif shift < 0:
+        seqs[a] = seqs[a][-shift:]
+    # An h264 recording stops at its last changed frame (variable frame
+    # rate), so a renderer that settles sooner has a shorter clip: hold its
+    # last frame, which is what the screen showed.
+    n = min(frames, max(len(s) for s in seqs.values()))
+    seqs = {r: (s + [s[-1]] * (n - len(s)))[:n] for r, s in seqs.items()}
+    # Scored region: everything either clip's glass covers in the window,
+    # inflated like the static region (INFLATE_PT).
+    boxes = [bx for s in seqs.values() for f in s if (bx := glass_bbox(f, bg))]
+    h, w = bg.shape[:2]
+    pad = INFLATE_PT * scale
+    if boxes:
+        x0 = int(max(0, min(bx[0] for bx in boxes) - pad))
+        y0 = int(max(0, min(bx[1] for bx in boxes) - pad))
+        x1 = int(min(w, max(bx[2] for bx in boxes) + pad))
+        y1 = int(min(h, max(bx[3] for bx in boxes) + pad))
+    else:
+        x0, y0, x1, y1 = 0, 0, w, h
+    per = [score(seqs[a][i][y0:y1, x0:x1], seqs[b][i][y0:y1, x0:x1]) for i in range(n)]
+    worst = min(range(n), key=lambda i: per[i]["ssim"]) if n else None
+    analysis = {r: _analyse(m, s, bg, scale, crop) for r, s in own.items()}
+    # A press must start at rest: a lost touch-up (seen once with idb)
+    # leaves the first frame pressed. The recording's last frame is the
+    # settled rest, unlike the window's, which a slow release may not reach.
+    # Flag it; re-record.
+    unsettled = []
+    if m["kind"] == "press":
+        for r, s in own.items():
+            p, q = glass_bbox(s[0], bg), glass_bbox(raw[r][-1], bg)
+            if p and q and max(abs(u - v) for u, v in zip(p, q)) > UNSETTLED_PX:
+                unsettled.append(r)
+    return {
+        "id": m["id"], "kind": m["kind"], "frames": n, "onset": onset,
+        # Frames from the second clip's first change to the first clip's.
+        # Each take starts its capture PRE before the touch, so this is the
+        # touch-to-pixels latency difference (plus touch-injection jitter).
+        "onset_offset": onset[a] - onset[b],
+        "shift": shift,
+        "region": [x0, y0, x1, y1],
+        "pass": bool(n and all(p["pass"] for p in per) and not unsettled),
+        "unsettled": unsettled,
+        "passed_frames": sum(p["pass"] for p in per),
+        "worst_frame": worst,
+        "worst": per[worst] if worst is not None else None,
+        "mean_ssim": float(np.mean([p["ssim"] for p in per])) if n else None,
+        "mean_delta_e": float(np.mean([p["delta_e"] for p in per])) if n else None,
+        "per_frame": [{"ssim": p["ssim"], "delta_e": p["delta_e"], "pass": p["pass"]}
+                      for p in per],
+        "analysis": analysis,
+    }
+
+
+def _has_frames(d):
+    return d.is_dir() and any(d.glob("*.png"))
+
+
 def run(run_dir, spec=None, prefix="", background=_asset_background,
-        no_fail=False, frames=FRAMES):
+        no_fail=False, frames=FRAMES, noise_ref=None):
+    """Scores Flutter against SwiftUI per motion into motion_report.json.
+
+    `noise_ref`: another run dir; each renderer's clips of `run_dir` ("a")
+    are scored against the same renderer's clips there ("b") instead, into
+    `run_dir`/noise_report.json: the measurement floor the Flutter scores
+    are read against."""
     run_dir = pathlib.Path(run_dir)
     spec = spec or json.loads((ROOT / "tool/scenes/motion.json").read_text())
     scale = spec["device"]["scale"]
     crops = json.loads((run_dir / "crop.json").read_text())
     out = []
     for m in (m for m in spec["motion"] if m["id"].startswith(prefix)):
-        dirs = {r: run_dir / "frames" / f"{m['id']}.{r}" for r in ("flutter", "swiftui")}
-        if not all(d.is_dir() and any(d.glob("*.png")) for d in dirs.values()) \
-                or m["id"] not in crops:
+        if noise_ref is None:
+            pairs = [(None, {r: run_dir / "frames" / f"{m['id']}.{r}"
+                             for r in ("flutter", "swiftui")})]
+        else:
+            pairs = [(r, {"a": run_dir / "frames" / f"{m['id']}.{r}",
+                          "b": pathlib.Path(noise_ref) / "frames" / f"{m['id']}.{r}"})
+                     for r in ("flutter", "swiftui")]
+        pairs = [(r, d) for r, d in pairs if all(_has_frames(x) for x in d.values())]
+        if not pairs or m["id"] not in crops:
             out.append({"id": m["id"], "missing": True, "pass": False})
             continue
         crop = crops[m["id"]]
         bg = background(m, crop)
-        raw = {r: _load_frames(d) for r, d in dirs.items()}
-        onset = {r: first_change(f) for r, f in raw.items()}
-        # Window starts one frame before the onset (the last resting frame).
-        seqs = {r: raw[r][max(0, onset[r] - 1):] for r in raw}
-        # Springs and amplitudes come from each renderer's own window (its
-        # first frame is its last resting frame); the shift below only
-        # aligns the frames that are scored against each other.
-        own = {r: (s + [s[-1]] * (frames - len(s)))[:frames] for r, s in seqs.items()}
-        n0 = min(frames, len(seqs["flutter"]), len(seqs["swiftui"]))
-        shift = _refine_shift(seqs["flutter"], seqs["swiftui"], n0)
-        if shift > 0:
-            seqs["swiftui"] = seqs["swiftui"][shift:]
-        elif shift < 0:
-            seqs["flutter"] = seqs["flutter"][-shift:]
-        # A recording stops at its last changed frame (variable frame rate),
-        # so a renderer that settles sooner has a shorter clip: hold its last
-        # frame, which is what the screen showed.
-        n = min(frames, max(len(s) for s in seqs.values()))
-        seqs = {r: (s + [s[-1]] * (n - len(s)))[:n] for r, s in seqs.items()}
-        # Scored region: everything either renderer's glass covers in the
-        # window, inflated like the static region (INFLATE_PT).
-        boxes = [b for s in seqs.values() for f in s if (b := glass_bbox(f, bg))]
-        h, w = bg.shape[:2]
-        pad = INFLATE_PT * scale
-        if boxes:
-            x0 = int(max(0, min(b[0] for b in boxes) - pad))
-            y0 = int(max(0, min(b[1] for b in boxes) - pad))
-            x1 = int(min(w, max(b[2] for b in boxes) + pad))
-            y1 = int(min(h, max(b[3] for b in boxes) + pad))
-        else:
-            x0, y0, x1, y1 = 0, 0, w, h
-        per = [score(seqs["flutter"][i][y0:y1, x0:x1], seqs["swiftui"][i][y0:y1, x0:x1])
-               for i in range(n)]
-        worst = min(range(n), key=lambda i: per[i]["ssim"]) if n else None
-        analysis = {r: _analyse(m, s, bg, scale, crop) for r, s in own.items()}
-        # A press must start at rest: a lost touch-up (seen once with idb)
-        # leaves the first frame pressed. The recording's last frame is the
-        # settled rest (the clip stops at the last change), unlike the
-        # window's, which a slow release may not reach. Flag it; re-record.
-        unsettled = []
-        if m["kind"] == "press":
-            for r, s in own.items():
-                a, b = glass_bbox(s[0], bg), glass_bbox(raw[r][-1], bg)
-                if a and b and max(abs(u - v) for u, v in zip(a, b)) > UNSETTLED_PX:
-                    unsettled.append(r)
-        out.append({
-            "id": m["id"], "kind": m["kind"], "frames": n, "onset": onset, "shift": shift,
-            "region": [x0, y0, x1, y1],
-            "pass": bool(n and all(p["pass"] for p in per) and not unsettled),
-            "unsettled": unsettled,
-            "passed_frames": sum(p["pass"] for p in per),
-            "worst_frame": worst,
-            "worst": per[worst] if worst is not None else None,
-            "mean_ssim": float(np.mean([p["ssim"] for p in per])) if n else None,
-            "mean_delta_e": float(np.mean([p["delta_e"] for p in per])) if n else None,
-            "per_frame": [{"ssim": p["ssim"], "delta_e": p["delta_e"], "pass": p["pass"]}
-                          for p in per],
-            "analysis": analysis,
-        })
-    (run_dir / "motion_report.json").write_text(json.dumps(out, indent=2))
+        for r, dirs in pairs:
+            o = _score_pair(m, dirs, bg, scale, crop, frames)
+            if r is not None:
+                o = {"id": o.pop("id"), "renderer": r, **o}
+            out.append(o)
+    name = "motion_report.json" if noise_ref is None else "noise_report.json"
+    (run_dir / name).write_text(json.dumps(out, indent=2))
     for o in out:
         if o.get("missing"):
             print("MISSING", o["id"])
             continue
+        label = o["id"] + (f" ({o['renderer']} A vs B)" if "renderer" in o else "")
         if o["unsettled"]:
-            print(f"WARNING {o['id']}: not at rest at the start ({o['unsettled']}); re-record")
-        print(f"{o['id']}: {'PASS' if o['pass'] else 'FAIL'} {o['passed_frames']}/{o['frames']} "
+            print(f"WARNING {label}: not at rest at the start ({o['unsettled']}); re-record")
+        print(f"{label}: {'PASS' if o['pass'] else 'FAIL'} {o['passed_frames']}/{o['frames']} "
               f"frames, worst #{o['worst_frame']} SSIM {o['worst']['ssim']:.4f} "
-              f"ΔE {o['worst']['delta_e']:.2f} (bars {SSIM_MIN}/{DELTA_E_MAX})")
+              f"ΔE {o['worst']['delta_e']:.2f} (bars {SSIM_MIN}/{DELTA_E_MAX}), "
+              f"mean {o['mean_ssim']:.4f}/{o['mean_delta_e']:.2f}, "
+              f"onset offset {o['onset_offset']:+d}, shift {o['shift']:+d}")
         for r, a in o["analysis"].items():
             sp = {k: (round(v["response"], 3), round(v["damping"], 3))
                   for k, v in a.items() if k.startswith("spring")}
@@ -368,9 +405,13 @@ def main():
     ap.add_argument("--prefix", default="")
     ap.add_argument("--no-fail", action="store_true")
     ap.add_argument("--strips", type=pathlib.Path, help="write <id>.strip.png here")
+    ap.add_argument("--noise-ref", type=pathlib.Path, metavar="DIR",
+                    help="score each renderer's clips against the same renderer's in DIR "
+                         "(noise_report.json)")
     args = ap.parse_args()
-    code = run(args.run_dir, prefix=args.prefix, no_fail=args.no_fail)
-    if args.strips:
+    code = run(args.run_dir, prefix=args.prefix, no_fail=args.no_fail,
+               noise_ref=args.noise_ref)
+    if args.strips and not args.noise_ref:
         args.strips.mkdir(parents=True, exist_ok=True)
         strips(args.run_dir, args.strips)
     sys.exit(code)

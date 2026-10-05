@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
 # Records press/morph motions (tool/scenes/motion.json) in both renderers.
 # Usage: tool/fidelity/record_motion.sh <run-dir> [motion-id-prefix]
-# Writes <run-dir>/<id>.<renderer>.mov and frames/<id>.<renderer>/%04d.png
-# (60 fps, cropped to the motion's region; crop origin in crop.json).
+# Writes frames/<id>.<renderer>/%04d.png (60 fps, cropped to the motion's
+# region; crop origin in crop.json).
+# Capture (Task 16b): lossless by default. The app's `-dump` captures the
+# screen on every display frame (MotionScenes.swift `FrameDump`; identical to
+# `simctl io screenshot` within 2/255, both renderers) and writes PNGs with
+# their timestamps (<id>.<renderer>.times.json); they are resampled to the
+# 60 fps grid here. DUMP=0 records h264 with `simctl io recordVideo` instead
+# (Task 16; the codec costs about 0.04 SSIM) and keeps <id>.<renderer>.mov.
+# Disk guards: stops when / has under MIN_FREE_GB (20) free, before the run
+# and before every take, and when the run dir exceeds MAX_RUN_GB (3).
 # Env: UDID (default: the motion simulator), CONSTANTS='{"motion":{...}}'
 #      (Flutter only), RENDERERS="flutter swiftui", SKIP_BUILD=1,
 #      PRE=0.8 (s recorded before the touch), POST=1.6 (s after it ends),
-#      WARMUP=1 (run the motion once, unrecorded, first; 0 disables)
+#      WARMUP=1 (run the motion once, unrecorded, first; 0 disables), DUMP=1
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 UDID="${UDID:-7E156D58-17BB-4F95-8C5D-9A4692BE2F60}"
@@ -19,7 +27,29 @@ RENDERERS="${RENDERERS:-flutter swiftui}"
 SPEC=tool/scenes/motion.json
 PRE="${PRE:-0.8}"
 POST="${POST:-1.6}"
-command -v ffmpeg >/dev/null || { echo "record_motion.sh: ffmpeg not found" >&2; exit 1; }
+DUMP="${DUMP:-1}"
+MIN_FREE_GB="${MIN_FREE_GB:-20}"
+MAX_RUN_GB="${MAX_RUN_GB:-3}"
+if [[ "$DUMP" == 0 ]]; then
+  command -v ffmpeg >/dev/null || { echo "record_motion.sh: ffmpeg not found" >&2; exit 1; }
+fi
+
+disk_guard() { # stops when / is short of space or the run dir is too big
+  local free_gb run_kb
+  free_gb=$(df -g / | awk 'NR == 2 { print $4 }')
+  if (( free_gb < MIN_FREE_GB )); then
+    echo "record_motion.sh: only ${free_gb} GB free on /, need ${MIN_FREE_GB}; stopping" >&2
+    exit 1
+  fi
+  if [[ -d "$OUT" ]]; then
+    run_kb=$(du -sk "$OUT" | awk '{ print $1 }')
+    if (( run_kb > MAX_RUN_GB * 1024 * 1024 )); then
+      echo "record_motion.sh: $OUT is $((run_kb / 1024)) MB, over ${MAX_RUN_GB} GB; stopping" >&2
+      exit 1
+    fi
+  fi
+}
+disk_guard
 
 # Same device model and runtime as the static bars (any simulator name).
 python3 - "$UDID" <<'PY' || exit 1
@@ -74,6 +104,8 @@ if [[ -z "${SKIP_BUILD:-}" ]]; then
   (cd example && flutter build ios --simulator --debug >/dev/null)
   xcrun simctl install "$UDID" example/build/ios/iphonesimulator/Runner.app
 fi
+# The app's temporary folder (NSTemporaryDirectory), where `-dump` writes.
+DUMP_DIR="$(xcrun simctl get_app_container "$UDID" "$BUNDLE" data)/tmp/motion-dump"
 
 python3 - "$OUT" "$plan" <<'PY'
 import json, sys
@@ -94,11 +126,22 @@ touch_once() { # kind x y hold-seconds
   fi
 }
 
+# Frames per dump take: the whole recorded span plus a margin, capped.
+dump_frames() { # hold-seconds
+  python3 -c "import math; print(min(600, math.ceil(($PRE + $1 + $POST) * 60) + 6))"
+}
+
 while read -r id kind tx ty hold crop; do
   for r in $RENDERERS; do
+    disk_guard
     xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
     extra=()
     [[ "$r" == flutter && -n "${CONSTANTS:-}" ]] && extra=(-constants "$CONSTANTS")
+    if [[ "$DUMP" != 0 ]]; then
+      IFS=: read -r cw ch cx cy <<<"$crop"
+      extra+=(-dump "$cx,$cy,$cw,$ch,$(dump_frames "$hold")")
+      rm -rf "$DUMP_DIR"
+    fi
     xcrun simctl launch "$UDID" "$BUNDLE" -motion "$id" -renderer "$r" ${extra[@]+"${extra[@]}"} >/dev/null </dev/null ||
       { echo "record_motion.sh: launch failed for '$id' renderer '$r'" >&2; exit 1; }
     sleep "${SETTLE:-2.5}"
@@ -114,27 +157,55 @@ while read -r id kind tx ty hold crop; do
         sleep 1.5
       fi
     fi
-    mov="$OUT/$id.$r.mov"
-    log="$OUT/$id.$r.rec.log"
-    xcrun simctl io "$UDID" recordVideo --codec h264 --force "$mov" 2>"$log" </dev/null &
-    rec=$!
-    for _ in $(seq 50); do grep -q "Recording started" "$log" && break; sleep 0.1; done
-    sleep "$PRE"
-    touch_once "$kind" "$tx" "$ty" "$hold"
-    sleep "$POST"
-    kill -INT "$rec"
-    wait "$rec" || true
     rm -rf "$OUT/frames/$id.$r"
     mkdir -p "$OUT/frames/$id.$r"
-    # The stream is BT.709 limited range (its smpte432 primaries tag is not
-    # honoured: undecoded values match the sRGB screenshots, a P3→sRGB
-    # conversion makes them worse); ffmpeg's default BT.601 decode adds a
-    # 2/255 bias.
-    ffmpeg -nostdin -loglevel error -y -i "$mov" -vf \
-      "scale=in_color_matrix=bt709:in_range=tv:out_range=pc:flags=accurate_rnd+full_chroma_int,fps=60,crop=$crop" \
-      -pix_fmt rgb24 "$OUT/frames/$id.$r/%04d.png"
+    if [[ "$DUMP" != 0 ]]; then
+      mkdir -p "$DUMP_DIR"
+      touch "$DUMP_DIR/start"
+      sleep "$PRE"
+      touch_once "$kind" "$tx" "$ty" "$hold"
+      for _ in $(seq 240); do [[ -f "$DUMP_DIR/done" ]] && break; sleep 0.25; done
+      [[ -f "$DUMP_DIR/done" ]] ||
+        { echo "record_motion.sh: no frame dump for '$id' renderer '$r'" >&2; exit 1; }
+      # Resampled onto the 60 fps grid (a dropped display frame repeats the
+      # previous one, as the screen did) by hard links; then the dump goes.
+      python3 - "$DUMP_DIR" "$OUT/frames/$id.$r" "$OUT/$id.$r.times.json" </dev/null <<'PY'
+import json, math, os, shutil, sys
+src, dst, times_out = sys.argv[1:4]
+t = json.load(open(f"{src}/meta.json"))["times"]
+n = int(math.floor((t[-1] - t[0]) * 60 + 0.25)) + 1
+i = 0
+for k in range(n):
+    g = t[0] + k / 60
+    while i + 1 < len(t) and t[i + 1] <= g + 0.004:
+        i += 1
+    os.link(f"{src}/{i + 1:04d}.png", f"{dst}/{k + 1:04d}.png")
+json.dump({"times": t, "grid": n}, open(times_out, "w"))
+shutil.rmtree(src)
+PY
+    else
+      mov="$OUT/$id.$r.mov"
+      log="$OUT/$id.$r.rec.log"
+      xcrun simctl io "$UDID" recordVideo --codec h264 --force "$mov" 2>"$log" </dev/null &
+      rec=$!
+      for _ in $(seq 50); do grep -q "Recording started" "$log" && break; sleep 0.1; done
+      sleep "$PRE"
+      touch_once "$kind" "$tx" "$ty" "$hold"
+      sleep "$POST"
+      kill -INT "$rec"
+      wait "$rec" || true
+      # The stream is BT.709 limited range (its smpte432 primaries tag is not
+      # honoured: undecoded values match the sRGB screenshots, a P3→sRGB
+      # conversion makes them worse); ffmpeg's default BT.601 decode adds a
+      # 2/255 bias.
+      ffmpeg -nostdin -loglevel error -y -i "$mov" -vf \
+        "scale=in_color_matrix=bt709:in_range=tv:out_range=pc:flags=accurate_rnd+full_chroma_int,fps=60,crop=$crop" \
+        -pix_fmt rgb24 "$OUT/frames/$id.$r/%04d.png"
+    fi
     echo "$id $r: $(ls "$OUT/frames/$id.$r" | wc -l | tr -d ' ') frames"
   done
 # Every command in the loop reads /dev/null: the plan is on stdin.
 done <<<"$plan"
+xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
+disk_guard
 echo "recorded into $OUT"

@@ -27,6 +27,10 @@ enum MotionScenes {
   /// Handles `-motion <id>` for the SwiftUI renderer. Returns false when the
   /// launch is not a SwiftUI motion launch (the static host then runs).
   static func install(in window: UIWindow?) -> Bool {
+    // `-dump` (Task 16b) captures the screen, so it serves both renderers.
+    if LaunchArgs.arg("motion") != nil, let d = LaunchArgs.arg("dump") {
+      FrameDump.shared = FrameDump(spec: d)
+    }
     guard let id = LaunchArgs.arg("motion"), LaunchArgs.arg("renderer") == "swiftui",
           let window else { return false }
     guard #available(iOS 26.0, *) else {
@@ -46,7 +50,6 @@ enum MotionScenes {
     }
     window.rootViewController = UIHostingController(
       rootView: MotionSceneView(spec: spec, background: bg))
-    if let d = LaunchArgs.arg("dump") { FrameDump.shared = FrameDump(window: window, spec: d) }
     return true
   }
 
@@ -140,18 +143,27 @@ struct Heartbeat: View {
 
 /// Lossless frame dump (Task 16b): `-dump x,y,w,h,frames` (crop in px).
 ///
-/// Every display frame after `<tmp>/motion-dump/start` appears, the window
-/// is snapshotted (`drawHierarchy`, which renders the glass the way the
-/// screen shows it) into an sRGB image of the crop, and its
+/// On every display frame after `<tmp>/motion-dump/start` appears, the
+/// screen is captured (the same pixels `simctl io screenshot` returns:
+/// measured identical within 2/255) and cropped, and its
 /// `CACurrentMediaTime` is kept. After `frames` frames the PNGs, `meta.json`
 /// (`{"renderer", "times"}`, seconds) and `done` are written to the same
-/// folder. The Flutter motion view dumps the same way
-/// (`example/lib/scenes/frame_dump.dart`); `tool/fidelity/record_motion.sh`
-/// drives both.
+/// folder. It captures the screen, so one path serves both renderers;
+/// `tool/fidelity/record_motion.sh` (`DUMP=1`) drives it.
 final class FrameDump: NSObject {
   static var shared: FrameDump?
 
-  private let window: UIWindow
+  /// UIKit's screen capture (what `simctl io screenshot` returns, glass
+  /// included). `drawHierarchy` is not usable: it renders the glass without
+  /// its blur (measured SSIM 0.963 against a screenshot). Private; this is a
+  /// simulator-only test harness.
+  private typealias ScreenImageFn = @convention(c) () -> Unmanaged<UIImage>
+  private static let screenImage: ScreenImageFn? = {
+    guard let sym = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "_UICreateScreenUIImage")
+    else { return nil }
+    return unsafeBitCast(sym, to: ScreenImageFn.self)
+  }()
+
   private let crop: CGRect
   private let count: Int
   private let dir = URL(fileURLWithPath: NSTemporaryDirectory())
@@ -161,9 +173,8 @@ final class FrameDump: NSObject {
   private var link: CADisplayLink?
   private var armed = false
 
-  init(window: UIWindow, spec: String) {
+  init(spec: String) {
     let v = spec.split(separator: ",").compactMap { Double($0) }
-    self.window = window
     crop = v.count >= 4 ? CGRect(x: v[0], y: v[1], width: v[2], height: v[3]) : .zero
     count = v.count >= 5 ? Int(v[4]) : 180
     super.init()
@@ -179,18 +190,28 @@ final class FrameDump: NSObject {
       if !armed { return }
     }
     let t = CACurrentMediaTime()
-    let s = window.screen.scale
-    let fmt = UIGraphicsImageRendererFormat()
-    fmt.scale = s
-    fmt.preferredRange = .standard
-    fmt.opaque = true
-    let size = CGSize(width: crop.width / s, height: crop.height / s)
-    let origin = CGPoint(x: -crop.minX / s, y: -crop.minY / s)
-    let img = UIGraphicsImageRenderer(size: size, format: fmt).image { _ in
-      window.drawHierarchy(in: CGRect(origin: origin, size: window.bounds.size),
-                           afterScreenUpdates: false)
+    // Copied out of the full screen image: a `cropping(to:)` view would keep
+    // every full frame (12 MB) alive until the dump is written.
+    guard let fn = Self.screenImage,
+      let full = fn().takeRetainedValue().cgImage,
+      // The capture is tagged extended sRGB; its values are in range (the
+      // PNG matches the screenshot), so plain sRGB is the identity.
+      let space = CGColorSpace(name: CGColorSpace.sRGB),
+      let ctx = CGContext(
+        data: nil, width: Int(crop.width), height: Int(crop.height), bitsPerComponent: 8,
+        bytesPerRow: 0, space: space,
+        bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue
+          | CGBitmapInfo.byteOrder32Little.rawValue)
+    else {
+      NSLog("FrameDump: screen capture unavailable")
+      return
     }
-    images.append(img)
+    ctx.interpolationQuality = .none
+    ctx.draw(full, in: CGRect(
+      x: -crop.minX, y: crop.maxY - CGFloat(full.height),
+      width: CGFloat(full.width), height: CGFloat(full.height)))
+    guard let img = ctx.makeImage() else { return }
+    images.append(UIImage(cgImage: img))
     times.append(t)
     if images.count >= count { finish() }
   }
@@ -205,7 +226,9 @@ final class FrameDump: NSObject {
         let url = dir.appendingPathComponent(String(format: "%04d.png", i + 1))
         try? img.pngData()?.write(to: url)
       }
-      let meta: [String: Any] = ["renderer": "swiftui", "times": times]
+      let meta: [String: Any] = [
+        "renderer": LaunchArgs.arg("renderer") ?? "flutter", "times": times,
+      ]
       if let d = try? JSONSerialization.data(withJSONObject: meta) {
         try? d.write(to: dir.appendingPathComponent("meta.json"))
       }

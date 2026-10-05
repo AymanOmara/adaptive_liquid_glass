@@ -10,7 +10,6 @@ class LaunchArgs {
     this.constants,
     this.motion, [
     this.sceneFile,
-    this.dump,
   ]);
 
   /// Static scene id, or null for the demo.
@@ -28,9 +27,6 @@ class LaunchArgs {
   /// Scene list asset; null means `assets/scenes.json`.
   final String? sceneFile;
 
-  /// Motion frame dump, `x,y,w,h,frames` (crop in px; Task 16b).
-  final String? dump;
-
   /// Reads the arguments; all null where the channel is not registered.
   static Future<LaunchArgs> read() async {
     try {
@@ -42,7 +38,6 @@ class LaunchArgs {
         m?['constants'] as String?,
         m?['motion'] as String?,
         m?['sceneFile'] as String?,
-        m?['dump'] as String?,
       );
     } on MissingPluginException {
       return LaunchArgs(null, null, null, null);
