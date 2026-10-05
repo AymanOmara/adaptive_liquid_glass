@@ -132,6 +132,7 @@ def run(run_dir, no_fail=False, spec=None, prefix="", floor=None):
         f"<td>{r['ssim']:.4f}</td><td>{r['delta_e']:.2f}</td><td>{r['de_p99']:.2f}</td>"
         f"<td>{r['flip']:.4f}</td><td>{r.get('delta_e_interior', float('nan')):.2f}</td>"
         f"<td>{r.get('delta_e_band', float('nan')):.2f}</td>"
+        f"<td>{'within noise' if r.get('within_noise') else '&mdash;'}</td>"
         f"<td><img src='{r['id']}.flutter.png'></td><td><img src='{r['id']}.swiftui.png'></td>"
         f"<td><img src='{r['id']}.diff.png'></td></tr>" for r in rows)
     missing_html = (f"<p class=bad>{len(missing)} missing: "
@@ -142,7 +143,7 @@ def run(run_dir, no_fail=False, spec=None, prefix="", floor=None):
         f"<p>{passed}/{len(rows)} pass "
         f"(SSIM ≥ {SSIM_MIN}, ΔE ≤ {DELTA_E_MAX})</p>{missing_html}"
         f"<table><tr><th>scene<th>SSIM<th>ΔE<th>ΔE p99<th>FLIP"
-        f"<th>ΔE int<th>ΔE band"
+        f"<th>ΔE int<th>ΔE band<th>floor"
         f"<th>Flutter<th>SwiftUI<th>diff</tr>{cells}</table>")
     failed = [r["id"] for r in rows if not r["pass"]]
     print(f"{passed}/{len(rows)} pass, {len(missing)} missing")

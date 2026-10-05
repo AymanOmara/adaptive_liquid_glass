@@ -159,9 +159,14 @@ def test_floor_verdicts_are_reported_and_do_not_change_exit(tmp_path):
 
 
 def test_floor_verdict_false_when_outside_noise(tmp_path, capsys):
-    for r in ["flutter", "swiftui"]:
-        _png(tmp_path / f"a.{r}.png", 0)
-        _png(tmp_path / f"b.{r}.png", 11)  # different noise per renderer
+    # a: both renderers identical (inside the floor and the bars);
+    # b: independent noise per renderer (outside both).
+    _png(tmp_path / "a.flutter.png", 0)
+    _png(tmp_path / "a.swiftui.png", 0)
+    _png(tmp_path / "b.flutter.png", 11)
+    _png(tmp_path / "b.swiftui.png", 12)
     code = run(tmp_path, spec=SPEC, floor=FLOOR)
     rows = {r["id"]: r for r in json.loads((tmp_path / "report.json").read_text())["scenes"]}
-    assert not rows["b"]["within_noise"] or not rows["a"]["within_noise"] or code in (0, 1)
+    assert rows["a"]["within_noise"]  # identical renders: inside the floor
+    assert not rows["b"]["within_noise"]  # independent noise: outside it
+    assert code == 1  # b fails the official bars; --floor never softens them
