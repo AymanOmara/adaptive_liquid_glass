@@ -4,6 +4,7 @@ import '../core/glass.dart';
 import '../core/glass_shape.dart';
 import '../core/shape_border.dart';
 import '../foreground/glass_label_style.dart';
+import '../interaction/glass_pressable.dart';
 
 /// Material 3 rendering of a glass member (spec §8).
 class MaterialGlass extends StatelessWidget {
@@ -85,8 +86,10 @@ class MaterialGlass extends StatelessWidget {
   }
 
   /// Interactive glass ripples (InkWell); with [onPressed] the surface is a
-  /// button. A non-interactive surface with [onPressed] still taps,
-  /// focuses and activates, without a ripple.
+  /// button. The button contract — semantics, focus, cursor and Enter/Space
+  /// activation — is `GlassPressable`, the same widget the shader and
+  /// native paths use; the InkWell only adds the Material ripple (its own
+  /// focus and semantics stay off so the contract stays single).
   Widget _pressable(Widget content) {
     final onPressed = this.onPressed;
     final ripple = glass.isInteractive;
@@ -95,15 +98,12 @@ class MaterialGlass extends StatelessWidget {
           ? InkWell(onTap: () {}, excludeFromSemantics: true, child: content)
           : content;
     }
-    final enabled = onPressed != null;
-    return Semantics(
-      container: enabled,
-      button: enabled ? true : null,
-      enabled: enabled ? true : null,
+    return GlassPressable(
+      onPressed: onPressed,
       child: InkWell(
         onTap: onPressed ?? (ripple ? () {} : null),
-        excludeFromSemantics: !enabled,
-        canRequestFocus: enabled,
+        excludeFromSemantics: true,
+        canRequestFocus: false,
         splashFactory: ripple ? null : NoSplash.splashFactory,
         overlayColor: ripple
             ? null

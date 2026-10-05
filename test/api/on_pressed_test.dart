@@ -1,5 +1,6 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/group/glass_member.dart';
+import 'package:adaptive_liquid_glass/src/interaction/glass_pressable.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/material.dart';
@@ -73,6 +74,43 @@ void main() {
       await t.sendKeyEvent(LogicalKeyboardKey.space);
       await t.pump();
       expect(taps, 2);
+    }, variant: variant);
+  }
+
+  // Cross-path parity: both rendering paths are buttons the same way, and
+  // they get there through the same widget (GlassPressable), so the
+  // semantics, focus and keyboard activation cannot drift apart.
+  for (final (name, variant) in [('shader', ios), ('Material', android)]) {
+    testWidgets('$name: pressable contract matches GlassPressable', (t) async {
+      shaderEnv();
+      final semantics = t.ensureSemantics();
+      var taps = 0;
+      await t.pumpWidget(
+        appHost(LiquidGlass(onPressed: () => taps++, child: const Text('Go'))),
+      );
+      // The Material InkWell only adds the ripple: no focus or semantics of
+      // its own, so the contract above it is the single one.
+      expect(find.byType(GlassPressable), findsOneWidget);
+      expect(
+        t.getSemantics(find.text('Go')),
+        isSemantics(
+          label: 'Go',
+          isButton: true,
+          hasTapAction: true,
+          isFocusable: true,
+          hasEnabledState: true,
+          isEnabled: true,
+        ),
+      );
+      await t.sendKeyEvent(LogicalKeyboardKey.tab);
+      await t.pump();
+      await t.sendKeyEvent(LogicalKeyboardKey.enter);
+      await t.pump();
+      expect(taps, 1);
+      await t.sendKeyEvent(LogicalKeyboardKey.space);
+      await t.pump();
+      expect(taps, 2);
+      semantics.dispose();
     }, variant: variant);
   }
 
