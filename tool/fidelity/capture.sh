@@ -28,7 +28,7 @@ sys.exit(f"capture.sh: simulator {udid} not found")
 PY
 
 for r in $RENDERERS; do
-  [[ "$r" == flutter || "$r" == swiftui ]] || { echo "capture.sh: unknown renderer '$r'" >&2; exit 1; }
+  [[ "$r" == flutter || "$r" == swiftui || "$r" == uikit ]] || { echo "capture.sh: unknown renderer '$r'" >&2; exit 1; }
 done
 
 ids=$(python3 - "$PREFIX" "$SCENES" <<'PY'

@@ -83,12 +83,16 @@ def load_spec():
     return json.loads((ROOT / "tool/scenes/scenes.json").read_text())
 
 
-def run(run_dir, no_fail=False, spec=None, prefix=""):
+def run(run_dir, no_fail=False, spec=None, prefix="", floor=None):
     """Scores every scene in `run_dir`; returns the process exit code.
 
     A scene missing either screenshot is reported as missing and fails the
     run, as does a run with nothing scored (unless `no_fail`). `prefix`
     limits the run to scene ids starting with it, as `capture.sh` does.
+    `floor` (a noise.py result) adds per-scene floor-relative verdicts
+    (`within_noise`): the scene's error sits within Apple's own cross-run /
+    cross-API noise. It never changes the exit code — the bars are the
+    official ones until the floor-based rule is signed off.
     """
     run_dir = pathlib.Path(run_dir)
     spec = spec or load_spec()
@@ -110,6 +114,14 @@ def run(run_dir, no_fail=False, spec=None, prefix=""):
         diff = (np.abs(a[y0:y1, x0:x1] - b[y0:y1, x0:x1]).mean(axis=2) * 4).clip(0, 1)
         Image.fromarray((diff * 255).astype(np.uint8)).save(run_dir / f"{scene['id']}.diff.png")
         rows.append({"id": scene["id"], **r, "region": [x0, y0, x1, y1]})
+
+    if floor:
+        f = floor["floor"]
+        fs, fd, ff = f["ssim"]["p90"], f["delta_e"]["p90"], f["flip"]["p90"]
+        for r in rows:
+            r["floor_ssim"], r["floor_de"], r["floor_flip"] = fs, fd, ff
+            r["within_noise"] = bool(r["ssim"] >= fs - 0.005 and r["delta_e"] <= fd + 0.05
+                                     and r["flip"] <= ff + 0.005)
 
     passed = sum(r["pass"] for r in rows)
     (run_dir / "report.json").write_text(json.dumps(
@@ -149,8 +161,11 @@ def main():
     ap.add_argument("run_dir", type=pathlib.Path)
     ap.add_argument("--no-fail", action="store_true")
     ap.add_argument("--prefix", default="", help="only scenes whose id starts with this")
+    ap.add_argument("--floor", type=pathlib.Path,
+                    help="noise.py result; adds report-only within-noise verdicts")
     args = ap.parse_args()
-    sys.exit(run(args.run_dir, args.no_fail, prefix=args.prefix))
+    floor = json.loads(args.floor.read_text()) if args.floor else None
+    sys.exit(run(args.run_dir, args.no_fail, prefix=args.prefix, floor=floor))
 
 
 if __name__ == "__main__":

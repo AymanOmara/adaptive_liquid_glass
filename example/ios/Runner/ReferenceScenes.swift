@@ -85,7 +85,63 @@ struct ReferenceSceneView: View {
   }
 }
 
+/// Draws the scene with Apple's UIKit glass APIs (Task 17d noise floor:
+/// SwiftUI vs UIKit is one of Apple's own cross-API error bars). Mirrors the
+/// plugin's `GlassPlatformView`: a `UIGlassContainerEffect` host when the
+/// scene merges, one `UIGlassEffect` view per shape with the same corner
+/// configurations. Tinted shapes fall back to untinted — this reference
+/// exists for the noise floor, and tinted scenes are excluded from it.
+@available(iOS 26.0, *)
+final class UIKitSceneView: UIView {
+  init(scene: RefScene, background: UIImage) {
+    super.init(frame: UIScreen.main.bounds)
+    backgroundColor = .systemBackground
+
+    let image = UIImageView(image: background)
+    image.frame = CGRect(x: 0, y: 0, width: 402, height: 874)
+    image.contentMode = .scaleToFill
+    addSubview(image)
+
+    let host: UIView = self
+    var container: UIVisualEffectView?
+    if let spacing = scene.spacing {
+      let c = UIVisualEffectView(effect: nil)
+      c.frame = bounds
+      c.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+      addSubview(c)
+      let e = UIGlassContainerEffect()
+      e.spacing = spacing
+      c.effect = e
+      container = c
+    }
+    let parent = container?.contentView ?? host
+    for s in scene.shapes {
+      let v = UIVisualEffectView(effect: nil)
+      let g = UIGlassEffect(style: s.variant == "clear" ? .clear : .regular)
+      if let t = s.tint { g.tintColor = Color.uiColor(rgbaHex: t) }
+      v.effect = g
+      v.frame = CGRect(x: s.x, y: s.y, width: s.w, height: s.h)
+      switch s.shape {
+      case "capsule", "circle": v.cornerConfiguration = .capsule()
+      default: v.cornerConfiguration = .corners(radius: .fixed(s.radius))
+      }
+      parent.addSubview(v)
+    }
+  }
+
+  required init?(coder: NSCoder) { fatalError("not used") }
+}
+
 extension Color {
+  /// RGBA hex ("#AARRGGBB") → UIColor, for the UIKit reference's tint.
+  static func uiColor(rgbaHex: String) -> UIColor {
+    let v = UInt32(rgbaHex.dropFirst(), radix: 16) ?? 0
+    return UIColor(red: CGFloat((v >> 16) & 0xFF) / 255,
+                   green: CGFloat((v >> 8) & 0xFF) / 255,
+                   blue: CGFloat(v & 0xFF) / 255,
+                   alpha: CGFloat((v >> 24) & 0xFF) / 255)
+  }
+
   init(rgbaHex: String) {
     let v = UInt32(rgbaHex.dropFirst(), radix: 16) ?? 0
     self.init(.sRGB,
@@ -114,19 +170,27 @@ enum LaunchArgs {
   /// screen turns solid magenta with the reason, so a capture can never pass
   /// Flutter off as the SwiftUI reference.
   static func installReferenceScene(in window: UIWindow?) {
-    guard arg("renderer") == "swiftui", let window else { return }
+    let renderer = arg("renderer")
+    guard renderer == "swiftui" || renderer == "uikit", let window else { return }
+    let r = renderer!
     guard #available(iOS 26.0, *) else {
-      return fail(window, "SwiftUI reference needs iOS 26 or later")
+      return fail(window, "\(r) reference needs iOS 26 or later")
     }
-    guard let id = arg("scene") else { return fail(window, "-renderer swiftui without -scene") }
+    guard let id = arg("scene") else { return fail(window, "-renderer \(r) without -scene") }
     guard let scene = ReferenceAssets.scene(id: id) else {
       return fail(window, "scene not found: \(id)")
     }
     guard let bg = ReferenceAssets.image(scene.background) else {
       return fail(window, "background missing: \(scene.background)")
     }
-    window.rootViewController = UIHostingController(
-      rootView: ReferenceSceneView(scene: scene, background: bg))
+    if r == "uikit" {
+      let vc = UIViewController()
+      vc.view.addSubview(UIKitSceneView(scene: scene, background: bg))
+      window.rootViewController = vc
+    } else {
+      window.rootViewController = UIHostingController(
+        rootView: ReferenceSceneView(scene: scene, background: bg))
+    }
   }
 
   private static func fail(_ window: UIWindow, _ message: String) {

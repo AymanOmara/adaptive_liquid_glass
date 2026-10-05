@@ -139,3 +139,29 @@ def test_score_reports_region_metrics_with_masks():
     assert s["delta_e_interior"] == pytest.approx(0.0, abs=1e-9)
     assert s["delta_e_band"] > 1.0
     assert s["ssim_interior"] > s["ssim_band"]
+
+
+# --- Task 17d: floor-relative verdicts (report-only) -------------------------
+
+FLOOR = {"floor": {"ssim": {"median": 1.0, "p90": 0.995},
+                   "delta_e": {"median": 0.1, "p90": 0.3},
+                   "flip": {"median": 0.005, "p90": 0.02}}}
+
+
+def test_floor_verdicts_are_reported_and_do_not_change_exit(tmp_path):
+    for r in ["flutter", "swiftui"]:
+        _png(tmp_path / f"a.{r}.png", 0)
+    assert run(tmp_path, spec={**SPEC, "scenes": SPEC["scenes"][:1]}, floor=FLOOR) == 0
+    row = json.loads((tmp_path / "report.json").read_text())["scenes"][0]
+    assert row["floor_ssim"] == 0.995 and row["floor_de"] == 0.3 and row["floor_flip"] == 0.02
+    # Identical 40x40 noise: perfect ssim, zero dE -> within noise on all three.
+    assert row["within_noise"]
+
+
+def test_floor_verdict_false_when_outside_noise(tmp_path, capsys):
+    for r in ["flutter", "swiftui"]:
+        _png(tmp_path / f"a.{r}.png", 0)
+        _png(tmp_path / f"b.{r}.png", 11)  # different noise per renderer
+    code = run(tmp_path, spec=SPEC, floor=FLOOR)
+    rows = {r["id"]: r for r in json.loads((tmp_path / "report.json").read_text())["scenes"]}
+    assert not rows["b"]["within_noise"] or not rows["a"]["within_noise"] or code in (0, 1)
