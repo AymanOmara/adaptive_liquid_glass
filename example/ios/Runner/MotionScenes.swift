@@ -1,3 +1,4 @@
+import IOSurface
 import SwiftUI
 import UIKit
 
@@ -82,7 +83,12 @@ struct MotionSceneView: View {
         .frame(width: 402, height: 874)
         .onTapGesture {
           guard spec.kind == "morph" else { return }
-          withAnimation(.bouncy) { toggled.toggle() }
+          // While dumping, the change waits for the next display frame:
+          // SwiftUI animates from the transaction's time, so a change at
+          // the tap's random point between frames samples the curve at a
+          // random sub-frame phase. Flutter's animations start on a frame.
+          let toggle = { withAnimation(.bouncy) { toggled.toggle() } }
+          if let dump = FrameDump.shared { dump.onNextFrame(toggle) } else { toggle() }
         }
       if spec.kind == "press", let s = spec.shape {
         glass(s, interactive: true)
@@ -143,97 +149,145 @@ struct Heartbeat: View {
 
 /// Lossless frame dump (Task 16b): `-dump x,y,w,h,frames` (crop in px).
 ///
-/// On every display frame after `<tmp>/motion-dump/start` appears, the
-/// screen is captured (the same pixels `simctl io screenshot` returns:
-/// measured identical within 2/255) and cropped, and its
-/// `CACurrentMediaTime` is kept. After `frames` frames the PNGs, `meta.json`
-/// (`{"renderer", "times"}`, seconds) and `done` are written to the same
-/// folder. It captures the screen, so one path serves both renderers;
-/// `tool/fidelity/record_motion.sh` (`DUMP=1`) drives it.
+/// On every display frame after `<tmp>/motion-dump/start` appears, the crop
+/// of the screen is rendered by the render server into an IOSurface (the
+/// same pixels `simctl io screenshot` returns: measured identical within
+/// 1/255, glass included) and its `CACurrentMediaTime` is kept. After
+/// `frames` frames the PNGs, `meta.json` (`{"renderer", "times", "costs"}`,
+/// seconds) and `done` are written to the same folder. It captures the
+/// screen, so one path serves both renderers; `tool/fidelity/record_motion.sh`
+/// drives it.
+///
+/// Rejected: `drawHierarchy` renders the glass without its blur (SSIM 0.963
+/// against a screenshot); `_UICreateScreenUIImage` is exact but captures
+/// the whole screen in about 8 ms on the main thread, which made SwiftUI
+/// skip animation frames (SwiftUI against itself down to SSIM 0.92), and it
+/// throws off the main thread. This captures only the crop, from a display
+/// link on its own thread (no dropped capture frames in 15 takes, measured).
+/// Private API; this is a simulator-only test harness.
 final class FrameDump: NSObject {
   static var shared: FrameDump?
 
-  /// UIKit's screen capture (what `simctl io screenshot` returns, glass
-  /// included). `drawHierarchy` is not usable: it renders the glass without
-  /// its blur (measured SSIM 0.963 against a screenshot). Private; this is a
-  /// simulator-only test harness.
-  private typealias ScreenImageFn = @convention(c) () -> Unmanaged<UIImage>
-  private static let screenImage: ScreenImageFn? = {
-    guard let sym = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "_UICreateScreenUIImage")
+  private typealias RenderDisplayFn = @convention(c) (
+    UInt32, CFString, IOSurfaceRef, Int32, Int32
+  ) -> Void
+  private static let renderDisplay: RenderDisplayFn? = {
+    guard let sym = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "CARenderServerRenderDisplay")
     else { return nil }
-    return unsafeBitCast(sym, to: ScreenImageFn.self)
+    return unsafeBitCast(sym, to: RenderDisplayFn.self)
   }()
+  private static let displayName: String =
+    ((UIScreen.main.value(forKey: "_display") as? NSObject)?.value(forKey: "name") as? String)
+    ?? "LCD"
 
   private let crop: CGRect
   private let count: Int
   private let dir = URL(fileURLWithPath: NSTemporaryDirectory())
     .appendingPathComponent("motion-dump")
-  private var images: [UIImage] = []
+  // Capture thread only.
   private var times: [Double] = []
-  private var link: CADisplayLink?
+  private var costs: [Double] = []  // capture time per frame, s
+  private var images: [CGImage] = []
   private var armed = false
+  // Main thread only.
+  private var pending: [() -> Void] = []
 
   init(spec: String) {
     let v = spec.split(separator: ",").compactMap { Double($0) }
     crop = v.count >= 4 ? CGRect(x: v[0], y: v[1], width: v[2], height: v[3]) : .zero
     count = v.count >= 5 ? Int(v[4]) : 180
     super.init()
-    let l = CADisplayLink(target: self, selector: #selector(tick))
-    l.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 60, preferred: 60)
-    l.add(to: .main, forMode: .common)
-    link = l
+    _ = Self.displayName  // UIKit: resolved on the main thread
+    Self.link(self, #selector(mainTick), .main)
+    // The capture waits for the render server (4–9 ms a frame, measured);
+    // on the main thread that made the app miss display frames, so it runs
+    // on a display link of its own thread.
+    let thread = Thread { [unowned self] in
+      Self.link(self, #selector(self.tick), .current)
+      RunLoop.current.run()
+    }
+    thread.name = "FrameDump"
+    thread.qualityOfService = .userInteractive
+    thread.start()
   }
 
+  private static func link(_ target: FrameDump, _ sel: Selector, _ loop: RunLoop) {
+    let l = CADisplayLink(target: target, selector: sel)
+    l.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 60, preferred: 60)
+    l.add(to: loop, forMode: .common)
+  }
+
+  @objc private func mainTick(_ l: CADisplayLink) {
+    let actions = pending
+    pending = []
+    actions.forEach { $0() }
+  }
+
+  /// Runs `action` on the main thread at the start of the next display frame.
+  func onNextFrame(_ action: @escaping () -> Void) { pending.append(action) }
+
+  /// Capture thread.
   @objc private func tick(_ l: CADisplayLink) {
+    if images.count >= count {
+      l.invalidate()
+      return
+    }
     if !armed {
       armed = FileManager.default.fileExists(atPath: dir.appendingPathComponent("start").path)
       if !armed { return }
     }
     let t = CACurrentMediaTime()
-    // Copied out of the full screen image: a `cropping(to:)` view would keep
-    // every full frame (12 MB) alive until the dump is written.
-    guard let fn = Self.screenImage,
-      let full = fn().takeRetainedValue().cgImage,
-      // The capture is tagged extended sRGB; its values are in range (the
-      // PNG matches the screenshot), so plain sRGB is the identity.
-      let space = CGColorSpace(name: CGColorSpace.sRGB),
-      let ctx = CGContext(
-        data: nil, width: Int(crop.width), height: Int(crop.height), bitsPerComponent: 8,
-        bytesPerRow: 0, space: space,
-        bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue
-          | CGBitmapInfo.byteOrder32Little.rawValue)
-    else {
-      NSLog("FrameDump: screen capture unavailable")
+    guard let img = renderCrop() else {
+      NSLog("FrameDump: render server capture unavailable")
       return
     }
-    ctx.interpolationQuality = .none
-    ctx.draw(full, in: CGRect(
-      x: -crop.minX, y: crop.maxY - CGFloat(full.height),
-      width: CGFloat(full.width), height: CGFloat(full.height)))
-    guard let img = ctx.makeImage() else { return }
-    images.append(UIImage(cgImage: img))
     times.append(t)
-    if images.count >= count { finish() }
+    costs.append(CACurrentMediaTime() - t)
+    images.append(img)
+    if images.count == count {
+      let (images, times, costs) = (images, times, costs)
+      DispatchQueue.global(qos: .userInitiated).async {
+        self.write(images, times, costs)
+      }
+    }
   }
 
-  private func finish() {
-    link?.invalidate()
-    link = nil
-    let (images, times, dir) = (self.images, self.times, self.dir)
-    self.images = []
-    DispatchQueue.global(qos: .userInitiated).async {
-      for (i, img) in images.enumerated() {
-        let url = dir.appendingPathComponent(String(format: "%04d.png", i + 1))
-        try? img.pngData()?.write(to: url)
-      }
-      let meta: [String: Any] = [
-        "renderer": LaunchArgs.arg("renderer") ?? "flutter", "times": times,
-      ]
-      if let d = try? JSONSerialization.data(withJSONObject: meta) {
-        try? d.write(to: dir.appendingPathComponent("meta.json"))
-      }
-      FileManager.default.createFile(
-        atPath: dir.appendingPathComponent("done").path, contents: nil)
+  private func renderCrop() -> CGImage? {
+    let w = Int(crop.width), h = Int(crop.height)
+    guard let fn = Self.renderDisplay,
+      let surf = IOSurfaceCreate([
+        kIOSurfaceWidth: w, kIOSurfaceHeight: h, kIOSurfaceBytesPerElement: 4,
+        kIOSurfacePixelFormat: 0x4247_5241,  // 'BGRA'
+      ] as CFDictionary)
+    else { return nil }
+    // The offset is the crop's origin on the display, in px.
+    fn(0, Self.displayName as CFString, surf, Int32(crop.minX), Int32(crop.minY))
+    IOSurfaceLock(surf, .readOnly, nil)
+    defer { IOSurfaceUnlock(surf, .readOnly, nil) }
+    let bpr = IOSurfaceGetBytesPerRow(surf)
+    let data = Data(bytes: IOSurfaceGetBaseAddress(surf), count: bpr * h)
+    guard let provider = CGDataProvider(data: data as CFData),
+      let space = CGColorSpace(name: CGColorSpace.sRGB)
+    else { return nil }
+    return CGImage(
+      width: w, height: h, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: bpr, space: space,
+      bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue
+        | CGBitmapInfo.byteOrder32Little.rawValue),
+      provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)
+  }
+
+  private func write(_ images: [CGImage], _ times: [Double], _ costs: [Double]) {
+    for (i, img) in images.enumerated() {
+      let url = dir.appendingPathComponent(String(format: "%04d.png", i + 1))
+      try? UIImage(cgImage: img).pngData()?.write(to: url)
     }
+    let meta: [String: Any] = [
+      "renderer": LaunchArgs.arg("renderer") ?? "flutter", "times": times, "costs": costs,
+    ]
+    if let d = try? JSONSerialization.data(withJSONObject: meta) {
+      try? d.write(to: dir.appendingPathComponent("meta.json"))
+    }
+    FileManager.default.createFile(
+      atPath: dir.appendingPathComponent("done").path, contents: nil)
   }
 }

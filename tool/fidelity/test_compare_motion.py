@@ -312,6 +312,76 @@ def test_run_noise_ref_scores_each_renderer_against_the_other_run(tmp_path):
     assert set(rep[0]["analysis"]) == {"a", "b"}
 
 
+def test_run_does_not_score_frames_a_capture_held_over_a_dropped_tick(tmp_path):
+    # SwiftUI's capture missed a display frame mid-motion: the resampler
+    # repeated the previous frame there and listed it as held. That frame
+    # is reported but not scored.
+    bg = np.full((30, 40, 3), 0.2)
+    seq = _growing(bg, 3)
+    held = seq[:6] + [seq[5]] + seq[7:]
+    _write_frames(tmp_path / "frames/m.flutter", seq)
+    _write_frames(tmp_path / "frames/m.swiftui", held)
+    (tmp_path / "m.swiftui.times.json").write_text(json.dumps({"held": [6]}))
+    (tmp_path / "crop.json").write_text(json.dumps({"m": {"x": 0, "y": 0, "w": 40, "h": 30}}))
+    assert run(tmp_path, spec=_MORPH_SPEC, background=lambda m, crop: bg) == 0
+    rep = json.loads((tmp_path / "motion_report.json").read_text())[0]
+    assert rep["held_frames"] == [4]  # window starts at the last rest frame, #2
+    assert rep["per_frame"][4]["pass"] is False
+    assert rep["pass"] is True
+    assert rep["passed_frames"] == rep["frames"] - 1
+
+
+def test_run_aligns_a_press_release_on_its_own_onset(tmp_path):
+    # Same press, but B's touch-up came 3 frames later (touch injection
+    # jitter): press-in and release are aligned separately.
+    bg = np.full((30, 40, 3), 0.2)
+
+    def frame(half):
+        f = bg.copy()
+        f[10:20, 20 - half:20 + half] = 0.8
+        return f
+
+    def take(plateau):
+        return [frame(6)] * 3 + [frame(h) for h in (8, 10, 12)] + [frame(12)] * plateau + \
+               [frame(h) for h in (10, 8, 6)] + [frame(6)] * 8
+
+    _write_frames(tmp_path / "frames/m.flutter", take(9))
+    _write_frames(tmp_path / "frames/m.swiftui", take(12))
+    (tmp_path / "crop.json").write_text(json.dumps({"m": {"x": 0, "y": 0, "w": 40, "h": 30}}))
+    spec = {"device": {"scale": 1},
+            "motion": [{"id": "m", "kind": "press", "background": "x", "hold_ms": 200,
+                        "shape": {"x": 14, "y": 10, "w": 12, "h": 10},
+                        "touch": {"x": 20, "y": 15}}]}
+    run(tmp_path, spec=spec, background=lambda m, crop: bg, frames=24)
+    rep = json.loads((tmp_path / "motion_report.json").read_text())[0]
+    assert rep["release_offset"] == -3
+    assert rep["pass"] is True
+
+
+def test_run_aligns_a_clip_sampled_half_a_frame_later(tmp_path):
+    # The touch lands at a random point between two display frames, so two
+    # takes sample the same animation at a sub-frame offset: B is matched
+    # by interpolating its neighbouring frames at the fitted phase.
+    yy, xx = np.mgrid[0:30, 0:60]
+
+    def frame(t):
+        x = 15 + 3 * max(0.0, t - 3)
+        f = np.full((30, 60, 3), 0.2)
+        f += 0.6 * np.exp(-((xx - x) ** 2 + (yy - 15) ** 2) / (2 * 4.0**2))[..., None]
+        return f
+
+    bg = np.full((30, 60, 3), 0.2)
+    _write_frames(tmp_path / "frames/m.flutter", [frame(i) for i in range(14)])
+    _write_frames(tmp_path / "frames/m.swiftui", [frame(i - 0.5) for i in range(14)])
+    (tmp_path / "crop.json").write_text(json.dumps({"m": {"x": 0, "y": 0, "w": 60, "h": 30}}))
+    run(tmp_path, spec=_MORPH_SPEC, background=lambda m, crop: bg)
+    rep = json.loads((tmp_path / "motion_report.json").read_text())[0]
+    assert rep["shift"] == pytest.approx(0.5, abs=0.11)
+    # Past the kink at the onset; the last position is padding (B's last
+    # frame has no successor to interpolate toward).
+    assert min(p["ssim"] for p in rep["per_frame"][2:-1]) > 0.995
+
+
 def test_run_noise_ref_reports_a_motion_with_no_common_renderer(tmp_path):
     bg = np.full((30, 40, 3), 0.2)
     a, b = tmp_path / "a", tmp_path / "b"

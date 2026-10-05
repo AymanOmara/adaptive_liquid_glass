@@ -167,20 +167,26 @@ while read -r id kind tx ty hold crop; do
       for _ in $(seq 240); do [[ -f "$DUMP_DIR/done" ]] && break; sleep 0.25; done
       [[ -f "$DUMP_DIR/done" ]] ||
         { echo "record_motion.sh: no frame dump for '$id' renderer '$r'" >&2; exit 1; }
-      # Resampled onto the 60 fps grid (a dropped display frame repeats the
-      # previous one, as the screen did) by hard links; then the dump goes.
+      # Resampled onto the 60 fps grid by hard links; then the dump goes. A
+      # display frame the capture missed (0–2 per take, measured) repeats
+      # the previous capture and is listed as held in the times file.
       python3 - "$DUMP_DIR" "$OUT/frames/$id.$r" "$OUT/$id.$r.times.json" </dev/null <<'PY'
 import json, math, os, shutil, sys
 src, dst, times_out = sys.argv[1:4]
-t = json.load(open(f"{src}/meta.json"))["times"]
+meta = json.load(open(f"{src}/meta.json"))
+t = meta["times"]
 n = int(math.floor((t[-1] - t[0]) * 60 + 0.25)) + 1
-i = 0
+i, prev, held = 0, -1, []
 for k in range(n):
     g = t[0] + k / 60
     while i + 1 < len(t) and t[i + 1] <= g + 0.004:
         i += 1
+    if i == prev:
+        held.append(k)  # compare_motion.py does not score these
+    prev = i
     os.link(f"{src}/{i + 1:04d}.png", f"{dst}/{k + 1:04d}.png")
-json.dump({"times": t, "grid": n}, open(times_out, "w"))
+json.dump({"times": t, "grid": n, "held": held, "costs": meta.get("costs")},
+          open(times_out, "w"))
 shutil.rmtree(src)
 PY
     else

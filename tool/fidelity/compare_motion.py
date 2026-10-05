@@ -40,7 +40,7 @@ ONSET_SIGMA = 2.0
 # about 0.3, so 0.12 sits near the edge's half level (little blur bias).
 BBOX_THRESHOLD = 0.12
 BBOX_SIGMA = 4.0
-SHIFT = 2            # ± frames searched to refine the onset alignment
+SHIFT = 2            # ± frames searched to refine the onset alignment (plus a phase)
 GLOW_INSET_PT = 8    # glow fit ignores this rim of the resting shape
 UNSETTLED_PX = 4     # press bbox drift between first and last frame
 
@@ -183,15 +183,51 @@ def _asset_background(m, crop):
     return img[crop["y"]:crop["y"] + crop["h"], crop["x"]:crop["x"] + crop["w"]]
 
 
-def _refine_shift(a, b, n):
-    """Shift of b (± SHIFT frames) that best matches a over the window."""
-    best = (None, 0)
-    for s in range(-SHIFT, SHIFT + 1):
-        idx = [(i, i + s) for i in range(n) if 0 <= i + s < len(b)]
-        err = np.mean([np.abs(a[i] - b[j]).mean() for i, j in idx])
-        if best[0] is None or err < best[0]:
-            best = (err, s)
-    return best[1]
+PHASES = 10  # sub-frame phase steps searched per segment
+
+
+def _frame(raw, k, f):
+    """Clip frame k, or the linear interpolation k + f toward frame k + 1."""
+    return raw[k] if f == 0 else (1 - f) * raw[k] + f * raw[k + 1]
+
+
+def _align(idx, raw, a, b):
+    """Aligns the window positions `idx` ({label: [(clip index, phase)]},
+    first entries aligned at the onsets) of a and b: b is shifted by
+    s ± SHIFT frames plus a sub-frame phase f in [0, 1), its frames
+    interpolated between neighbours, to the best mean match over the
+    segment. The touch lands at a random point between two display frames
+    and SwiftUI animates from the touch time (measured: SwiftUI takes of
+    one press differ by up to half a frame after integer alignment), so a
+    whole-frame shift leaves a sampling error the renderers do not make.
+    One phase per segment, not per frame. Returns the trimmed lists and the
+    shift s + f of b."""
+    ia, ib = idx[a], idx[b]
+    n = min(len(ia), len(ib))
+    best = (None, 0, 0.0)
+    if n:
+        sub = (slice(None, None, 2), slice(None, None, 2))  # search on every 2nd pixel
+        sa = [raw[a][k][sub] for k, _ in ia[:n]]
+        for sh in range(-SHIFT, SHIFT + 1):
+            for f in np.arange(PHASES) / PHASES:
+                pairs = [(i, i + sh) for i in range(n)
+                         if 0 <= i + sh and i + sh + (f > 0) < len(ib)]
+                if not pairs:
+                    continue
+                err = np.mean([np.abs(sa[i] - _frame(raw[b], ib[j][0], f)[sub]).mean()
+                               for i, j in pairs])
+                if best[0] is None or err < best[0] - 1e-9:
+                    best = (err, sh, float(f))
+    _, sh, f = best
+    out = dict(idx)
+    if sh >= 0:
+        out[b] = [(k, f) for k, _ in ib[sh:]]
+    else:
+        out[a] = ia[-sh:]
+        out[b] = [(k, f) for k, _ in ib]
+    if f > 0:  # the last frame has no successor to interpolate toward
+        out[b] = [(k, g) for k, g in out[b] if k + 1 < len(raw[b])]
+    return {**out, "shift": sh + f}
 
 
 def _press_meta(m, scale, crop):
@@ -243,6 +279,34 @@ def _analyse(m, frames, bg, scale, crop):
     return out
 
 
+def _held(d):
+    """Grid indices of a lossless capture that repeat the previous frame
+    because the capture missed a display frame (record_motion.sh lists them
+    in <run>/<id>.<renderer>.times.json); empty for h264."""
+    f = d.parent.parent / f"{d.name}.times.json"
+    return set(json.loads(f.read_text()).get("held", [])) if f.exists() else set()
+
+
+RELEASE_LOOKBACK = 8  # frames before the nominal touch-up taken as the plateau
+
+
+def _release_onsets(m, seqs):
+    """Window position of each clip's first release frame: the first change
+    from its held plateau (RELEASE_LOOKBACK frames before the nominal
+    touch-up). None when either clip shows no release."""
+    nominal = int(round(m.get("hold_ms", 0) / 1000 * FPS)) + 1
+    p = max(1, nominal - RELEASE_LOOKBACK)
+    out = {}
+    for r, s in seqs.items():
+        if p >= len(s):
+            return None
+        k = first_change(s[p:])
+        if p + k >= len(s):
+            return None
+        out[r] = p + k
+    return out
+
+
 def _score_pair(m, dirs, bg, scale, crop, frames):
     """Aligns and scores the two clips of `dirs` ({label: frame dir}, the
     first label is scored against the second) and analyses each."""
@@ -250,22 +314,34 @@ def _score_pair(m, dirs, bg, scale, crop, frames):
     raw = {r: _load_frames(d) for r, d in dirs.items()}
     onset = {r: first_change(f) for r, f in raw.items()}
     # Window starts one frame before the onset (the last resting frame).
-    seqs = {r: raw[r][max(0, onset[r] - 1):] for r in raw}
+    start = {r: max(0, onset[r] - 1) for r in raw}
+    seqs = {r: raw[r][start[r]:] for r in raw}
     # Springs and amplitudes come from each clip's own window (its first
-    # frame is its last resting frame); the shift below only aligns the
+    # frame is its last resting frame); the alignment below only pairs the
     # frames that are scored against each other.
     own = {r: (s + [s[-1]] * (frames - len(s)))[:frames] for r, s in seqs.items()}
-    n0 = min(frames, len(seqs[a]), len(seqs[b]))
-    shift = _refine_shift(seqs[a], seqs[b], n0)
-    if shift > 0:
-        seqs[b] = seqs[b][shift:]
-    elif shift < 0:
-        seqs[a] = seqs[a][-shift:]
+    # Window positions as indices into each clip (held frames are mapped
+    # through them).
+    idx = {r: [(k, 0.0) for k in range(start[r], len(raw[r]))] for r in raw}
+    # A press is aligned in two segments: the touch-up comes from the touch
+    # injector's hold timer, whose jitter (measured: up to 2 frames between
+    # SwiftUI takes) is independent of the touch-down's.
+    rel = _release_onsets(m, {r: seqs[r] for r in raw}) if m["kind"] == "press" else None
+    if rel:
+        p_idx = _align({r: idx[r][:rel[r]] for r in raw}, raw, a, b)
+        r_idx = _align({r: idx[r][rel[r]:] for r in raw}, raw, a, b)
+        shift, release_shift = p_idx.pop("shift"), r_idx.pop("shift")
+        cut = min(len(p_idx[a]), len(p_idx[b]))
+        idx = {r: p_idx[r][:cut] + r_idx[r] for r in raw}
+    else:
+        idx = _align(idx, raw, a, b)
+        shift, release_shift = idx.pop("shift"), None
     # An h264 recording stops at its last changed frame (variable frame
     # rate), so a renderer that settles sooner has a shorter clip: hold its
     # last frame, which is what the screen showed.
-    n = min(frames, max(len(s) for s in seqs.values()))
-    seqs = {r: (s + [s[-1]] * (n - len(s)))[:n] for r, s in seqs.items()}
+    n = min(frames, max(len(v) for v in idx.values()))
+    idx = {r: (v + [v[-1]] * (n - len(v)))[:n] for r, v in idx.items()}
+    seqs = {r: [_frame(raw[r], k, f) for k, f in v] for r, v in idx.items()}
     # Scored region: everything either clip's glass covers in the window,
     # inflated like the static region (INFLATE_PT).
     boxes = [bx for s in seqs.values() for f in s if (bx := glass_bbox(f, bg))]
@@ -279,7 +355,13 @@ def _score_pair(m, dirs, bg, scale, crop, frames):
     else:
         x0, y0, x1, y1 = 0, 0, w, h
     per = [score(seqs[a][i][y0:y1, x0:x1], seqs[b][i][y0:y1, x0:x1]) for i in range(n)]
-    worst = min(range(n), key=lambda i: per[i]["ssim"]) if n else None
+    # A frame either capture held over a missed display frame shows the
+    # previous frame, not the screen: reported, but not scored.
+    held = {r: _held(d) for r, d in dirs.items()}
+    skip = sorted(i for i in range(n) if any(
+        k in held[r] or (f > 0 and k + 1 in held[r]) for r in dirs for k, f in [idx[r][i]]))
+    scored = [i for i in range(n) if i not in skip]
+    worst = min(scored, key=lambda i: per[i]["ssim"]) if scored else None
     analysis = {r: _analyse(m, s, bg, scale, crop) for r, s in own.items()}
     # A press must start at rest: a lost touch-up (seen once with idb)
     # leaves the first frame pressed. The recording's last frame is the
@@ -298,14 +380,18 @@ def _score_pair(m, dirs, bg, scale, crop, frames):
         # touch-to-pixels latency difference (plus touch-injection jitter).
         "onset_offset": onset[a] - onset[b],
         "shift": shift,
+        # Press: the same for the touch-up, and the release segment's shift.
+        "release_offset": (rel[a] + start[a] - rel[b] - start[b]) if rel else None,
+        "release_shift": release_shift,
         "region": [x0, y0, x1, y1],
-        "pass": bool(n and all(p["pass"] for p in per) and not unsettled),
+        "pass": bool(scored and all(per[i]["pass"] for i in scored) and not unsettled),
         "unsettled": unsettled,
-        "passed_frames": sum(p["pass"] for p in per),
+        "held_frames": skip,
+        "passed_frames": sum(per[i]["pass"] for i in scored),
         "worst_frame": worst,
         "worst": per[worst] if worst is not None else None,
-        "mean_ssim": float(np.mean([p["ssim"] for p in per])) if n else None,
-        "mean_delta_e": float(np.mean([p["delta_e"] for p in per])) if n else None,
+        "mean_ssim": float(np.mean([per[i]["ssim"] for i in scored])) if scored else None,
+        "mean_delta_e": float(np.mean([per[i]["delta_e"] for i in scored])) if scored else None,
         "per_frame": [{"ssim": p["ssim"], "delta_e": p["delta_e"], "pass": p["pass"]}
                       for p in per],
         "analysis": analysis,
@@ -357,11 +443,14 @@ def run(run_dir, spec=None, prefix="", background=_asset_background,
         label = o["id"] + (f" ({o['renderer']} A vs B)" if "renderer" in o else "")
         if o["unsettled"]:
             print(f"WARNING {label}: not at rest at the start ({o['unsettled']}); re-record")
-        print(f"{label}: {'PASS' if o['pass'] else 'FAIL'} {o['passed_frames']}/{o['frames']} "
-              f"frames, worst #{o['worst_frame']} SSIM {o['worst']['ssim']:.4f} "
+        held = f" ({len(o['held_frames'])} held, unscored)" if o["held_frames"] else ""
+        print(f"{label}: {'PASS' if o['pass'] else 'FAIL'} "
+              f"{o['passed_frames']}/{o['frames'] - len(o['held_frames'])} frames{held}, worst #{o['worst_frame']} SSIM {o['worst']['ssim']:.4f} "
               f"ΔE {o['worst']['delta_e']:.2f} (bars {SSIM_MIN}/{DELTA_E_MAX}), "
               f"mean {o['mean_ssim']:.4f}/{o['mean_delta_e']:.2f}, "
-              f"onset offset {o['onset_offset']:+d}, shift {o['shift']:+d}")
+              f"onset offset {o['onset_offset']:+d}, shift {o['shift']:+.1f}"
+              + (f", release offset {o['release_offset']:+d} shift {o['release_shift']:+.1f}"
+                 if o.get("release_offset") is not None else ""))
         for r, a in o["analysis"].items():
             sp = {k: (round(v["response"], 3), round(v["damping"], 3))
                   for k, v in a.items() if k.startswith("spring")}
