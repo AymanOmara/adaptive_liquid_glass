@@ -1,0 +1,121 @@
+{
+  "buttons": {
+    "mini": {
+      "height": 30.0,
+      "padding": 11.0,
+      "font": 15.1,
+      "icon_only": 24.33,
+      "icon_only_width": 36.33
+    },
+    "small": {
+      "height": 30.0,
+      "padding": 11.0,
+      "font": 15.1,
+      "icon_only": 24.33,
+      "icon_only_width": 36.33
+    },
+    "regular": {
+      "height": 36.33,
+      "padding": 13.33,
+      "font": 17.0,
+      "icon_only": 30.0,
+      "icon_only_width": 42.0
+    },
+    "large": {
+      "height": 52.33,
+      "padding": 21.33,
+      "font": 17.0,
+      "icon_only": 46.0,
+      "icon_only_width": 58.0
+    },
+    "extraLarge": {
+      "height": 52.33,
+      "padding": 21.33,
+      "font": 17.0,
+      "icon_only": 46.0,
+      "icon_only_width": 58.0
+    }
+  },
+  "navbar": {
+    "safe_top": 62.0,
+    "bar_height": 46.33,
+    "bar_centre": 85.17,
+    "item_width": 51.5,
+    "large_title_baseline_below_bar": 44.0,
+    "inline_threshold": 51.0,
+    "button": 44.0,
+    "group_width": 103.0,
+    "edge_inset": 16.0,
+    "large_title_top": 128.0,
+    "large_title_bottom": 152.33,
+    "large_title_inset": 18.0,
+    "inline_fade_start": 50,
+    "inline_fade_end": 52,
+    "inline_fade": [
+      [
+        0,
+        0.0
+      ],
+      [
+        10,
+        0.0
+      ],
+      [
+        20,
+        0.0
+      ],
+      [
+        30,
+        0.0
+      ],
+      [
+        40,
+        0.0
+      ],
+      [
+        44,
+        0.0
+      ],
+      [
+        48,
+        0.0
+      ],
+      [
+        50,
+        0.0
+      ],
+      [
+        52,
+        1.0
+      ],
+      [
+        54,
+        1.0
+      ],
+      [
+        56,
+        1.0
+      ],
+      [
+        58,
+        1.0
+      ],
+      [
+        60,
+        1.0
+      ],
+      [
+        70,
+        1.0
+      ],
+      [
+        80,
+        1.0
+      ],
+      [
+        100,
+        1.0
+      ]
+    ]
+  }
+}
