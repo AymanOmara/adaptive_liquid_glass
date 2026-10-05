@@ -296,7 +296,12 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
           dpr,
       v.blurSizeRef * dpr,
     ]);
-    f.setAll(k + 44, [v.rimBack, 0, 0, 0]);
+    f.setAll(k + 44, [
+      v.rimBack,
+      v.lensRingStart * dpr,
+      v.lensRingEnd * dpr,
+      v.lensRingReach * dpr,
+    ]);
     k += 48;
   }
   return f;

@@ -48,7 +48,8 @@ void main() {
       expect(c.blurSigma, 0);
       expect(c.frostWideSigma, 0);
       expect(c.postBlurShare, 0);
-      expect(c.lensStrength, greaterThan(0), reason: 'samples outward');
+      expect(c.lensRingEnd, greaterThan(c.lensRingStart));
+      expect(c.lensRingReach, greaterThan(0), reason: 'samples outward');
       expect(c.dispersion, greaterThan(0));
     }
   });

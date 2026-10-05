@@ -20,7 +20,7 @@ uniform vec4 uVar[24];     // per variant (regular A-L, then clear A-L):
                            //   I.yzw(lens edge px, lens edge decay px, tone lift)
                            //   J(rim mix, rim mix width px, rim mix cut px, rim mix luma floor)
                            //   K(tone lift knee, tone lift size ref px, post-lens sigma px, blur size ref px)
-                           //   L(rim back strength, -, -, -)
+                           //   L(rim back strength, lens ring start px, ring end px, ring reach px)
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -188,6 +188,23 @@ void main() {
   float le = I.y * exp(-max(depth, 0.0) / max(I.z, 1e-3));
   lensAmt -= le;
   dLens += le / max(I.z, 1e-3);
+  // Refraction ring (iOS 26's tab lens): between depths L.y and L.z the
+  // lens samples outside its edge, from just outside at the start to L.w
+  // outside at the end: a mirrored, compressed image of what borders the
+  // glass. Off when L.z <= L.y.
+  // Its ends blend back into the plain glass (1 px in at the start, 1.5 px
+  // at the end, scaled with L.y/L.z), so the sample sweeps across what
+  // borders the glass: a soft edge that dispersion turns into a fringe.
+  float ringW = 0.0;
+  if (L4.z > L4.y && depth >= L4.y - 1.0 && depth <= L4.z) {
+    float tr = clamp((depth - L4.y + 1.0) / (L4.z - L4.y + 1.0), 0.0, 1.0);
+    float sDepth = -L4.w * tr;  // sampled depth (negative = outside)
+    float inW = smoothstep(L4.y - 1.0, L4.y, depth);
+    float outW = 1.0 - smoothstep(L4.z - 1.5 * uGlobal.y, L4.z, depth);
+    ringW = inW * outW;
+    lensAmt = mix(lensAmt, depth - sDepth, ringW);
+    dLens = mix(dLens, 1.0 + L4.w / (L4.z - L4.y + 1.0), ringW);
+  }
   vec2 sp = px + nrm * lensAmt;
 
   // Frost v2, measured from SwiftUI (Task 17c, tool/fidelity/measure_frost.py):
@@ -255,8 +272,10 @@ void main() {
   if (A.w != 0.0) {
     vec3 coreOff = col - base;
     vec2 disp = nrm * lensAmt * A.w;
-    col.r = mix(col.r, tex(sp + disp).r + coreOff.r, v);
-    col.b = mix(col.b, tex(sp - disp).b + coreOff.b, v);
+    // The ring splits colour across its whole width, like iOS's tab lens.
+    float dw = max(v, ringW > 0.0 ? 1.0 : 0.0);
+    col.r = mix(col.r, tex(sp + disp).r + coreOff.r, dw);
+    col.b = mix(col.b, tex(sp - disp).b + coreOff.b, dw);
   }
 
   float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));
