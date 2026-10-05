@@ -3,7 +3,9 @@
 * `GlassTabBar`: the lens is shader glass fitted to iOS 26.4's tab lens
   (unfrosted, outward edge refraction, colour dispersion), and the bar is
   shader glass too so the lens can refract it; an explicit `mode:` wins.
-  The selected tint no longer flickers as the release settles.
+  The selected tint no longer flickers as the release settles. Tapping a
+  far tab sends the lens across from the selection and settles it on
+  arrival (~180 ms, as iOS 26.4), instead of snapping.
 * `GlassButton` / `GlassButton.icon`: SwiftUI's glass and prominent button
   styles, destructive and cancel roles, control sizes, border shapes,
   disabled and loading states; Material 3 buttons on Android. Sizes

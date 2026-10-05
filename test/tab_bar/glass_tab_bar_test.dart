@@ -327,23 +327,37 @@ void main() {
     );
   }, variant: ios);
 
-  testWidgets('pressing another tab shows the lens under the finger at once', (
+  testWidgets('tapping a far tab sends the lens across from the selection', (
     t,
   ) async {
     shaderEnv();
     await t.pumpWidget(plainHost(_Harness(_picks())));
-    final settings = t.getCenter(find.text('Settings'));
-    final g = await t.startGesture(settings);
-    await t.pump();
+    final history = t.getCenter(find.text('History')).dx;
+    final settings = t.getCenter(find.text('Settings')).dx;
+    // A device tap: ~100 ms down, then up.
+    final g = await t.startGesture(t.getCenter(find.text('Settings')));
     await t.pump(const Duration(milliseconds: 16));
     expect(_lens, findsOneWidget);
     expect(
       t.getCenter(_lens).dx,
-      moreOrLessEquals(settings.dx, epsilon: 6),
-      reason: 'the lens starts under the finger, not at the old selection',
+      lessThan(history + (settings - history) * 0.3),
+      reason: 'the lens starts at the current selection',
     );
+    for (var i = 0; i < 5; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
     await g.up();
-    await t.pumpAndSettle();
+    // Mid-travel, the lens is still shown (it settles only on arrival).
+    await t.pump(const Duration(milliseconds: 16));
+    expect(_lens, findsOneWidget);
+    final mid = t.getCenter(_lens).dx;
+    expect(mid, greaterThan(history + (settings - history) * 0.3));
+    expect(mid, lessThan(settings - 4));
+    // Arrives at ~180 ms (as iOS 26.4 does), then the lens settles.
+    for (var i = 0; i < 40; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    expect(_lens, findsNothing);
   }, variant: ios);
 
   testWidgets('after a tap the pill settles back to its own size', (t) async {

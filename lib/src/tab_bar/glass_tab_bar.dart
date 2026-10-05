@@ -201,6 +201,13 @@ abstract final class _Metrics {
   );
 
   /// The pill moving to a newly selected tab.
+  /// The lens travelling from the selection to a pressed or tapped tab:
+  /// History to Settings arrives in ~11 frames on iOS 26.4 (Kept).
+  static final SpringDescription travel = swiftUISpring(
+    response: 0.22,
+    dampingFraction: 0.85,
+  );
+
   static final SpringDescription slide = swiftUISpring(
     response: 0.3,
     dampingFraction: 0.78,
@@ -377,10 +384,11 @@ class _GlassTabBarState extends State<GlassTabBar>
   void _down(DragDownDetails details) {
     _held = true;
     _finger = _toSlots(details.localPosition.dx);
+    _cancelPendingRelease();
     _springPress(_Metrics.press, 1);
-    // The lens grows where the finger lands (as iOS does), not from the
-    // old selection.
-    _x.value = _lensTarget(_finger);
+    // The lens grows at the current selection and travels to the finger,
+    // as iOS does (a tap on a far tab sends it across the bar).
+    _springX(_Metrics.travel, _lensTarget(_finger));
     _startWobble();
   }
 
@@ -393,9 +401,31 @@ class _GlassTabBarState extends State<GlassTabBar>
     _held = false;
     final slot = _finger.round().clamp(0, _count - 1);
     final index = _rtl ? _count - 1 - slot : slot;
-    _springX(_Metrics.slide, slot.toDouble());
-    _springPress(_Metrics.release, 0);
+    final travelling = (_x.value - slot).abs() > 0.15;
+    _springX(travelling ? _Metrics.travel : _Metrics.slide, slot.toDouble());
+    if (travelling && !_reduceMotion) {
+      // iOS keeps the lens until it arrives, then settles it into the pill.
+      _arrival = slot.toDouble();
+      _x.addListener(_settleOnArrival);
+    } else {
+      _springPress(_Metrics.release, 0);
+    }
     if (index != widget.selectedIndex) widget.onSelected(index);
+  }
+
+  /// Where a released lens is travelling to; null when not waiting.
+  double? _arrival;
+
+  void _settleOnArrival() {
+    final target = _arrival;
+    if (target == null || (_x.value - target).abs() > 0.15) return;
+    _cancelPendingRelease();
+    _springPress(_Metrics.release, 0);
+  }
+
+  void _cancelPendingRelease() {
+    _arrival = null;
+    _x.removeListener(_settleOnArrival);
   }
 
   @override
