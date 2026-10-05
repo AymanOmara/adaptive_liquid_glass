@@ -21,7 +21,6 @@ import '../core/theme.dart';
 import '../group/glass_group.dart';
 import '../liquid_glass.dart';
 import '../platform/glass_platform.dart';
-import 'lens_rim.dart';
 
 /// One tab of a [GlassTabBar]: an icon over a short label.
 @immutable
@@ -507,16 +506,6 @@ class _GlassTabBarState extends State<GlassTabBar>
     final lean = _Metrics.growLean * (x - _rowWidth / 2) * t;
     final growX = _Metrics.growX * t;
     final growY = _Metrics.growY * t;
-    // How far each lens end sits inside the (grown) bar, for its rim.
-    final barLeft = -growX + lean;
-    final barRight = _rowWidth + _Metrics.inset * 2 + growX + lean;
-    final leftShade = lensEndShade(
-      inside: lens.left + _Metrics.inset - barLeft,
-    );
-    final rightShade = lensEndShade(
-      inside: barRight - (lens.right + _Metrics.inset),
-    );
-    final motion = (_x.velocity.abs() * _itemWidth / 400).clamp(0.0, 1.0);
     return SizedBox(
       width: _rowWidth + _Metrics.inset * 2,
       height: widget.height,
@@ -630,22 +619,6 @@ class _GlassTabBarState extends State<GlassTabBar>
                         ),
                       ],
                     ),
-                  ),
-                ),
-              ),
-            ),
-          // iOS's lens rim: bright edge, colour fringes and the refracted
-          // outside as a dark band (see LensRimPainter).
-          if (lensShown)
-            Positioned.fromRect(
-              rect: lens.shift(const Offset(_Metrics.inset, _Metrics.inset)),
-              child: IgnorePointer(
-                child: CustomPaint(
-                  painter: LensRimPainter(
-                    strength: t,
-                    leftShade: leftShade,
-                    rightShade: rightShade,
-                    motion: motion,
                   ),
                 ),
               ),
