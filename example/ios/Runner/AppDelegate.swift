@@ -16,7 +16,10 @@ import UIKit
       name: "example/launch", binaryMessenger: engineBridge.applicationRegistrar.messenger()
     ).setMethodCallHandler { call, result in
       guard call.method == "getArgs" else { result(FlutterMethodNotImplemented); return }
-      result(LaunchArgs.all)
+      // `-mode <auto|shader|native>` picks the glass path for scenes.
+      var args = LaunchArgs.all
+      args["mode"] = LaunchArgs.arg("mode")
+      result(args)
     }
   }
 }

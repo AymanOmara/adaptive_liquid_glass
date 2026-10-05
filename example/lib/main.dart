@@ -46,9 +46,17 @@ Future<void> main() async {
     );
     throw StateError(message);
   }
+  // Scenes default to the shader: that is what the fidelity harness fits.
+  // `-mode native` (or `auto`) renders them with Apple's glass instead.
+  final mode = switch (args.mode) {
+    'native' => GlassRenderMode.native,
+    'auto' => GlassRenderMode.auto,
+    'shader' => GlassRenderMode.shader,
+    _ => scene == null ? GlassRenderMode.auto : GlassRenderMode.shader,
+  };
   runApp(
     LiquidGlassTheme(
-      data: LiquidGlassThemeData(constants: constants),
+      data: LiquidGlassThemeData(constants: constants, defaultMode: mode),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         home: scene == null ? const Demo() : SceneView(scene: scene),

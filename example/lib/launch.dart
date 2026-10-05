@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 
 /// Launch arguments forwarded by the iOS host (`-scene`, `-renderer`,
-/// `-constants`, `-motion`, `-sceneFile`) over the `example/launch` channel.
+/// `-constants`, `-motion`, `-sceneFile`, `-mode`) over the `example/launch` channel.
 class LaunchArgs {
   /// Creates the arguments.
   LaunchArgs(
@@ -10,6 +10,7 @@ class LaunchArgs {
     this.constants,
     this.motion, [
     this.sceneFile,
+    this.mode,
   ]);
 
   /// Static scene id, or null for the demo.
@@ -27,6 +28,10 @@ class LaunchArgs {
   /// Scene list asset; null means `assets/scenes.json`.
   final String? sceneFile;
 
+  /// Glass path for scenes: `shader` (the default, what the fidelity
+  /// harness measures), `native` or `auto`.
+  final String? mode;
+
   /// Reads the arguments; all null where the channel is not registered.
   static Future<LaunchArgs> read() async {
     try {
@@ -38,6 +43,7 @@ class LaunchArgs {
         m?['constants'] as String?,
         m?['motion'] as String?,
         m?['sceneFile'] as String?,
+        m?['mode'] as String?,
       );
     } on MissingPluginException {
       return LaunchArgs(null, null, null, null);

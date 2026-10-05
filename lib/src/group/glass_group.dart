@@ -29,7 +29,7 @@ enum GlassMemberRendering {
   /// Each member is a blur-only surface.
   degraded,
 
-  /// Registered with the group's native (UIKit) glass layer, iOS 26+.
+  /// Registered with the group's native (SwiftUI) glass layer, iOS 26+.
   native;
 
   /// Whether the group draws its members' glass (shader backdrop or native

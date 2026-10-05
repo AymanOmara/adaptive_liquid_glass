@@ -112,6 +112,89 @@ void main() {
     expect(shape['interactive'], false);
   }, variant: ios);
 
+  testWidgets('native payload carries the platform brightness', (t) async {
+    iosEnv();
+    final sent = mockNative(t);
+    Widget app(Brightness b) => themed(
+      Builder(
+        builder: (context) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(platformBrightness: b),
+          child: const Align(
+            alignment: AlignmentDirectional.topStart,
+            child: GlassGroup(
+              child: LiquidGlass(child: SizedBox(width: 100, height: 40)),
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.pumpWidget(app(Brightness.dark));
+    await t.pump();
+    expect(sent.last['dark'], true);
+    await t.pumpWidget(app(Brightness.light));
+    await t.pump();
+    expect(sent.last['dark'], false);
+  }, variant: ios);
+
+  testWidgets('members sharing a unionId get one union index', (t) async {
+    iosEnv();
+    final sent = mockNative(t);
+    await t.pumpWidget(
+      themed(
+        const Align(
+          alignment: AlignmentDirectional.topStart,
+          child: GlassGroup(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LiquidGlass(
+                  unionId: 'a',
+                  child: SizedBox(width: 40, height: 40),
+                ),
+                SizedBox(width: 20),
+                LiquidGlass(child: SizedBox(width: 40, height: 40)),
+                SizedBox(width: 20),
+                LiquidGlass(
+                  unionId: 'a',
+                  child: SizedBox(width: 40, height: 40),
+                ),
+                LiquidGlass(unionId: 7, child: SizedBox(width: 40, height: 40)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.pump();
+    final unions = [
+      for (final s in sent.last['shapes']! as List)
+        (s as Map<Object?, Object?>)['union'],
+    ];
+    expect(unions, [0, null, 0, 1]);
+  }, variant: ios);
+
+  testWidgets('circles are sent with circular corners', (t) async {
+    iosEnv();
+    final sent = mockNative(t);
+    await t.pumpWidget(
+      themed(
+        const Align(
+          alignment: AlignmentDirectional.topStart,
+          child: GlassGroup(
+            child: LiquidGlass(
+              shape: GlassShape.circle(),
+              child: SizedBox(width: 60, height: 60),
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.pump();
+    final shape =
+        (sent.last['shapes']! as List).single as Map<Object?, Object?>;
+    expect(shape['capsule'], true);
+  }, variant: ios);
+
   testWidgets('native mode passes tight constraints through like shader', (
     t,
   ) async {
