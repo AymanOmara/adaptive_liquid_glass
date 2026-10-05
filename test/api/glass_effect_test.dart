@@ -23,13 +23,13 @@ void main() {
     expect(glass.padding, isNull);
   });
 
-  test('glassEffect forwards glass, shape, id, unionId and padding', () {
+  test('glassEffect forwards glass, shape, glassId, unionId and padding', () {
     const icon = Icon(Icons.add);
     final g = Glass.clear.interactive();
     final glass = icon.glassEffect(
       glass: g,
       shape: const GlassShape.circle(),
-      id: 'plus',
+      glassId: 'plus',
       unionId: 'tools',
       padding: const EdgeInsetsDirectional.all(8),
     );

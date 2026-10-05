@@ -18,7 +18,7 @@ extension GlassEffect on Widget {
   /// Puts this widget on Liquid Glass; returns a [LiquidGlass].
   ///
   /// [glass] defaults to the theme's `defaultGlass` (regular glass) and
-  /// [shape] to a capsule. [id] is the morph identity inside a `GlassGroup`
+  /// [shape] to a capsule. [glassId] is the morph identity inside a `GlassGroup`
   /// (`glassEffectID`), [unionId] merges members into one shape
   /// (`glassEffectUnion`), and [padding] insets this widget inside the
   /// glass. Use [LiquidGlass] directly for `onPressed` and the other
@@ -26,13 +26,13 @@ extension GlassEffect on Widget {
   LiquidGlass glassEffect({
     Glass? glass,
     GlassShape shape = const GlassShape.capsule(),
-    Object? id,
+    Object? glassId,
     Object? unionId,
     EdgeInsetsGeometry? padding,
   }) => LiquidGlass(
     glass: glass,
     shape: shape,
-    glassId: id,
+    glassId: glassId,
     unionId: unionId,
     padding: padding,
     child: this,

@@ -1,6 +1,6 @@
 ## Unreleased
 
-* `Widget.glassEffect(glass:, shape:, id:, unionId:, padding:)`: one-line
+* `Widget.glassEffect(glass:, shape:, glassId:, unionId:, padding:)`: one-line
   glass, mirroring SwiftUI's `.glassEffect(_:in:)`.
 * `LiquidGlass.padding`: insets the child inside the glass (directional).
 * `LiquidGlass.adaptiveForeground` (default `true`): text and icons on glass

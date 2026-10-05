@@ -68,7 +68,10 @@ class LiquidGlass extends StatelessWidget {
   /// Like SwiftUI's vibrant labels: the [DefaultTextStyle] and [IconTheme]
   /// colour follow `GlassForeground.labelColorOf` (dark on light content,
   /// white on dark), or the Material "on" colour of the surface on the
-  /// Material path. Colours set on a `Text` or `Icon` still win.
+  /// Material path. This replaces the colour of any ambient
+  /// [DefaultTextStyle] or [IconTheme] above the glass (their other fields
+  /// are kept); only a colour set on the `Text` or `Icon` itself, or by a
+  /// [DefaultTextStyle] inside the glass, still wins.
   final bool adaptiveForeground;
 
   /// Called when the glass is tapped or activated from the keyboard.

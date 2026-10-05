@@ -73,7 +73,8 @@ class Glass {
 
   @override
   String toString() =>
-      'Glass.${variant.name}(tint: $tintColor, interactive: $isInteractive)';
+      'Glass.${variant.name}(tint: $tintColor, '
+      'interactive: ${_interactive ?? 'unset'})';
 }
 
 /// [glass] as used by a pressable `LiquidGlass`: interactive unless it

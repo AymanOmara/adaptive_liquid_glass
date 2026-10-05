@@ -149,4 +149,16 @@ void main() {
     expect(Glass.regular.interactive(false), isNot(Glass.regular));
     expect(Glass.regular.interactive(false).isInteractive, isFalse);
   });
+
+  test('toString tells an unset interactive from false', () {
+    expect(Glass.regular.toString(), contains('interactive: unset'));
+    expect(
+      Glass.regular.interactive(false).toString(),
+      contains('interactive: false'),
+    );
+    expect(
+      Glass.regular.interactive().toString(),
+      contains('interactive: true'),
+    );
+  });
 }

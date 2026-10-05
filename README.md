@@ -14,9 +14,20 @@ counterparts on Android, behind one API. App code never branches on platform.
 
 ### Install
 
+The package is not on pub.dev yet (coming soon). Depend on it from git:
+
 ```yaml
 dependencies:
-  adaptive_liquid_glass: ^0.1.0-dev.1
+  adaptive_liquid_glass:
+    git:
+      url: https://github.com/aymanomara/adaptive_liquid_glass
+```
+
+After the pub.dev release, this will be:
+
+```yaml
+dependencies:
+  adaptive_liquid_glass: ^0.1.0  # after release
 ```
 
 ```dart
@@ -177,7 +188,7 @@ const LiquidGlass(
 Nested glass with `GlassShape.concentric()` follows the card's corners, inset
 by the distance between them.
 
-### Morphing pair with `id`
+### Morphing pair with `glassId`
 
 Give glass an identity and it morphs in and out of its neighbours as it
 appears and disappears, like `glassEffectID`:
@@ -198,7 +209,7 @@ GlassGroup(
       ),
       if (expanded)
         const Icon(Icons.favorite).glassEffect(
-          id: 'extra',
+          glassId: 'extra',
           shape: const GlassShape.circle(),
           padding: const EdgeInsets.all(14),
         ),
