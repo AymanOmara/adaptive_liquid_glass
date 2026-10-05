@@ -48,7 +48,7 @@ KEYS = ["blurSigma", "blurSizeRef", "frostWideSigma", "frostWideMixEdge", "frost
         "tone0", "tone1", "tone2", "tone3", "tone4", "tone5", "tone6", "tone7", "tone8",
         "postBlurShare", "normalRadiusScale", "lensEdge", "lensEdgeDecay",
         "rimMix", "rimMixWidth", "rimMixCut", "rimMixLumaFloor",
-        "toneLift", "toneLiftKnee", "toneLiftSizeRef", "blurAspectPower"]
+        "toneLift", "toneLiftKnee", "toneLiftSizeRef", "blurAspectPower", "rimBack"]
 TONE_KEYS = [f"tone{i}" for i in range(9)]
 BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
           # Task 17b: frost sigma x min(1, halfMin / blurSizeRef) (pt); 0 = off.
@@ -72,7 +72,7 @@ BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
           "rimMixLumaFloor": (0, 1),
           # Task 8b small-shape shadow lift (amount, knee, size ref pt).
           "toneLift": (0, 1), "toneLiftKnee": (0.05, 2), "toneLiftSizeRef": (0, 200),
-          "blurAspectPower": (-1, 1),
+          "blurAspectPower": (-1, 1), "rimBack": (0, 2),
           # Lens v3 (pt); Task 15c measured 6.4-6.5 and 38.4 (regular) / 0 (clear).
           "lensDecay": (0.5, 20), "lensSizeRef": (0, 100),
           "dispersion": (0, 0.6), "rimWidth": (0.3, 4), "rimIntensity": (0, 1.5),

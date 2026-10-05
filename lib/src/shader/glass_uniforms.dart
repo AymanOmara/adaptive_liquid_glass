@@ -152,7 +152,7 @@ List<GlassShapeUniform> mergeUnions(List<GlassShapeUniform> shapes) {
 }
 
 /// Number of user floats after `uSize`.
-const int kGlassUniformFloats = 296;
+const int kGlassUniformFloats = 304;
 
 /// Packs [u] into the float layout documented in `shaders/liquid_glass.frag`:
 ///
@@ -165,7 +165,7 @@ const int kGlassUniformFloats = 296;
 /// | 16–79   | uRects[16]     | x, y, w, h px                             |
 /// | 80–143  | uInfo[16]      | radius px, clear?, cornerExponent, fill scale |
 /// | 144–207 | uTints[16]     | rgb, strength                             |
-/// | 208–295 | uVar[22]       | regular A–K, then clear A–K               |
+/// | 208–303 | uVar[24]       | regular A–L, then clear A–L               |
 ///
 /// Per variant: A = (lens decay px, lens band px, lens strength, dispersion),
 /// B = (rim width px, rim intensity, fillOpacity, dim),
@@ -178,7 +178,8 @@ const int kGlassUniformFloats = 296;
 /// I.yzw = (lens edge px, lens edge decay px, tone lift),
 /// J = (rim mix, rim mix width px, rim mix cut px, rim mix luma floor),
 /// K = (tone lift knee, tone lift size ref px, post-lens sigma px =
-/// blurSigma·√postBlurShare, blur size ref px).
+/// blurSigma·√postBlurShare, blur size ref px),
+/// L = (rim back strength, -, -, -).
 List<double> packGlassUniforms(GlassFrameUniforms u) {
   final dpr = u.devicePixelRatio;
   final shapes = u.shapes.where(_drawable).take(_maxShapes).toList();
@@ -295,7 +296,8 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
           dpr,
       v.blurSizeRef * dpr,
     ]);
-    k += 44;
+    f.setAll(k + 44, [v.rimBack, 0, 0, 0]);
+    k += 48;
   }
   return f;
 }

@@ -11,7 +11,7 @@ uniform vec4 uTouch;       // x, y, glow, glowRadius px
 uniform vec4 uRects[16];   // x, y, w, h px
 uniform vec4 uInfo[16];    // radius px, variant(0 regular, 1 clear), cornerExponent (0 = global), fill scale
 uniform vec4 uTints[16];   // rgb, strength
-uniform vec4 uVar[22];     // per variant (regular A-K, then clear A-K):
+uniform vec4 uVar[24];     // per variant (regular A-L, then clear A-L):
                            //   A(lens decay px, band px, lens strength, disp) B(rimW, rimI, fillOpacity, dim)
                            //   C(shadowR, shadowO, tintS, lens size ref px) D(fillR, fillG, fillB, saturation)
                            //   E(frost wide sigma px, wide mix edge, wide mix centre, wide size ref px)
@@ -20,6 +20,7 @@ uniform vec4 uVar[22];     // per variant (regular A-K, then clear A-K):
                            //   I.yzw(lens edge px, lens edge decay px, tone lift)
                            //   J(rim mix, rim mix width px, rim mix cut px, rim mix luma floor)
                            //   K(tone lift knee, tone lift size ref px, post-lens sigma px, blur size ref px)
+                           //   L(rim back strength, -, -, -)
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -69,7 +70,7 @@ float lensField(vec2 p) {
   for (int i = 0; i < 16; i++) {
     if (i >= int(uGlobal.x)) break;
     vec4 info = uInfo[i];
-    float rs = mix(uVar[5].w, uVar[16].w, info.y);
+    float rs = mix(uVar[5].w, uVar[17].w, info.y);
     d = smin(d, shapeOf(p, uRects[i], info, rs), uGlobal2.x);
   }
   return d;
@@ -121,17 +122,18 @@ void main() {
   fillScale /= wsum;
   tint /= wsum;
 
-  vec4 A = mix(uVar[0], uVar[11], clearMix);
-  vec4 B = mix(uVar[1], uVar[12], clearMix);
-  vec4 C = mix(uVar[2], uVar[13], clearMix);
-  vec4 D = mix(uVar[3], uVar[14], clearMix);
-  vec4 E = mix(uVar[4], uVar[15], clearMix);
-  vec4 F = mix(uVar[5], uVar[16], clearMix);
-  vec4 G = mix(uVar[6], uVar[17], clearMix);
-  vec4 H = mix(uVar[7], uVar[18], clearMix);
-  vec4 I = mix(uVar[8], uVar[19], clearMix);
-  vec4 J = mix(uVar[9], uVar[20], clearMix);
-  vec4 K = mix(uVar[10], uVar[21], clearMix);
+  vec4 A = mix(uVar[0], uVar[12], clearMix);
+  vec4 B = mix(uVar[1], uVar[13], clearMix);
+  vec4 C = mix(uVar[2], uVar[14], clearMix);
+  vec4 D = mix(uVar[3], uVar[15], clearMix);
+  vec4 E = mix(uVar[4], uVar[16], clearMix);
+  vec4 F = mix(uVar[5], uVar[17], clearMix);
+  vec4 G = mix(uVar[6], uVar[18], clearMix);
+  vec4 H = mix(uVar[7], uVar[19], clearMix);
+  vec4 I = mix(uVar[8], uVar[20], clearMix);
+  vec4 J = mix(uVar[9], uVar[21], clearMix);
+  vec4 K = mix(uVar[10], uVar[22], clearMix);
+  vec4 L4 = mix(uVar[11], uVar[23], clearMix);
   float hc = uGlobal2.z;
 
   float inside = 1.0 - smoothstep(-0.75, 0.75, d);
@@ -210,7 +212,7 @@ void main() {
   float sPost = K.z * (K.w > 0.0 ? min(1.0, halfMin / K.w) : 1.0);
   if (sPost >= 0.25) {
     // The lens field equals the outline's field when no variant rounds it.
-    float fc = (uVar[5].w == 1.0 && uVar[16].w == 1.0) ? d : lensField(px);
+    float fc = (uVar[5].w == 1.0 && uVar[17].w == 1.0) ? d : lensField(px);
     float lap = fxp + fxm + fyp + fym - 4.0 * fc;
     float kappa = lap / max(0.5 * gradLen, 1e-3);
     float ja = clamp(1.0 - dLens, -4.0, 4.0) * sPost;
@@ -288,7 +290,7 @@ void main() {
   vec2 L = vec2(cos(uGlobal.z), sin(uGlobal.z));
   float rimW = max(B.x * (1.0 + hc), 0.5);
   float rim = 1.0 - smoothstep(0.0, rimW, depth);
-  float spec = rim * (max(dot(nrm, L), 0.0) + 0.35 * max(dot(nrm, -L), 0.0));
+  float spec = rim * (max(dot(nrm, L), 0.0) + L4.x * max(dot(nrm, -L), 0.0));
   col += B.y * (1.0 + hc) * spec;
 
   // Isotropic rim (Task 17d, measured on clear glass): a mix toward white,

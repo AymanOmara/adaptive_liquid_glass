@@ -53,6 +53,7 @@ VARIANT_DEFAULTS = {
     "rimMixLumaFloor": 1.0,
     "toneLift": 0.0,
     "blurAspectPower": 0.0,
+    "rimBack": 0.35,
     "toneLiftKnee": 0.5,
     "toneLiftSizeRef": 0.0,
 }
@@ -359,6 +360,7 @@ def _uvar(constants, brightness, scale):
                            v["blurSigma"] * np.sqrt(min(max(v["postBlurShare"], 0.0),
                                                         POST_SHARE_MAX)) * scale,
                            v["blurSizeRef"] * scale]),
+            "L": np.array([v["rimBack"], 0.0, 0.0, 0.0]),
         })
     return res
 
@@ -470,12 +472,12 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     uv = _uvar(constants, brightness, scale)
     if np.all(clear_mix == 0) or np.all(clear_mix == 1):
         u = uv[1] if np.all(clear_mix == 1) else uv[0]
-        A, B, C, D, E, F, G, H, I, J, K = (u[n] for n in "ABCDEFGHIJK")
+        A, B, C, D, E, F, G, H, I, J, K, L = (u[n] for n in "ABCDEFGHIJKL")
     else:
         cm = np.asarray(clear_mix)[..., None]
-        A, B, C, D, E, F, G, H, I, J, K = (uv[0][n] * (1 - cm) + uv[1][n] * cm for n in "ABCDEFGHIJK")
-    A, B, C, D, E, F, I, J, K = (np.broadcast_to(x, g["d"].shape + (4,))
-                                 for x in (A, B, C, D, E, F, I, J, K))
+        A, B, C, D, E, F, G, H, I, J, K, L = (uv[0][n] * (1 - cm) + uv[1][n] * cm for n in "ABCDEFGHIJKL")
+    A, B, C, D, E, F, I, J, K, L = (np.broadcast_to(x, g["d"].shape + (4,))
+                                    for x in (A, B, C, D, E, F, I, J, K, L))
 
     d, nx, ny, px, py = g["d"], g["nx"], g["ny"], g["px"], g["py"]
     inside = 1.0 - _smoothstep(-0.75, 0.75, d)
@@ -603,7 +605,9 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     rim_w = np.maximum(Bm[:, 0], 0.5)
     rim = 1.0 - _smoothstep(0.0, rim_w, depth[m])
     ndl = nx[m] * lx + ny[m] * ly
-    spec = rim * (np.maximum(ndl, 0.0) + 0.35 * np.maximum(-ndl, 0.0))
+    # Back-side rim strength rimBack (Task 9: the device rim is a fixed
+    # light that is about as bright facing away from the light as toward it).
+    spec = rim * (np.maximum(ndl, 0.0) + L[..., 0][m] * np.maximum(-ndl, 0.0))
     col = col + (Bm[:, 1] * spec)[:, None]
     # Isotropic rim (Task 17d, measured on clear glass): a mix toward white,
     # alpha rimMix ramping to 0 at rimMixWidth, cut at rimMixCut; scaled by

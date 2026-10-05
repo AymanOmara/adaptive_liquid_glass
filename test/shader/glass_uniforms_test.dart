@@ -49,7 +49,7 @@ void main() {
         }),
       ),
     );
-    expect(f.length, 296);
+    expect(f.length, 304);
     expect(f.sublist(0, 4), [1, 3, -2, 0]);
     expect(f.sublist(4, 8), [60, GlassConstants.standard.cornerExponent, 0, 0]);
     expect(f.sublist(16, 20), [1, 2, 30, 40]);
@@ -114,7 +114,7 @@ void main() {
       reg.tintStrength,
       reg.lensSizeRef * 3,
     ]);
-    expect(f.sublist(260, 264), [
+    expect(f.sublist(264, 268), [
       clr.shadowRadius * 3,
       clr.shadowOpacity,
       clr.tintStrength,
@@ -126,19 +126,19 @@ void main() {
       reg.fillColor.b,
       reg.saturation,
     ]);
-    expect(f.sublist(252, 256), [
+    expect(f.sublist(256, 260), [
       clr.lensDecay * 3,
       clr.lensBand * 3,
       clr.lensStrength,
       clr.dispersion,
     ]);
-    expect(f.sublist(256, 260), [
+    expect(f.sublist(260, 264), [
       clr.rimWidth * 3,
       clr.rimIntensity,
       clr.fillOpacity,
       clr.dim,
     ]);
-    expect(f.sublist(264, 268), [
+    expect(f.sublist(268, 272), [
       clr.fillColor.r,
       clr.fillColor.g,
       clr.fillColor.b,
@@ -166,8 +166,8 @@ void main() {
     final f = packGlassUniforms(frame(const [], constants: c));
     expect(f.sublist(224, 228), [5.5 * 3, 0.3, 1.2, 70 * 3]);
     expect(f[228], 1.4);
-    expect(f.sublist(268, 272), [4.0 * 3, -0.1, 0.2, 0]);
-    expect(f[272], 0.5);
+    expect(f.sublist(272, 276), [4.0 * 3, -0.1, 0.2, 0]);
+    expect(f[276], 0.5);
   });
 
   test('tone LUT knots pack into G, H and I (identity when absent)', () {
@@ -181,8 +181,8 @@ void main() {
       GlassVariantConstants.identityToneKnots.sublist(4, 8),
     );
     expect(identity[240], 1.0);
-    // The clear set's knots live 44 floats later.
-    expect(identity[240 + 44], 1.0);
+    // The clear set's knots live 48 floats later.
+    expect(identity[240 + 48], 1.0);
 
     final c = GlassConstants.fromJson({
       'regular': {
@@ -203,6 +203,7 @@ void main() {
     expect(d.sublist(248, 251), [0.5, 0, 0]); // K.w = blurSizeRef·dpr
     expect(d.sublist(244, 248), [0, 1.5 * 3, 1 * 3, 1]);
     expect(d[7], 0);
+    expect([d[252], d[300]], [0.35, 0.35]); // L.x rimBack
 
     final c = GlassConstants.fromJson({
       'clear': {
@@ -228,11 +229,11 @@ void main() {
     );
     expect(f[7], 0);
     // K.zw: post-lens sigma = blurSigma·√0.9·dpr, blur size ref·dpr.
-    expect(f[294], closeTo(c.clear.blurSigma * math.sqrt(0.9) * 3, 1e-12));
-    expect(f[295], c.clear.blurSizeRef * 3);
-    expect(f.sublist(273, 276), [0.4, 0.9, 1.55]);
-    expect(f.sublist(285, 288), [9.0 * 3, closeTo(0.6 * 3, 1e-12), 0]);
-    expect(f.sublist(288, 292), [0.63, 1.5 * 3, 1.0 * 3, 0.05]);
+    expect(f[298], closeTo(c.clear.blurSigma * math.sqrt(0.9) * 3, 1e-12));
+    expect(f[299], c.clear.blurSizeRef * 3);
+    expect(f.sublist(277, 280), [0.4, 0.9, 1.55]);
+    expect(f.sublist(289, 292), [9.0 * 3, closeTo(0.6 * 3, 1e-12), 0]);
+    expect(f.sublist(292, 296), [0.63, 1.5 * 3, 1.0 * 3, 0.05]);
   });
 
   test('toneLift keys pack into I.w and K.xy (size ref × dpr)', () {
@@ -255,7 +256,7 @@ void main() {
     );
     expect(f[243], 0.7); // regular I.w
     expect(f.sublist(248, 250), [0.8, 48.0 * 2]); // regular K.xy
-    expect(f[287], 0); // clear I.w: lift off
+    expect(f[291], 0); // clear I.w: lift off
   });
 
   test(
@@ -277,8 +278,8 @@ void main() {
       );
       // regular K.zw: no post blur; clear K.zw: 1.2·0.6·3 px, no size scale.
       expect(f.sublist(250, 252), [0, 60.0 * 3]);
-      expect(f[294], closeTo(1.2 * 0.6 * 3, 1e-12));
-      expect(f[295], 0);
+      expect(f[298], closeTo(1.2 * 0.6 * 3, 1e-12));
+      expect(f[299], 0);
     },
   );
 
@@ -377,7 +378,7 @@ void main() {
       d.fillColor.b,
       d.saturation,
     ]);
-    expect(f[259], GlassConstants.standard.clearDark.dim);
+    expect(f[263], GlassConstants.standard.clearDark.dim);
   });
 
   test('opaque and touch', () {

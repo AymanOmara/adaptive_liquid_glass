@@ -94,6 +94,7 @@ class GlassVariantConstants {
     this.rimMixLumaFloor = 1,
     this.toneLift = 0,
     this.blurAspectPower = 0,
+    this.rimBack = 0.35,
     this.toneLiftKnee = 0.5,
     this.toneLiftSizeRef = 0,
     required this.lensBand,
@@ -138,6 +139,7 @@ class GlassVariantConstants {
     rimMixLumaFloor: _d(j, 'rimMixLumaFloor', base.rimMixLumaFloor),
     toneLift: _d(j, 'toneLift', base.toneLift),
     blurAspectPower: _d(j, 'blurAspectPower', base.blurAspectPower),
+    rimBack: _d(j, 'rimBack', base.rimBack),
     toneLiftKnee: _d(j, 'toneLiftKnee', base.toneLiftKnee),
     toneLiftSizeRef: _d(j, 'toneLiftSizeRef', base.toneLiftSizeRef),
     lensBand: _d(j, 'lensBand', base.lensBand),
@@ -303,6 +305,11 @@ class GlassVariantConstants {
   /// Brightness added at the rim.
   final double rimIntensity;
 
+  /// Rim strength on the side facing away from the light, relative to the
+  /// lit side (0.35 = the pre-17d literal). Task 9 measured a fixed light
+  /// whose far side is about as bright as the near side.
+  final double rimBack;
+
   /// Colour the content behind the glass is washed toward (opaque; JSON
   /// `"#RRGGBB"` or an int ARGB).
   final Color fillColor;
@@ -360,6 +367,7 @@ class GlassVariantConstants {
     'rimMixLumaFloor': rimMixLumaFloor,
     'toneLift': toneLift,
     'blurAspectPower': blurAspectPower,
+    'rimBack': rimBack,
     'toneLiftKnee': toneLiftKnee,
     'toneLiftSizeRef': toneLiftSizeRef,
     'lensBand': lensBand,
