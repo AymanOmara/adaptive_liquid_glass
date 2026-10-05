@@ -50,24 +50,26 @@ void main() {
   });
 
   test(
-    'standard v4: Task 17b fit on lens v3 with size-dependent frost/fill',
+    'standard v5: Task 17d round-2 fit (toneLift + clear lens set)',
     () {
       const c = GlassConstants.standard;
-      // Fitted on the NumPy model against SwiftUI (build/fidelity/fit17b),
-      // device-verified: 41/75 scenes, median SSIM 0.981, median ΔE 1.50.
+      // Fitted on the NumPy model against SwiftUI (build/fidelity/fit17d,
+      // analysis2.json), model-side: 46/75 scenes, median SSIM 0.9828,
+      // median ΔE 1.15, min SSIM 0.9480.
       expect(c.regular.blurSigma, 5.9236);
       expect(c.regular.blurSizeRef, 59.9762);
       expect(c.regular.fillOpacity, 0.6804);
       expect(c.regular.fillSizeRef, 43.9952);
       expect(c.regular.fillSizeDrop, 0.1268);
       expect(c.regular.tintStrength, 1.0219);
-      expect(c.regularDark.blurSigma, 11.4482);
-      expect(c.regularDark.fillSizeDrop, 0.799);
-      expect(c.regularDark.fillColor, const Color(0xFF191818));
-      expect(c.clear.blurSigma, 1.3993);
+      expect(c.regularDark.blurSigma, 8.2468);
+      expect(c.regularDark.toneLift, 0.7827);
+      expect(c.regularDark.fillSizeDrop, 0.798);
+      expect(c.regularDark.fillColor, const Color(0xFF1B1817));
+      expect(c.clear.blurSigma, 1.2794);
       expect(c.clear.blurSizeRef, 0);
       expect(c.clear.fillSizeRef, 0);
-      expect(c.clearDark.lensSizeRef, 28.86);
+      expect(c.clearDark.lensSizeRef, 14.7722);
       expect(c.cornerExponent, 2.0);
       expect(c.mergeFactor, 0.8);
       // The lens stays near the Task 15c measurement in every set.

@@ -97,6 +97,7 @@ def test_group_blur_sigma_scales_with_shape_size():
     mixed["shapes"].append({**_scene("clear-rect16-photo-light")["shapes"][0], "y": 100})
     assert group_blur_sigma(mixed, c) == pytest.approx(3.0)
     c["clear"]["blurSigma"] = 4.0
+    c["clear"]["postBlurShare"] = 0.0  # this test pins the size scaling alone
     assert group_blur_sigma(mixed, c) == pytest.approx(4.0)
     # Dark scenes use the dark sets.
     dark = _scene("regular-circle-photo-dark")
@@ -211,13 +212,16 @@ def _tone_scene(variant="clear", brightness="light"):
 
 
 def test_tone_lut_identity_renders_unchanged():
+    """Identity knots bypass the LUT. The shipped sets carry fitted knots
+    since Task 17d round 2, so they must render differently from identity —
+    this catches accidentally shipping identity knots again."""
     sc = _tone_scene()
-    a = render(_tone_bg(), sc, resolve_constants(json.loads(json.dumps(STANDARD))))
-    c = json.loads(json.dumps(STANDARD))
+    identity = json.loads(json.dumps(STANDARD))
     for n in ("regular", "clear", "regularDark", "clearDark"):
-        c[n]["toneKnots"] = list(IDENTITY)
-    b = render(_tone_bg(), sc, resolve_constants(c))
-    assert np.array_equal(a, b)
+        identity[n]["toneKnots"] = list(IDENTITY)
+    a = render(_tone_bg(), sc, resolve_constants(identity))
+    b = render(_tone_bg(), sc, resolve_constants(json.loads(json.dumps(STANDARD))))
+    assert not np.array_equal(a, b)
 
 
 def test_tone_lut_lifts_interior():
@@ -272,21 +276,29 @@ def _feat(sid, **over):
     return render_window(bg, sc, c)
 
 
-def test_17d_defaults_are_the_17c_model():
+def test_17d_defaults_are_feature_neutral():
+    """VARIANT_DEFAULTS stay the 17c neutral point. Round 2 ships clear keys
+    that use the features, so substituting the defaults must land on the
+    all-defaults model while the shipped render differs from it."""
     from glass_model import VARIANT_DEFAULTS
-    a, _ = _feat("clear-rect16-photo-light")
-    b, _ = _feat("clear-rect16-photo-light", **{k: v for k, v in VARIANT_DEFAULTS.items()
-                                                  if k != "toneKnots"})
+    over = {k: v for k, v in VARIANT_DEFAULTS.items() if k != "toneKnots"}
+    a, _ = _feat("clear-rect16-photo-light", **over)
+    bg = np.random.default_rng(3).random((2622, 1206, 3))
+    minimal = {"clear": over, "clearDark": over}
+    b, _ = render_window(bg, _scene("clear-rect16-photo-light"),
+                         resolve_constants(minimal))
     assert np.array_equal(a, b)
+    c, _ = _feat("clear-rect16-photo-light")
+    assert not np.array_equal(a, c)  # shipped clear uses the features now
     assert VARIANT_DEFAULTS["glowStrength"] == 0.25  # shader-only (touch glow)
 
 
 def test_normal_radius_scale_leaves_capsules_alone_and_bends_rect_corners():
-    a, _ = _feat("clear-capsule-photo-light")
-    b, _ = _feat("clear-capsule-photo-light", normalRadiusScale=1.55)
-    assert np.array_equal(a, b)
-    a, _ = _feat("clear-rect16-photo-light")
-    b, _ = _feat("clear-rect16-photo-light", normalRadiusScale=1.55)
+    a, _ = _feat("clear-capsule-photo-light", normalRadiusScale=1.0)
+    b, _ = _feat("clear-capsule-photo-light")  # shipped: 1.55
+    assert np.array_equal(a, b)  # capsules have no corners to scale
+    a, _ = _feat("clear-rect16-photo-light", normalRadiusScale=1.0)
+    b, _ = _feat("clear-rect16-photo-light")
     diff = np.abs(a - b).max(-1) > 0
     h, w = diff.shape
     # Only the corners move: the middle of each side is unchanged.
@@ -294,9 +306,10 @@ def test_normal_radius_scale_leaves_capsules_alone_and_bends_rect_corners():
 
 
 def test_lens_edge_and_post_blur_change_the_glass():
-    a, _ = _feat("clear-rect16-photo-light")
+    neutral = {"lensEdge": 0.0, "postBlurShare": 0.0}
+    a, _ = _feat("clear-rect16-photo-light", **neutral)
     for over in ({"lensEdge": 9.0}, {"postBlurShare": 0.3}):
-        b, _ = _feat("clear-rect16-photo-light", **over)
+        b, _ = _feat("clear-rect16-photo-light", **{**neutral, **over})
         assert not np.array_equal(a, b), over
 
 
@@ -304,13 +317,14 @@ def test_post_blur_share_shrinks_the_composed_blur():
     from glass_model import group_blur_sigma
     c = json.loads(json.dumps(STANDARD))
     sc = _scene("clear-rect16-photo-light")
+    c["clear"]["postBlurShare"] = 0.0
     s0 = group_blur_sigma(sc, c)
     c["clear"]["postBlurShare"] = 0.36
     assert group_blur_sigma(sc, c) == pytest.approx(s0 * 0.8)
 
 
 def test_rim_mix_whitens_outer_pixels_and_dark_floor_scales_it():
-    a, box = _feat("clear-rect28-text-light")
+    a, box = _feat("clear-rect28-text-light", rimMix=0.0)
     b, _ = _feat("clear-rect28-text-light", rimMix=0.63)
     c, _ = _feat("clear-rect28-text-light", rimMix=0.63, rimMixLumaFloor=0.0)
     assert b.sum() > a.sum()
@@ -319,12 +333,14 @@ def test_rim_mix_whitens_outer_pixels_and_dark_floor_scales_it():
 
 def test_tone_lift_lifts_small_dark_shapes_only():
     bg = np.full((2622, 1206, 3), 0.1)
-    c = json.loads(json.dumps(STANDARD))
+    base = json.loads(json.dumps(STANDARD))
+    base["regularDark"]["toneLift"] = 0.0  # neutral reference
+    c = json.loads(json.dumps(base))
     c["regularDark"].update(toneLift=0.4, toneLiftKnee=0.5, toneLiftSizeRef=50.0)
     small = _scene("regular-capsule-photo-dark")  # halfMin 28 pt
     large = _scene("regular-rect28-photo-dark")   # halfMin 70 pt
     for sc, lifted in ((small, True), (large, False)):
-        a, _ = render_window(bg, sc, STANDARD)
+        a, _ = render_window(bg, sc, base)
         b, _ = render_window(bg, sc, c)
         assert (b.sum() > a.sum()) == lifted
 

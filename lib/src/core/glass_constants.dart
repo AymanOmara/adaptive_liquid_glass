@@ -478,15 +478,16 @@ class GlassConstants {
     ),
   );
 
-  /// The shipped values (Task 17c): the edge lens measured from SwiftUI in
-  /// Task 15c, refined together with every other constant by fitting the
-  /// NumPy model (`tool/fidelity/fit.py`) to SwiftUI screenshots of
-  /// `tool/scenes/scenes.json`; frost blur and fill scale with shape size as
-  /// measured from the coded captures, and the frost wide tail
-  /// (`frostWide*`, sharp core + wide component) from the Task 17c
-  /// measurement (`tool/fidelity/measure_frost.py`). Device-verified on the
-  /// reference simulator: 42/75 scenes pass, median SSIM 0.981, median ΔE
-  /// 1.56 (`docs/superpowers/notes/fidelity-status.md`).
+  /// The shipped values (Task 17d round 2): the Task 17c shipped constants
+  /// (edge lens from Task 15c, size-dependent frost/fill from 17b, frost
+  /// wide tail from 17c) refitted on all keys the round freed — the
+  /// small-shape dark tone lift (`toneLift*`, Task 8b/17d) and the clear
+  /// lens set (tone knots, post-blur share, lens edge, rim mix family) —
+  /// by fitting the NumPy model (`tool/fidelity/fit.py`) to SwiftUI
+  /// screenshots of `tool/scenes/scenes.json`. Device-verified on the
+  /// reference simulator: 46/75 scenes pass, median SSIM 0.9828, median ΔE
+  /// 1.15, min SSIM 0.9452
+  /// (`docs/superpowers/notes/fidelity-status.md`).
   static const GlassConstants standard = GlassConstants(
     // Device median SSIM/ΔE 0.988/1.65 (light, 6/12); tinted uses tintStrength.
     regular: GlassVariantConstants(
@@ -516,25 +517,30 @@ class GlassConstants {
     ),
     // Device median SSIM/ΔE 0.937/1.98 (4/12).
     clear: GlassVariantConstants(
-      blurSigma: 1.3993,
+      blurSigma: 1.2794,
       blurSizeRef: 0,
-      frostWideSigma: 3.7541,
-      frostWideMixEdge: -0.0591,
-      frostWideMixCentre: 0.1981,
+      frostWideSigma: 1.7973,
+      frostWideMixEdge: -0.0117,
+      frostWideMixCentre: 0.7589,
       frostWideSizeRef: 85.2463,
       frostWideSizeDrop: 0.0002,
+      toneKnots: [0, 0.0289, 0.1865, 0.3476, 0.5063, 0.6651, 0.8265, 0.9772, 1],
+      postBlurShare: 0.3,
+      normalRadiusScale: 1.55,
+      lensEdge: 9,
+      rimMix: 0.63,
       lensBand: 18.442,
       lensStrength: -2.5235,
       lensDecay: 6.5573,
-      lensSizeRef: 19.0695,
-      dispersion: 0.0002,
-      rimWidth: 1.3411,
-      rimIntensity: 0.6098,
+      lensSizeRef: 28.6499,
+      dispersion: 0,
+      rimWidth: 1.2475,
+      rimIntensity: 0,
       fillColor: Color(0xFFFEFCFC),
-      fillOpacity: 0.1819,
+      fillOpacity: 0.1705,
       fillSizeRef: 0,
       fillSizeDrop: 0,
-      saturation: 1.2495,
+      saturation: 0.9726,
       dim: 0.0013,
       shadowRadius: 29.31,
       shadowOpacity: 0.0015,
@@ -542,13 +548,16 @@ class GlassConstants {
     ),
     // Device median SSIM/ΔE 0.978/1.59 (7/12); tinted uses tintStrength.
     regularDark: GlassVariantConstants(
-      blurSigma: 11.4482,
-      blurSizeRef: 81.7199,
+      blurSigma: 8.2468,
+      blurSizeRef: 78.0334,
       frostWideSigma: 7.556,
-      frostWideMixEdge: 0.3985,
+      frostWideMixEdge: 1.0836,
       frostWideMixCentre: 0.908,
       frostWideSizeRef: 79.2109,
-      frostWideSizeDrop: 1.2716,
+      frostWideSizeDrop: 2.7378,
+      toneLift: 0.7827,
+      toneLiftKnee: 0.9995,
+      toneLiftSizeRef: 48.0387,
       lensBand: 18.8261,
       lensStrength: -2.6267,
       lensDecay: 5.9001,
@@ -556,37 +565,56 @@ class GlassConstants {
       dispersion: 0,
       rimWidth: 1.3623,
       rimIntensity: 0.3493,
-      fillColor: Color(0xFF191818),
-      fillOpacity: 0.6642,
-      fillSizeRef: 36.0568,
-      fillSizeDrop: 0.799,
-      saturation: 1.8408,
-      dim: 0.0147,
+      fillColor: Color(0xFF1B1817),
+      fillOpacity: 0.665,
+      fillSizeRef: 36.0728,
+      fillSizeDrop: 0.798,
+      saturation: 1.8791,
+      dim: 0.001,
       shadowRadius: 20.3036,
       shadowOpacity: 0.0264,
-      tintStrength: 1.0271,
+      tintStrength: 1.0084,
     ),
     // Device median SSIM/ΔE 0.941/2.00 (4/12).
     clearDark: GlassVariantConstants(
-      blurSigma: 1.3799,
+      blurSigma: 1.1534,
       blurSizeRef: 0,
-      frostWideSigma: 3.7534,
-      frostWideMixEdge: -0.0595,
-      frostWideMixCentre: 0.2011,
+      frostWideSigma: 1.9152,
+      frostWideMixEdge: 0.0296,
+      frostWideMixCentre: 0.7809,
       frostWideSizeRef: 84.2326,
       frostWideSizeDrop: 0.0038,
-      lensBand: 18.42,
-      lensStrength: -2.529,
-      lensDecay: 6.52,
-      lensSizeRef: 28.86,
+      toneKnots: [
+        0,
+        0.0519091586529797,
+        0.213090511337508,
+        0.3630962727280779,
+        0.5198145752907551,
+        0.679180921179765,
+        0.8347696966236444,
+        0.9910065350260904,
+        1,
+      ],
+      postBlurShare: 0.2882,
+      normalRadiusScale: 1.5358,
+      lensEdge: 10.5854,
+      lensEdgeDecay: 0.4954,
+      rimMix: 0.5247,
+      rimMixWidth: 1.1782,
+      rimMixCut: 3.9722,
+      rimMixLumaFloor: 0.05,
+      lensBand: 18.3411,
+      lensStrength: -2.512,
+      lensDecay: 6.6262,
+      lensSizeRef: 14.7722,
       dispersion: 0,
-      rimWidth: 1.4229,
-      rimIntensity: 0.406,
+      rimWidth: 1.2475,
+      rimIntensity: 0,
       fillColor: Color(0xFFFDFAFB),
-      fillOpacity: 0.1778,
+      fillOpacity: 0.1581,
       fillSizeRef: 0,
       fillSizeDrop: 0,
-      saturation: 1.2332,
+      saturation: 0.9633,
       dim: 0.0006,
       shadowRadius: 13.0732,
       shadowOpacity: 0.0017,

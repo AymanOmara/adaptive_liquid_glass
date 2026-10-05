@@ -95,3 +95,61 @@ Diagnosis from the diff images and per-region ΔE (interior = deeper than
   capsule still sits ~20 levels too dark.
 - **Rect corners**: continuous corners vs circular arcs in the lens depth
   field (clear rect band ΔE 6-7).
+
+## Task 17d round 2 (shipped)
+
+Run: `build/fidelity/final` refreshed after the refit (iPhone 17 Pro, iOS
+26.4; SwiftUI side is `baseline-v2`). Full numbers:
+`build/fidelity/fit17d/parity-r2.txt` (three-way per scene),
+`score-analysis2.txt` (model vs SwiftUI), `parity-std.txt` (previous round).
+
+**46/75 pass. Median SSIM 0.9828, median ΔE 1.15. Min SSIM 0.9452.**
+Previous round: 42/75, 0.9811/1.61, min 0.8490, 18 scenes below 0.95
+(device side). Round 2: **3 scenes below 0.95**.
+
+What changed (fit stages under `build/fidelity/fit17d/`, assembled
+`analysis2.json`):
+
+- **regularDark** (`rd2`, Powell polish of 16 keys, loss 1.448 → 1.116):
+  the small-shape **tone lift** engaged — `toneLift` 0.7827 with knee
+  0.9995 and size ref 48 pt (small dark shapes get their darks lifted);
+  core blur σ 11.45 → 8.25 pt with the wide tail taking over
+  (`frostWideMixEdge` 0.40 → 1.08, `frostWideSizeDrop` 1.27 → 2.74);
+  dim 0.0147 → 0.0010, fill colour a touch warmer.
+- **clear / clearDark** (`c2`, 23-key refits, floor 0.962): tone knots
+  freed from identity (dark-end lift inside clear glass), post-blur share
+  ~0.29-0.30, lens edge 9-10.6 pt, rim-mix family engaged (rimMix 0.52-0.63,
+  `rimIntensity` → 0), blur σ 1.40 → 1.15-1.28 pt with the wide tail
+  widened (σ 3.75 → 1.8-1.9 pt, centre weight 0.20 → 0.76-0.78).
+- **regular** untouched this round.
+
+`regular` and `regularDark` gains: regular-capsule-photo-dark SSIM
+0.8980 → 0.9476; regular-rect1x-photo-dark 0.96 → 0.963 with ΔE 3.9 → 3.6.
+
+### Min-SSIM progress toward the 0.95 hard target
+
+0.8490 (17c round) → **0.9452** (round 2). Three scenes remain below 0.95,
+all within 0.005 of the line:
+
+| scene | SSIM | ΔE | diagnosis |
+|---|---|---|---|
+| clear-capsule-text-dark | 0.9452 | 0.74 | the unmeasured tone curve below the 0.15 code floor (SwiftUI lifts the black text strokes) plus edge-local blur variation; was 0.9017. |
+| clear-rect28-text-light | 0.9463 | 0.78 | same tone-floor + edge-blur residual; was 0.8490 (the round-1 minimum). |
+| regular-capsule-photo-dark | 0.9476 | 2.25 | dark small-capsule interior still ~1.15x too contrasty; the tone lift recovered most of the 0.9017 gap, the rest is the size-dependent fill the single wash cannot express. |
+
+Next candidates (Task 17d): measure the clear tone curve below the 0.15
+floor (grey-ramp captures) — it is the shared residual of both clear text
+scenes; the dark capsule wants a per-shape contrast term, not more fill.
+
+### Unit-test updates that shipped with the constants
+
+- `test/core/glass_constants_test.dart`: the "standard v4" pin became
+  "standard v5" with the round-2 values (regularDark blur σ/toneLift/fill
+  colour, clear blur σ, clearDark lens size ref).
+- `test/liquid_glass_test.dart`: the composed-blur sigma expectation now
+  includes the post-blur share (σ·√(1−share), shipped clear share 0.3).
+- `tool/fidelity/test_glass_model.py`: the 17d feature tests neutralise
+  the shipped feature keys explicitly (the shipped clear/regularDark sets
+  now use the features, so "STANDARD is at defaults" no longer holds);
+  tone-LUT identity test now pins that identity differs from the shipped
+  fitted knots.

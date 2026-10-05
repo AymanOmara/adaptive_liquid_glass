@@ -218,9 +218,13 @@ void main() {
     );
     const c = GlassConstants.standard;
     // 40 x 40 members: half the shorter side is 20 (blurSizeRef scaling).
-    double sigma(GlassVariantConstants v) => v.blurSizeRef > 0
-        ? v.blurSigma * math.min(1.0, 20 / v.blurSizeRef)
-        : v.blurSigma;
+    // The composed blur applies postBlurShare after the lens, so the
+    // pre-lens sigma scales by sqrt(1 - share).
+    double sigma(GlassVariantConstants v) =>
+        (v.blurSizeRef > 0
+            ? v.blurSigma * math.min(1.0, 20 / v.blurSizeRef)
+            : v.blurSigma) *
+        math.sqrt(1.0 - v.postBlurShare);
     await t.pumpWidget(group(Brightness.light, [Glass.clear]));
     expect(backdropOf(t).debugLastFrame!.blurSigma, sigma(c.clear));
     await t.pumpWidget(group(Brightness.light, [Glass.clear, Glass.regular]));
