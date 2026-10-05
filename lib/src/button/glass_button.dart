@@ -302,21 +302,17 @@ class GlassButton extends StatelessWidget {
         ),
       ),
     );
-    button = Semantics(
-      label: semanticLabel,
-      value: loading ? loadingLabel : null,
-      child: button,
-    );
-    // LiquidGlass is a button only with onPressed; a disabled or loading
-    // GlassButton is still a (disabled) button.
-    if (!active) {
-      button = Semantics(
-        container: true,
-        button: true,
-        enabled: false,
+    // One node: the label and value merge into LiquidGlass's button node.
+    // A disabled or loading GlassButton is still a (disabled) button.
+    button = MergeSemantics(
+      child: Semantics(
+        label: semanticLabel,
+        value: loading ? loadingLabel : null,
+        button: active ? null : true,
+        enabled: active ? null : false,
         child: button,
-      );
-    }
+      ),
+    );
     return button;
   }
 

@@ -50,8 +50,22 @@ class MaterialGlassButton extends StatelessWidget {
       GlassButtonShape.circle => const CircleBorder(),
       _ => null,
     };
-    // Loading keeps the enabled look but does nothing.
-    final VoidCallback? onPressed = b.loading ? () {} : b.onPressed;
+    // Loading disables the button but keeps its enabled colours.
+    final VoidCallback? onPressed = b.loading ? null : b.onPressed;
+    final iconOnly = b.icon != null && b.label == null;
+    final cancel = b.role == GlassButtonRole.cancel;
+    final Color? loadingBackground = !b.loading || cancel
+        ? null
+        : background ??
+              (prominent ? scheme.primary : scheme.secondaryContainer);
+    final Color? loadingForeground = !b.loading
+        ? null
+        : foreground ??
+              (cancel
+                  ? (iconOnly ? scheme.onSurfaceVariant : scheme.primary)
+                  : prominent
+                  ? scheme.onPrimary
+                  : scheme.onSecondaryContainer);
 
     Widget withLoading(Widget content) => !b.loading
         ? content
@@ -76,6 +90,8 @@ class MaterialGlassButton extends StatelessWidget {
         minimumSize: Size.square(h),
         backgroundColor: background,
         foregroundColor: foreground,
+        disabledBackgroundColor: loadingBackground,
+        disabledForegroundColor: loadingForeground,
         shape: border,
       );
       final icon = withLoading(Icon(b.icon));
@@ -99,12 +115,8 @@ class MaterialGlassButton extends StatelessWidget {
     } else {
       final style = ButtonStyle(
         minimumSize: WidgetStatePropertyAll(Size(0, h)),
-        backgroundColor: background == null
-            ? null
-            : WidgetStatePropertyAll(background),
-        foregroundColor: foreground == null
-            ? null
-            : WidgetStatePropertyAll(foreground),
+        backgroundColor: _colour(background, loadingBackground),
+        foregroundColor: _colour(foreground, loadingForeground),
         shape: border == null ? null : WidgetStatePropertyAll(border),
       );
       final content = withLoading(
@@ -132,10 +144,20 @@ class MaterialGlassButton extends StatelessWidget {
         ),
       };
     }
-    return Semantics(
-      label: b.semanticLabel,
-      value: b.loading ? b.loadingLabel : null,
-      child: result,
+    return MergeSemantics(
+      child: Semantics(
+        label: b.semanticLabel,
+        value: b.loading ? b.loadingLabel : null,
+        child: result,
+      ),
+    );
+  }
+
+  /// [enabled] normally; [loading] also while disabled for loading.
+  static WidgetStateProperty<Color?>? _colour(Color? enabled, Color? loading) {
+    if (enabled == null && loading == null) return null;
+    return WidgetStateProperty.resolveWith(
+      (states) => states.contains(WidgetState.disabled) ? loading : enabled,
     );
   }
 }

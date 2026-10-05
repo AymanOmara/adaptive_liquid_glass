@@ -76,6 +76,9 @@ class NavBarContent extends StatelessWidget {
             ? GlassBackButton(mode: mode)
             : null);
     final label = CupertinoDynamicColor.resolve(CupertinoColors.label, context);
+    // Bar items keep their size at any text size, as on iOS (the bar's
+    // height is fixed); the title still scales.
+    Widget item(Widget child) => MediaQuery.withNoTextScaling(child: child);
     return GlassButtonMetricsScope(
       metrics: NavBarMetrics.item,
       child: SizedBox(
@@ -86,7 +89,9 @@ class NavBarContent extends StatelessWidget {
           ),
           child: NavigationToolbar(
             // The toolbar stretches its leading slot to the bar's height.
-            leading: lead == null ? null : Center(widthFactor: 1, child: lead),
+            leading: lead == null
+                ? null
+                : Center(widthFactor: 1, child: item(lead)),
             middle: title == null
                 ? null
                 : _fade(
@@ -110,9 +115,8 @@ class NavBarContent extends StatelessWidget {
                     mode: mode,
                     child: GlassUnionScope(
                       id: _actionsUnion,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: actions,
+                      child: item(
+                        Row(mainAxisSize: MainAxisSize.min, children: actions),
                       ),
                     ),
                   ),
