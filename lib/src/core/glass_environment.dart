@@ -15,11 +15,11 @@ class GlassEnvironment {
 
   /// Environment known synchronously at startup (no channel data yet).
   factory GlassEnvironment.current() => GlassEnvironment(
-        platform: defaultTargetPlatform,
-        iosMajorVersion: null,
-        reduceTransparency: false,
-        shaderSupported: ui.ImageFilter.isShaderFilterSupported,
-      );
+    platform: defaultTargetPlatform,
+    iosMajorVersion: null,
+    reduceTransparency: false,
+    shaderSupported: ui.ImageFilter.isShaderFilterSupported,
+  );
 
   /// The target platform.
   final TargetPlatform platform;
@@ -39,13 +39,12 @@ class GlassEnvironment {
     int? iosMajorVersion,
     bool? reduceTransparency,
     bool? shaderSupported,
-  }) =>
-      GlassEnvironment(
-        platform: platform ?? this.platform,
-        iosMajorVersion: iosMajorVersion ?? this.iosMajorVersion,
-        reduceTransparency: reduceTransparency ?? this.reduceTransparency,
-        shaderSupported: shaderSupported ?? this.shaderSupported,
-      );
+  }) => GlassEnvironment(
+    platform: platform ?? this.platform,
+    iosMajorVersion: iosMajorVersion ?? this.iosMajorVersion,
+    reduceTransparency: reduceTransparency ?? this.reduceTransparency,
+    shaderSupported: shaderSupported ?? this.shaderSupported,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -57,5 +56,9 @@ class GlassEnvironment {
 
   @override
   int get hashCode => Object.hash(
-      platform, iosMajorVersion, reduceTransparency, shaderSupported);
+    platform,
+    iosMajorVersion,
+    reduceTransparency,
+    shaderSupported,
+  );
 }
