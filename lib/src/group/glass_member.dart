@@ -7,6 +7,8 @@ import '../core/glass.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
 import '../degraded/degraded_glass.dart';
+import '../foreground/glass_foreground.dart';
+import '../foreground/glass_label_style.dart';
 import '../interaction/press_controller.dart';
 import '../material/material_glass.dart';
 import 'glass_entry.dart';
@@ -24,6 +26,7 @@ class GlassMember extends StatefulWidget {
     required this.glassId,
     required this.unionId,
     required this.mode,
+    this.adaptiveForeground = true,
     required this.child,
   });
 
@@ -41,6 +44,9 @@ class GlassMember extends StatefulWidget {
 
   /// See `LiquidGlass.mode`.
   final GlassRenderMode? mode;
+
+  /// See `LiquidGlass.adaptiveForeground`.
+  final bool adaptiveForeground;
 
   /// Content.
   final Widget child;
@@ -211,6 +217,7 @@ class GlassMemberState extends State<GlassMember>
           glassId: widget.glassId,
           unionId: widget.unionId,
           mode: widget.mode,
+          adaptiveForeground: widget.adaptiveForeground,
           child: widget.child,
         ),
       );
@@ -221,6 +228,7 @@ class GlassMemberState extends State<GlassMember>
         glass: widget.glass,
         shape: widget.shape,
         fadeIn: _fadeIn,
+        adaptiveForeground: widget.adaptiveForeground,
         child: widget.child,
       ),
       GlassMemberRendering.degraded => DegradedGlass(
@@ -228,7 +236,7 @@ class GlassMemberState extends State<GlassMember>
         shape: widget.shape,
         constants: scope.constants,
         opaqueColor: scope.opaqueColor,
-        child: widget.child,
+        child: _labelled(context),
       ),
       GlassMemberRendering.backdrop ||
       GlassMemberRendering.native => ConcentricScope(
@@ -236,23 +244,31 @@ class GlassMemberState extends State<GlassMember>
         child: GlassMemberBox(
           entry: entry,
           registry: _registry!,
-          child: buildContent(context),
+          child: buildContent(context, _labelled(context)),
         ),
       ),
     };
   }
 
-  /// The child as drawn on the glass: faded during `glassId` morphs and,
+  /// The child with vibrant label colours, when [GlassMember.adaptiveForeground].
+  Widget _labelled(BuildContext context) => widget.adaptiveForeground
+      ? GlassLabelStyle(
+          color: GlassForeground.labelColorOf(context),
+          child: widget.child,
+        )
+      : widget.child;
+
+  /// [content] as drawn on the glass: faded during `glassId` morphs and,
   /// for interactive glass, wrapped in the press transform.
-  Widget buildContent(BuildContext context) => _ContentFade(
+  Widget buildContent(BuildContext context, Widget content) => _ContentFade(
     opacity: entry.contentOpacity,
-    child: _pressContent(context),
+    child: _pressContent(context, content),
   );
 
-  Widget _pressContent(BuildContext context) {
+  Widget _pressContent(BuildContext context, Widget content) {
     if (!widget.glass.isInteractive) {
       entry.press = GlassPressGeometry.identity;
-      return widget.child;
+      return content;
     }
     final scope = GlassGroupScope.of(context);
     final press = _pressController(scope)
@@ -271,7 +287,7 @@ class GlassMemberState extends State<GlassMember>
         animation: press,
         builder: (_, child) =>
             Transform(transform: press.contentTransform(), child: child),
-        child: widget.child,
+        child: content,
       ),
     );
   }

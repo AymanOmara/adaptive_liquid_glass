@@ -21,6 +21,8 @@ class LiquidGlass extends StatelessWidget {
     this.glassId,
     this.unionId,
     this.mode,
+    this.padding,
+    this.adaptiveForeground = true,
     required this.child,
   });
 
@@ -39,6 +41,20 @@ class LiquidGlass extends StatelessWidget {
   /// Rendering mode when not inside a `GlassGroup` (a group's mode wins).
   final GlassRenderMode? mode;
 
+  /// Space between the glass edge and [child]; null means none.
+  ///
+  /// Prefer [EdgeInsetsDirectional] so the inset follows the reading
+  /// direction.
+  final EdgeInsetsGeometry? padding;
+
+  /// Whether text and icons on the glass take a readable colour.
+  ///
+  /// Like SwiftUI's vibrant labels: the [DefaultTextStyle] and [IconTheme]
+  /// colour follow `GlassForeground.labelColorOf` (dark on light content,
+  /// white on dark), or the Material "on" colour of the surface on the
+  /// Material path. Colours set on a `Text` or `Icon` still win.
+  final bool adaptiveForeground;
+
   /// Content drawn on the glass.
   final Widget child;
 
@@ -54,7 +70,8 @@ class LiquidGlass extends StatelessWidget {
       glassId: glassId,
       unionId: unionId,
       mode: mode,
-      child: child,
+      adaptiveForeground: adaptiveForeground,
+      child: padding == null ? child : Padding(padding: padding!, child: child),
     );
     return GlassGroupScope.maybeOf(context) == null
         ? GlassGroup(mode: mode, child: member)
