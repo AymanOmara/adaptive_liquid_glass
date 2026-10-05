@@ -122,41 +122,54 @@ class _LargeTitleDelegate extends SliverPersistentHeaderDelegate {
         return Stack(
           clipBehavior: Clip.none,
           children: [
-            // The large title moves with the content: up as it scrolls,
-            // down as it is pulled.
-            Positioned(
-              left: 0,
-              right: 0,
-              top: minExtent - shrinkOffset + stretch,
-              height: _titleHeight,
-              child: Padding(
-                padding: const EdgeInsetsDirectional.symmetric(
-                  horizontal: NavBarMetrics.largeTitleInset,
-                ),
-                child: Align(
-                  alignment: AlignmentDirectional.topStart,
-                  child: Transform.scale(
-                    scale: grow,
-                    alignment: AlignmentDirectional.bottomStart.resolve(dir),
-                    child: Baseline(
-                      baseline:
-                          NavBarMetrics.largeTitleBaselineBelowBar * scale,
-                      baselineType: TextBaseline.alphabetic,
-                      child: Semantics(
-                        header: true,
-                        child: DefaultTextStyle(
-                          style: TextStyle(
-                            fontSize: NavBarMetrics.largeTitleFontSize,
-                            fontWeight: FontWeight.bold,
-                            color: label,
+            // The large title moves with the content (up as it scrolls,
+            // down as it is pulled) and is never drawn above the bar.
+            Positioned.fill(
+              child: ClipRect(
+                clipper: _ClipBelow(top),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: minExtent - shrinkOffset + stretch,
+                      height: _titleHeight,
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.symmetric(
+                          horizontal: NavBarMetrics.largeTitleInset,
+                        ),
+                        child: Align(
+                          alignment: AlignmentDirectional.topStart,
+                          child: Transform.scale(
+                            scale: grow,
+                            alignment: AlignmentDirectional.bottomStart.resolve(
+                              dir,
+                            ),
+                            child: Baseline(
+                              baseline:
+                                  NavBarMetrics.largeTitleBaselineBelowBar *
+                                  scale,
+                              baselineType: TextBaseline.alphabetic,
+                              child: Semantics(
+                                header: true,
+                                child: DefaultTextStyle(
+                                  style: TextStyle(
+                                    fontSize: NavBarMetrics.largeTitleFontSize,
+                                    fontWeight: FontWeight.bold,
+                                    color: label,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  child: bar.largeTitle,
+                                ),
+                              ),
+                            ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          child: bar.largeTitle,
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
@@ -166,6 +179,7 @@ class _LargeTitleDelegate extends SliverPersistentHeaderDelegate {
               top: 0,
               child: GlassScrollEdge(
                 visible: shrinkOffset > 0 || overlapsContent,
+                blurred: shrinkOffset > NavBarMetrics.inlineThreshold,
                 height: minExtent + 16,
               ),
             ),
@@ -194,4 +208,18 @@ class _LargeTitleDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(_LargeTitleDelegate old) =>
       old.bar != bar || old.top != top || old.scale != scale;
+}
+
+/// Clips everything above [top] (the status bar).
+class _ClipBelow extends CustomClipper<Rect> {
+  const _ClipBelow(this.top);
+
+  final double top;
+
+  @override
+  Rect getClip(Size size) =>
+      Rect.fromLTRB(-size.width, top, size.width * 2, size.height * 4);
+
+  @override
+  bool shouldReclip(_ClipBelow old) => old.top != top;
 }

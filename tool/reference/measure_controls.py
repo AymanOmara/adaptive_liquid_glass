@@ -74,6 +74,10 @@ def navbar(d):
     cap_x0 = (edge(row, int(icons[0] * S) - 3, -1) + 1) / S
     cap_x1 = edge(row, int(icons[2] * S) + 3, 1) / S
     large = ink(rest, 0, cap_y1 + 4, 300, cap_y1 + 60, thr=80)
+    # First list row (44-pt rows, text centred): its ink centre minus 22
+    # is where the content starts below the large title.
+    row0 = ink(rest, 0, large[3] + 8, 300, large[3] + 60)
+    content_top = (row0[1] + row0[3]) / 2 - 22
     # Inline title fade: ink in the bar's centre per scroll offset.
     ys_, mass = [], []
     for p in sorted(d.glob("navbar_*.png"), key=lambda p: int(p.stem.split("_")[1])):
@@ -93,6 +97,7 @@ def navbar(d):
         "bar_centre": round(cy, 2),
         "item_width": round((cap_x1 - cap_x0) / 2, 2),
         "large_title_baseline_below_bar": round(large[3] - safe_top - bar_height, 2),
+        "large_title_area": round(content_top - safe_top - bar_height, 2),
         "inline_threshold": (start + end) / 2,
         "button": round(cap_y1 - cap_y0, 2),
         "group_width": round(cap_x1 - cap_x0, 2),

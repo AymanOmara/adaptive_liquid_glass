@@ -1,3 +1,13 @@
+## 0.1.0-dev.4
+
+* `GlassButton` / `GlassButton.icon`: SwiftUI's glass and prominent button
+  styles, destructive and cancel roles, control sizes, border shapes,
+  disabled and loading states; Material 3 buttons on Android. Sizes
+  measured from SwiftUI (`tool/reference/controls.json`).
+* `GlassBackButton`, `GlassNavigationBar` (inline title) and
+  `SliverGlassNavigationBar` (collapsing large title): iOS 26's navigation
+  bar, measured from SwiftUI; `AppBar` / `SliverAppBar.large` on Android.
+
 ## 0.1.0-dev.3
 
 * `glassEffect(onPressed: ...)`: a glass button in one line, same as

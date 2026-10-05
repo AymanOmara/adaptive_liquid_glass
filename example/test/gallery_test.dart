@@ -16,14 +16,23 @@ void main() {
 
     await t.scrollUntilVisible(find.byIcon(Icons.add), 200);
     await t.tap(find.byIcon(Icons.add));
-    await t.pumpAndSettle();
+    // The loading button's spinner never settles: pump fixed durations.
+    await t.pump(const Duration(seconds: 1));
     expect(find.byIcon(Icons.favorite), findsOneWidget);
 
     await t.scrollUntilVisible(find.text('Tinted'), 200);
 
     await t.scrollUntilVisible(find.text('Snippets'), 200);
     await t.tap(find.text('Snippets'));
-    await t.pumpAndSettle();
+    await t.pump(const Duration(seconds: 1));
+    expect(t.takeException(), isNull);
+
+    await t.scrollUntilVisible(find.text('Open a large-title page'), 200);
+    expect(find.text('Prominent'), findsOneWidget);
+    await t.tap(find.text('Open a large-title page'));
+    await t.pump();
+    await t.pump(const Duration(seconds: 1));
+    expect(find.byType(SliverAppBar), findsOneWidget);
     expect(t.takeException(), isNull);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }

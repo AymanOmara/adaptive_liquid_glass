@@ -31,6 +31,8 @@ class Gallery extends StatelessWidget {
                 _Recipe('Tinted glass', _Tinted()),
                 _Recipe('Tab bar', _TabBar()),
                 _Recipe('Five tabs, badges, active icons', _FiveTabs()),
+                _Recipe('Buttons (GlassButton)', _Buttons()),
+                _Recipe('Navigation bar', _NavBarDemo()),
               ],
             ),
           ),
@@ -269,5 +271,98 @@ class _FiveTabsState extends State<_FiveTabs> {
     ],
     selectedIndex: _tab,
     onSelected: (i) => setState(() => _tab = i),
+  );
+}
+
+class _Buttons extends StatelessWidget {
+  const _Buttons();
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: 12,
+    runSpacing: 12,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    children: [
+      for (final size in [
+        GlassControlSize.small,
+        GlassControlSize.regular,
+        GlassControlSize.large,
+      ])
+        GlassButton(onPressed: () {}, size: size, child: Text(size.name)),
+      GlassButton(
+        onPressed: () {},
+        style: GlassButtonStyle.glassProminent,
+        child: const Text('Prominent'),
+      ),
+      GlassButton(
+        onPressed: () {},
+        role: GlassButtonRole.destructive,
+        child: const Text('Delete'),
+      ),
+      const GlassButton(onPressed: null, child: Text('Disabled')),
+      GlassButton(onPressed: () {}, loading: true, child: const Text('Saving')),
+      GlassButton.icon(
+        onPressed: () {},
+        icon: CupertinoIcons.share,
+        semanticLabel: 'Share',
+      ),
+      GlassButton.icon(
+        onPressed: () {},
+        icon: CupertinoIcons.add,
+        label: const Text('New'),
+      ),
+    ],
+  );
+}
+
+class _NavBarDemo extends StatelessWidget {
+  const _NavBarDemo();
+
+  @override
+  Widget build(BuildContext context) => GlassButton(
+    onPressed: () => Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => const _LargeTitlePage())),
+    child: const Text('Open a large-title page'),
+  );
+}
+
+class _LargeTitlePage extends StatelessWidget {
+  const _LargeTitlePage();
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        SliverGlassNavigationBar(
+          largeTitle: const Text('Inbox'),
+          actions: [
+            GlassButton.icon(
+              onPressed: () {},
+              icon: CupertinoIcons.square_pencil,
+              semanticLabel: 'Compose',
+            ),
+            GlassButton.icon(
+              onPressed: () {},
+              icon: CupertinoIcons.ellipsis,
+              semanticLabel: 'More',
+            ),
+          ],
+        ),
+        SliverList.builder(
+          itemCount: 60,
+          itemBuilder: (_, i) => SizedBox(
+            height: 44,
+            child: Padding(
+              padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text('Row $i'),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
   );
 }

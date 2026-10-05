@@ -126,6 +126,7 @@ void main() {
     await t.drag(find.byType(ListView), const Offset(0, -200));
     await t.pumpAndSettle();
     expect(edge().visible, isTrue);
+    expect(edge().blurred, isTrue);
   }, variant: ios);
 
   testWidgets('no back button on the root route', (t) async {

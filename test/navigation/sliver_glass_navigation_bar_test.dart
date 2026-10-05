@@ -149,4 +149,42 @@ void main() {
     expect(find.byType(SliverAppBar), findsOneWidget);
     expect(find.byType(LiquidGlass), findsNothing);
   }, variant: android);
+
+  testWidgets('the large title never shows above the bar', (t) async {
+    shaderEnv();
+    final c = ScrollController();
+    await t.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(
+          size: Size(800, 600),
+          padding: EdgeInsets.only(top: 62),
+        ),
+        child: page(c),
+      ),
+    );
+    c.jumpTo(100);
+    await t.pump();
+    final clip = t.widget<ClipRect>(
+      find.ancestor(of: large, matching: find.byType(ClipRect)).first,
+    );
+    expect(clip.clipper!.getClip(const Size(800, 200)).top, 62);
+  }, variant: ios);
+
+  testWidgets('content under the bar blurs once the title collapses', (
+    t,
+  ) async {
+    shaderEnv();
+    final c = ScrollController();
+    await t.pumpWidget(page(c));
+    Finder blur() => find.descendant(
+      of: find.byType(GlassScrollEdge),
+      matching: find.byType(BackdropFilter),
+    );
+    c.jumpTo(30);
+    await t.pump();
+    expect(blur(), findsNothing);
+    c.jumpTo(NavBarMetrics.inlineThreshold + 10);
+    await t.pump();
+    expect(blur(), findsOneWidget);
+  }, variant: ios);
 }

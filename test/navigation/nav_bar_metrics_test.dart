@@ -38,5 +38,9 @@ void main() {
       moreOrLessEquals(ref('large_title_inset') - 2, epsilon: 0.5),
     );
     expect(NavBarMetrics.inlineThreshold, ref('inline_threshold'));
+    expect(
+      NavBarMetrics.largeTitleHeight,
+      moreOrLessEquals(ref('large_title_area'), epsilon: 0.5),
+    );
   });
 }

@@ -15,7 +15,8 @@ abstract final class NavBarMetrics {
     height: 44,
     padding: 14,
     fontSize: 17,
-    iconSize: 20,
+    // CupertinoIcons glyphs are padded: 26 gives SF's 21-pt toolbar ink.
+    iconSize: 26,
     iconGap: 6,
     iconOnlyHeight: 44,
     iconOnlyExtraWidth: 7.5,
@@ -31,8 +32,8 @@ abstract final class NavBarMetrics {
   /// The large title's baseline below the bar at rest.
   static const double largeTitleBaselineBelowBar = 44;
 
-  /// Height of the large-title area below the bar.
-  static const double largeTitleHeight = 52;
+  /// Height of the large-title area below the bar (where content starts).
+  static const double largeTitleHeight = 59.67;
 
   /// The large title's leading inset.
   static const double largeTitleInset = 16;

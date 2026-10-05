@@ -337,6 +337,52 @@ Material 3 `NavigationBar` in the same floating capsule. Each tab is a
 selectable button for VoiceOver and TalkBack, the order follows the
 reading direction, and with Reduce Motion the pill moves without animating.
 
+### Buttons
+
+`GlassButton` is SwiftUI's `.buttonStyle(.glass)` and `.glassProminent`,
+with roles, control sizes, border shapes, and disabled and loading states.
+Sizes are measured from SwiftUI on iOS 26.4 (iOS 26 draws mini as small and
+extraLarge as large; icon-only buttons are capsules 12 pt wider than tall):
+
+```dart
+GlassButton(onPressed: save, child: const Text('Save'))
+GlassButton(
+  onPressed: delete,
+  role: GlassButtonRole.destructive,
+  style: GlassButtonStyle.glassProminent,
+  child: const Text('Delete'),
+)
+GlassButton.icon(onPressed: share, icon: CupertinoIcons.share, semanticLabel: 'Share')
+GlassButton(onPressed: upload, loading: uploading, child: const Text('Upload'))
+```
+
+On Android it is a Material 3 `FilledButton` (`.tonal` for `glass`), an
+`IconButton` for icon-only buttons, and a `TextButton` for `cancel`.
+
+### Navigation bar
+
+```dart
+// Inline title
+Scaffold(
+  extendBodyBehindAppBar: true,
+  appBar: GlassNavigationBar(title: const Text('Detail'), actions: [...]),
+  body: ...,
+)
+
+// Large title
+CustomScrollView(slivers: [
+  SliverGlassNavigationBar(largeTitle: const Text('Inbox'), actions: [...]),
+  SliverList(...),
+])
+```
+
+No bar background, as on iOS 26: a glass back button when the route can
+pop, the actions merged into one glass capsule, and a fade at the top once
+content is under the bar. The large title scrolls away with the content,
+the inline title fades in once it has gone, and pulling down stretches the
+large title. Metrics are measured from SwiftUI's `NavigationStack`
+(`tool/reference/`). On Android these are `AppBar` and `SliverAppBar.large`.
+
 ## Adaptive foreground over busy content
 
 By default the label colour follows the platform brightness. To follow the
