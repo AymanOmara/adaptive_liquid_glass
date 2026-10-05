@@ -25,6 +25,8 @@ def main():
     print("base", line(base))
     for arg in sys.argv[4:]:
         k, vs = arg.split("=")
+        if k not in base[st] and k not in fit.KEYS:
+            sys.exit(f"probe.py: unknown key {k} in {st}")
         for v in vs.split(","):
             c = copy.deepcopy(base)
             fit.put(c, st, k, float(v))
