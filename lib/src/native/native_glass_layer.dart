@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 
 import '../core/glass.dart';
 import '../group/entry_geometry.dart';
+import '../group/glass_group.dart';
 import '../group/glass_registry.dart';
 
 /// How far the native view extends past the group on each side.
@@ -54,8 +55,11 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final dark =
-        MediaQuery.maybePlatformBrightnessOf(context) == Brightness.dark;
+    // The group's resolved brightness. Without any (no MediaQuery above the
+    // group) this draws light, deliberately: the appearance flag must always
+    // go out, and light was this layer's behaviour without a brightness to
+    // read. See GlassGroupScope.maybeBrightnessOf.
+    final dark = GlassGroupScope.maybeBrightnessOf(context) == Brightness.dark;
     if (dark != _dark) {
       _dark = dark;
       _schedule();

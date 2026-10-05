@@ -6,6 +6,7 @@ import '../core/glass.dart';
 import '../core/glass_constants.dart';
 import '../core/glass_shape.dart';
 import '../core/shape_border.dart';
+import '../group/glass_group.dart';
 
 /// The paint values of shader-less glass: blur, fill and rim.
 @immutable
@@ -115,7 +116,9 @@ class _DegradedGlassState extends State<DegradedGlass> {
     final look = DegradedLook.of(
       glass,
       constants,
-      MediaQuery.platformBrightnessOf(context),
+      // The group's resolved brightness; outside a group, the ambient
+      // MediaQuery. See GlassGroupScope.brightnessOf.
+      GlassGroupScope.brightnessOf(context),
     );
     return ClipPath(
       clipper: ShapeBorderClipper(shape: border),

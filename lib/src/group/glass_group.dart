@@ -48,6 +48,7 @@ class GlassGroupScope extends InheritedWidget {
     required this.rendering,
     required this.constants,
     required this.opaqueColor,
+    required this.brightness,
     required this.settled,
     required this.requestedMode,
     this.scrollable,
@@ -65,6 +66,11 @@ class GlassGroupScope extends InheritedWidget {
 
   /// Reduce Transparency fill.
   final Color? opaqueColor;
+
+  /// The brightness member surfaces draw with; null without a `MediaQuery`.
+  ///
+  /// Resolved once per group build; see [GlassGroupScope.maybeBrightnessOf].
+  final Brightness? brightness;
 
   /// True after the group's first frame (members added later may animate in).
   final bool settled;
@@ -85,12 +91,35 @@ class GlassGroupScope extends InheritedWidget {
   /// Nearest scope; asserts one exists.
   static GlassGroupScope of(BuildContext context) => maybeOf(context)!;
 
+  /// The brightness glass surfaces draw with, or null without a
+  /// `MediaQuery` in scope.
+  ///
+  /// Inside a group this is resolved once per build by `GlassGroup.build`
+  /// from the platform brightness, so the shader, degraded, loading and
+  /// native paths all agree; outside one, the ambient `MediaQuery`.
+  ///
+  /// Without any brightness at all the surfaces differ on purpose: the
+  /// degraded and loading surfaces throw (see [brightnessOf], like the
+  /// direct `MediaQuery` reads they replace), while the native layer falls
+  /// back to [Brightness.light] — it must always send an appearance flag
+  /// to its platform view, and drawing light was its behaviour before this
+  /// scope existed.
+  static Brightness? maybeBrightnessOf(BuildContext context) =>
+      maybeOf(context)?.brightness ??
+      MediaQuery.maybePlatformBrightnessOf(context);
+
+  /// [maybeBrightnessOf] for surfaces that draw a brightness-dependent look
+  /// and require one.
+  static Brightness brightnessOf(BuildContext context) =>
+      maybeBrightnessOf(context) ?? MediaQuery.platformBrightnessOf(context);
+
   @override
   bool updateShouldNotify(GlassGroupScope old) =>
       old.registry != registry ||
       old.rendering != rendering ||
       old.constants != constants ||
       old.opaqueColor != opaqueColor ||
+      old.brightness != brightness ||
       old.settled != settled ||
       old.requestedMode != requestedMode ||
       old.scrollable != scrollable;
@@ -305,8 +334,9 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
       requested: widget.mode ?? theme.defaultMode,
       environment: environment,
     );
+    final brightness = MediaQuery.maybePlatformBrightnessOf(context);
     final opaque = mode == EffectiveGlassMode.opaque
-        ? opaqueGlassColor(MediaQuery.platformBrightnessOf(context))
+        ? opaqueGlassColor(brightness!)
         : null;
     final rendering = switch (mode) {
       EffectiveGlassMode.material => GlassMemberRendering.material,
@@ -329,28 +359,36 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
     }
     _rendering = rendering;
 
-    Widget scoped = GlassGroupScope(
+    Widget content = widget.child;
+    final sampled = _sampled;
+    if (sampled != null) {
+      content = GlassForeground(backgroundBrightness: sampled, child: content);
+    }
+    GlassGroupScope scoped({required Widget child}) => GlassGroupScope(
       registry: _registry,
       rendering: rendering,
       constants: theme.constants,
       opaqueColor: opaque,
+      brightness: brightness,
       settled: _settled,
       requestedMode: widget.mode,
       scrollable: Scrollable.maybeOf(context),
-      child: widget.child,
+      child: child,
     );
-    final sampled = _sampled;
-    if (sampled != null) {
-      scoped = GlassForeground(backgroundBrightness: sampled, child: scoped);
-    }
+    // The scope sits above the native layer so the layer reads the group's
+    // resolved brightness like every other path.
     if (rendering == GlassMemberRendering.native) {
-      return NativeGlassLayer(
-        registry: _registry,
-        spacing: widget.spacing,
-        child: scoped,
+      return scoped(
+        child: NativeGlassLayer(
+          registry: _registry,
+          spacing: widget.spacing,
+          child: content,
+        ),
       );
     }
-    if (rendering != GlassMemberRendering.backdrop) return scoped;
+    if (rendering != GlassMemberRendering.backdrop) {
+      return scoped(child: content);
+    }
 
     return GlassBackdrop(
       registry: _registry,
@@ -360,11 +398,11 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
         lightAngle: theme.lightAngle,
         devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
         constants: theme.constants,
-        brightness: MediaQuery.platformBrightnessOf(context),
+        brightness: brightness!,
         highContrast: MediaQuery.highContrastOf(context),
         opaqueColor: opaque,
       ),
-      child: scoped,
+      child: scoped(child: content),
     );
   }
 }

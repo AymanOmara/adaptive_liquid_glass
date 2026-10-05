@@ -7,6 +7,7 @@ import '../core/glass.dart';
 import '../core/glass_constants.dart';
 import '../core/glass_shape.dart';
 import '../core/shape_border.dart';
+import '../group/glass_group.dart';
 import 'degraded_glass.dart';
 
 /// Shader-less glass shown while the shader program loads.
@@ -52,7 +53,9 @@ class GlassLoadingSurface extends StatelessWidget {
     look: DegradedLook.of(
       glass,
       constants,
-      MediaQuery.platformBrightnessOf(context),
+      // The group's resolved brightness; outside a group, the ambient
+      // MediaQuery. See GlassGroupScope.brightnessOf.
+      GlassGroupScope.brightnessOf(context),
     ),
     opaqueColor: opaqueColor,
     textDirection: Directionality.maybeOf(context),
