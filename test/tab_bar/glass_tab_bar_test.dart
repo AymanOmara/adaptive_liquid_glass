@@ -305,4 +305,147 @@ void main() {
     await t.pumpAndSettle();
     expect(picks, [2]);
   }, variant: android);
+
+  testWidgets('the pill defaults to the secondary system fill, as on iOS', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    final pill = t.widget<DecoratedBox>(
+      find.byWidgetPredicate(
+        (w) => w is DecoratedBox && w.decoration is ShapeDecoration,
+      ),
+    );
+    final ctx = t.element(find.byType(GlassTabBar));
+    expect(
+      (pill.decoration as ShapeDecoration).color!.toARGB32(),
+      CupertinoDynamicColor.resolve(
+        CupertinoColors.secondarySystemFill,
+        ctx,
+      ).toARGB32(),
+    );
+  }, variant: ios);
+
+  testWidgets('pressing another tab shows the lens under the finger at once', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    final settings = t.getCenter(find.text('Settings'));
+    final g = await t.startGesture(settings);
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 16));
+    expect(_lens, findsOneWidget);
+    expect(
+      t.getCenter(_lens).dx,
+      moreOrLessEquals(settings.dx, epsilon: 6),
+      reason: 'the lens starts under the finger, not at the old selection',
+    );
+    await g.up();
+    await t.pumpAndSettle();
+  }, variant: ios);
+
+  testWidgets('after a tap the pill settles back to its own size', (t) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    // A device tap: ~100 ms down, then real 16-ms frames so the springs
+    // and the wobble integrate as on device.
+    final g = await t.startGesture(t.getCenter(find.text('Settings')));
+    for (var i = 0; i < 6; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    await g.up();
+    for (var i = 0; i < 22; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    final pill = find.byWidgetPredicate(
+      (w) => w is DecoratedBox && w.decoration is ShapeDecoration,
+    );
+    expect(_lens, findsNothing);
+    // Back to the pill's 54 pt, give or take the settling squash; no wobble.
+    expect(t.getSize(pill).height, moreOrLessEquals(62 - 8, epsilon: 1));
+  }, variant: ios);
+
+  testWidgets('after a drag and release no lens is left on the pill', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    final from = t.getCenter(find.text('History'));
+    final to = t.getCenter(find.text('Settings'));
+    final g = await t.startGesture(from);
+    for (var i = 0; i < 20; i++) {
+      await g.moveTo(Offset.lerp(from, to, i / 19)!);
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    await g.up();
+    for (var i = 0; i < 120; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    expect(_lens, findsNothing);
+  }, variant: ios);
+
+  testWidgets('only the lens ends refract tabs; its middle and rims do not', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    final g = await t.startGesture(t.getCenter(find.text('History')));
+    for (var i = 0; i < 20; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    // The tinted copy under the lens glass is clipped to the lens ends.
+    final clip = t
+        .widgetList<ClipPath>(find.byType(ClipPath))
+        .map((c) => c.clipper)
+        .whereType<CustomClipper<Path>>()
+        .where((c) => c.runtimeType.toString() == '_LensEnds')
+        .single;
+    final lensBox = t.getRect(_lens);
+    final path = clip.getClip(const Size(400, 54));
+    final ends = path.getBounds();
+    expect(ends.width, greaterThan(lensBox.width * 0.9));
+    final middle = Offset(ends.center.dx, ends.center.dy);
+    expect(path.contains(middle), isFalse, reason: 'middle is not refracted');
+    expect(
+      path.contains(Offset(ends.left + 6, ends.center.dy)),
+      isTrue,
+      reason: 'the leading end is',
+    );
+    await g.up();
+    await t.pumpAndSettle();
+  }, variant: ios);
+
+  testWidgets('the sharp copy fades only towards the lens ends', (t) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    final g = await t.startGesture(t.getCenter(find.text('History')));
+    for (var i = 0; i < 20; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    expect(
+      find.descendant(
+        of: find.byType(GlassTabBar),
+        matching: find.byType(ShaderMask),
+      ),
+      findsOneWidget,
+    );
+    await g.up();
+    await t.pumpAndSettle();
+  }, variant: ios);
+
+  testWidgets('the lens is gone within 8 frames of letting go', (t) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    final g = await t.startGesture(t.getCenter(find.text('History')));
+    for (var i = 0; i < 30; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    await g.up();
+    for (var i = 0; i < 8; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    expect(_lens, findsNothing);
+    await t.pumpAndSettle();
+  }, variant: ios);
 }

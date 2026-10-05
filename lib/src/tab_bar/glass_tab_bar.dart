@@ -106,7 +106,8 @@ class GlassTabBar extends StatefulWidget {
   final Color? selectedColor;
 
   /// The pill behind the selected tab at rest. Defaults to the system's
-  /// tertiary fill, or Material 3's indicator on the Material path.
+  /// secondary fill (as iOS 26.4 draws it), or Material 3's indicator on
+  /// the Material path.
   final Color? indicatorColor;
 
   /// The bar's glass. Defaults to the theme's default glass.
@@ -188,7 +189,7 @@ abstract final class _Metrics {
     dampingFraction: 0.752,
   );
   static final SpringDescription release = swiftUISpring(
-    response: 0.36,
+    response: 0.27,
     dampingFraction: 0.55,
   );
 
@@ -278,9 +279,16 @@ class _GlassTabBarState extends State<GlassTabBar>
     if (_reduceMotion) {
       _press.value = target;
     } else {
-      _press.animateWith(
-        SpringSimulation(spring, _press.value, target, _press.velocity),
-      );
+      _press
+          .animateWith(
+            SpringSimulation(spring, _press.value, target, _press.velocity),
+          )
+          .whenCompleteOrCancel(() {
+            // A spring stops within its tolerance, not on the target; a
+            // lens left a hair above zero would keep drawing (blurred and
+            // refracted) over the pill.
+            if (!_held && target == 0 && mounted) _press.value = 0;
+          });
     }
   }
 
@@ -359,7 +367,9 @@ class _GlassTabBarState extends State<GlassTabBar>
     _held = true;
     _finger = _toSlots(details.localPosition.dx);
     _springPress(_Metrics.press, 1);
-    _springX(_Metrics.follow, _lensTarget(_finger));
+    // The lens grows where the finger lands (as iOS does), not from the
+    // old selection.
+    _x.value = _lensTarget(_finger);
     _startWobble();
   }
 
@@ -454,7 +464,7 @@ class _GlassTabBarState extends State<GlassTabBar>
       context,
     );
     final indicator = CupertinoDynamicColor.resolve(
-      widget.indicatorColor ?? CupertinoColors.tertiarySystemFill,
+      widget.indicatorColor ?? CupertinoColors.secondarySystemFill,
       context,
     );
     return Semantics(
@@ -479,8 +489,14 @@ class _GlassTabBarState extends State<GlassTabBar>
     // p springs past 0 and 1; the lens shows only while it is above 0,
     // but the pill and lens sizes follow p itself (the pill squashes).
     final t = p.clamp(0.0, 1.0);
+    // Only a lens that is held or still visibly grown is drawn: a release
+    // spring rebounds a hair above zero, and a hair-thin lens would still
+    // refract a ghost of the tabs over the pill.
+    final lensShown = _held || p > 0.02;
     final x = _toPixels(_x.value);
-    final wobble = _wobble.value;
+    // The wobble belongs to the held lens: it fades with it and never
+    // reaches the pill.
+    final wobble = _wobble.value * t;
     final lens = Rect.fromCenter(
       center: Offset(x, _contentHeight / 2),
       width: _pillWidth + _Metrics.lensGrowX * p,
@@ -534,7 +550,7 @@ class _GlassTabBarState extends State<GlassTabBar>
                         // lens, so its glass refracts them (bending them at
                         // its rim, as iOS does).
                         ClipPath(
-                          clipper: _Hole(t > 0 ? lens : null),
+                          clipper: _Hole(lensShown ? lens : null),
                           child: _row(
                             (i) => t == 0 && i == widget.selectedIndex
                                 ? selected
@@ -542,9 +558,9 @@ class _GlassTabBarState extends State<GlassTabBar>
                             semantics: true,
                           ),
                         ),
-                        if (t > 0)
+                        if (lensShown)
                           ClipPath(
-                            clipper: _Capsule(lens),
+                            clipper: _LensEnds(lens),
                             child: Transform.scale(
                               scaleX: lerpDouble(1, _Metrics.magnifyX, t),
                               scaleY: lerpDouble(1, _Metrics.magnifyY, t),
@@ -559,7 +575,7 @@ class _GlassTabBarState extends State<GlassTabBar>
               ),
             ),
           ),
-          if (t > 0)
+          if (lensShown)
             Positioned.fromRect(
               rect: lens.shift(const Offset(_Metrics.inset, _Metrics.inset)),
               child: GlassGroup(
@@ -574,7 +590,7 @@ class _GlassTabBarState extends State<GlassTabBar>
           // The lens's glass refracts and blurs the copy beneath it; iOS's
           // lens keeps its middle sharp and bends only the rim, so a sharp
           // copy goes on top, faded out towards the rim.
-          if (t > 0)
+          if (lensShown)
             Positioned.fromRect(
               rect: lens.shift(const Offset(_Metrics.inset, _Metrics.inset)),
               child: IgnorePointer(
@@ -700,7 +716,7 @@ class _GlassTabBarState extends State<GlassTabBar>
   }
 }
 
-/// Fades [child] out over the [rim] at each edge.
+/// Fades [child] out over the [rim] at its leading and trailing ends.
 class _RimFade extends StatelessWidget {
   const _RimFade({required this.rim, required this.child});
 
@@ -732,30 +748,36 @@ class _RimFade extends StatelessWidget {
       return ShaderMask(
         blendMode: BlendMode.dstIn,
         shaderCallback: (bounds) => fade(Axis.horizontal).createShader(bounds),
-        child: ShaderMask(
-          blendMode: BlendMode.dstIn,
-          shaderCallback: (bounds) => fade(Axis.vertical).createShader(bounds),
-          child: child,
-        ),
+        child: child,
       );
     },
   );
 }
 
-/// Just [capsule].
-class _Capsule extends CustomClipper<Path> {
-  const _Capsule(this.capsule);
+/// The rounded ends of [lens] (one corner radius in from each side): the
+/// only part of the lens whose glass refracts the tabs beneath it. Its
+/// middle shows the sharp copy on top, and its top and bottom rims refract
+/// the bar, as iOS's lens does.
+class _LensEnds extends CustomClipper<Path> {
+  const _LensEnds(this.lens);
 
-  final Rect capsule;
-
-  @override
-  Path getClip(Size size) => Path()
-    ..addRRect(
-      RRect.fromRectAndRadius(capsule, Radius.circular(capsule.height / 2)),
-    );
+  final Rect lens;
 
   @override
-  bool shouldReclip(_Capsule old) => old.capsule != capsule;
+  Path getClip(Size size) {
+    final r = lens.height / 2;
+    final capsule = Path()
+      ..addRRect(RRect.fromRectAndRadius(lens, Radius.circular(r)));
+    final ends = Path()
+      ..addRect(Rect.fromLTRB(lens.left, lens.top, lens.left + r, lens.bottom))
+      ..addRect(
+        Rect.fromLTRB(lens.right - r, lens.top, lens.right, lens.bottom),
+      );
+    return Path.combine(PathOperation.intersect, capsule, ends);
+  }
+
+  @override
+  bool shouldReclip(_LensEnds old) => old.lens != lens;
 }
 
 /// Everything but [hole] (a capsule); everything when it is null.
