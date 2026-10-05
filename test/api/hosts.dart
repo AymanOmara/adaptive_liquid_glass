@@ -21,23 +21,19 @@ void shaderEnv() {
 }
 
 /// A widgets-only host with a MediaQuery from the test view.
-Widget plainHost(
-  Widget child, {
-  TextDirection direction = TextDirection.ltr,
-}) => MediaQuery(
-  data: MediaQueryData.fromView(
-    WidgetsBinding.instance.platformDispatcher.implicitView!,
-  ),
-  child: Directionality(
-    textDirection: direction,
-    child: Center(child: child),
-  ),
-);
+Widget plainHost(Widget child, {TextDirection direction = TextDirection.ltr}) =>
+    MediaQuery(
+      data: MediaQueryData.fromView(
+        WidgetsBinding.instance.platformDispatcher.implicitView!,
+      ),
+      child: Directionality(
+        textDirection: direction,
+        child: Center(child: child),
+      ),
+    );
 
 /// A MaterialApp host (shortcuts, focus traversal, Material theme).
 Widget appHost(Widget child) => MaterialApp(
-  theme: ThemeData(
-    colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-  ),
+  theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal)),
   home: Scaffold(body: Center(child: child)),
 );

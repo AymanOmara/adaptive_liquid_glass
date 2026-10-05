@@ -108,19 +108,13 @@ void main() {
 
   testWidgets('Material path uses the on-surface colour', (t) async {
     shaderEnv();
-    final c = await _probe(
-      t,
-      (p) => LiquidGlass(child: p),
-      host: appHost,
-    );
+    final c = await _probe(t, (p) => LiquidGlass(child: p), host: appHost);
     final scheme = Theme.of(c).colorScheme;
     expect(_textColor(c), scheme.onSurface);
     expect(IconTheme.of(c).color, scheme.onSurface);
   }, variant: android);
 
-  testWidgets('Material tinted glass uses its on-container colour', (
-    t,
-  ) async {
+  testWidgets('Material tinted glass uses its on-container colour', (t) async {
     shaderEnv();
     final c = await _probe(
       t,

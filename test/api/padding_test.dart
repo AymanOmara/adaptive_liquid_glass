@@ -56,9 +56,7 @@ void main() {
 
   testWidgets('padding applies on the Material path too', (t) async {
     shaderEnv();
-    await t.pumpWidget(
-      appHost(_glass(padding: const EdgeInsets.all(10))),
-    );
+    await t.pumpWidget(appHost(_glass(padding: const EdgeInsets.all(10))));
     expect(t.getSize(find.byType(LiquidGlass)), const Size(60, 40));
   }, variant: android);
 }

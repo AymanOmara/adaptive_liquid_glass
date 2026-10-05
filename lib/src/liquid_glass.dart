@@ -23,6 +23,7 @@ class LiquidGlass extends StatelessWidget {
     this.mode,
     this.padding,
     this.adaptiveForeground = true,
+    this.onPressed,
     required this.child,
   });
 
@@ -55,6 +56,14 @@ class LiquidGlass extends StatelessWidget {
   /// Material path. Colours set on a `Text` or `Icon` still win.
   final bool adaptiveForeground;
 
+  /// Called when the glass is tapped or activated from the keyboard.
+  ///
+  /// When set, the glass is a button: it gets button semantics, takes
+  /// focus, and answers Enter and Space. Its glass also becomes
+  /// interactive (the press stretch and glow, or the Material ripple)
+  /// unless [glass] opts out with `interactive(false)`.
+  final VoidCallback? onPressed;
+
   /// Content drawn on the glass.
   final Widget child;
 
@@ -64,13 +73,15 @@ class LiquidGlass extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolved = glass ?? LiquidGlassTheme.of(context).defaultGlass;
     final member = GlassMember(
-      glass: glass ?? LiquidGlassTheme.of(context).defaultGlass,
+      glass: onPressed == null ? resolved : pressableGlass(resolved),
       shape: shape,
       glassId: glassId,
       unionId: unionId,
       mode: mode,
       adaptiveForeground: adaptiveForeground,
+      onPressed: onPressed,
       child: padding == null ? child : Padding(padding: padding!, child: child),
     );
     return GlassGroupScope.maybeOf(context) == null

@@ -9,6 +9,7 @@ import '../core/glass_shape.dart';
 import '../degraded/degraded_glass.dart';
 import '../foreground/glass_foreground.dart';
 import '../foreground/glass_label_style.dart';
+import '../interaction/glass_pressable.dart';
 import '../interaction/press_controller.dart';
 import '../material/material_glass.dart';
 import 'glass_entry.dart';
@@ -27,6 +28,7 @@ class GlassMember extends StatefulWidget {
     required this.unionId,
     required this.mode,
     this.adaptiveForeground = true,
+    this.onPressed,
     required this.child,
   });
 
@@ -47,6 +49,9 @@ class GlassMember extends StatefulWidget {
 
   /// See `LiquidGlass.adaptiveForeground`.
   final bool adaptiveForeground;
+
+  /// See `LiquidGlass.onPressed`.
+  final VoidCallback? onPressed;
 
   /// Content.
   final Widget child;
@@ -218,17 +223,21 @@ class GlassMemberState extends State<GlassMember>
           unionId: widget.unionId,
           mode: widget.mode,
           adaptiveForeground: widget.adaptiveForeground,
+          onPressed: widget.onPressed,
           child: widget.child,
         ),
       );
     }
-    if (widget.glass.variant == GlassVariant.identity) return widget.child;
+    if (widget.glass.variant == GlassVariant.identity) {
+      return _pressable(widget.child);
+    }
     return switch (scope.rendering) {
       GlassMemberRendering.material => MaterialGlass(
         glass: widget.glass,
         shape: widget.shape,
         fadeIn: _fadeIn,
         adaptiveForeground: widget.adaptiveForeground,
+        onPressed: widget.onPressed,
         child: widget.child,
       ),
       GlassMemberRendering.degraded => DegradedGlass(
@@ -250,13 +259,23 @@ class GlassMemberState extends State<GlassMember>
     };
   }
 
-  /// The child with vibrant label colours, when [GlassMember.adaptiveForeground].
-  Widget _labelled(BuildContext context) => widget.adaptiveForeground
-      ? GlassLabelStyle(
-          color: GlassForeground.labelColorOf(context),
-          child: widget.child,
-        )
-      : widget.child;
+  /// The child with vibrant label colours (when
+  /// [GlassMember.adaptiveForeground]), as a button when pressable.
+  Widget _labelled(BuildContext context) => _pressable(
+    widget.adaptiveForeground
+        ? GlassLabelStyle(
+            color: GlassForeground.labelColorOf(context),
+            child: widget.child,
+          )
+        : widget.child,
+  );
+
+  Widget _pressable(Widget child) {
+    final onPressed = widget.onPressed;
+    return onPressed == null
+        ? child
+        : GlassPressable(onPressed: onPressed, child: child);
+  }
 
   /// [content] as drawn on the glass: faded during `glassId` morphs and,
   /// for interactive glass, wrapped in the press transform.
