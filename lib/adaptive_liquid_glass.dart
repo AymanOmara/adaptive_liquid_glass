@@ -7,5 +7,6 @@ export 'src/core/glass_shape.dart' hide concentricRadius;
 export 'src/core/theme.dart';
 export 'src/foreground/glass_backdrop_source.dart' show GlassBackdropSource;
 export 'src/foreground/glass_foreground.dart';
+export 'src/glass_effect.dart';
 export 'src/group/glass_group.dart' show GlassGroup;
 export 'src/liquid_glass.dart' show LiquidGlass;

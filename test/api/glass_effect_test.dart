@@ -1,0 +1,54 @@
+import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
+import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
+import 'package:adaptive_liquid_glass/src/shader/render_glass_backdrop.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'hosts.dart';
+
+void main() {
+  setUp(() => GlassProgram.instance.debugReset(skipLoad: true));
+  tearDown(() => GlassPlatform.instance.debugReset());
+
+  test('glassEffect() is regular-by-theme glass in a capsule', () {
+    const text = Text('Hello');
+    final glass = text.glassEffect();
+    expect(glass, isA<LiquidGlass>());
+    expect(glass.child, same(text));
+    expect(glass.glass, isNull); // the theme's defaultGlass
+    expect(glass.shape, const GlassShape.capsule());
+    expect(glass.glassId, isNull);
+    expect(glass.unionId, isNull);
+    expect(glass.padding, isNull);
+  });
+
+  test('glassEffect forwards glass, shape, id, unionId and padding', () {
+    const icon = Icon(Icons.add);
+    final g = Glass.clear.interactive();
+    final glass = icon.glassEffect(
+      glass: g,
+      shape: const GlassShape.circle(),
+      id: 'plus',
+      unionId: 'tools',
+      padding: const EdgeInsetsDirectional.all(8),
+    );
+    expect(glass.glass, g);
+    expect(glass.shape, const GlassShape.circle());
+    expect(glass.glassId, 'plus');
+    expect(glass.unionId, 'tools');
+    expect(glass.padding, const EdgeInsetsDirectional.all(8));
+    expect(glass.child, same(icon));
+  });
+
+  testWidgets('one line draws glass', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      plainHost(const SizedBox(width: 80, height: 40).glassEffect()),
+    );
+    final frame = t
+        .renderObject<RenderGlassBackdrop>(find.byType(GlassBackdrop))
+        .debugLastFrame!;
+    expect(frame.uniforms.shapes, hasLength(1));
+  }, variant: ios);
+}
