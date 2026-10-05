@@ -172,7 +172,7 @@ class RenderGlassLoadingSurface extends RenderProxyBox {
   bool get _blurs => _enabled && _opaqueColor == null;
 
   @override
-  bool get alwaysNeedsCompositing => _blurs && child != null;
+  bool get alwaysNeedsCompositing => _blurs;
 
   @override
   void dispose() {
@@ -196,7 +196,7 @@ class RenderGlassLoadingSurface extends RenderProxyBox {
   @override
   void paint(PaintingContext context, Offset offset) {
     final opaque = _opaqueColor;
-    if (!_enabled || child == null) {
+    if (!_enabled) {
       _clip.layer = null;
       _blur.layer = null;
       super.paint(context, offset);

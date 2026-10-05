@@ -57,7 +57,11 @@ class DegradedLook {
 }
 
 /// Glass without shader support: blur, tint and a rim; no lensing or merging.
-class DegradedGlass extends StatelessWidget {
+///
+/// Under Reduce Transparency it is a solid fill instead. The two trees
+/// differ, so the child sits under a [GlobalKey]: toggling the setting
+/// reparents it rather than remounting it.
+class DegradedGlass extends StatefulWidget {
   /// Creates a degraded glass surface.
   const DegradedGlass({
     super.key,
@@ -84,8 +88,20 @@ class DegradedGlass extends StatelessWidget {
   final Widget child;
 
   @override
+  State<DegradedGlass> createState() => _DegradedGlassState();
+}
+
+class _DegradedGlassState extends State<DegradedGlass> {
+  final GlobalKey _content = GlobalKey();
+
+  @override
   Widget build(BuildContext context) {
+    final glass = widget.glass;
+    final child = KeyedSubtree(key: _content, child: widget.child);
     if (glass.variant == GlassVariant.identity) return child;
+    final shape = widget.shape;
+    final constants = widget.constants;
+    final opaqueColor = widget.opaqueColor;
     final border = sizeIndependentBorder(shape);
 
     final opaque = opaqueColor;

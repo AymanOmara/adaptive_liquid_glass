@@ -23,12 +23,12 @@ class _StatefulState extends State<_Stateful> {
   Widget build(BuildContext context) => const Text('Go');
 }
 
-void _env({bool rt = false}) {
+void _env({bool rt = false, bool shader = true}) {
   GlassPlatform.instance.debugEnvironment = GlassEnvironment(
     platform: defaultTargetPlatform,
     iosMajorVersion: defaultTargetPlatform == TargetPlatform.iOS ? 26 : null,
     reduceTransparency: rt,
-    shaderSupported: true,
+    shaderSupported: shader,
   );
 }
 
@@ -79,6 +79,20 @@ void main() {
     await t.pump();
     expect(t.state(find.byType(_Stateful)), same(state));
     _env();
+    await t.pump();
+    expect(t.state(find.byType(_Stateful)), same(state));
+  }, variant: ios);
+
+  testWidgets('degraded path: Reduce Transparency keeps the content mounted', (
+    t,
+  ) async {
+    _env(shader: false);
+    await t.pumpWidget(plainHost(const LiquidGlass(child: _Stateful())));
+    final state = t.state(find.byType(_Stateful));
+    _env(rt: true, shader: false);
+    await t.pump();
+    expect(t.state(find.byType(_Stateful)), same(state));
+    _env(shader: false);
     await t.pump();
     expect(t.state(find.byType(_Stateful)), same(state));
   }, variant: ios);

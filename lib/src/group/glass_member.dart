@@ -358,7 +358,8 @@ class GlassMemberState extends State<GlassMember>
     );
   }
 
-  static const Listenable _noPress = AlwaysStoppedAnimation<double>(0);
+  static const AlwaysStoppedAnimation<double> _noPress =
+      AlwaysStoppedAnimation<double>(0);
 }
 
 /// Provides the enclosing glass entry to concentric descendants.
