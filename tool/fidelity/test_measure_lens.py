@@ -100,7 +100,9 @@ def test_measure_scene_matrix():
     probe_bases = {f"regular-{s}-{b}" for b in ("light", "dark") for s in (
         "circle56", "circle60", "circle64", "circle68", "capsule60", "capsule64",
         "capsule68", "capsule72", "rect16-124x60", "merge4", "merge16", "merge30")}
-    assert len(ids) == len(set(ids)) == 18 * 28 + 12 * 20 + 8 * 16 + 18 + 14 + 4 + 6
+    # Task 9 adds rect16 x {regular, clear} x {light, dark} over the four
+    # rotated gradients (bases shared with the lens scenes, new backgrounds).
+    assert len(ids) == len(set(ids)) == 18 * 28 + 12 * 20 + 8 * 16 + 18 + 14 + 4 + 6 + 16
     # The Task 15c / 17b scenes keep their ids and order.
     assert ids[:18 * 16] == [f"{b}--{c}" for b in dict.fromkeys(
         i.split("--")[0] for i in ids[:18 * 16]) for c in gb.CODES]
@@ -122,7 +124,8 @@ def test_measure_scene_matrix():
             assert min(sh["w"], sh["h"]) / 2 == int(s["id"].split("-s")[1].split("-")[0])
         assert sh["x"] >= 16 and sh["y"] + sh["h"] + 16 <= 874 and sh["x"] + sh["w"] + 16 <= 402
     assert {s["background"] for s in spec["scenes"]} == \
-        set(gb.CODES) | set(gb.FROST_CODES) | set(gb.FLATS) | set(gb.PROBE_FLATS)
+        set(gb.CODES) | set(gb.FROST_CODES) | set(gb.FLATS) | set(gb.PROBE_FLATS) \
+        | {f"gradient-r{d:03d}" for d in gb.GRADIENT_DEGREES}
 
 
 def test_shape_geometry_depth_and_normal():
