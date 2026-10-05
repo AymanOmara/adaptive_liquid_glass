@@ -241,6 +241,16 @@ final class SwiftUIGlass {
     if rethemed { root?.rearm() }
   }
 
+  /// Flutter can release the platform view while it is still in a window;
+  /// never leave the hosting controller behind in the Flutter view
+  /// controller then.
+  deinit {
+    if host.parent != nil {
+      host.willMove(toParent: nil)
+      host.removeFromParent()
+    }
+  }
+
   /// Contains the hosting controller in the view controller that shows the
   /// platform view (found through the responder chain), so SwiftUI gets
   /// appearance and trait updates; released again when the view leaves.
