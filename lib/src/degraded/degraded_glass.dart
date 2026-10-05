@@ -16,6 +16,7 @@ class DegradedGlass extends StatelessWidget {
     required this.shape,
     required this.constants,
     this.opaqueColor,
+    this.enabled = true,
     required this.child,
   });
 
@@ -30,6 +31,10 @@ class DegradedGlass extends StatelessWidget {
 
   /// Non-null when Reduce Transparency forces a solid surface.
   final Color? opaqueColor;
+
+  /// When false, draws nothing but keeps the same widget tree, so turning
+  /// the surface off (the shader has loaded) keeps the child's state.
+  final bool enabled;
 
   /// Content.
   final Widget child;
@@ -47,7 +52,9 @@ class DegradedGlass extends StatelessWidget {
     final opaque = opaqueColor;
     if (opaque != null) {
       return DecoratedBox(
-        decoration: ShapeDecoration(color: opaque, shape: border),
+        decoration: enabled
+            ? ShapeDecoration(color: opaque, shape: border)
+            : const BoxDecoration(),
         child: child,
       );
     }
@@ -56,21 +63,26 @@ class DegradedGlass extends StatelessWidget {
         ? tint.withValues(alpha: c.tintStrength * tint.a)
         : c.fillColor.withValues(alpha: c.fillOpacity);
     return ClipPath(
-      clipper: ShapeBorderClipper(shape: border),
+      // A null clipper also hit-tests the whole box, like no clip at all.
+      clipper: enabled ? ShapeBorderClipper(shape: border) : null,
+      clipBehavior: enabled ? Clip.antiAlias : Clip.none,
       child: BackdropFilter(
+        enabled: enabled,
         filter: ui.ImageFilter.blur(sigmaX: c.blurSigma, sigmaY: c.blurSigma),
         child: DecoratedBox(
-          decoration: ShapeDecoration(
-            color: fill,
-            shape: border.copyWith(
-              side: BorderSide(
-                color: const Color(
-                  0xFFFFFFFF,
-                ).withValues(alpha: c.rimIntensity * 0.6),
-                width: c.rimWidth,
-              ),
-            ),
-          ),
+          decoration: !enabled
+              ? const BoxDecoration()
+              : ShapeDecoration(
+                  color: fill,
+                  shape: border.copyWith(
+                    side: BorderSide(
+                      color: const Color(
+                        0xFFFFFFFF,
+                      ).withValues(alpha: c.rimIntensity * 0.6),
+                      width: c.rimWidth,
+                    ),
+                  ),
+                ),
           child: child,
         ),
       ),

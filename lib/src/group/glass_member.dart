@@ -12,10 +12,19 @@ import '../foreground/glass_label_style.dart';
 import '../interaction/glass_pressable.dart';
 import '../interaction/press_controller.dart';
 import '../material/material_glass.dart';
+import '../shader/glass_program.dart';
 import 'glass_entry.dart';
 import 'glass_group.dart';
 import 'glass_registry.dart';
 import 'scroll_chain.dart';
+
+/// The glass shader program, or null until it has loaded.
+///
+/// Members on the shader path show a blur-only surface until then.
+/// Replaceable in tests: the shader asset does not load under
+/// `flutter test`.
+@visibleForTesting
+ValueListenable<Object?> glassShaderProgram = GlassProgram.instance.program;
 
 /// A `LiquidGlass` inside a group. Internal.
 class GlassMember extends StatefulWidget {
@@ -253,11 +262,34 @@ class GlassMemberState extends State<GlassMember>
         child: GlassMemberBox(
           entry: entry,
           registry: _registry!,
-          child: buildContent(context, _labelled(context)),
+          child: _untilShaderLoads(
+            scope,
+            buildContent(context, _labelled(context)),
+          ),
         ),
       ),
     };
   }
+
+  /// Blur-only glass on the shader path until the shader program loads,
+  /// so the first frames are not bare content and `LiquidGlass.precache`
+  /// stays optional. The tree is the same before and after, so the switch
+  /// keeps the content's state and layout.
+  Widget _untilShaderLoads(GlassGroupScope scope, Widget content) =>
+      ValueListenableBuilder<Object?>(
+        valueListenable: glassShaderProgram,
+        builder: (context, program, content) => DegradedGlass(
+          glass: widget.glass,
+          shape: widget.shape,
+          constants: scope.constants,
+          opaqueColor: scope.opaqueColor,
+          enabled:
+              program == null &&
+              scope.rendering == GlassMemberRendering.backdrop,
+          child: content!,
+        ),
+        child: content,
+      );
 
   /// The child with vibrant label colours (when
   /// [GlassMember.adaptiveForeground]), as a button when pressable.

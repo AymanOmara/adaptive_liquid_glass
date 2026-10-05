@@ -67,8 +67,19 @@ class LiquidGlass extends StatelessWidget {
   /// Content drawn on the glass.
   final Widget child;
 
-  /// Loads the shader ahead of the first frame. Call from `main()` to avoid
-  /// a frame without glass at startup.
+  /// Optionally loads the shader before the first frame.
+  ///
+  /// Not required: until the shader has loaded (usually the first frame or
+  /// two), shader glass draws as a blur-only surface and then switches over
+  /// in place. Await this in `main()` to skip that brief fallback.
+  ///
+  /// ```dart
+  /// Future<void> main() async {
+  ///   WidgetsFlutterBinding.ensureInitialized();
+  ///   await LiquidGlass.precache();
+  ///   runApp(const MyApp());
+  /// }
+  /// ```
   static Future<void> precache() => GlassProgram.instance.load();
 
   @override
