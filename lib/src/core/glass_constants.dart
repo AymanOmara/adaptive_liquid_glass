@@ -395,11 +395,14 @@ class GlassVariantConstants {
 class GlassMotionConstants {
   /// Creates motion constants.
   const GlassMotionConstants({
-    required this.pressScale,
+    required this.pressGrowthArea,
+    required this.pressScaleMax,
     required this.pressStretch,
     required this.glowRadius,
     required this.pressResponse,
     required this.pressDamping,
+    required this.releaseResponse,
+    required this.releaseDamping,
     required this.morphResponse,
     required this.morphDamping,
   });
@@ -409,17 +412,25 @@ class GlassMotionConstants {
     Map<String, Object?> j,
     GlassMotionConstants base,
   ) => GlassMotionConstants(
-    pressScale: _d(j, 'pressScale', base.pressScale),
+    pressGrowthArea: _d(j, 'pressGrowthArea', base.pressGrowthArea),
+    pressScaleMax: _d(j, 'pressScaleMax', base.pressScaleMax),
     pressStretch: _d(j, 'pressStretch', base.pressStretch),
     glowRadius: _d(j, 'glowRadius', base.glowRadius),
     pressResponse: _d(j, 'pressResponse', base.pressResponse),
     pressDamping: _d(j, 'pressDamping', base.pressDamping),
+    releaseResponse: _d(j, 'releaseResponse', base.releaseResponse),
+    releaseDamping: _d(j, 'releaseDamping', base.releaseDamping),
     morphResponse: _d(j, 'morphResponse', base.morphResponse),
     morphDamping: _d(j, 'morphDamping', base.morphDamping),
   );
 
-  /// Uniform scale gained at full press.
-  final double pressScale;
+  /// Area (pt²) a pressed shape gains at full press: its uniform scale is
+  /// `sqrt(1 + pressGrowthArea / (w·h))`, capped at [pressScaleMax], so
+  /// small shapes grow more than large ones.
+  final double pressGrowthArea;
+
+  /// Largest uniform press scale.
+  final double pressScaleMax;
 
   /// Extra scale along the touch direction at full press.
   final double pressStretch;
@@ -427,11 +438,17 @@ class GlassMotionConstants {
   /// Radius of the touch glow.
   final double glowRadius;
 
-  /// SwiftUI spring response for press/release.
+  /// SwiftUI spring response for the press-in.
   final double pressResponse;
 
-  /// SwiftUI damping fraction for press/release.
+  /// SwiftUI damping fraction for the press-in.
   final double pressDamping;
+
+  /// SwiftUI spring response for the release.
+  final double releaseResponse;
+
+  /// SwiftUI damping fraction for the release.
+  final double releaseDamping;
 
   /// SwiftUI spring response for morphs.
   final double morphResponse;
@@ -441,11 +458,14 @@ class GlassMotionConstants {
 
   /// JSON form.
   Map<String, double> toJson() => {
-    'pressScale': pressScale,
+    'pressGrowthArea': pressGrowthArea,
+    'pressScaleMax': pressScaleMax,
     'pressStretch': pressStretch,
     'glowRadius': glowRadius,
     'pressResponse': pressResponse,
     'pressDamping': pressDamping,
+    'releaseResponse': releaseResponse,
+    'releaseDamping': releaseDamping,
     'morphResponse': morphResponse,
     'morphDamping': morphDamping,
   };
@@ -632,14 +652,40 @@ class GlassConstants {
     cornerExponent: 2,
     // Merge scenes (device): median SSIM 0.979, ΔE 2.01.
     mergeFactor: 0.8,
+    // Fitted to SwiftUI recordings (Task 16, iOS 26.4 simulator; bounding
+    // box over time of press/morph clips, tool/fidelity/compare_motion.py).
     motion: GlassMotionConstants(
-      pressScale: 0.1,
-      pressStretch: 0.08,
-      glowRadius: 60,
-      pressResponse: 0.35,
-      pressDamping: 0.65,
-      morphResponse: 0.45,
-      morphDamping: 0.75,
+      // Task 16b: lossless captures (in-app render-server crop, identical
+      // to screenshots), iOS 26.4 simulator, compare_motion.py bboxes.
+      // SwiftUI adds about the same area to every pressed shape: centre
+      // presses of circles 44/72/120 pt and capsules 120×44/200×56/300×72
+      // grow by scale 1.356/1.229/1.069 and 1.136/1.072/1.041. Least
+      // squares on the long-side growth (pt) of sqrt(1 + G/(w·h)), capped:
+      // G 1796, cap 1.356, RMS 2.4 pt (worst: 72 pt circle, 11.5 vs
+      // 16.5 pt). Below 44 pt the cap is unmeasured.
+      pressGrowthArea: 1800,
+      pressScaleMax: 1.36,
+      // SwiftUI (sx − sy)/0.79 = 0.0055 on the 200×56 capsule; Flutter
+      // measured 0.0103 at 0.011.
+      pressStretch: 0.006,
+      // Gaussian σ of the touch glow: SwiftUI 42.3 (light) / 42.5 (dark) pt,
+      // Flutter at 41 measured 46.0 / 40.9. SwiftUI's glow is 6–9× fainter
+      // (lift 0.019 vs 0.175 light, 0.041 vs 0.238 dark): the shader's
+      // amplitude, not fitted here.
+      glowRadius: 40,
+      // Press-in and release differ: SwiftUI (0.280, 0.633) in and
+      // (0.383, 0.545) out (median over 7 clips, bbox height). Circles
+      // release under-damped (ζ ≈ 0.37), capsules at 0.51–0.76. Flutter
+      // at these values measures (0.274, 0.625) and (0.375, 0.554).
+      pressResponse: 0.28,
+      pressDamping: 0.63,
+      releaseResponse: 0.38,
+      releaseDamping: 0.55,
+      // `withAnimation(.bouncy)` morphs measure (0.50, 0.72): `.bouncy`
+      // (response 0.5, bounce 0.3); Flutter at these values measures
+      // (0.50, 0.69).
+      morphResponse: 0.5,
+      morphDamping: 0.7,
     ),
   );
 

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import 'demo.dart';
 import 'launch.dart';
+import 'scenes/motion_view.dart';
 import 'scenes/scene.dart';
 import 'scenes/scene_view.dart';
 
@@ -20,6 +21,17 @@ Future<void> main() async {
       : GlassConstants.fromJson(
           (jsonDecode(args.constants!) as Map).cast<String, Object?>(),
         );
+  // Harness entries (`-scene`, `-motion`) default to the shader: that is
+  // what the fidelity harness fits, and `auto` is native glass on iOS 26.
+  // `-mode native` (or `auto`) renders them with Apple's glass instead.
+  final harnessMode = switch (args.mode) {
+    'native' => GlassRenderMode.native,
+    'auto' => GlassRenderMode.auto,
+    _ => GlassRenderMode.shader,
+  };
+  if (args.motion != null) {
+    return runMotion(args.motion!, constants, mode: harnessMode);
+  }
   final scenes = args.sceneFile == null
       ? await Scene.loadAll()
       : await Scene.loadAll(args.sceneFile!);
@@ -46,14 +58,10 @@ Future<void> main() async {
     );
     throw StateError(message);
   }
-  // Scenes default to the shader: that is what the fidelity harness fits.
-  // `-mode native` (or `auto`) renders them with Apple's glass instead.
-  final mode = switch (args.mode) {
-    'native' => GlassRenderMode.native,
-    'auto' => GlassRenderMode.auto,
-    'shader' => GlassRenderMode.shader,
-    _ => scene == null ? GlassRenderMode.auto : GlassRenderMode.shader,
-  };
+  // The gallery follows the package default unless `-mode` is passed.
+  final mode = scene == null && args.mode == null
+      ? GlassRenderMode.auto
+      : harnessMode;
   runApp(
     LiquidGlassTheme(
       data: LiquidGlassThemeData(constants: constants, defaultMode: mode),
