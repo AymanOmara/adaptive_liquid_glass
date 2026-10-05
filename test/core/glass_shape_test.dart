@@ -1,4 +1,6 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/core/glass_shape.dart'
+    show concentricRadius;
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 

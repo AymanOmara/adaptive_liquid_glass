@@ -16,6 +16,7 @@ import '../shader/glass_program.dart';
 import '../shader/render_glass_backdrop.dart';
 import 'glass_registry.dart';
 import 'morph_controller.dart';
+import 'scroll_chain.dart';
 
 /// How members of a group render themselves.
 enum GlassMemberRendering {
@@ -28,8 +29,14 @@ enum GlassMemberRendering {
   /// Each member is a blur-only surface.
   degraded,
 
-  /// Registered with the group's native (UIKit) glass layer, iOS 26+.
-  native,
+  /// Registered with the group's native (SwiftUI) glass layer, iOS 26+.
+  native;
+
+  /// Whether the group draws its members' glass (shader backdrop or native
+  /// layer) rather than each member drawing its own surface.
+  bool get drawnByGroup =>
+      this == GlassMemberRendering.backdrop ||
+      this == GlassMemberRendering.native;
 }
 
 /// Shares a group's registry and resolved mode with its members.
@@ -92,6 +99,26 @@ class GlassGroupScope extends InheritedWidget {
 /// Merges nearby `LiquidGlass` descendants into one shape, like SwiftUI's
 /// `GlassEffectContainer(spacing:)`.
 ///
+/// Members are drawn in one pass, sample the same backdrop, and can morph
+/// into each other by `glassId`. Shapes closer than [spacing] blend; with
+/// the default of 0 only touching shapes do, so a row of separate buttons
+/// stays separate. Set [spacing] to at least the gap between members to
+/// make them flow together as they near.
+///
+/// ```dart
+/// GlassGroup(
+///   spacing: 16, // >= the 12 px gap: the buttons blend
+///   child: Row(
+///     mainAxisSize: MainAxisSize.min,
+///     spacing: 12,
+///     children: [
+///       const Icon(Icons.edit).glassEffect(padding: const EdgeInsets.all(14)),
+///       const Icon(Icons.share).glassEffect(padding: const EdgeInsets.all(14)),
+///     ],
+///   ),
+/// )
+/// ```
+///
 /// Inside a group, the group's [mode] wins over members' modes.
 class GlassGroup extends StatefulWidget {
   /// Creates a group.
@@ -102,7 +129,8 @@ class GlassGroup extends StatefulWidget {
     required this.child,
   });
 
-  /// Shapes closer than this (logical px) blend together.
+  /// Shapes closer than this (logical px) blend together; 0 (the default)
+  /// blends only shapes that touch.
   final double spacing;
 
   /// Rendering mode; defaults to the theme's.
@@ -119,6 +147,9 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
   final GlassRegistry _registry = GlassRegistry();
   final List<Listenable> _motion = [];
   bool _settled = false;
+
+  /// The rendering of the last build.
+  GlassMemberRendering? _rendering;
 
   /// False between deactivate and activate/dispose: ancestor and render
   /// object lookups are not allowed then, and no ghost should start.
@@ -151,7 +182,6 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
     _morph; // install the registry hooks before members register
     GlassPlatform.instance.ensureStarted();
     GlassPlatform.instance.environment.addListener(_onEnvironment);
-    GlassProgram.instance.load();
     GlassBackdropSources.instance.revision.addListener(_onSources);
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -190,8 +220,7 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
 
   void _updateSampler(GlassMemberRendering rendering) {
     final want =
-        (rendering == GlassMemberRendering.backdrop ||
-            rendering == GlassMemberRendering.native) &&
+        rendering.drawnByGroup &&
         GlassBackdropSources.instance.boundaries.isNotEmpty;
     if (want && _sampler == null) {
       _sampler = Timer.periodic(
@@ -240,12 +269,9 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
     for (final l in _motion) {
       l.removeListener(_registry.markNeedsPaint);
     }
-    _motion.clear();
-    var scrollable = Scrollable.maybeOf(context);
-    while (scrollable != null) {
-      _motion.add(scrollable.position);
-      scrollable = Scrollable.maybeOf(scrollable.context);
-    }
+    _motion
+      ..clear()
+      ..addAll(enclosingScrollPositions(context));
     final route = ModalRoute.of(context);
     if (route != null) {
       final a = route.animation;
@@ -277,7 +303,6 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
     final environment = GlassPlatform.instance.environment.value;
     final mode = resolveGlassMode(
       requested: widget.mode ?? theme.defaultMode,
-      nativeEnabled: theme.nativeEnabled,
       environment: environment,
     );
     final opaque = mode == EffectiveGlassMode.opaque
@@ -295,6 +320,14 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
     };
 
     _updateSampler(rendering);
+    // Only the shader path needs the program; the Material, degraded and
+    // native paths never load it. Load on entering that path, not on every
+    // build, so a failed load is not retried (and reported) per rebuild.
+    if (rendering == GlassMemberRendering.backdrop &&
+        _rendering != GlassMemberRendering.backdrop) {
+      GlassProgram.instance.load();
+    }
+    _rendering = rendering;
 
     Widget scoped = GlassGroupScope(
       registry: _registry,

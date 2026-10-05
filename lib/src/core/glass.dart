@@ -15,10 +15,19 @@ enum GlassVariant {
 
 /// An immutable description of a Liquid Glass material.
 ///
-/// Mirrors SwiftUI: `Glass.regular.tint(color).interactive()`.
+/// Mirrors SwiftUI's `Glass`: start from a preset and chain modifiers.
+///
+/// ```dart
+/// Glass.regular                          // the default
+/// Glass.clear                            // for photos and video
+/// Glass.regular.tint(Colors.blue)        // tinted
+/// Glass.regular.interactive()            // reacts to touch
+/// Glass.clear.tint(Colors.orange).interactive()
+/// ```
 @immutable
 class Glass {
-  const Glass._(this.variant, {this.tintColor, this.isInteractive = false});
+  const Glass._(this.variant, {this.tintColor, bool? interactive})
+    : _interactive = interactive;
 
   /// Standard glass (`Glass.regular`).
   static const Glass regular = Glass._(GlassVariant.regular);
@@ -35,28 +44,40 @@ class Glass {
   /// Optional tint colour blended into the glass body.
   final Color? tintColor;
 
+  /// Set by [interactive]; null when never set.
+  final bool? _interactive;
+
   /// Whether the glass reacts to touch (stretch, glow, bounce).
-  final bool isInteractive;
+  bool get isInteractive => _interactive ?? false;
 
   /// Returns a copy tinted with [color]; `null` removes the tint.
   Glass tint(Color? color) =>
-      Glass._(variant, tintColor: color, isInteractive: isInteractive);
+      Glass._(variant, tintColor: color, interactive: _interactive);
 
   /// Returns a copy that reacts to touch when [enabled].
+  ///
+  /// A `LiquidGlass` with `onPressed` makes its glass interactive; pass
+  /// `interactive(false)` to opt out of the press visuals there.
   Glass interactive([bool enabled = true]) =>
-      Glass._(variant, tintColor: tintColor, isInteractive: enabled);
+      Glass._(variant, tintColor: tintColor, interactive: enabled);
 
   @override
   bool operator ==(Object other) =>
       other is Glass &&
       other.variant == variant &&
       other.tintColor == tintColor &&
-      other.isInteractive == isInteractive;
+      other._interactive == _interactive;
 
   @override
-  int get hashCode => Object.hash(variant, tintColor, isInteractive);
+  int get hashCode => Object.hash(variant, tintColor, _interactive);
 
   @override
   String toString() =>
-      'Glass.${variant.name}(tint: $tintColor, interactive: $isInteractive)';
+      'Glass.${variant.name}(tint: $tintColor, '
+      'interactive: ${_interactive ?? 'unset'})';
 }
+
+/// [glass] as used by a pressable `LiquidGlass`: interactive unless it
+/// opted out with `interactive(false)`. Internal.
+Glass pressableGlass(Glass glass) =>
+    glass._interactive == null ? glass.interactive() : glass;

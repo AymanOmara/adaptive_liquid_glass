@@ -1,7 +1,10 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
-/// A quick look at still glass over a busy, photo-like backdrop.
+import 'gallery.dart';
+
+/// A quick look at still glass over a busy, photo-like backdrop, with a
+/// button to the cookbook [Gallery].
 class Demo extends StatelessWidget {
   /// Creates the demo.
   const Demo({super.key});
@@ -52,6 +55,19 @@ class Demo extends StatelessWidget {
                 ),
               ),
             ),
+          ),
+        ),
+        PositionedDirectional(
+          top: MediaQuery.paddingOf(context).top + 16,
+          end: 16,
+          child: LiquidGlass(
+            onPressed: () => Navigator.of(context)
+                .push(MaterialPageRoute<void>(builder: (_) => const Gallery())),
+            padding: const EdgeInsetsDirectional.symmetric(
+              horizontal: 18,
+              vertical: 10,
+            ),
+            child: const Text('Gallery'),
           ),
         ),
         const PositionedDirectional(

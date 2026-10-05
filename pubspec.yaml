@@ -22,6 +22,10 @@ dev_dependencies:
 flutter:
   plugin:
     platforms:
+      # Dart only: Android renders Material 3 and has no native code.
+      android:
+        dartPluginClass: AdaptiveLiquidGlassAndroid
+        dartFileName: src/platform/android_plugin.dart
       ios:
         pluginClass: AdaptiveLiquidGlassPlugin
   shaders:
