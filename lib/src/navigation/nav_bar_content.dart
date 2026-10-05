@@ -17,6 +17,7 @@ class NavBarContent extends StatelessWidget {
     this.automaticallyImplyLeading = true,
     this.title,
     this.titleOpacity = 1,
+    this.titleFade,
     this.actions = const [],
     this.mode,
   });
@@ -33,6 +34,9 @@ class NavBarContent extends StatelessWidget {
   /// The inline title's opacity.
   final double titleOpacity;
 
+  /// When set, opacity changes animate over this long.
+  final Duration? titleFade;
+
   /// Trailing items, merged into one capsule.
   final List<Widget> actions;
 
@@ -40,6 +44,14 @@ class NavBarContent extends StatelessWidget {
   final GlassRenderMode? mode;
 
   static const Object _actionsUnion = Object();
+
+  Widget _fade(Widget child) => titleFade == null
+      ? Opacity(opacity: titleOpacity, child: child)
+      : AnimatedOpacity(
+          opacity: titleOpacity,
+          duration: titleFade!,
+          child: child,
+        );
 
   @override
   Widget build(BuildContext context) {
@@ -62,9 +74,8 @@ class NavBarContent extends StatelessWidget {
             leading: lead == null ? null : Center(widthFactor: 1, child: lead),
             middle: title == null
                 ? null
-                : Opacity(
-                    opacity: titleOpacity,
-                    child: Semantics(
+                : _fade(
+                    Semantics(
                       header: true,
                       child: DefaultTextStyle(
                         style: TextStyle(
