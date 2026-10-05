@@ -8,6 +8,10 @@ below are recorded, not scheduled — do them opportunistically.
   from `GlassConstants.standard`; or generate the Dart data from
   `tool/fidelity/standard_constants.json`. Only worth it if the 17-series
   keeps editing constants.
+- **P3-2b** (re-review follow-up): extract `GlassGroupScope` to its own
+  `glass_group_scope.dart` to break the (safe, const-only) import cycle
+  native_glass_layer ⇄ glass_group.dart. Mechanical import shuffle; three
+  consumers.
 - **P3-3** `lib/src/group/glass_member.dart:27-28`: mutable top-level
   `glassShaderProgram` is a test seam living in shipped code. Move to a
   `@visibleForTesting` static on `GlassProgram`.
