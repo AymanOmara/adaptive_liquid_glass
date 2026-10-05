@@ -154,6 +154,23 @@ scenes; the dark capsule wants a per-shape contrast term, not more fill.
   tone-LUT identity test now pins that identity differs from the shipped
   fitted knots.
 
+## Task 17d round 3 (not shipped — stop signal, superseded by round 4)
+
+Ran the brief's three stages on the round-2 key set (`build/fidelity/fit17d/`):
+c3-clear and c3-clearDark (24 keys, floor 0.962, ftol 1e-5) and rd3
+(polishRegularDark, 16 keys). c3-clear and c3-clearDark both returned the
+start point unchanged (losses 0.8389 / 0.8518, ~300 evals); a restricted
+escalation fitting only the five weak clearDark scenes
+(`restrict3.py`, where any expressible capsule gain strictly lowers the
+loss) also returned the start point (1.3712, 285 evals). Per-region
+diagnosis: the residual of clear-capsule-text-dark is band-local (band SSIM
+0.895 vs interior 0.976), tone keys are inert on it, and no single key moves
+it more than +0.003 — the pre-round-4 key set cannot express it. rd3 was
+stopped mid-run when round 4 landed (its 16-key space cannot touch clear
+scenes at all, so the round-3 gate — strictly better min SSIM — was already
+unreachable). The residual was expressive only with a new anisotropy degree
+of freedom plus a lens re-grid: round 4 below.
+
 ## Task 17d round 4 (shipped): hard target met
 
 Device run (reference simulator, build/fidelity/final): **46/75 pass,
