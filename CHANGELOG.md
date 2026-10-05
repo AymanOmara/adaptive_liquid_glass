@@ -16,6 +16,9 @@
 * Android and the other non-shader paths no longer load the shader.
 * `concentricRadius` is no longer exported.
 
-## 0.0.1
+## 0.1.0-dev.1
 
-* TODO: Describe initial release.
+* First development release: `LiquidGlass`, `GlassGroup`, `Glass`,
+  `GlassShape`, `LiquidGlassTheme`, `GlassBackdropSource` and
+  `GlassForeground`; shader glass fitted to SwiftUI on iOS, Apple's native
+  glass on iOS 26+ (opt-in), Material 3 on Android.
