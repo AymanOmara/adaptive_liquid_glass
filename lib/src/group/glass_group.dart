@@ -148,6 +148,9 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
   final List<Listenable> _motion = [];
   bool _settled = false;
 
+  /// The rendering of the last build.
+  GlassMemberRendering? _rendering;
+
   /// False between deactivate and activate/dispose: ancestor and render
   /// object lookups are not allowed then, and no ghost should start.
   bool _active = true;
@@ -318,11 +321,14 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
     };
 
     _updateSampler(rendering);
-    // Only the shader path needs the program (idempotent); the Material,
-    // degraded and native paths never load it.
-    if (rendering == GlassMemberRendering.backdrop) {
+    // Only the shader path needs the program; the Material, degraded and
+    // native paths never load it. Load on entering that path, not on every
+    // build, so a failed load is not retried (and reported) per rebuild.
+    if (rendering == GlassMemberRendering.backdrop &&
+        _rendering != GlassMemberRendering.backdrop) {
       GlassProgram.instance.load();
     }
+    _rendering = rendering;
 
     Widget scoped = GlassGroupScope(
       registry: _registry,

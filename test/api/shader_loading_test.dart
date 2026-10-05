@@ -114,4 +114,22 @@ void main() {
     await t.pump();
     expect(t.takeException(), isNull);
   }, variant: android);
+
+  testWidgets('a failed load is not retried on every rebuild', (t) async {
+    // Loading for real fails under `flutter test` and reports an error.
+    GlassProgram.instance.debugReset();
+    shaderEnv();
+    Widget group(double spacing) => plainHost(
+      GlassGroup(
+        spacing: spacing,
+        child: const LiquidGlass(child: _Stateful()),
+      ),
+    );
+    await t.pumpWidget(group(0));
+    await t.pump();
+    expect(t.takeException(), isNotNull); // the first attempt
+    await t.pumpWidget(group(4));
+    await t.pump();
+    expect(t.takeException(), isNull);
+  }, variant: ios);
 }
