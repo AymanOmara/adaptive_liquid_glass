@@ -6,7 +6,7 @@ import 'glass.dart';
 import 'glass_constants.dart';
 import 'glass_render_mode.dart';
 
-/// App-wide defaults for Liquid Glass.
+/// App-wide defaults for Liquid Glass. See [LiquidGlassTheme].
 @immutable
 class LiquidGlassThemeData {
   /// Creates theme data.
@@ -31,7 +31,9 @@ class LiquidGlassThemeData {
   /// Whether `auto` may use Apple's native glass on iOS 26+.
   final bool nativeEnabled;
 
-  /// Rendering constants. Override only for fidelity work.
+  /// Rendering constants fitted to SwiftUI. Override only for fidelity
+  /// work; the type is exported from
+  /// `package:adaptive_liquid_glass/testing.dart`.
   final GlassConstants constants;
 
   /// Returns a copy with the given fields replaced.
@@ -41,14 +43,13 @@ class LiquidGlassThemeData {
     GlassRenderMode? defaultMode,
     bool? nativeEnabled,
     GlassConstants? constants,
-  }) =>
-      LiquidGlassThemeData(
-        lightAngle: lightAngle ?? this.lightAngle,
-        defaultGlass: defaultGlass ?? this.defaultGlass,
-        defaultMode: defaultMode ?? this.defaultMode,
-        nativeEnabled: nativeEnabled ?? this.nativeEnabled,
-        constants: constants ?? this.constants,
-      );
+  }) => LiquidGlassThemeData(
+    lightAngle: lightAngle ?? this.lightAngle,
+    defaultGlass: defaultGlass ?? this.defaultGlass,
+    defaultMode: defaultMode ?? this.defaultMode,
+    nativeEnabled: nativeEnabled ?? this.nativeEnabled,
+    constants: constants ?? this.constants,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -60,11 +61,27 @@ class LiquidGlassThemeData {
       other.constants == constants;
 
   @override
-  int get hashCode =>
-      Object.hash(lightAngle, defaultGlass, defaultMode, nativeEnabled, constants);
+  int get hashCode => Object.hash(
+    lightAngle,
+    defaultGlass,
+    defaultMode,
+    nativeEnabled,
+    constants,
+  );
 }
 
-/// Provides [LiquidGlassThemeData] to descendants.
+/// Provides [LiquidGlassThemeData] to descendants. Optional: without one,
+/// the defaults apply.
+///
+/// ```dart
+/// LiquidGlassTheme(
+///   data: const LiquidGlassThemeData(
+///     defaultGlass: Glass.clear,
+///     nativeEnabled: true, // Apple's own glass on iOS 26+
+///   ),
+///   child: MaterialApp(home: const HomePage()),
+/// )
+/// ```
 class LiquidGlassTheme extends InheritedWidget {
   /// Creates a theme scope.
   const LiquidGlassTheme({super.key, required this.data, required super.child});

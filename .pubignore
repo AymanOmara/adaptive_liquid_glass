@@ -1,6 +1,3 @@
-# Pub does not read this file: .pubignore replaces it for `dart pub publish`.
-# Mirror any addition here in .pubignore.
-
 # Miscellaneous
 *.class
 *.log
@@ -40,3 +37,10 @@ build/fidelity/
 tool/fidelity/.venv/
 __pycache__/
 .pytest_cache/
+
+# Not published: development docs, the fidelity harness and agent state.
+# (A .pubignore replaces .gitignore for pub, so the lines above repeat it.)
+/docs/
+/tool/
+/.claude/
+/.superpowers/
