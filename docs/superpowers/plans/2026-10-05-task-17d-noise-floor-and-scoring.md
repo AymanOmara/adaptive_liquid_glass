@@ -129,6 +129,23 @@ The 17c flat captures (`measure-v3`, flats v000-v255) already measure glass's in
 - [ ] Refit `fillSizeRef/fillSizeDrop` on merge scenes, device capture, record delta.
 - [ ] Commit `feat: merged blob uses its own fill size factor`.
 
+### Task 8b: Dark small-shape fill (backdrop-adaptive fill level)
+
+The three worst regular/tinted scenes (dark capsules, SSIM 0.90–0.95) share
+one residual: small dark shapes sit ~20 levels too dark even with
+`fillSizeDrop` at its bound.
+
+- [ ] Capture a dark size series into measure.json only: rect16 at half-sizes 20/50/100/150 pt, capsule and circle, regular and clear, dark, each over two backdrop levels (dark, mid grey).
+- [ ] `measure_frost.py` decode: mean level and contrast vs size and backdrop luminance.
+- [ ] Model the measurement with at most 2 constants per variant set (size- and/or backdrop-luminance-dependent fill colour or level — Apple documents that small elements adapt to the content behind them).
+- [ ] Implement in shader, packer and model with parity; refit, capture, record the pass delta.
+
+### Task 8c: colour matrix (contingency)
+
+If the tone LUT leaves per-channel residuals (colour near-misses over ΔE 2.0
+by 0.1–0.7), a small luminance-dependent 3×3 colour matrix after the LUT is
+acceptable. Build only if the residual is measured.
+
 ### Task 9: Rim direction measurement and model (attacks the rect band residuals)
 
 - [ ] Backgrounds: add rotated gradient variants (0/90/180/270°) to `gen_backgrounds.py`; scenes: one rect16 over each rotation (measure.json).
@@ -139,7 +156,8 @@ The 17c flat captures (`measure-v3`, flats v000-v255) already measure glass's in
 ### Task 10: Stop-criterion round
 
 - [ ] Full refit of all freed keys on the model (`polishRegular`, `polishClear`), device capture, compare pass count to the previous round.
-- [ ] If 0 scenes gained: stop, final status note (floor-relative pass count, per-family table, residual list). If > 0: loop back into the largest failing family with a new targeted measurement first.
+- [ ] **Hard target (user, 2026-10-05): every one of the 75 scenes at SSIM ≥ 0.95, worst case included — 17d does not stop until min SSIM ≥ 0.95 on the device run** (official bars unchanged). After each landed task, record min SSIM and the count of scenes below 0.95 in the ledger and the status note.
+- [ ] If clear stays below 0.95 after Tasks 7/8/8b/9: use the interior/band split to localise the remaining error per scene and bring a measured hypothesis before building; spatially varying blur or our own blur pyramid is the known next lever.
 - [ ] Final commit: `docs: fidelity status and README results for Task 17d`.
 
 ## Self-review notes
