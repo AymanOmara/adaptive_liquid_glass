@@ -76,14 +76,14 @@ class _GlassButton extends StatelessWidget {
   const _GlassButton();
 
   @override
-  Widget build(BuildContext context) => LiquidGlass(
-    onPressed: () => _snack(context, 'Pressed'),
-    padding: const EdgeInsetsDirectional.symmetric(
-      horizontal: 24,
-      vertical: 14,
-    ),
-    child: const Text('Continue', style: TextStyle(fontSize: 17)),
-  );
+  Widget build(BuildContext context) =>
+      const Text('Continue', style: TextStyle(fontSize: 17)).glassEffect(
+        onPressed: () => _snack(context, 'Pressed'),
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: 24,
+          vertical: 14,
+        ),
+      );
 }
 
 class _Card extends StatelessWidget {

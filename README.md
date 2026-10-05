@@ -56,6 +56,9 @@ No setup is needed: no theme, no initialisation call, no platform checks.
 
 ```dart
 const Text('Hello').glassEffect(padding: const EdgeInsets.all(12));
+
+// A glass button, also one line:
+const Icon(Icons.add).glassEffect(onPressed: add);
 ```
 
 `glassEffect` mirrors SwiftUI's `.glassEffect(_:in:)` and returns a
@@ -183,10 +186,9 @@ Every recipe is in the example app's Gallery (`example/lib/gallery.dart`).
 ### Glass button
 
 ```dart
-LiquidGlass(
+const Text('Save').glassEffect(
   onPressed: save,
   padding: const EdgeInsetsDirectional.symmetric(horizontal: 24, vertical: 14),
-  child: const Text('Save'),
 )
 ```
 

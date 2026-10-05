@@ -21,6 +21,7 @@ void main() {
     expect(glass.glassId, isNull);
     expect(glass.unionId, isNull);
     expect(glass.padding, isNull);
+    expect(glass.onPressed, isNull);
   });
 
   test('glassEffect forwards glass, shape, glassId, unionId and padding', () {
@@ -51,4 +52,26 @@ void main() {
         .debugLastFrame!;
     expect(frame.uniforms.shapes, hasLength(1));
   }, variant: ios);
+
+  test('glassEffect forwards onPressed', () {
+    void tap() {}
+    expect(const Text('Go').glassEffect(onPressed: tap).onPressed, tap);
+  });
+
+  for (final (name, variant) in [('shader', ios), ('Material', android)]) {
+    testWidgets('$name: one line makes a glass button', (t) async {
+      shaderEnv();
+      var taps = 0;
+      await t.pumpWidget(
+        appHost(
+          const Text('Go').glassEffect(
+            padding: const EdgeInsets.all(12),
+            onPressed: () => taps++,
+          ),
+        ),
+      );
+      await t.tap(find.text('Go'));
+      expect(taps, 1);
+    }, variant: variant);
+  }
 }

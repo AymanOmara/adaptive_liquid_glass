@@ -10,8 +10,9 @@ import 'liquid_glass.dart';
 /// const Text('Hello').glassEffect(padding: const EdgeInsets.all(12));
 ///
 /// const Icon(Icons.add).glassEffect(
-///   glass: Glass.clear.interactive(),
 ///   shape: const GlassShape.circle(),
+///   padding: const EdgeInsets.all(14),
+///   onPressed: add, // a glass button
 /// );
 /// ```
 extension GlassEffect on Widget {
@@ -21,20 +22,22 @@ extension GlassEffect on Widget {
   /// [shape] to a capsule. [glassId] is the morph identity inside a `GlassGroup`
   /// (`glassEffectID`), [unionId] merges members into one shape
   /// (`glassEffectUnion`), and [padding] insets this widget inside the
-  /// glass. Use [LiquidGlass] directly for `onPressed` and the other
-  /// options.
+  /// glass. [onPressed] makes it a button, as on [LiquidGlass.onPressed].
+  /// Use [LiquidGlass] directly for the other options.
   LiquidGlass glassEffect({
     Glass? glass,
     GlassShape shape = const GlassShape.capsule(),
     Object? glassId,
     Object? unionId,
     EdgeInsetsGeometry? padding,
+    VoidCallback? onPressed,
   }) => LiquidGlass(
     glass: glass,
     shape: shape,
     glassId: glassId,
     unionId: unionId,
     padding: padding,
+    onPressed: onPressed,
     child: this,
   );
 }

@@ -1,5 +1,7 @@
 ## 0.1.0-dev.3
 
+* `glassEffect(onPressed: ...)`: a glass button in one line, same as
+  `LiquidGlass.onPressed`.
 * `GlassTabBar` and `GlassTabBarItem`: iOS 26's floating tab bar. The
   selected tab sits on a pill; pressing turns it into a clear glass lens
   that overhangs the bar and magnifies the tabs under it, dragging slides
