@@ -8,9 +8,8 @@ import 'package:flutter/physics.dart';
 SpringDescription swiftUISpring({
   required double response,
   required double dampingFraction,
-}) =>
-    SpringDescription(
-      mass: 1,
-      stiffness: math.pow(2 * math.pi / response, 2).toDouble(),
-      damping: 4 * math.pi * dampingFraction / response,
-    );
+}) => SpringDescription(
+  mass: 1,
+  stiffness: math.pow(2 * math.pi / response, 2).toDouble(),
+  damping: 4 * math.pi * dampingFraction / response,
+);

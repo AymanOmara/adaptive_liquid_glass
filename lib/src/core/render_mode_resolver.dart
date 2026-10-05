@@ -20,11 +20,12 @@ EffectiveGlassMode resolveGlassMode({
     GlassRenderMode.shader => shaderPath,
     GlassRenderMode.native =>
       nativeAvailable ? EffectiveGlassMode.native : shaderPath,
-    GlassRenderMode.auto => !isIOS
-        ? EffectiveGlassMode.material
-        : (nativeEnabled && nativeAvailable)
-            ? EffectiveGlassMode.native
-            : shaderPath,
+    GlassRenderMode.auto =>
+      !isIOS
+          ? EffectiveGlassMode.material
+          : (nativeEnabled && nativeAvailable)
+          ? EffectiveGlassMode.native
+          : shaderPath,
   };
 
   if (environment.reduceTransparency &&

@@ -7,6 +7,13 @@ import 'package:flutter/painting.dart';
 ///
 /// Mirrors the `in:` argument of SwiftUI's `glassEffect(_:in:)`. Corners use
 /// Apple's continuous curve (a rounded superellipse), never circular arcs.
+///
+/// ```dart
+/// const GlassShape.capsule()     // the default
+/// const GlassShape.circle()
+/// const GlassShape.rect(20)      // continuous corners of radius 20
+/// const GlassShape.concentric()  // follows the enclosing glass's corners
+/// ```
 @immutable
 sealed class GlassShape {
   const GlassShape();
@@ -35,8 +42,8 @@ sealed class GlassShape {
 
   /// The equivalent Flutter border, for clipping and Material rendering.
   OutlinedBorder toBorder(Size size) => RoundedSuperellipseBorder(
-        borderRadius: BorderRadius.circular(resolveRadius(size)),
-      );
+    borderRadius: BorderRadius.circular(resolveRadius(size)),
+  );
 }
 
 /// See [GlassShape.capsule].
@@ -62,10 +69,10 @@ final class CircleGlassShape extends GlassShape {
 
   @override
   Rect resolveRect(Size size) => Rect.fromCenter(
-        center: size.center(Offset.zero),
-        width: size.shortestSide,
-        height: size.shortestSide,
-      );
+    center: size.center(Offset.zero),
+    width: size.shortestSide,
+    height: size.shortestSide,
+  );
 
   @override
   double resolveRadius(Size size, {double? concentricRadius}) =>
@@ -111,8 +118,10 @@ final class ConcentricGlassShape extends GlassShape {
 
   @override
   double resolveRadius(Size size, {double? concentricRadius}) =>
-      (concentricRadius ?? size.shortestSide / 2)
-          .clamp(0.0, size.shortestSide / 2);
+      (concentricRadius ?? size.shortestSide / 2).clamp(
+        0.0,
+        size.shortestSide / 2,
+      );
 
   @override
   bool operator ==(Object other) =>
