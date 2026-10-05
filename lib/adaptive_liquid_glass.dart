@@ -8,7 +8,8 @@
 ///
 /// Start with [LiquidGlass] (or the [GlassEffect.glassEffect] shorthand),
 /// group neighbours with [GlassGroup], and pick the material with [Glass]
-/// and the outline with [GlassShape].
+/// and the outline with [GlassShape]. [GlassTabBar] is iOS 26's floating
+/// tab bar, built from them.
 library;
 
 export 'src/core/glass.dart' show Glass, GlassVariant;
@@ -20,3 +21,4 @@ export 'src/foreground/glass_foreground.dart';
 export 'src/glass_effect.dart';
 export 'src/group/glass_group.dart' show GlassGroup;
 export 'src/liquid_glass.dart' show LiquidGlass;
+export 'src/tab_bar/glass_tab_bar.dart';

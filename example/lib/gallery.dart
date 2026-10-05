@@ -1,4 +1,5 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 
 /// The README cookbook, one recipe per section, over a photo.
@@ -28,6 +29,7 @@ class Gallery extends StatelessWidget {
                 _Recipe('Merged union (unionId)', _Union()),
                 _Recipe('Clear glass over media', _ClearOverMedia()),
                 _Recipe('Tinted glass', _Tinted()),
+                _Recipe('Tab bar', _TabBar()),
               ],
             ),
           ),
@@ -198,5 +200,27 @@ class _Tinted extends StatelessWidget {
       vertical: 14,
     ),
     child: const Text('Tinted', style: TextStyle(fontSize: 17)),
+  );
+}
+
+class _TabBar extends StatefulWidget {
+  const _TabBar();
+
+  @override
+  State<_TabBar> createState() => _TabBarState();
+}
+
+class _TabBarState extends State<_TabBar> {
+  int _tab = 0;
+
+  @override
+  Widget build(BuildContext context) => GlassTabBar(
+    items: const [
+      GlassTabBarItem(icon: CupertinoIcons.clock_fill, label: 'History'),
+      GlassTabBarItem(icon: CupertinoIcons.text_quote, label: 'Snippets'),
+      GlassTabBarItem(icon: CupertinoIcons.gear_solid, label: 'Settings'),
+    ],
+    selectedIndex: _tab,
+    onSelected: (i) => setState(() => _tab = i),
   );
 }

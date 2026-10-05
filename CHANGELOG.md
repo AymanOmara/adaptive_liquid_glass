@@ -1,3 +1,13 @@
+## 0.1.0-dev.3
+
+* `GlassTabBar` and `GlassTabBarItem`: iOS 26's floating tab bar. The
+  selected tab sits on a pill; pressing turns it into a clear glass lens
+  that overhangs the bar and magnifies the tabs under it, dragging slides
+  it between tabs, and letting go springs it to the nearest tab (sizes and
+  timing measured from iOS 26.4). Works in every render mode, follows the
+  reading direction and Reduce Motion, and exposes each tab as a selectable
+  button to assistive tech.
+
 ## 0.1.0-dev.2
 
 

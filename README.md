@@ -291,6 +291,41 @@ LiquidGlass(
 )
 ```
 
+### Tab bar
+
+iOS 26's floating tab bar. Pressing turns the selected pill into a clear
+glass lens that magnifies the tabs under it; dragging slides it between
+tabs; letting go springs it to the nearest tab and calls `onSelected`.
+
+```dart
+Stack(
+  children: [
+    pages[tab],
+    Positioned(
+      left: 0,
+      right: 0,
+      bottom: 21,
+      child: Center(
+        child: GlassTabBar(
+          items: const [
+            GlassTabBarItem(icon: CupertinoIcons.clock_fill, label: 'History'),
+            GlassTabBarItem(icon: CupertinoIcons.text_quote, label: 'Snippets'),
+            GlassTabBarItem(icon: CupertinoIcons.gear_solid, label: 'Settings'),
+          ],
+          selectedIndex: tab,
+          onSelected: (i) => setState(() => tab = i),
+        ),
+      ),
+    ),
+  ],
+)
+```
+
+The selected tab takes `selectedColor` (default: the Cupertino theme's
+primary colour); the others take glass's readable colour. Each tab is a
+selectable button for VoiceOver and TalkBack, the order follows the
+reading direction, and with Reduce Motion the pill moves without animating.
+
 ## Adaptive foreground over busy content
 
 By default the label colour follows the platform brightness. To follow the

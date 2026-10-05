@@ -20,6 +20,10 @@ void main() {
     expect(find.byIcon(Icons.favorite), findsOneWidget);
 
     await t.scrollUntilVisible(find.text('Tinted'), 200);
+
+    await t.scrollUntilVisible(find.text('Snippets'), 200);
+    await t.tap(find.text('Snippets'));
+    await t.pumpAndSettle();
     expect(t.takeException(), isNull);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }
