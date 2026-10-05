@@ -5,5 +5,5 @@
   "clearDark": {"blurSigma": 1.3799, "blurSizeRef": 0.0, "frostWideSigma": 3.7534, "frostWideMixEdge": -0.0595, "frostWideMixCentre": 0.2011, "frostWideSizeRef": 84.2326, "frostWideSizeDrop": 0.0038, "lensBand": 18.42, "lensStrength": -2.529, "lensDecay": 6.52, "lensSizeRef": 28.86, "dispersion": 0.0, "rimWidth": 1.4229, "rimIntensity": 0.406, "fillColor": "#FDFAFB", "fillOpacity": 0.1778, "fillSizeRef": 0.0, "fillSizeDrop": 0.0, "saturation": 1.2332, "dim": 0.0006, "shadowRadius": 13.0732, "shadowOpacity": 0.0017, "tintStrength": 0.35},
   "cornerExponent": 2.0,
   "mergeFactor": 0.8,
-  "motion": {"pressScale": 0.1, "pressStretch": 0.08, "glowRadius": 60, "pressResponse": 0.35, "pressDamping": 0.65, "morphResponse": 0.45, "morphDamping": 0.75}
+  "motion": {"pressScale": 0.066, "pressStretch": 0.011, "glowRadius": 41, "pressResponse": 0.36, "pressDamping": 0.56, "morphResponse": 0.5, "morphDamping": 0.7}
 }

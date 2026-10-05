@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import 'demo.dart';
 import 'launch.dart';
+import 'scenes/motion_view.dart';
 import 'scenes/scene.dart';
 import 'scenes/scene_view.dart';
 
@@ -20,6 +21,7 @@ Future<void> main() async {
       : GlassConstants.fromJson(
           (jsonDecode(args.constants!) as Map).cast<String, Object?>(),
         );
+  if (args.motion != null) return runMotion(args.motion!, constants);
   final scenes = args.sceneFile == null
       ? await Scene.loadAll()
       : await Scene.loadAll(args.sceneFile!);
