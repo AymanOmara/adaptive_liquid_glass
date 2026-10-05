@@ -221,3 +221,46 @@ scenes; off-grid it holds to within 0.003 on the two hardest — both in the
 known regular-dark small-shape family. Do not cite "hard target met" as
 generalising off-grid; a future round should fit a regular-dark size term
 against the holdout set.
+
+## Tone LUT (Task 17d)
+
+Deviation from the plan, kept deliberately: the shipped tone LUT is the
+piecewise-linear 9-knot hat (`tone_curve.py`, `tone_apply`), not the plan's
+"monotonically-clamped cubic" — piecewise-linear is parity-exact with the
+shader's LUT (one interpolation, no spline divergence between model, Dart
+and GPU), and the hat-sum identity property it replaces is algebraic, so
+the Review-Focus identity test now pins shipped ≠ identity instead of
+identity itself.
+
+## Noise floors (Part A)
+
+- **SwiftUI-vs-SwiftUI repeat floor: every metric is exactly zero**
+  (simulator rendering is bit-deterministic across runs) — committed
+  `tool/fidelity/floors/simulator-swiftui-repeat.json`. A repeat run is a
+  free upper bound on measurement noise: zero.
+- **SwiftUI-vs-UIKit cross-API floor** — committed
+  `tool/fidelity/floors/simulator-swiftui-uikit.json` (all 75 scenes);
+  global p90 SSIM 0.99999, ΔE 35.1, FLIP 0.75. The ΔE and FLIP p90 legs
+  are report-only; only the SSIM leg is meaningful, because the tinted
+  scenes ARE included in this committed floor and the two APIs render tint
+  differently by design (see `example/ios/Runner/ReferenceScenes.swift`).
+- **Device floor: blocked** — no physical iPhone attached; re-run when one
+  is.
+- **Floor-relative verdicts** exist in `compare.py --floor` (`within_noise`
+  per scene, mirrored into report.json and report.html). Report-only: the
+  per-scene bars stay official until the floor-based rule is signed off.
+
+Sign-off (Ayman): pending — per-scene bars stay official; floor-relative
+verdicts are informational until signed.
+
+## Plan-item dispositions
+
+- **Task 8 (merged-blob fill factor): deferred with reason.** The merge
+  scenes sit at SSIM 0.965/0.979, above the 0.95 hard target, and the
+  union-extent fill factor stays recorded as the known next lever; the
+  plan's stop criterion (a round adding zero passes) fired first (round 3,
+  see above).
+- **Task 8c (colour-matrix contingency): not triggered.** The trigger
+  condition (per-channel colour residual over ΔE 2.0 after the tone LUT)
+  was not measured in the final round; median ΔE 1.09 with the worst
+  per-scene ΔE documented in the round-2 table above.

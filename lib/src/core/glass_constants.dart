@@ -497,18 +497,20 @@ class GlassConstants {
     ),
   );
 
-  /// The shipped values (Task 17d round 2): the Task 17c shipped constants
-  /// (edge lens from Task 15c, size-dependent frost/fill from 17b, frost
-  /// wide tail from 17c) refitted on all keys the round freed — the
-  /// small-shape dark tone lift (`toneLift*`, Task 8b/17d) and the clear
-  /// lens set (tone knots, post-blur share, lens edge, rim mix family) —
-  /// by fitting the NumPy model (`tool/fidelity/fit.py`) to SwiftUI
-  /// screenshots of `tool/scenes/scenes.json`. Device-verified on the
-  /// reference simulator: 46/75 scenes pass, median SSIM 0.9828, median ΔE
-  /// 1.15, min SSIM 0.9452
-  /// (`docs/superpowers/notes/fidelity-status.md`).
+  /// The shipped values (certified at the final Task 17d tree): the Task
+  /// 17c constants (edge lens from Task 15c, size-dependent frost/fill from
+  /// 17b, frost wide tail from 17c) plus the 17d additions (tone LUT, small
+  /// dark-shape tone lift, clear lens grid, anisotropic frost), fitted by
+  /// the NumPy model (`tool/fidelity/fit.py`) against SwiftUI screenshots
+  /// of `tool/scenes/scenes.json`. Device-certified on the reference
+  /// simulator: 46/75 scenes pass, median SSIM 0.9828 / median ΔE 1.09,
+  /// min SSIM 0.9532, 0 scenes below 0.95 (75 in-set scenes; held-out
+  /// 48-scene set: 18/48, min 0.9470). Per-set and per-scene numbers, and
+  /// the known residuals, live in
+  /// `docs/superpowers/notes/fidelity-status.md` — cite that note, not
+  /// per-set numbers here.
   static const GlassConstants standard = GlassConstants(
-    // Device median SSIM/ΔE 0.988/1.65 (light, 6/12); tinted uses tintStrength.
+    // Tinted uses tintStrength.
     regular: GlassVariantConstants(
       blurSigma: 5.9236,
       blurSizeRef: 59.9762,
@@ -534,7 +536,6 @@ class GlassConstants {
       shadowOpacity: 0.0494,
       tintStrength: 1.0219,
     ),
-    // Device median SSIM/ΔE 0.937/1.98 (4/12).
     clear: GlassVariantConstants(
       blurSigma: 1.2,
       blurSizeRef: 0,
@@ -565,7 +566,6 @@ class GlassConstants {
       shadowOpacity: 0.0015,
       tintStrength: 0.35,
     ),
-    // Device median SSIM/ΔE 0.978/1.59 (7/12); tinted uses tintStrength.
     regularDark: GlassVariantConstants(
       blurSigma: 8.2468,
       blurSizeRef: 78.0334,
@@ -595,7 +595,6 @@ class GlassConstants {
       shadowOpacity: 0.0264,
       tintStrength: 1.0084,
     ),
-    // Device median SSIM/ΔE 0.941/2.00 (4/12).
     clearDark: GlassVariantConstants(
       blurSigma: 1.1534,
       blurSizeRef: 0,

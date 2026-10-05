@@ -90,8 +90,14 @@ struct ReferenceSceneView: View {
 /// `UIGlassContainerEffect` host when the scene merges, one `UIGlassEffect`
 /// view per shape with matching corner configurations. The plugin no longer
 /// draws this way — its native mode hosts SwiftUI `.glassEffect` (Task N1) —
-/// so this is a measurement reference only. Tinted shapes fall back to
-/// untinted; tinted scenes are excluded from the floor.
+/// so this is a measurement reference only. Tinted shapes carry their tint
+/// here, and tinted scenes ARE included in the committed cross-API floor
+/// (tool/fidelity/floors/simulator-swiftui-uikit.json): SwiftUI and UIKit
+/// render tint differently by design, which is why the global floor's
+/// ΔE/FLIP p90 legs are report-only and only the SSIM leg (p90 0.99999)
+/// is meaningful. See the per-variant floor ruling in
+/// .superpowers/sdd/2026-10-05-task-17d-noise-floor-and-scoring/progress.md
+/// (Task 4/6 rulings).
 @available(iOS 26.0, *)
 final class UIKitSceneView: UIView {
   init(scene: RefScene, background: UIImage) {
