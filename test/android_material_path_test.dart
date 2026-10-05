@@ -3,7 +3,7 @@ import 'dart:ui' as ui;
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/degraded/degraded_glass.dart';
-import 'package:adaptive_liquid_glass/src/liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/group/glass_member.dart';
 import 'package:adaptive_liquid_glass/src/material/material_glass.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
@@ -15,6 +15,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Material-path audit of the package on Android (spec §1 criterion 4:
 /// every widget renders a Material 3 equivalent with no glass code path).
+///
+/// Updated for the U1 API (`glassEffect()`, `padding`, `onPressed`,
+/// `adaptiveForeground`): the A1 findings 4.3 (shader load on Android) and
+/// 4.6 (no-op `onTap`) are asserted as fixed here.
 ///
 /// Every test runs with `debugDefaultTargetPlatformOverride` set to
 /// [TargetPlatform.android] via [TargetPlatformVariant] (which resets it in
@@ -104,7 +108,160 @@ void main() {
     final m = materialOf(t);
     expect(m.elevation, 1);
     expect(m.clipBehavior, Clip.antiAlias);
-    expect(find.byType(InkWell), findsNothing); // not interactive
+    // The ink-well structure is always built (so toggling onPressed keeps
+    // the child mounted); with nothing to press it is inert, not a no-op
+    // button: no tap handler, no focus, no semantics.
+    final ink = t.widget<InkWell>(find.byType(InkWell));
+    expect(ink.onTap, isNull);
+    expect(ink.canRequestFocus, isFalse);
+    expect(ink.excludeFromSemantics, isTrue);
+  }, variant: android);
+
+  testWidgets('the shader program is never loaded on the Material path', (
+    t,
+  ) async {
+    // A1 finding 4.3, fixed: GlassProgram.load() ran for every group. Now
+    // only the backdrop path loads it. Arm a real load (it fails and is
+    // reported under `flutter test`), pump the Material path and assert
+    // neither the load nor its failure ever happens.
+    GlassProgram.instance.debugReset();
+    await t.pumpWidget(
+      host(const LiquidGlass(child: SizedBox(width: 80, height: 40))),
+    );
+    await t.pump();
+    expect(t.takeException(), isNull); // no failed asset load was reported
+    expect(GlassProgram.instance.program.value, isNull); // nothing loaded
+    expectNoGlassPath(t);
+  }, variant: android);
+
+  testWidgets('onPressed fires on the Material path', (t) async {
+    // A1 finding 4.6, fixed: the ink well's tap was a no-op. onPressed is
+    // now a real button callback.
+    var taps = 0;
+    await t.pumpWidget(
+      host(LiquidGlass(onPressed: () => taps++, child: const Text('Go'))),
+    );
+    expectNoGlassPath(t);
+    await t.tap(find.text('Go'));
+    await t.pumpAndSettle();
+    expect(taps, 1);
+    // The padding is part of the button (inside the capsule's end cap).
+    await t.pumpWidget(
+      host(
+        LiquidGlass(
+          onPressed: () => taps++,
+          padding: const EdgeInsets.all(12),
+          child: const Text('Go'),
+        ),
+      ),
+    );
+    await t.tapAt(
+      t
+          .getCenter(find.byType(LiquidGlass))
+          .translate(-t.getSize(find.byType(LiquidGlass)).width / 2 + 8, 0),
+    );
+    await t.pumpAndSettle();
+    expect(taps, 2);
+  }, variant: android);
+
+  testWidgets('button semantics follow onPressed', (t) async {
+    final semantics = t.ensureSemantics();
+    await t.pumpWidget(
+      host(LiquidGlass(onPressed: () {}, child: const Text('Go'))),
+    );
+    expect(
+      t.getSemantics(find.text('Go')),
+      isSemantics(
+        label: 'Go',
+        isButton: true,
+        hasTapAction: true,
+        isFocusable: true,
+        hasEnabledState: true,
+        isEnabled: true,
+      ),
+    );
+    // Without onPressed the glass is not a button.
+    await t.pumpWidget(host(const LiquidGlass(child: Text('Go'))));
+    expect(t.getSemantics(find.text('Go')), isNot(isSemantics(isButton: true)));
+    semantics.dispose();
+  }, variant: android);
+
+  testWidgets("Text('x').glassEffect() renders a Material capsule", (t) async {
+    await t.pumpWidget(host(const Text('x').glassEffect()));
+    expect(find.text('x'), findsOneWidget);
+    expect(find.byType(MaterialGlass), findsOneWidget);
+    expectNoGlassPath(t);
+    final m = materialOf(t);
+    expect(m.shape, isA<StadiumBorder>()); // the glassEffect capsule default
+    final scheme = Theme.of(t.element(find.byType(MaterialGlass))).colorScheme;
+    expect(m.color, scheme.surfaceContainerHigh); // regular default glass
+  }, variant: android);
+
+  testWidgets('padding insets the child inside the Material surface', (
+    t,
+  ) async {
+    const key = Key('content');
+    await t.pumpWidget(
+      host(
+        const LiquidGlass(
+          padding: EdgeInsetsDirectional.only(
+            start: 16,
+            end: 4,
+            top: 8,
+            bottom: 2,
+          ),
+          child: SizedBox(key: key, width: 40, height: 20),
+        ),
+      ),
+    );
+    expectNoGlassPath(t);
+    expect(t.getSize(find.byType(LiquidGlass)), const Size(60, 30));
+    final glass = t.getTopLeft(find.byType(LiquidGlass));
+    expect(t.getTopLeft(find.byKey(key)) - glass, const Offset(16, 8));
+  }, variant: android);
+
+  testWidgets('the adaptive foreground labels with onSurface', (t) async {
+    late BuildContext probe;
+    await t.pumpWidget(
+      host(
+        LiquidGlass(
+          child: Builder(
+            builder: (c) {
+              probe = c;
+              return const Text('label');
+            },
+          ),
+        ),
+      ),
+    );
+    expectNoGlassPath(t);
+    final scheme = Theme.of(probe).colorScheme;
+    expect(DefaultTextStyle.of(probe).style.color, scheme.onSurface);
+    expect(IconTheme.of(probe).color, scheme.onSurface);
+  }, variant: android);
+
+  testWidgets('tinted glass labels with onPrimaryContainer', (t) async {
+    late BuildContext probe;
+    await t.pumpWidget(
+      host(
+        LiquidGlass(
+          glass: Glass.regular.tint(Colors.orange),
+          child: Builder(
+            builder: (c) {
+              probe = c;
+              return const Text('label');
+            },
+          ),
+        ),
+      ),
+    );
+    expectNoGlassPath(t);
+    final seeded = ColorScheme.fromSeed(
+      seedColor: Colors.orange,
+      brightness: Theme.of(probe).brightness,
+    );
+    expect(DefaultTextStyle.of(probe).style.color, seeded.onPrimaryContainer);
+    expect(IconTheme.of(probe).color, seeded.onPrimaryContainer);
   }, variant: android);
 
   testWidgets('a group of three members is three Materials, no backdrop', (
@@ -255,6 +412,7 @@ void main() {
     expectNoGlassPath(t);
     final ink = t.widget<InkWell>(find.byType(InkWell));
     expect(ink.excludeFromSemantics, isTrue); // semantics come from the child
+    expect(ink.onTap, isNotNull); // the empty callback enables the ripple
     expect(materialOf(t).clipBehavior, Clip.antiAlias);
   }, variant: android);
 
