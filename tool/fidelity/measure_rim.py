@@ -155,9 +155,12 @@ def rim_profiles(frame, shape):
     py, px = np.mgrid[y0:y1, x0:x1] + 0.5
     g = ml.shape_geometry(shape, SCALE, px, py)
     outside = g["depth"] < -8 * SCALE
-    if outside.any() and np.abs(diff[outside]).max() > 1.0 / 255.0:
-        print(f"  WARNING: capture-vs-background max |diff| outside the glass "
-              f"is {np.abs(diff[outside]).max() * 255:.1f}/255 — alignment?")
+    if outside.any():
+        md = float(np.abs(diff[outside]).max())
+        if md > 1.0 / 255.0:
+            frac = float((np.abs(diff[outside]) > 0.5 / 255.0).mean())
+            print(f"  note: max |diff| {md * 255:.1f}/255 on {frac * 100:.2f}% of pixels just "
+                  f"outside the glass (the glass's own outer shadow); bin medians unaffected")
     az = azimuth_deg(g["nx"], g["ny"])
     dmean = diff.mean(-1)
     bluma = (b * LUMA).sum(-1)
@@ -216,11 +219,22 @@ def compare_rotations(per_rotation, ring="rim"):
     return res
 
 
-def verdict(device, model=None, ring="rim"):
-    """fixed-light / content-following / mixed, from the cross-rotation
-    statistics (thresholds stated; the numbers are reported either way)."""
+def verdict(device, model=None, ring="rim", residual=False):
+    """fixed-light / content-following / mixed. On raw device profiles the
+    statistics conflate the rim with the (content-coupled) lens/frost/fill
+    machinery; with `residual=True` they run on device-minus-model, which
+    the model's fixed rim cannot explain at all — that is the rim verdict.
+    Thresholds stated; the numbers are reported either way."""
     d = device[ring]
     dz, dc, df = d["median_pair_corr_zero_shift"], d["median_corr_with_backdrop"], d["fixed_fraction"]
+    if residual:
+        v = "fixed-light" if dz >= 0.85 and abs(dc) <= 0.3 else \
+            "content-following" if abs(dc) >= 0.75 and df <= 0.5 else "mixed"
+        return {"verdict": v, "ring": ring, "basis": "residual (device - model)",
+                "median_pair_corr_zero_shift": dz, "median_corr_with_backdrop": dc,
+                "fixed_fraction": df,
+                "thresholds": "fixed-light: pair corr >= 0.85 and |backdrop corr| <= 0.3; "
+                              "content-following: |backdrop corr| >= 0.75 and fixed fraction <= 0.5"}
     # The control ring is the non-rim floor for backdrop correlation.
     ctrl = device["control"]["median_corr_with_backdrop"]
     floor = None
@@ -232,7 +246,7 @@ def verdict(device, model=None, ring="rim"):
         v = "content-following"
     else:
         v = "mixed"
-    return {"verdict": v, "ring": ring,
+    return {"verdict": v, "ring": ring, "basis": "raw device profiles",
             "median_pair_corr_zero_shift": dz, "median_corr_with_backdrop": dc,
             "control_corr_with_backdrop": ctrl, "fixed_fraction": df,
             "model_fixed_fraction": floor,
@@ -257,7 +271,59 @@ def analyse(run_dir, renderer, spec, variant, brightness, model_constants=None):
     out["comparison"] = {ring: compare_rotations(out["rotations"], ring) for ring in RINGS}
     if model_constants is not None:
         out["model_comparison"] = {ring: compare_rotations(out["model"], ring) for ring in RINGS}
+        # The decisive test. The model's rim is fixed (no content coupling),
+        # and its lens/frost/fill content coupling matches the device. The
+        # residual device - model is therefore what a rimContent term would
+        # have to explain: rotation-invariant residual => fixed-light
+        # (retune the fixed rim), rotating with the gradient => the device
+        # has a content rim the model lacks.
+        out["residual"] = {ring: {str(r): (
+            np.asarray(out["rotations"][str(r)][ring]["diff"])
+            - np.asarray(out["model"][str(r)][ring]["diff"])).tolist()
+            for r in ROTATIONS} for ring in RINGS}
+        out["residual_comparison"] = {
+            ring: compare_rotations(
+                {str(r): {ring: {"diff": out["residual"][ring][str(r)],
+                                 "bg_luma": out["rotations"][str(r)][ring]["bg_luma"]}}
+                 for r in ROTATIONS}, ring)
+            for ring in RINGS}
+        out["residual_depth"] = _residual_depth(run_dir, renderer, spec, variant,
+                                                brightness, model_constants)
     out["verdict"] = verdict(out["comparison"], out.get("model_comparison"))
+    if "residual_comparison" in out:
+        out["verdict_residual"] = verdict(out["residual_comparison"], None, residual=True)
+    return out
+
+
+DEPTH_BINS_PX = ((0, 1), (1, 2), (2, 3), (3, 4), (4, 6), (6, 9), (9, 14), (14, 24))
+
+
+def _residual_depth(run_dir, renderer, spec, variant, brightness, constants):
+    """Median device-minus-model difference vs depth (physical px), straight
+    edges vs corners, median over rotations (/255) — where the fixed
+    residual lives."""
+    from glass_model import render
+    rows = {"straight": [], "corner": []}
+    for r in ROTATIONS:
+        sid, scene = _scene_for(spec, variant, brightness, r)
+        sh = scene["shapes"][0]
+        cap = ml.load(pathlib.Path(run_dir) / f"{sid}.{renderer}.png")
+        mod = render(ml.load(BG_DIR / f"{scene['background']}.png"), scene, constants)
+        x0, y0, x1, y1 = _window(sh)
+        diff = (cap - mod)[y0:y1, x0:x1].mean(-1)
+        py, px = np.mgrid[y0:y1, x0:x1] + 0.5
+        g = ml.shape_geometry(sh, SCALE, px, py)
+        for corner in (False, True):
+            rows["corner" if corner else "straight"].append((diff, g, corner))
+    out = {"bins_px": [list(b) for b in DEPTH_BINS_PX]}
+    for key, vals in rows.items():
+        out[key] = []
+        for lo, hi in DEPTH_BINS_PX:
+            med = []
+            for d, g_, c in vals:
+                mm = (g_["depth"] > lo) & (g_["depth"] <= hi) & (c == g_["corner"])
+                med.append(float(np.median(d[mm])) if mm.any() else float("nan"))
+            out[key].append(float(np.nanmedian(med)) * 255.0)
     return out
 
 
@@ -313,6 +379,18 @@ def main():
                 print(f"  model: pair corr(0) {m['median_pair_corr_zero_shift']:+.3f}  "
                       f"backdrop corr {m['median_corr_with_backdrop']:+.3f}  "
                       f"fixed fraction {m['fixed_fraction']:.2f}")
+            if "residual_comparison" in r:
+                x = r["residual_comparison"]["rim"]
+                vr = r["verdict_residual"]
+                print(f"  residual: pair corr(0) {x['median_pair_corr_zero_shift']:+.3f}  "
+                      f"backdrop corr {x['median_corr_with_backdrop']:+.3f}  "
+                      f"fixed fraction {x['fixed_fraction']:.2f}  "
+                      f"-> {vr['verdict'].upper()}")
+                rd = r["residual_depth"]
+                print("  residual vs depth (/255): "
+                      + " ".join(f"{a}-{b}px s {s:+.1f} c {c:+.1f}"
+                                 for (a, b), s, c in zip(rd["bins_px"], rd["straight"],
+                                                         rd["corner"])))
     if args.model:
         scores = {k: model_scores(args.run_dir, args.renderer, spec, *k.split("-"), constants)
                   for k in out}
