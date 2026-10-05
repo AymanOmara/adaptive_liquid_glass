@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/cupertino.dart';
 
 import '../button/glass_button.dart';
@@ -50,7 +52,20 @@ class NavBarContent extends StatelessWidget {
       : AnimatedOpacity(
           opacity: titleOpacity,
           duration: titleFade!,
-          child: child,
+          // iOS 26 brings the inline title in blurred and sharpens it.
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(end: titleOpacity),
+            duration: titleFade!,
+            child: child,
+            builder: (context, v, child) {
+              final sigma = (1 - v) * 4;
+              return ImageFiltered(
+                enabled: sigma > 0.05,
+                imageFilter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+                child: child,
+              );
+            },
+          ),
         );
 
   @override

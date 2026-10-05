@@ -42,6 +42,6 @@ abstract final class NavBarMetrics {
   /// [inlineFade], as on iOS, rather than with the scroll).
   static const double inlineThreshold = 51;
 
-  /// The inline title's fade.
-  static const Duration inlineFade = Duration(milliseconds: 200);
+  /// The inline title's blur-and-fade in (~14 frames on iOS 26.4).
+  static const Duration inlineFade = Duration(milliseconds: 230);
 }

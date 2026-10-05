@@ -187,4 +187,22 @@ void main() {
     await t.pump();
     expect(blur(), findsOneWidget);
   }, variant: ios);
+
+  testWidgets('the inline title comes in blurred, then sharpens', (t) async {
+    shaderEnv();
+    final c = ScrollController();
+    await t.pumpWidget(page(c));
+    c.jumpTo(NavBarMetrics.inlineThreshold + 10);
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 60));
+    ImageFiltered blur() => t.widget<ImageFiltered>(
+      find.ancestor(
+        of: titleOfSize(NavBarMetrics.titleFontSize),
+        matching: find.byType(ImageFiltered),
+      ),
+    );
+    expect(blur().enabled, isTrue);
+    await t.pump(NavBarMetrics.inlineFade);
+    expect(blur().enabled, isFalse);
+  }, variant: ios);
 }
