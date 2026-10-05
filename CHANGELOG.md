@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.0-dev.2
 
 
 ### Task 17d — noise floor, tone LUT, hard target met
