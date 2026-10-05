@@ -21,7 +21,9 @@ Future<void> main() async {
       : GlassConstants.fromJson(
           (jsonDecode(args.constants!) as Map).cast<String, Object?>(),
         );
-  if (args.motion != null) return runMotion(args.motion!, constants);
+  if (args.motion != null) {
+    return runMotion(args.motion!, constants, dump: args.dump);
+  }
   final scenes = args.sceneFile == null
       ? await Scene.loadAll()
       : await Scene.loadAll(args.sceneFile!);

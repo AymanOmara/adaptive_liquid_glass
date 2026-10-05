@@ -16,7 +16,8 @@ import UIKit
       name: "example/launch", binaryMessenger: engineBridge.applicationRegistrar.messenger()
     ).setMethodCallHandler { call, result in
       guard call.method == "getArgs" else { result(FlutterMethodNotImplemented); return }
-      result(LaunchArgs.all)
+      // `-dump` (Task 16b): the motion views' lossless frame dump.
+      result(LaunchArgs.all.merging(["dump": LaunchArgs.arg("dump")]) { a, _ in a })
     }
   }
 }

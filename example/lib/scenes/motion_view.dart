@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/testing.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
+import 'frame_dump.dart';
 import 'scene.dart';
 
 /// A motion recording entry of `tool/scenes/motion.json` (Task 16).
@@ -58,7 +60,11 @@ class MotionSpec {
 
 /// Runs the motion [id] from `assets/motion.json`; an unknown id shows a
 /// magenta error screen and throws, like the static scene host.
-Future<void> runMotion(String id, GlassConstants constants) async {
+Future<void> runMotion(
+  String id,
+  GlassConstants constants, {
+  String? dump,
+}) async {
   final j = jsonDecode(
     await rootBundle.loadString('assets/motion.json'),
   ) as Map<String, Object?>;
@@ -92,6 +98,7 @@ Future<void> runMotion(String id, GlassConstants constants) async {
         debugShowCheckedModeBanner: false,
         home: MotionView(
           spec: MotionSpec.fromJson(entry.cast<String, Object?>()),
+          dump: dump,
         ),
       ),
     ),
@@ -103,10 +110,13 @@ Future<void> runMotion(String id, GlassConstants constants) async {
 /// `before` and `after` (morph).
 class MotionView extends StatefulWidget {
   /// Creates the view for [spec].
-  const MotionView({super.key, required this.spec});
+  const MotionView({super.key, required this.spec, this.dump});
 
   /// The motion to render.
   final MotionSpec spec;
+
+  /// `-dump` spec for a lossless [FrameDump], or null.
+  final String? dump;
 
   @override
   State<MotionView> createState() => _MotionViewState();
@@ -114,6 +124,22 @@ class MotionView extends StatefulWidget {
 
 class _MotionViewState extends State<MotionView> {
   bool _toggled = false;
+  final _screen = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    final dump = widget.dump;
+    if (dump != null) {
+      FrameDump(
+        dump,
+        () =>
+            _screen.currentContext?.findRenderObject()
+                as RenderRepaintBoundary?,
+        WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -135,38 +161,42 @@ class _MotionViewState extends State<MotionView> {
     return MediaQuery(
       data: MediaQuery.of(context)
           .copyWith(platformBrightness: spec.brightness),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTapUp: spec.kind == 'morph'
-                  ? (_) => setState(() => _toggled = !_toggled)
-                  : null,
-              child: Image.asset(
-                'assets/backgrounds/${spec.background}.png',
-                fit: BoxFit.fill,
-                filterQuality: FilterQuality.none,
-              ),
-            ),
-          ),
-          const Positioned(left: 0, top: 0, child: _Heartbeat()),
-          if (spec.shape != null)
+      child: RepaintBoundary(
+        key: _screen,
+        child: Stack(
+          children: [
             Positioned.fill(
-              child: Stack(children: [glass(spec.shape!, interactive: true)]),
-            )
-          else
-            Positioned.fill(
-              child: GlassGroup(
-                spacing: spec.spacing,
-                child: Stack(
-                  children: [
-                    for (final e in members.entries) glass(e.value, id: e.key),
-                  ],
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTapUp: spec.kind == 'morph'
+                    ? (_) => setState(() => _toggled = !_toggled)
+                    : null,
+                child: Image.asset(
+                  'assets/backgrounds/${spec.background}.png',
+                  fit: BoxFit.fill,
+                  filterQuality: FilterQuality.none,
                 ),
               ),
             ),
-        ],
+            const Positioned(left: 0, top: 0, child: _Heartbeat()),
+            if (spec.shape != null)
+              Positioned.fill(
+                child: Stack(children: [glass(spec.shape!, interactive: true)]),
+              )
+            else
+              Positioned.fill(
+                child: GlassGroup(
+                  spacing: spec.spacing,
+                  child: Stack(
+                    children: [
+                      for (final e in members.entries)
+                        glass(e.value, id: e.key),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

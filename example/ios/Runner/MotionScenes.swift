@@ -46,6 +46,7 @@ enum MotionScenes {
     }
     window.rootViewController = UIHostingController(
       rootView: MotionSceneView(spec: spec, background: bg))
+    if let d = LaunchArgs.arg("dump") { FrameDump.shared = FrameDump(window: window, spec: d) }
     return true
   }
 
@@ -133,6 +134,83 @@ struct Heartbeat: View {
     TimelineView(.animation) { context in
       let v = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1)
       Rectangle().fill(Color(hue: v, saturation: 1, brightness: 1)).frame(width: 2, height: 2)
+    }
+  }
+}
+
+/// Lossless frame dump (Task 16b): `-dump x,y,w,h,frames` (crop in px).
+///
+/// Every display frame after `<tmp>/motion-dump/start` appears, the window
+/// is snapshotted (`drawHierarchy`, which renders the glass the way the
+/// screen shows it) into an sRGB image of the crop, and its
+/// `CACurrentMediaTime` is kept. After `frames` frames the PNGs, `meta.json`
+/// (`{"renderer", "times"}`, seconds) and `done` are written to the same
+/// folder. The Flutter motion view dumps the same way
+/// (`example/lib/scenes/frame_dump.dart`); `tool/fidelity/record_motion.sh`
+/// drives both.
+final class FrameDump: NSObject {
+  static var shared: FrameDump?
+
+  private let window: UIWindow
+  private let crop: CGRect
+  private let count: Int
+  private let dir = URL(fileURLWithPath: NSTemporaryDirectory())
+    .appendingPathComponent("motion-dump")
+  private var images: [UIImage] = []
+  private var times: [Double] = []
+  private var link: CADisplayLink?
+  private var armed = false
+
+  init(window: UIWindow, spec: String) {
+    let v = spec.split(separator: ",").compactMap { Double($0) }
+    self.window = window
+    crop = v.count >= 4 ? CGRect(x: v[0], y: v[1], width: v[2], height: v[3]) : .zero
+    count = v.count >= 5 ? Int(v[4]) : 180
+    super.init()
+    let l = CADisplayLink(target: self, selector: #selector(tick))
+    l.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 60, preferred: 60)
+    l.add(to: .main, forMode: .common)
+    link = l
+  }
+
+  @objc private func tick(_ l: CADisplayLink) {
+    if !armed {
+      armed = FileManager.default.fileExists(atPath: dir.appendingPathComponent("start").path)
+      if !armed { return }
+    }
+    let t = CACurrentMediaTime()
+    let s = window.screen.scale
+    let fmt = UIGraphicsImageRendererFormat()
+    fmt.scale = s
+    fmt.preferredRange = .standard
+    fmt.opaque = true
+    let size = CGSize(width: crop.width / s, height: crop.height / s)
+    let origin = CGPoint(x: -crop.minX / s, y: -crop.minY / s)
+    let img = UIGraphicsImageRenderer(size: size, format: fmt).image { _ in
+      window.drawHierarchy(in: CGRect(origin: origin, size: window.bounds.size),
+                           afterScreenUpdates: false)
+    }
+    images.append(img)
+    times.append(t)
+    if images.count >= count { finish() }
+  }
+
+  private func finish() {
+    link?.invalidate()
+    link = nil
+    let (images, times, dir) = (self.images, self.times, self.dir)
+    self.images = []
+    DispatchQueue.global(qos: .userInitiated).async {
+      for (i, img) in images.enumerated() {
+        let url = dir.appendingPathComponent(String(format: "%04d.png", i + 1))
+        try? img.pngData()?.write(to: url)
+      }
+      let meta: [String: Any] = ["renderer": "swiftui", "times": times]
+      if let d = try? JSONSerialization.data(withJSONObject: meta) {
+        try? d.write(to: dir.appendingPathComponent("meta.json"))
+      }
+      FileManager.default.createFile(
+        atPath: dir.appendingPathComponent("done").path, contents: nil)
     }
   }
 }
