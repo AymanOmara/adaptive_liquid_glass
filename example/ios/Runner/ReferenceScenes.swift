@@ -86,11 +86,12 @@ struct ReferenceSceneView: View {
 }
 
 /// Draws the scene with Apple's UIKit glass APIs (Task 17d noise floor:
-/// SwiftUI vs UIKit is one of Apple's own cross-API error bars). Mirrors the
-/// plugin's `GlassPlatformView`: a `UIGlassContainerEffect` host when the
-/// scene merges, one `UIGlassEffect` view per shape with the same corner
-/// configurations. Tinted shapes fall back to untinted — this reference
-/// exists for the noise floor, and tinted scenes are excluded from it.
+/// SwiftUI vs UIKit is one of Apple's own cross-API error bars): a
+/// `UIGlassContainerEffect` host when the scene merges, one `UIGlassEffect`
+/// view per shape with matching corner configurations. The plugin no longer
+/// draws this way — its native mode hosts SwiftUI `.glassEffect` (Task N1) —
+/// so this is a measurement reference only. Tinted shapes fall back to
+/// untinted; tinted scenes are excluded from the floor.
 @available(iOS 26.0, *)
 final class UIKitSceneView: UIView {
   init(scene: RefScene, background: UIImage) {

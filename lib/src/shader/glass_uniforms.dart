@@ -59,6 +59,7 @@ class GlassFrameUniforms {
     this.opaqueColor,
     this.touch,
     this.glow = 0,
+    this.blurSigma = 0,
   });
 
   /// Light or dark appearance (selects constant sets).
@@ -91,6 +92,24 @@ class GlassFrameUniforms {
 
   /// Touch glow strength 0..1.
   final double glow;
+
+  /// Sigma of the composed frost blur (logical px), which the shader needs
+  /// to size the post-lens blur (`postBlurShare`).
+  final double blurSigma;
+}
+
+/// Largest usable `postBlurShare` (the composed blur keeps √0.1 of σ).
+const double kMaxPostBlurShare = 0.9;
+
+/// Composed frost sigma (logical px) for a shape of variant constants [v]
+/// whose half shorter side is [halfMin]: [GlassVariantConstants.blurSigma]
+/// scaled down below `blurSizeRef` and by √(1 − postBlurShare). A group
+/// runs one blur with the largest of its members' values.
+double composedBlurSigma(GlassVariantConstants v, double halfMin) {
+  final ref = v.blurSizeRef;
+  final k = ref > 0 ? math.min(1.0, halfMin / ref) : 1.0;
+  final share = v.postBlurShare.clamp(0.0, kMaxPostBlurShare);
+  return v.blurSigma * k * math.sqrt(1 - share);
 }
 
 bool _drawable(GlassShapeUniform s) =>
@@ -129,7 +148,7 @@ List<GlassShapeUniform> mergeUnions(List<GlassShapeUniform> shapes) {
 }
 
 /// Number of user floats after `uSize`.
-const int kGlassUniformFloats = 256;
+const int kGlassUniformFloats = 288;
 
 /// Packs [u] into the float layout documented in `shaders/liquid_glass.frag`:
 ///
@@ -142,14 +161,20 @@ const int kGlassUniformFloats = 256;
 /// | 16–79   | uRects[16]     | x, y, w, h px                             |
 /// | 80–143  | uInfo[16]      | radius px, clear?, cornerExponent, fill scale |
 /// | 144–207 | uTints[16]     | rgb, strength                             |
-/// | 208–255 | uVar[12]       | regular A–F, then clear A–F               |
+/// | 208–287 | uVar[20]       | regular A–J, then clear A–J               |
 ///
 /// Per variant: A = (lens decay px, lens band px, lens strength, dispersion),
 /// B = (rim width px, rim intensity, fillOpacity, dim),
 /// C = (shadow radius px, shadow opacity, tint strength, lens size ref px),
 /// D = (fill r, g, b, saturation),
 /// E = (frost wide sigma px, wide mix edge, wide mix centre, wide size ref px),
-/// F = (wide size drop, -, -, -).
+/// F = (wide size drop, glow strength, post-lens blur share, normal radius
+/// scale),
+/// G, H, I.x = tone LUT: 9 grey output knots at inputs i/8,
+/// I.yzw = (lens edge px, lens edge decay px, -),
+/// J = (rim mix, rim mix width px, rim mix cut px, rim mix luma floor).
+///
+/// uGlobal2.w (float 7) is the composed frost sigma in physical px.
 List<double> packGlassUniforms(GlassFrameUniforms u) {
   final dpr = u.devicePixelRatio;
   final shapes = u.shapes.where(_drawable).take(_maxShapes).toList();
@@ -163,6 +188,7 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
   f[4] = u.smoothing;
   f[5] = u.constants.cornerExponent;
   f[6] = u.highContrast ? 1 : 0;
+  f[7] = u.blurSigma * dpr;
 
   final o = u.opaqueColor;
   if (o != null) {
@@ -236,8 +262,27 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
       v.frostWideMixCentre,
       v.frostWideSizeRef * dpr,
     ]);
-    f[k + 20] = v.frostWideSizeDrop;
-    k += 24;
+    f.setAll(k + 20, [
+      v.frostWideSizeDrop,
+      v.glowStrength,
+      v.postBlurShare.clamp(0.0, kMaxPostBlurShare),
+      v.normalRadiusScale,
+    ]);
+    f.setAll(k + 24, v.toneKnots.sublist(0, 4));
+    f.setAll(k + 28, v.toneKnots.sublist(4, 8));
+    f.setAll(k + 32, [
+      v.toneKnots[8],
+      v.lensEdge * dpr,
+      v.lensEdgeDecay * dpr,
+      0,
+    ]);
+    f.setAll(k + 36, [
+      v.rimMix,
+      v.rimMixWidth * dpr,
+      v.rimMixCut * dpr,
+      v.rimMixLumaFloor,
+    ]);
+    k += 40;
   }
   return f;
 }

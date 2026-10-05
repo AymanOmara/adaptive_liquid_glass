@@ -12,6 +12,8 @@ Stages (spec §15 / Task 17 v2), each fed with the previous one's output:
     fit.py polishRegular --start S --out O   # regular + regularDark (all keys) on
                                              # regular-*, tinted-*, merge-*
     fit.py polishClear   --start S --out O   # clear + clearDark on clear-*
+    fit.py polishRegularDark --start S --out O  # regularDark on every dark
+                                             # regular-*, tinted-*, merge-*
     fit.py score         --start S [--scenes PREFIX]   # per-scene numbers only
 
 Loss: mean over the stage's scenes of (1 - SSIM) * 10 + ΔE / 2, scored in
@@ -42,7 +44,11 @@ KEYS = ["blurSigma", "blurSizeRef", "frostWideSigma", "frostWideMixEdge", "frost
         "frostWideSizeRef", "frostWideSizeDrop",
         "lensBand", "lensStrength", "lensDecay", "lensSizeRef", "dispersion",
         "rimWidth", "rimIntensity", "fillOpacity", "fillSizeRef", "fillSizeDrop", "fillR", "fillG", "fillB", "saturation", "dim",
-        "shadowRadius", "shadowOpacity", "tintStrength"]
+        "shadowRadius", "shadowOpacity", "tintStrength",
+        "tone0", "tone1", "tone2", "tone3", "tone4", "tone5", "tone6", "tone7", "tone8",
+        "postBlurShare", "normalRadiusScale", "lensEdge", "lensEdgeDecay",
+        "rimMix", "rimMixWidth", "rimMixCut", "rimMixLumaFloor"]
+TONE_KEYS = [f"tone{i}" for i in range(9)]
 BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
           # Task 17b: frost sigma x min(1, halfMin / blurSizeRef) (pt); 0 = off.
           "blurSizeRef": (0, 200),
@@ -53,6 +59,16 @@ BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
           "frostWideSigma": (0, 30), "frostWideMixEdge": (-1, 2),
           "frostWideMixCentre": (-1, 2), "frostWideSizeRef": (0, 200),
           "frostWideSizeDrop": (0, 5),
+          # Task 17d tone LUT knots (grey, inputs i/8).
+          **{k: (0, 1) for k in TONE_KEYS},
+          # Task 17d clear-analysis features (measured shapes, fitted sizes):
+          # post-lens blur share of the frost variance, lens normals from a
+          # rounder rect (radius x scale), lens edge term (pt, pt) and the
+          # isotropic rim mix toward white (alpha, pt, pt, luma floor).
+          "postBlurShare": (0, 0.9), "normalRadiusScale": (1, 2.5),
+          "lensEdge": (0, 20), "lensEdgeDecay": (0.1, 3),
+          "rimMix": (0, 1), "rimMixWidth": (0.3, 4), "rimMixCut": (0.3, 4),
+          "rimMixLumaFloor": (0, 1),
           # Lens v3 (pt); Task 15c measured 6.4-6.5 and 38.4 (regular) / 0 (clear).
           "lensDecay": (0.5, 20), "lensSizeRef": (0, 100),
           "dispersion": (0, 0.6), "rimWidth": (0.3, 4), "rimIntensity": (0, 1.5),
@@ -84,6 +100,9 @@ def scenes_for(stage):
         return [x for x in s if x["id"].startswith("merge-gap")]
     if stage == "polishRegular":  # every scene drawn with the regular sets
         return [x for x in s if x["id"].startswith(("regular-", "tinted-", "merge-"))]
+    if stage == "polishRegularDark":  # every dark scene drawn with regularDark
+        return [x for x in s if x["id"].startswith(("regular-", "tinted-", "merge-"))
+                and x["brightness"] == "dark"]
     if stage == "polishClear":
         return [x for x in s if x["id"].startswith("clear-")]
     raise ValueError(stage)
@@ -152,8 +171,17 @@ class Pool:
             c.send(None)
 
 
+# Task 17d: optional worst-case term (`--ssim-floor`): every scene below the
+# floor adds 100 x its shortfall, so the fit cannot trade one scene's SSIM for
+# the mean (the user's target is the minimum).
+SSIM_FLOOR = [None]
+
+
 def loss_of(rows):
-    return float(np.mean([(1 - s) * 10 + d / 2 for _, s, d in rows]))
+    base = float(np.mean([(1 - s) * 10 + d / 2 for _, s, d in rows]))
+    if SSIM_FLOOR[0] is not None:
+        base += 100.0 * float(np.mean([max(0.0, SSIM_FLOOR[0] - s) for _, s, _ in rows]))
+    return base
 
 
 # --- parameter access ---------------------------------------------------------
@@ -165,6 +193,8 @@ def get(c, set_name, key):
         h = v["fillColor"].lstrip("#")
         rgb = v.get("_fill") or [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
         return rgb["RGB".index(key[-1])]
+    if key.startswith("tone"):
+        return float(v["toneKnots"][int(key[4:])])
     return float(v[key])
 
 
@@ -176,6 +206,8 @@ def put(c, set_name, key, value):
         rgb["RGB".index(key[-1])] = float(value)
         v["_fill"] = rgb
         v["fillColor"] = "#" + "".join(f"{int(round(x * 255)):02X}" for x in rgb)
+    elif key.startswith("tone"):
+        v.setdefault("toneKnots", [i / 8 for i in range(9)])[int(key[4:])] = float(value)
     else:
         v[key] = float(value)
 
@@ -229,6 +261,9 @@ def scan(pool, c, key, values):
     return c
 
 
+CHECKPOINT = [None]  # path: best-so-far constants, rewritten as the fit improves
+
+
 def fit_sets(pool, c, targets, keys, restarts, maxfev, seed=0):
     """Powell over `keys` of every set in `targets`, normalised to [0, 1]."""
     params = [(t, k) for t in targets for k in keys]
@@ -245,9 +280,15 @@ def fit_sets(pool, c, targets, keys, restarts, maxfev, seed=0):
             put(c2, t, k, v)
         return c2
 
+    best = [np.inf, None]
+
     def f(u):
         evals[0] += 1
         lo_ = loss_of(pool.scores(model_constants(apply(u))))
+        if lo_ < best[0]:
+            best[0], best[1] = lo_, np.array(u)
+        if CHECKPOINT[0] is not None and evals[0] % 10 == 0:
+            CHECKPOINT[0].write_text(json.dumps(clean(apply(best[1])), indent=2) + "\n")
         if evals[0] % 50 == 0:
             print(f"  eval {evals[0]} loss {lo_:.4f} ({time.time() - t0:.0f}s)")
             sys.stdout.flush()
@@ -274,6 +315,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("stage", choices=["corner", "regular", "regularDark", "clear", "clearDark",
                                       "tinted", "merge", "polishRegular", "polishClear",
+                                      "polishRegularDark",
                                       "score"])
     ap.add_argument("--start", type=pathlib.Path,
                     default=ROOT / "tool/fidelity/standard_constants.json")
@@ -284,12 +326,18 @@ def main():
     ap.add_argument("--maxfev", type=int, default=3000)
     ap.add_argument("--procs", type=int, default=8)
     ap.add_argument("--seed", type=int, default=0, help="random-restart seed")
+    ap.add_argument("--ssim-floor", type=float,
+                    help="add 100 x mean shortfall below this SSIM to the loss")
+    ap.add_argument("--checkpoint", type=pathlib.Path,
+                    help="rewrite best-so-far constants here during the fit")
     ap.add_argument("--lo", type=float, help="corner: scan start (default 2.0)")
     ap.add_argument("--hi", type=float, help="corner: scan end (default 6.0)")
     args = ap.parse_args()
 
     # Missing keys (e.g. Task 17 stage files without the lens v3 keys) come
     # from standard_constants.json, as GlassConstants.fromJson does.
+    SSIM_FLOOR[0] = args.ssim_floor
+    CHECKPOINT[0] = args.checkpoint
     c = resolve_constants(json.loads(args.start.read_text()))
     if args.stage == "score":
         scenes = [s for s in SPEC["scenes"] if s["id"].startswith(args.scenes)]
@@ -311,6 +359,10 @@ def main():
                 sub = Pool([s["id"] for s in scenes if s["brightness"] == br], args.procs)
                 c = fit_sets(sub, c, [t], keys, args.restarts, args.maxfev, seed=args.seed)
                 sub.close()
+        elif args.stage == "polishRegularDark":
+            keys = args.only.split(",") if args.only else KEYS
+            c = fit_sets(pool, c, ["regularDark"], keys, args.restarts, args.maxfev,
+                         seed=args.seed)
         elif args.stage in ("polishRegular", "polishClear"):
             base = "regular" if args.stage == "polishRegular" else "clear"
             keys = args.only.split(",") if args.only else (KEYS if base == "regular" else NO_TINT)

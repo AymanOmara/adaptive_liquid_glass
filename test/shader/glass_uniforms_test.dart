@@ -47,7 +47,7 @@ void main() {
         }),
       ),
     );
-    expect(f.length, 256);
+    expect(f.length, 288);
     expect(f.sublist(0, 4), [1, 3, -2, 0]);
     expect(f.sublist(4, 8), [60, GlassConstants.standard.cornerExponent, 0, 0]);
     expect(f.sublist(16, 20), [1, 2, 30, 40]);
@@ -112,7 +112,7 @@ void main() {
       reg.tintStrength,
       reg.lensSizeRef * 3,
     ]);
-    expect(f.sublist(240, 244), [
+    expect(f.sublist(256, 260), [
       clr.shadowRadius * 3,
       clr.shadowOpacity,
       clr.tintStrength,
@@ -124,19 +124,19 @@ void main() {
       reg.fillColor.b,
       reg.saturation,
     ]);
-    expect(f.sublist(232, 236), [
+    expect(f.sublist(248, 252), [
       clr.lensDecay * 3,
       clr.lensBand * 3,
       clr.lensStrength,
       clr.dispersion,
     ]);
-    expect(f.sublist(236, 240), [
+    expect(f.sublist(252, 256), [
       clr.rimWidth * 3,
       clr.rimIntensity,
       clr.fillOpacity,
       clr.dim,
     ]);
-    expect(f.sublist(244, 248), [
+    expect(f.sublist(260, 264), [
       clr.fillColor.r,
       clr.fillColor.g,
       clr.fillColor.b,
@@ -164,10 +164,95 @@ void main() {
     final f = packGlassUniforms(frame(const [], constants: c));
     expect(f.sublist(224, 228), [5.5 * 3, 0.3, 1.2, 70 * 3]);
     expect(f[228], 1.4);
-    expect(f.sublist(248, 252), [4.0 * 3, -0.1, 0.2, 0]);
-    expect(f[252], 0.5);
+    expect(f.sublist(264, 268), [4.0 * 3, -0.1, 0.2, 0]);
+    expect(f[268], 0.5);
   });
 
+  test('tone LUT knots pack into G, H and I (identity when absent)', () {
+    final identity = packGlassUniforms(frame(const []));
+    expect(
+      identity.sublist(232, 236),
+      GlassVariantConstants.identityToneKnots.sublist(0, 4),
+    );
+    expect(
+      identity.sublist(236, 240),
+      GlassVariantConstants.identityToneKnots.sublist(4, 8),
+    );
+    expect(identity[240], 1.0);
+    // The clear set's knots live 40 floats later.
+    expect(identity[240 + 40], 1.0);
+
+    final c = GlassConstants.fromJson({
+      'regular': {
+        'toneKnots': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
+      },
+    });
+    final f = packGlassUniforms(frame(const [], constants: c));
+    expect(f.sublist(232, 236), [0.0, 0.1, 0.2, 0.3]);
+    expect(f.sublist(236, 240), [0.4, 0.5, 0.6, 0.7]);
+    expect(f[240], 0.8);
+  });
+
+  test('Task 17d keys pack into F, I and J (pre-17d behaviour by default)', () {
+    final d = packGlassUniforms(frame(const []));
+    // F.yzw: glow 0.25, no post-lens blur, outline normals.
+    expect(d.sublist(229, 232), [0.25, 0, 1]);
+    expect(d.sublist(241, 244), [0, closeTo(0.6 * 3, 1e-12), 0]);
+    expect(d.sublist(244, 248), [0, 1.5 * 3, 1 * 3, 1]);
+    expect(d[7], 0);
+
+    final c = GlassConstants.fromJson({
+      'clear': {
+        'glowStrength': 0.4,
+        'postBlurShare': 0.95, // clamped to 0.9
+        'normalRadiusScale': 1.55,
+        'lensEdge': 9.0,
+        'lensEdgeDecay': 0.6,
+        'rimMix': 0.63,
+        'rimMixWidth': 1.5,
+        'rimMixCut': 1.0,
+        'rimMixLumaFloor': 0.05,
+      },
+    });
+    final f = packGlassUniforms(
+      GlassFrameUniforms(
+        shapes: const [],
+        devicePixelRatio: 3,
+        lightAngle: 0,
+        smoothing: 0,
+        constants: c,
+        blurSigma: 1.5,
+      ),
+    );
+    expect(f[7], 1.5 * 3);
+    expect(f.sublist(268 + 1, 272), [0.4, 0.9, 1.55]);
+    expect(f.sublist(281, 284), [9.0 * 3, closeTo(0.6 * 3, 1e-12), 0]);
+    expect(f.sublist(284, 288), [0.63, 1.5 * 3, 1.0 * 3, 0.05]);
+  });
+
+  test('composed blur sigma scales by size and post-lens share', () {
+    const v = GlassVariantConstants(
+      blurSigma: 4,
+      blurSizeRef: 40,
+      postBlurShare: 0.36,
+      lensBand: 1,
+      lensStrength: 0,
+      lensDecay: 1,
+      lensSizeRef: 0,
+      dispersion: 0,
+      rimWidth: 1,
+      rimIntensity: 0,
+      fillColor: Color(0xFFFFFFFF),
+      fillOpacity: 0,
+      saturation: 1,
+      dim: 0,
+      shadowRadius: 0,
+      shadowOpacity: 0,
+      tintStrength: 0,
+    );
+    expect(composedBlurSigma(v, 20), closeTo(4 * 0.5 * 0.8, 1e-12));
+    expect(composedBlurSigma(v, 80), closeTo(4 * 0.8, 1e-12));
+  });
   test('tint strength is tintStrength × alpha; clear variant index is 1', () {
     const tint = Color.fromARGB(128, 255, 0, 0);
     final f = packGlassUniforms(
@@ -228,7 +313,7 @@ void main() {
       d.fillColor.b,
       d.saturation,
     ]);
-    expect(f[239], GlassConstants.standard.clearDark.dim);
+    expect(f[255], GlassConstants.standard.clearDark.dim);
   });
 
   test('opaque and touch', () {

@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from compare import load, region_for, score
-from glass_model import render
+from glass_model import render, render_window, resolve_constants
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 # Flutter captures of the shipped build with no -constants (Task 17b final run).
@@ -192,3 +192,126 @@ def test_frost_off_by_default_and_wide_mix_lowers_contrast():
     c, _ = render_window(bg, scene, on)
     inner = (slice(150, -150), slice(150, -150))
     assert c[inner].std() < 0.8 * b[inner].std()
+
+
+# --- Task 17d: measured tone curve (piecewise-linear LUT, grey) --------------
+
+IDENTITY = [i / 8 for i in range(9)]
+
+
+def _tone_bg():
+    """Flat 0.5 grey background 200x200."""
+    return np.full((400, 400, 3), 0.5)
+
+
+def _tone_scene(variant="clear", brightness="light"):
+    return {"id": "tone-test", "background": "flat-v128", "brightness": brightness,
+            "shapes": [{"x": 20, "y": 20, "w": 60, "h": 60, "shape": "rect",
+                        "radius": 8, "variant": variant, "tint": None}]}
+
+
+def test_tone_lut_identity_renders_unchanged():
+    sc = _tone_scene()
+    a = render(_tone_bg(), sc, resolve_constants(json.loads(json.dumps(STANDARD))))
+    c = json.loads(json.dumps(STANDARD))
+    for n in ("regular", "clear", "regularDark", "clearDark"):
+        c[n]["toneKnots"] = list(IDENTITY)
+    b = render(_tone_bg(), sc, resolve_constants(c))
+    assert np.array_equal(a, b)
+
+
+def test_tone_lut_lifts_interior():
+    sc = _tone_scene()
+    c = json.loads(json.dumps(STANDARD))
+    for n in ("regular", "clear", "regularDark", "clearDark"):
+        # Lifts at ~0.59, the post-fill level of a 0.5 grey backdrop.
+        c[n]["toneKnots"] = [0.0, 0.15, 0.3, 0.42, 0.55, 0.68, 0.8, 0.9, 1.0]
+    lifted, box = render_window(_tone_bg(), sc, resolve_constants(c))
+    plain, box = render_window(_tone_bg(), sc, resolve_constants(json.loads(json.dumps(STANDARD))))
+    x0, y0, x1, y1 = box
+    inner = lifted[y0 + 90:y1 - 90, x0 + 90:x1 - 90]
+    inner_plain = plain[y0 + 90:y1 - 90, x0 + 90:x1 - 90]
+    assert inner.mean() > inner_plain.mean()  # dark backdrop lifted
+
+
+def test_tone_lut_lowering_knots_darkens():
+    sc = _tone_scene()
+    c = json.loads(json.dumps(STANDARD))
+    for n in ("regular", "clear", "regularDark", "clearDark"):
+        c[n]["toneKnots"] = [0.0, 0.05, 0.12, 0.22, 0.35, 0.5, 0.68, 0.87, 0.97]
+    out, box = render_window(_tone_bg(), sc, resolve_constants(c))
+    plain, box = render_window(_tone_bg(), sc, resolve_constants(json.loads(json.dumps(STANDARD))))
+    x0, y0, x1, y1 = box
+    assert out[y0 + 90:y1 - 90, x0 + 90:x1 - 90].mean() < \
+        plain[y0 + 90:y1 - 90, x0 + 90:x1 - 90].mean()
+
+
+def test_tone_lut_blends_across_variants_like_other_blocks():
+    """Mixed groups blend the two sets' knots linearly, as the shader mixes
+    uVar G/H/I by clearMix — documented approximation, pinned here."""
+    sc = _tone_scene()
+    sc["shapes"][0]["variant"] = "clear"
+    c = json.loads(json.dumps(STANDARD))
+    c["clear"]["toneKnots"] = [0.0, 0.02, 0.06, 0.12, 0.2, 0.32, 0.5, 0.74, 1.0]
+    c["regular"]["toneKnots"] = list(IDENTITY)
+    a, box = render_window(_tone_bg(), sc, resolve_constants(c))
+    # The render must not raise and interior must differ from identity-only.
+    plain, box = render_window(_tone_bg(), sc, resolve_constants(json.loads(json.dumps(STANDARD))))
+    x0, y0, x1, y1 = box
+    assert not np.array_equal(a, plain)
+
+
+# --- Task 17d: clear-analysis features (defaults reproduce the 17c model) ----
+
+def _feat(sid, **over):
+    sc = _scene(sid)
+    bg = np.random.default_rng(3).random((2622, 1206, 3))
+    c = json.loads(json.dumps(STANDARD))
+    for n in ("clear", "clearDark"):
+        c[n].update(over)
+    return render_window(bg, sc, c)
+
+
+def test_17d_defaults_are_the_17c_model():
+    from glass_model import VARIANT_DEFAULTS
+    a, _ = _feat("clear-rect16-photo-light")
+    b, _ = _feat("clear-rect16-photo-light", **{k: v for k, v in VARIANT_DEFAULTS.items()
+                                                  if k != "toneKnots"})
+    assert np.array_equal(a, b)
+    assert VARIANT_DEFAULTS["glowStrength"] == 0.25  # shader-only (touch glow)
+
+
+def test_normal_radius_scale_leaves_capsules_alone_and_bends_rect_corners():
+    a, _ = _feat("clear-capsule-photo-light")
+    b, _ = _feat("clear-capsule-photo-light", normalRadiusScale=1.55)
+    assert np.array_equal(a, b)
+    a, _ = _feat("clear-rect16-photo-light")
+    b, _ = _feat("clear-rect16-photo-light", normalRadiusScale=1.55)
+    diff = np.abs(a - b).max(-1) > 0
+    h, w = diff.shape
+    # Only the corners move: the middle of each side is unchanged.
+    assert diff.any() and not diff[h // 2].any() and not diff[:, w // 2].any()
+
+
+def test_lens_edge_and_post_blur_change_the_glass():
+    a, _ = _feat("clear-rect16-photo-light")
+    for over in ({"lensEdge": 9.0}, {"postBlurShare": 0.3}):
+        b, _ = _feat("clear-rect16-photo-light", **over)
+        assert not np.array_equal(a, b), over
+
+
+def test_post_blur_share_shrinks_the_composed_blur():
+    from glass_model import group_blur_sigma
+    c = json.loads(json.dumps(STANDARD))
+    sc = _scene("clear-rect16-photo-light")
+    s0 = group_blur_sigma(sc, c)
+    c["clear"]["postBlurShare"] = 0.36
+    assert group_blur_sigma(sc, c) == pytest.approx(s0 * 0.8)
+
+
+def test_rim_mix_whitens_outer_pixels_and_dark_floor_scales_it():
+    a, box = _feat("clear-rect28-text-light")
+    b, _ = _feat("clear-rect28-text-light", rimMix=0.63)
+    c, _ = _feat("clear-rect28-text-light", rimMix=0.63, rimMixLumaFloor=0.0)
+    assert b.sum() > a.sum()
+    assert a.sum() <= c.sum() <= b.sum()

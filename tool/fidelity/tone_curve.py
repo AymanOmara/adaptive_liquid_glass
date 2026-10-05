@@ -60,4 +60,12 @@ def tone_seed_from_model(model, measured, samples=257):
     y = np.maximum.accumulate([measured(v) for v in vs])
     x = np.maximum.accumulate(x)
     knots_in = np.linspace(0.0, 1.0, N_KNOTS)
-    return knots_in, np.maximum.accumulate(np.interp(knots_in, x, y))
+    out = np.interp(knots_in, x, y)
+    # Below the black-flat response (x[0]) the measurement constrains nothing;
+    # clamping there would collapse every darker pixel to one value. Extend
+    # the first measured segment's slope instead, floored at 0.
+    if len(x) >= 2 and x[0] > 0.0:
+        slope = (y[1] - y[0]) / max(x[1] - x[0], 1e-9)
+        lo = np.clip(y[0] + slope * (knots_in - x[0]), 0.0, 1.0)
+        out = np.where(knots_in < x[0], lo, out)
+    return knots_in, np.maximum.accumulate(out)

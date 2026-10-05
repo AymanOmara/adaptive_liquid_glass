@@ -15,6 +15,28 @@ GlassVariantConstants _v(
 double _d(Map<String, Object?> j, String k, double fallback) =>
     (j[k] as num?)?.toDouble() ?? fallback;
 
+/// Reads a 9-entry knot list; a malformed one falls back to [fallback].
+List<double> _knots(Map<String, Object?> j, String k, List<double> fallback) {
+  final v = j[k];
+  if (v is List && v.length == 9 && v.every((e) => e is num)) {
+    return [for (final e in v) (e as num).toDouble()];
+  }
+  return fallback;
+}
+
+/// [mapEquals] compares list values by identity, which breaks `==` across
+/// JSON round-trips now that [GlassVariantConstants] carries [List<double>]
+/// knots; compare top-level lists by contents.
+bool _jsonEquals(Map<String, Object?> a, Map<String, Object?> b) =>
+    a.length == b.length &&
+    a.entries.every(
+      (e) =>
+          identical(e.value, b[e.key]) ||
+          (e.value is List && b[e.key] is List
+              ? listEquals(e.value as List, b[e.key] as List)
+              : e.value == b[e.key]),
+    );
+
 /// Reads `"#RRGGBB"` or an int ARGB value. The result is always opaque (any
 /// alpha is dropped), so `toJson`'s `"#RRGGBB"` round-trips losslessly.
 Color _color(Map<String, Object?> j, String k, Color fallback) {
@@ -37,6 +59,20 @@ String _hex(Color c) =>
 /// Per-variant rendering constants (lengths in logical px).
 @immutable
 class GlassVariantConstants {
+  /// Grey tone LUT output knots at inputs `i / 8`, `i = 0..8`
+  /// ([identityToneKnots] reproduces the input exactly).
+  static const List<double> identityToneKnots = [
+    0,
+    0.125,
+    0.25,
+    0.375,
+    0.5,
+    0.625,
+    0.75,
+    0.875,
+    1,
+  ];
+
   /// Creates variant constants.
   const GlassVariantConstants({
     required this.blurSigma,
@@ -46,6 +82,16 @@ class GlassVariantConstants {
     this.frostWideMixCentre = 0,
     this.frostWideSizeRef = 0,
     this.frostWideSizeDrop = 0,
+    this.toneKnots = identityToneKnots,
+    this.glowStrength = 0.25,
+    this.postBlurShare = 0,
+    this.normalRadiusScale = 1,
+    this.lensEdge = 0,
+    this.lensEdgeDecay = 0.6,
+    this.rimMix = 0,
+    this.rimMixWidth = 1.5,
+    this.rimMixCut = 1,
+    this.rimMixLumaFloor = 1,
     required this.lensBand,
     required this.lensStrength,
     required this.lensDecay,
@@ -76,6 +122,16 @@ class GlassVariantConstants {
     frostWideMixCentre: _d(j, 'frostWideMixCentre', base.frostWideMixCentre),
     frostWideSizeRef: _d(j, 'frostWideSizeRef', base.frostWideSizeRef),
     frostWideSizeDrop: _d(j, 'frostWideSizeDrop', base.frostWideSizeDrop),
+    toneKnots: _knots(j, 'toneKnots', base.toneKnots),
+    glowStrength: _d(j, 'glowStrength', base.glowStrength),
+    postBlurShare: _d(j, 'postBlurShare', base.postBlurShare),
+    normalRadiusScale: _d(j, 'normalRadiusScale', base.normalRadiusScale),
+    lensEdge: _d(j, 'lensEdge', base.lensEdge),
+    lensEdgeDecay: _d(j, 'lensEdgeDecay', base.lensEdgeDecay),
+    rimMix: _d(j, 'rimMix', base.rimMix),
+    rimMixWidth: _d(j, 'rimMixWidth', base.rimMixWidth),
+    rimMixCut: _d(j, 'rimMixCut', base.rimMixCut),
+    rimMixLumaFloor: _d(j, 'rimMixLumaFloor', base.rimMixLumaFloor),
     lensBand: _d(j, 'lensBand', base.lensBand),
     lensStrength: _d(j, 'lensStrength', base.lensStrength),
     lensDecay: _d(j, 'lensDecay', base.lensDecay),
@@ -169,6 +225,51 @@ class GlassVariantConstants {
   /// lens profile (so it sits on the outer pixels). SwiftUI shows none.
   final double dispersion;
 
+  /// Grey tone curve applied to the frosted backdrop: piecewise linear
+  /// through these output knots at inputs `i / 8`, after the saturation and
+  /// before the fill wash (Task 17d, seeded from flat-grey captures and
+  /// fitted). [identityToneKnots] disables it.
+  final List<double> toneKnots;
+
+  /// Brightness of the touch glow at full press (Task 17d; 0.25 is the
+  /// pre-17d behaviour, left for the motion fit).
+  final double glowStrength;
+
+  /// Share of the frost blur's variance applied after the lens instead of
+  /// before it (0..0.9; Task 17d, clear glass). The composed blur becomes
+  /// σ·√(1 − share) and the shader adds σ·√share in screen space, mapped
+  /// through the lens, so the refracted band is blurred like SwiftUI's.
+  final double postBlurShare;
+
+  /// Lens normals follow a rounder outline: each corner radius × this,
+  /// capped at half the shorter side (Task 17d, measured: 1.5–1.6 on
+  /// SwiftUI rects). 1 uses the outline itself; capsules and circles are
+  /// unaffected.
+  final double normalRadiusScale;
+
+  /// Extra inward lens offset at the outline (logical px), falling off as
+  /// `exp(−depth / lensEdgeDecay)` (Task 17d, measured: SwiftUI's lens is
+  /// steeper in the outer 1–2 pt). 0 disables it.
+  final double lensEdge;
+
+  /// Falloff length of [lensEdge] (logical px).
+  final double lensEdgeDecay;
+
+  /// Isotropic rim: the outer pixels mix toward white by this alpha,
+  /// ramping to 0 at [rimMixWidth] and cut at [rimMixCut] (Task 17d,
+  /// measured on clear glass). 0 disables it.
+  final double rimMix;
+
+  /// Depth (logical px) where the [rimMix] ramp reaches 0.
+  final double rimMixWidth;
+
+  /// Depth (logical px) where [rimMix] is cut off (a 1 px smoothstep).
+  final double rimMixCut;
+
+  /// [rimMix] is scaled by `floor + (1 − floor)·min(1, luma / 0.5)` of the
+  /// glass under it; 1 disables the scaling (dark mode measured 0.05).
+  final double rimMixLumaFloor;
+
   /// Width of the specular rim.
   final double rimWidth;
 
@@ -220,6 +321,16 @@ class GlassVariantConstants {
     'frostWideMixCentre': frostWideMixCentre,
     'frostWideSizeRef': frostWideSizeRef,
     'frostWideSizeDrop': frostWideSizeDrop,
+    'toneKnots': toneKnots,
+    'glowStrength': glowStrength,
+    'postBlurShare': postBlurShare,
+    'normalRadiusScale': normalRadiusScale,
+    'lensEdge': lensEdge,
+    'lensEdgeDecay': lensEdgeDecay,
+    'rimMix': rimMix,
+    'rimMixWidth': rimMixWidth,
+    'rimMixCut': rimMixCut,
+    'rimMixLumaFloor': rimMixLumaFloor,
     'lensBand': lensBand,
     'lensStrength': lensStrength,
     'lensDecay': lensDecay,
@@ -240,10 +351,12 @@ class GlassVariantConstants {
 
   @override
   bool operator ==(Object other) =>
-      other is GlassVariantConstants && mapEquals(other.toJson(), toJson());
+      other is GlassVariantConstants && _jsonEquals(other.toJson(), toJson());
 
   @override
-  int get hashCode => Object.hashAll(toJson().values);
+  int get hashCode => Object.hashAll(
+    toJson().values.map((v) => v is List ? Object.hashAll(v) : v),
+  );
 }
 
 /// Motion constants for `.interactive()` and `glassId` morphs.

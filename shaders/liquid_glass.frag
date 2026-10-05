@@ -5,17 +5,20 @@ precision highp float;
 // Float layout must match lib/src/shader/glass_uniforms.dart.
 uniform vec2 uSize;        // engine: texture size
 uniform vec4 uGlobal;      // count, dpr, lightAngle, opaque
-uniform vec4 uGlobal2;     // smoothing px, cornerExponent, highContrast, -
+uniform vec4 uGlobal2;     // smoothing px, cornerExponent, highContrast, composed frost sigma px
 uniform vec4 uOpaque;      // rgb
 uniform vec4 uTouch;       // x, y, glow, glowRadius px
 uniform vec4 uRects[16];   // x, y, w, h px
 uniform vec4 uInfo[16];    // radius px, variant(0 regular, 1 clear), cornerExponent (0 = global), fill scale
 uniform vec4 uTints[16];   // rgb, strength
-uniform vec4 uVar[12];     // per variant (regular A-F, then clear A-F):
+uniform vec4 uVar[20];     // per variant (regular A-J, then clear A-J):
                            //   A(lens decay px, band px, lens strength, disp) B(rimW, rimI, fillOpacity, dim)
                            //   C(shadowR, shadowO, tintS, lens size ref px) D(fillR, fillG, fillB, saturation)
                            //   E(frost wide sigma px, wide mix edge, wide mix centre, wide size ref px)
-                           //   F(wide size drop, -, -, -)
+                           //   F(wide size drop, glow strength, post-lens blur share, normal radius scale)
+                           //   G, H, I.x: tone LUT, 9 grey output knots at inputs i/8 (Task 17d)
+                           //   I.yz(lens edge px, lens edge decay px)
+                           //   J(rim mix, rim mix width px, rim mix cut px, rim mix luma floor)
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -40,11 +43,14 @@ float sdSuperellipseBox(vec2 p, vec2 halfSize, float r, float n) {
   return corner + min(max(q.x, q.y), 0.0) - r;
 }
 
-float shapeDist(int i, vec2 p) {
-  vec4 rc = uRects[i];
+// Index-free: the uniform arrays are indexed only inside the
+// constant-bounded loops, whose induction variable SkSL accepts as a
+// constant index expression (a function parameter is not one). `rs` scales
+// the corner radius (lens normals; 1 = the outline).
+float shapeOf(vec2 p, vec4 rc, vec4 info, float rs) {
   vec2 hs = rc.zw * 0.5;
-  float n = uInfo[i].z > 0.0 ? uInfo[i].z : uGlobal2.y;
-  return sdSuperellipseBox(p - (rc.xy + hs), hs, uInfo[i].x, n);
+  float n = info.z > 0.0 ? info.z : uGlobal2.y;
+  return sdSuperellipseBox(p - (rc.xy + hs), hs, info.x * rs, n);
 }
 
 float smin(float a, float b, float k) {
@@ -53,11 +59,17 @@ float smin(float a, float b, float k) {
   return min(a, b) - h * h * k * 0.25;
 }
 
-float field(vec2 p) {
+// Lens field (Task 17d, measured: SwiftUI displaces along the normals of a
+// rounder rect): the smooth union of the shapes with each corner radius x
+// its variant's normal radius scale (capped at half the shorter side by
+// sdSuperellipseBox). Its gradient gives the lens normals.
+float lensField(vec2 p) {
   float d = 1e6;
   for (int i = 0; i < 16; i++) {
     if (i >= int(uGlobal.x)) break;
-    d = smin(d, shapeDist(i, p), uGlobal2.x);
+    vec4 info = uInfo[i];
+    float rs = mix(uVar[5].w, uVar[15].w, info.y);
+    d = smin(d, shapeOf(p, uRects[i], info, rs), uGlobal2.x);
   }
   return d;
 }
@@ -83,7 +95,8 @@ void main() {
   float dmin = 1e6;
   for (int i = 0; i < 16; i++) {
     if (i >= count) break;
-    float di = shapeDist(i, px);
+    vec4 info = uInfo[i];
+    float di = shapeOf(px, uRects[i], info, 1.0);
     d = smin(d, di, uGlobal2.x);
     float e = max(di, 0.0);
     if (e < dmin) {
@@ -97,9 +110,9 @@ void main() {
     }
     float w = exp(-(e - dmin) / wk);
     wsum += w;
-    clearMix += w * uInfo[i].y;
+    clearMix += w * info.y;
     halfMin += w * 0.5 * min(uRects[i].z, uRects[i].w);
-    fillScale += w * uInfo[i].w;
+    fillScale += w * info.w;
     tint += w * uTints[i];
   }
   clearMix /= wsum;
@@ -107,12 +120,16 @@ void main() {
   fillScale /= wsum;
   tint /= wsum;
 
-  vec4 A = mix(uVar[0], uVar[6], clearMix);
-  vec4 B = mix(uVar[1], uVar[7], clearMix);
-  vec4 C = mix(uVar[2], uVar[8], clearMix);
-  vec4 D = mix(uVar[3], uVar[9], clearMix);
-  vec4 E = mix(uVar[4], uVar[10], clearMix);
-  vec4 F = mix(uVar[5], uVar[11], clearMix);
+  vec4 A = mix(uVar[0], uVar[10], clearMix);
+  vec4 B = mix(uVar[1], uVar[11], clearMix);
+  vec4 C = mix(uVar[2], uVar[12], clearMix);
+  vec4 D = mix(uVar[3], uVar[13], clearMix);
+  vec4 E = mix(uVar[4], uVar[14], clearMix);
+  vec4 F = mix(uVar[5], uVar[15], clearMix);
+  vec4 G = mix(uVar[6], uVar[16], clearMix);
+  vec4 H = mix(uVar[7], uVar[17], clearMix);
+  vec4 I = mix(uVar[8], uVar[18], clearMix);
+  vec4 J = mix(uVar[9], uVar[19], clearMix);
   float hc = uGlobal2.z;
 
   float inside = 1.0 - smoothstep(-0.75, 0.75, d);
@@ -136,10 +153,13 @@ void main() {
     return;
   }
 
-  float e = 1.0;
-  vec2 nrm = vec2(field(px + vec2(e, 0.0)) - field(px - vec2(e, 0.0)),
-                  field(px + vec2(0.0, e)) - field(px - vec2(0.0, e)));
-  nrm = normalize(nrm + vec2(1e-6));
+  float fxp = lensField(px + vec2(1.0, 0.0));
+  float fxm = lensField(px - vec2(1.0, 0.0));
+  float fyp = lensField(px + vec2(0.0, 1.0));
+  float fym = lensField(px - vec2(0.0, 1.0));
+  vec2 grad = vec2(fxp - fxm, fyp - fym) + vec2(1e-6);
+  float gradLen = length(grad);
+  vec2 nrm = grad / gradLen;
 
   // Lens v3, measured from SwiftUI (Task 15c, tool/fidelity/measure_lens.py):
   // the displacement along the normal falls off exponentially with depth
@@ -152,8 +172,18 @@ void main() {
   float decay = max(A.x, 1e-3);
   float sc = C.w > 0.0 ? min(1.0, halfMin / C.w) : 1.0;
   float cut = exp(-band / decay);
-  float v = max(exp(-max(depth, 0.0) / max(decay * sc, 1e-3)) - cut, 0.0) / max(1.0 - cut, 1e-6);
-  float lensAmt = A.z * (1.0 - 0.5 * hc) * band * sc * v;
+  float ls = max(decay * sc, 1e-3);
+  float ex = exp(-max(depth, 0.0) / ls);
+  float v = max(ex - cut, 0.0) / max(1.0 - cut, 1e-6);
+  float lensK = A.z * (1.0 - 0.5 * hc) * band * sc;
+  float lensAmt = lensK * v;
+  // d(lensAmt)/d(depth), for the post-lens blur's Jacobian.
+  float dLens = v > 0.0 ? -lensK * ex / ls / max(1.0 - cut, 1e-6) : 0.0;
+  // Lens edge term (Task 17d, measured: SwiftUI's lens is steeper in the
+  // outer 1-2 pt): an extra inward offset I.y x exp(-depth / I.z).
+  float le = I.y * exp(-max(depth, 0.0) / max(I.z, 1e-3));
+  lensAmt -= le;
+  dLens += le / max(I.z, 1e-3);
   vec2 sp = px + nrm * lensAmt;
 
   // Frost v2, measured from SwiftUI (Task 17c, tool/fidelity/measure_frost.py):
@@ -165,7 +195,34 @@ void main() {
   // the interior mirrored, with the interior's frost) relative to the half
   // shorter side, minus a size term for small shapes. Cost: 16 extra taps,
   // only where w > 0 (glass_model.py places them identically).
-  vec3 col = tex(sp).rgb;
+  // Post-lens blur (Task 17d): SwiftUI applies part of the frost after
+  // refraction. The composed blur is sigma x sqrt(1 - share) (uGlobal2.w);
+  // the rest, sigma x sqrt(share), is a 3x3 Gauss-Hermite rule in screen
+  // space mapped through the lens's Jacobian: 1 - dL/ddepth along the
+  // normal, 1 + L x curvature along the tangent (curvature of the lens
+  // field's level set, Laplacian / |gradient|).
+  vec3 col;
+  float share = F.z;
+  if (share > 0.0) {
+    float sPost = uGlobal2.w * sqrt(share / max(1.0 - share, 1e-6));
+    float lap = fxp + fxm + fyp + fym - 4.0 * lensField(px);
+    float kappa = lap / max(0.5 * gradLen, 1e-3);
+    float ja = clamp(1.0 - dLens, -4.0, 4.0) * sPost;
+    float jb = clamp(1.0 + lensAmt * kappa, -4.0, 4.0) * sPost;
+    vec2 tng = vec2(-nrm.y, nrm.x);
+    col = vec3(0.0);
+    for (int i = 0; i < 3; i++) {
+      float on = float(i - 1) * 1.7320508;
+      float wn = i == 1 ? 0.6666667 : 0.1666667;
+      for (int j = 0; j < 3; j++) {
+        float ot = float(j - 1) * 1.7320508;
+        float wt = j == 1 ? 0.6666667 : 0.1666667;
+        col += (wn * wt) * tex(sp + nrm * (ja * on) + tng * (jb * ot)).rgb;
+      }
+    }
+  } else {
+    col = tex(sp).rgb;
+  }
   float hmw = max(halfMin, 1.0);
   float wideW = E.y + (E.z - E.y) * (depth - lensAmt) / hmw;
   if (E.w > 0.0) wideW -= F.x * max(0.0, 1.0 - hmw / E.w);
@@ -190,6 +247,21 @@ void main() {
 
   float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));
   col = mix(vec3(luma), col, D.w);
+
+  // Tone LUT (Task 17d, glass_model.tone_apply): 9 grey knots at inputs
+  // i/8, hat-sum form, on the frosted backdrop before the fill wash (where
+  // SwiftUI's flat-grey response places it); identity knots reproduce col.
+  vec3 c8 = col * 8.0;
+  col = vec3(G.x)
+      + (vec3(G.y) - vec3(G.x)) * clamp(c8, 0.0, 1.0)
+      + (vec3(G.z) - vec3(G.y)) * clamp(c8 - 1.0, 0.0, 1.0)
+      + (vec3(G.w) - vec3(G.z)) * clamp(c8 - 2.0, 0.0, 1.0)
+      + (vec3(H.x) - vec3(G.w)) * clamp(c8 - 3.0, 0.0, 1.0)
+      + (vec3(H.y) - vec3(H.x)) * clamp(c8 - 4.0, 0.0, 1.0)
+      + (vec3(H.z) - vec3(H.y)) * clamp(c8 - 5.0, 0.0, 1.0)
+      + (vec3(H.w) - vec3(H.z)) * clamp(c8 - 6.0, 0.0, 1.0)
+      + (vec3(I.x) - vec3(H.w)) * clamp(c8 - 7.0, 0.0, 1.0);
+
   col = mix(col, D.rgb, B.z * fillScale);
   col *= (1.0 - B.w);
   col = mix(col, tint.rgb, tint.a);
@@ -200,10 +272,19 @@ void main() {
   float spec = rim * (max(dot(nrm, L), 0.0) + 0.35 * max(dot(nrm, -L), 0.0));
   col += B.y * (1.0 + hc) * spec;
 
+  // Isotropic rim (Task 17d, measured on clear glass): a mix toward white,
+  // alpha J.x ramping to 0 at depth J.y, cut at J.z; scaled by the glass
+  // luminance down to J.w (dark mode).
+  float ra = J.x * clamp(1.0 - depth / max(J.y, 1e-3), 0.0, 1.0)
+      * (1.0 - smoothstep(J.z - 0.5, J.z + 0.5, depth));
+  float rl = dot(col, vec3(0.2126, 0.7152, 0.0722));
+  ra *= J.w + (1.0 - J.w) * clamp(rl / 0.5, 0.0, 1.0);
+  col += (1.0 - col) * ra;
+
   if (uTouch.z > 0.0) {
     vec2 dt = px - uTouch.xy;
     float gr = max(uTouch.w, 1.0);
-    col += 0.25 * uTouch.z * exp(-dot(dt, dt) / (2.0 * gr * gr));
+    col += F.y * uTouch.z * exp(-dot(dt, dt) / (2.0 * gr * gr));
   }
 
   fragColor = vec4(clamp(col, 0.0, 1.0) * inside, inside) + shadow;

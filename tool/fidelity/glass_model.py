@@ -38,6 +38,22 @@ def _standard():
     return json.loads(_STANDARD_PATH.read_text())
 
 
+# Task 17d keys added after the 17c constants files; files without them
+# render exactly as before (GlassVariantConstants' Dart defaults).
+VARIANT_DEFAULTS = {
+    "toneKnots": [i / 8 for i in range(9)],
+    "glowStrength": 0.25,
+    "postBlurShare": 0.0,
+    "normalRadiusScale": 1.0,
+    "lensEdge": 0.0,
+    "lensEdgeDecay": 0.6,
+    "rimMix": 0.0,
+    "rimMixWidth": 1.5,
+    "rimMixCut": 1.0,
+    "rimMixLumaFloor": 1.0,
+}
+
+
 def resolve_constants(constants):
     """`constants` with every missing key filled from standard_constants.json,
     with GlassConstants.fromJson's partial-override semantics (per variant set,
@@ -48,6 +64,8 @@ def resolve_constants(constants):
         given = constants.get(k)
         if isinstance(v, dict):
             out[k] = {**v, **(given or {})}
+            if k in ("regular", "clear", "regularDark", "clearDark"):
+                out[k] = {**VARIANT_DEFAULTS, **out[k]}
         else:
             out[k] = v if given is None else given
     return out
@@ -206,6 +224,10 @@ def frost_taps(sigma_px):
     return np.array(out)
 
 
+# 3-point Gauss-Hermite rule for a unit Gaussian: nodes 0, +-sqrt(3).
+POST_TAPS = ((-np.sqrt(3.0), 1.0 / 6.0), (0.0, 2.0 / 3.0), (np.sqrt(3.0), 1.0 / 6.0))
+
+
 def frost_wide_mix(sample_depth, half_min, v):
     """Weight of the wide frost at a pixel whose lens sample lies
     `sample_depth` inside a shape of half shorter side `half_min` (same
@@ -232,17 +254,23 @@ def fill_size_factor(shape, v):
     return 1.0 - float(v["fillSizeDrop"]) * (1.0 - min(1.0, half_min / ref))
 
 
+POST_SHARE_MAX = 0.9
+
+
 def group_blur_sigma(scene, constants):
     """Frost sigma (pt) of the group's one composed blur, as the renderer
     picks it (Task 17b): per drawn shape `blurSigma * min(1, halfMin /
     blurSizeRef)` (halfMin = half the shorter side; blurSizeRef <= 0 means no
-    scaling), and the largest of those."""
+    scaling) times sqrt(1 - postBlurShare) (Task 17d: that share of the
+    variance is applied by the shader after the lens), and the largest of
+    those."""
     out = 0.0
     for s in scene["shapes"]:
         v = constants[variant_key(s, scene["brightness"])]
         ref = float(v["blurSizeRef"])
         k = min(1.0, 0.5 * min(s["w"], s["h"]) / ref) if ref > 0 else 1.0
-        out = max(out, float(v["blurSigma"]) * k)
+        share = min(max(float(v.get("postBlurShare", 0.0)), 0.0), POST_SHARE_MAX)
+        out = max(out, float(v["blurSigma"]) * k * np.sqrt(1.0 - share))
     return out
 
 
@@ -284,6 +312,7 @@ def _uvar(constants, brightness, scale):
     res = []
     for base in ("regular", "clear"):
         v = constants[base + ("Dark" if brightness == "dark" else "")]
+        knots = np.asarray(v["toneKnots"], np.float64)
         res.append({
             "A": np.array([v["lensDecay"] * scale, v["lensBand"] * scale,
                            v["lensStrength"], v["dispersion"]]),
@@ -294,9 +323,27 @@ def _uvar(constants, brightness, scale):
             "D": np.concatenate([parse_hex(v["fillColor"]), [v["saturation"]]]),
             "E": np.array([v["frostWideSigma"] * scale, v["frostWideMixEdge"],
                            v["frostWideMixCentre"], v["frostWideSizeRef"] * scale]),
-            "F": np.array([v["frostWideSizeDrop"], 0.0, 0.0, 0.0]),
+            "F": np.array([v["frostWideSizeDrop"], v["glowStrength"],
+                           min(max(v["postBlurShare"], 0.0), POST_SHARE_MAX),
+                           v["normalRadiusScale"]]),
+            # Tone LUT: grey, output values at inputs i/8 (Task 17d).
+            "G": knots[0:4].copy(),
+            "H": knots[4:8].copy(),
+            "I": np.array([knots[8], v["lensEdge"] * scale,
+                           v["lensEdgeDecay"] * scale, 0.0]),
+            "J": np.array([v["rimMix"], v["rimMixWidth"] * scale,
+                           v["rimMixCut"] * scale, v["rimMixLumaFloor"]]),
         })
     return res
+
+
+def tone_apply(col, k):
+    """Piecewise-linear tone LUT with inputs at i/8 and per-pixel knot
+    values `k` (9, N): the hat-sum form of the shader's `Tone()`.
+    `col` is (3, N); returns (3, N)."""
+    seg = (k[1:] - k[:-1])[:, None, :]                                    # (8,1,N)
+    x = np.clip(col * 8.0 - np.arange(8).reshape(8, 1, 1), 0.0, 1.0)      # (8,3,N)
+    return k[0] + (seg * x).sum(0)
 
 
 def _work_box(scene, scale, W, H, pad):
@@ -309,9 +356,11 @@ def _work_box(scene, scale, W, H, pad):
 
 
 @functools.lru_cache(maxsize=256)
-def _geometry(scene_json, corner_exponent, merge_factor, scale, W, H, pad):
-    """Everything that depends only on the shapes, cornerExponent and
-    mergeFactor: field, normals, attribute weights."""
+def _geometry(scene_json, corner_exponent, merge_factor, scale, W, H, pad,
+              nrs_regular=1.0, nrs_clear=1.0):
+    """Everything that depends only on the shapes, cornerExponent,
+    mergeFactor and the per-variant normalRadiusScale: field, lens normals,
+    lens-field curvature, attribute weights."""
     scene = json.loads(scene_json)
     shapes = scene_shapes(scene, {"cornerExponent": corner_exponent}, scale)
     spacing = scene.get("spacing")
@@ -336,13 +385,24 @@ def _geometry(scene_json, corner_exponent, merge_factor, scale, W, H, pad):
     # Half the shorter side, blended like the other attributes (lens size).
     half_min = sum(w * 0.5 * min(s["rect"][2], s["rect"][3]) for w, s in zip(weights, shapes))
 
-    # Normals by +-1 px central differences of the field.
-    nx = field(shapes, px + 1, py, k) - field(shapes, px - 1, py, k) + 1e-6
-    ny = field(shapes, px, py + 1, k) - field(shapes, px, py - 1, k) + 1e-6
+    # Lens normals (Task 17d, measured: SwiftUI displaces along the normals
+    # of a rounder rect): +-1 px central differences of the lens field, the
+    # smooth union of each shape with its radius x normalRadiusScale (capped
+    # at half the shorter side). Scale 1 is the outline's own field.
+    lens = [{**s_, "radius": min(s_["radius"] * (nrs_clear if s_["clear"] else nrs_regular),
+                                 0.5 * min(s_["rect"][2], s_["rect"][3]))}
+            for s_ in shapes]
+    fxp, fxm = field(lens, px + 1, py, k), field(lens, px - 1, py, k)
+    fyp, fym = field(lens, px, py + 1, k), field(lens, px, py - 1, k)
+    nx = fxp - fxm + 1e-6
+    ny = fyp - fym + 1e-6
     nl = np.sqrt(nx * nx + ny * ny)
+    # Curvature of the lens field's level set: Laplacian / |grad| (px^-1).
+    lap = fxp + fxm + fyp + fym - 4.0 * field(lens, px, py, k)
+    kappa = lap / np.maximum(0.5 * nl, 1e-3)
     return {"box": (bx0, by0, bx1, by1), "px": px, "py": py, "d": d,
-            "nx": nx / nl, "ny": ny / nl, "weights": weights, "shapes": shapes,
-            "half_min": half_min}
+            "nx": nx / nl, "ny": ny / nl, "kappa": kappa, "weights": weights,
+            "shapes": shapes, "half_min": half_min}
 
 
 def _smoothstep(e0, e1, x):
@@ -360,8 +420,11 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     brightness = scene["brightness"]
     spacing = scene.get("spacing")
     merge_factor = float(constants["mergeFactor"])
+    br_ = "Dark" if brightness == "dark" else ""
     g = _geometry(json.dumps(scene, sort_keys=True), float(constants["cornerExponent"]),
-                  merge_factor, float(scale), W, H, float(pad_pt))
+                  merge_factor, float(scale), W, H, float(pad_pt),
+                  float(constants["regular" + br_]["normalRadiusScale"]),
+                  float(constants["clear" + br_]["normalRadiusScale"]))
     bx0, by0, bx1, by1 = g["box"]
     shapes, weights = g["shapes"], g["weights"]
 
@@ -381,11 +444,12 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     uv = _uvar(constants, brightness, scale)
     if np.all(clear_mix == 0) or np.all(clear_mix == 1):
         u = uv[1] if np.all(clear_mix == 1) else uv[0]
-        A, B, C, D, E, F = (u[n] for n in "ABCDEF")
+        A, B, C, D, E, F, G, H, I, J = (u[n] for n in "ABCDEFGHIJ")
     else:
         cm = np.asarray(clear_mix)[..., None]
-        A, B, C, D, E, F = (uv[0][n] * (1 - cm) + uv[1][n] * cm for n in "ABCDEF")
-    A, B, C, D, E, F = (np.broadcast_to(x, g["d"].shape + (4,)) for x in (A, B, C, D, E, F))
+        A, B, C, D, E, F, G, H, I, J = (uv[0][n] * (1 - cm) + uv[1][n] * cm for n in "ABCDEFGHIJ")
+    A, B, C, D, E, F, I, J = (np.broadcast_to(x, g["d"].shape + (4,))
+                              for x in (A, B, C, D, E, F, I, J))
 
     d, nx, ny, px, py = g["d"], g["nx"], g["ny"], g["px"], g["py"]
     inside = 1.0 - _smoothstep(-0.75, 0.75, d)
@@ -404,6 +468,15 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     t = np.maximum(np.exp(-np.maximum(depth, 0.0) / np.maximum(decay * sc, 1e-3)) - cut,
                    0.0) / np.maximum(1.0 - cut, 1e-6)  # profile weight v (also weights dispersion)
     lens_amt = A[..., 2] * band * sc * t  # == lens_v3(depth, half_min, -strength*band, ...)
+    # d(lens_amt)/d(depth), for the post-lens blur's Jacobian.
+    dlens = np.where(t > 0, -A[..., 2] * band * sc * np.exp(
+        -np.maximum(depth, 0.0) / np.maximum(decay * sc, 1e-3)) / np.maximum(
+        decay * sc, 1e-3) / np.maximum(1.0 - cut, 1e-6), 0.0)
+    # Lens edge term (Task 17d, measured: SwiftUI's lens is steeper in the
+    # outer 1-2 pt): an extra inward offset lensEdge x exp(-depth / decay).
+    le = I[..., 1] * np.exp(-np.maximum(depth, 0.0) / np.maximum(I[..., 2], 1e-3))
+    lens_amt = lens_amt - le
+    dlens = dlens + le / np.maximum(I[..., 2], 1e-3)
     spx = px + nx * lens_amt
     spy = py + ny * lens_amt
     dxp = nx * lens_amt * A[..., 3]
@@ -427,7 +500,26 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
 
     sharp = bg[by0:by1, bx0:bx1]
     m = inside > 0  # the shader returns the shadow only where inside <= 0
-    col = _sample(tex, tx0, ty0, spx[m], spy[m])
+    share = F[..., 2][m]
+    if np.any(share > 0):
+        # Post-lens blur (Task 17d): the share of the frost variance that
+        # SwiftUI applies after refraction. The composed blur is sigma x
+        # sqrt(1 - share); here a 3x3 Gauss-Hermite rule of sigma x
+        # sqrt(share) in screen space, mapped through the lens's Jacobian
+        # (normal: 1 - dL/ddepth, tangent: 1 + L x curvature).
+        sp_post = sigma * scale * np.sqrt(share / np.maximum(1.0 - share, 1e-6))
+        ja = np.clip(1.0 - dlens[m], -4.0, 4.0)
+        jb = np.clip(1.0 + lens_amt[m] * g["kappa"][m], -4.0, 4.0)
+        nxm, nym = nx[m], ny[m]
+        col = 0.0
+        for on, wn in POST_TAPS:
+            for ot, wt in POST_TAPS:
+                a_ = ja * on * sp_post
+                b_ = jb * ot * sp_post
+                col = col + (wn * wt) * _sample(tex, tx0, ty0, spx[m] + nxm * a_ - nym * b_,
+                                                spy[m] + nym * a_ + nxm * b_)
+    else:
+        col = _sample(tex, tx0, ty0, spx[m], spy[m])
     wm = wide_w[m]
     if np.any(wm > 0):
         unit = frost_taps(1.0)
@@ -445,6 +537,14 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     Dm, Bm, tim = D[m], B[m], tint[m]
     luma = (col * LUMA).sum(-1, keepdims=True)
     col = luma + (col - luma) * Dm[:, 3:4]
+    # Tone LUT (Task 17d): grey knots blended across variants like the other
+    # uniform blocks. Physically Apple's tone sits on the blurred backdrop
+    # before the fill wash (flat-exact placement; the post-fill placement
+    # distorted content contrast).
+    kr = np.concatenate([uv[0]["G"][:4], uv[0]["H"][:4], uv[0]["I"][:1]])
+    kc = np.concatenate([uv[1]["G"][:4], uv[1]["H"][:4], uv[1]["I"][:1]])
+    cm1 = np.broadcast_to(np.asarray(clear_mix), g["d"].shape)[m]
+    col = tone_apply(col.T, kr[:, None] * (1 - cm1) + kc[:, None] * cm1).T
     fsm = np.broadcast_to(fill_scale, g["d"].shape)[m][:, None]
     col = col + (Dm[:, :3] - col) * (Bm[:, 2:3] * fsm)
     col = col * (1.0 - Bm[:, 3:4])
@@ -455,7 +555,17 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     rim = 1.0 - _smoothstep(0.0, rim_w, depth[m])
     ndl = nx[m] * lx + ny[m] * ly
     spec = rim * (np.maximum(ndl, 0.0) + 0.35 * np.maximum(-ndl, 0.0))
-    col = np.clip(col + (Bm[:, 1] * spec)[:, None], 0.0, 1.0)
+    col = col + (Bm[:, 1] * spec)[:, None]
+    # Isotropic rim (Task 17d, measured on clear glass): a mix toward white,
+    # alpha rimMix ramping to 0 at rimMixWidth, cut at rimMixCut; scaled by
+    # backdrop luminance down to rimMixLumaFloor (dark mode).
+    Jm = J[m]
+    dm = depth[m]
+    ra = Jm[:, 0] * np.clip(1.0 - dm / np.maximum(Jm[:, 1], 1e-3), 0.0, 1.0) * (
+        1.0 - _smoothstep(Jm[:, 2] - 0.5, Jm[:, 2] + 0.5, dm))
+    lum = (col * LUMA).sum(-1)
+    ra = ra * (Jm[:, 3] + (1.0 - Jm[:, 3]) * np.clip(lum / 0.5, 0.0, 1.0))
+    col = np.clip(col + (1.0 - col) * ra[:, None], 0.0, 1.0)
 
     out_rgb = np.zeros(sharp.shape)
     out_rgb[m] = col * inside[m][:, None]  # premultiplied glass
