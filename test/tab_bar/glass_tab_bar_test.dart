@@ -448,4 +448,29 @@ void main() {
     expect(_lens, findsNothing);
     await t.pumpAndSettle();
   }, variant: ios);
+
+  testWidgets('after release the selected tint settles without flickering', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    final from = t.getCenter(find.text('History'));
+    final to = t.getCenter(find.text('Settings'));
+    final g = await t.startGesture(from);
+    for (var i = 0; i < 30; i++) {
+      await g.moveTo(Offset.lerp(from, to, (i / 20).clamp(0, 1))!);
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    await g.up();
+    final tinted = <bool>[];
+    for (var i = 0; i < 90; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+      tinted.add(_labelColor(t, 'Settings') == _blue);
+    }
+    // Once the tint comes on it stays on: no off/on toggling as the
+    // release spring settles.
+    final first = tinted.indexOf(true);
+    expect(first, isNonNegative);
+    expect(tinted.sublist(first), everyElement(isTrue));
+  }, variant: ios);
 }

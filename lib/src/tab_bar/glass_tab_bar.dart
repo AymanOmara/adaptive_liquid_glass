@@ -492,7 +492,8 @@ class _GlassTabBarState extends State<GlassTabBar>
     // Only a lens that is held or still visibly grown is drawn: a release
     // spring rebounds a hair above zero, and a hair-thin lens would still
     // refract a ghost of the tabs over the pill.
-    final lensShown = _held || p > 0.02;
+    // (The release spring's second rebound peaks near 0.016.)
+    final lensShown = _held || p > 0.05;
     final x = _toPixels(_x.value);
     // The wobble belongs to the held lens: it fades with it and never
     // reaches the pill.
@@ -552,7 +553,10 @@ class _GlassTabBarState extends State<GlassTabBar>
                         ClipPath(
                           clipper: _Hole(lensShown ? lens : null),
                           child: _row(
-                            (i) => t == 0 && i == widget.selectedIndex
+                            // Gated like the lens, not on p == 0: the
+                            // settling spring crosses zero several times and
+                            // would flicker the tint off and on.
+                            (i) => !lensShown && i == widget.selectedIndex
                                 ? selected
                                 : null,
                             semantics: true,
