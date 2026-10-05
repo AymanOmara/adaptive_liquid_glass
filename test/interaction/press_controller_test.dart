@@ -24,7 +24,10 @@ void main() {
     final g = c.geometry();
     expect(c.amount, closeTo(1, 0.01));
     expect(g.scaleX, greaterThan(g.scaleY)); // stretched along x
-    expect(g.scaleY, closeTo(1 + motion.motion.pressScale, 0.01));
+    expect(
+      g.scaleY,
+      closeTo(pressScaleFor(motion.motion, const Size(100, 40)), 0.01),
+    );
     expect(g.translation.dx, greaterThan(0));
     expect(g.translation.dy, closeTo(0, 1e-6));
     expect(g.glow, closeTo(1, 0.01));
@@ -63,11 +66,123 @@ void main() {
     addTearDown(c.dispose);
     c.down(const Offset(100, 20), const Size(100, 40));
     await t.pump(); // ticker starts on the first frame
-    await t.pump(const Duration(seconds: 1));
+    // Settle: the fitted press spring needs just over 1 s.
+    await t.pump(const Duration(seconds: 2));
     final g = c.geometry();
     expect(g.scaleX, 1);
     expect(g.scaleY, 1);
     expect(g.translation, Offset.zero);
     expect(g.glow, greaterThan(0.9));
+  });
+
+  test('press scale grows a fixed area, capped (SwiftUI, Task 16b)', () {
+    const m = GlassMotionConstants(
+      pressGrowthArea: 1800,
+      pressScaleMax: 1.36,
+      pressStretch: 0,
+      glowRadius: 41,
+      pressResponse: 0.3,
+      pressDamping: 0.6,
+      releaseResponse: 0.4,
+      releaseDamping: 0.5,
+      morphResponse: 0.5,
+      morphDamping: 0.7,
+    );
+    // sqrt(1 + 1800 / (200·56)) = 1.077; a 120 pt circle 1.060.
+    expect(pressScaleFor(m, const Size(200, 56)), closeTo(1.077, 0.001));
+    expect(pressScaleFor(m, const Size(120, 120)), closeTo(1.0606, 0.001));
+    // Small shapes hit the cap.
+    expect(pressScaleFor(m, const Size(20, 20)), 1.36);
+    expect(pressScaleFor(m, Size.zero), 1.36);
+  });
+
+  testWidgets('release follows the release spring', (t) async {
+    final slow = GlassMotionConstants.fromJson({
+      'pressResponse': 0.1,
+      'releaseResponse': 1.5,
+      'releaseDamping': 1.0,
+    }, motion.motion);
+    final c = GlassPressController(vsync: const TestVSync(), motion: slow);
+    addTearDown(c.dispose);
+    c.down(const Offset(50, 20), const Size(100, 40));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400)); // fast press-in
+    expect(c.amount, closeTo(1, 0.02));
+    c.up();
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400)); // slow release
+    expect(c.amount, greaterThan(0.5));
+    await t.pump(const Duration(seconds: 6));
+    expect(c.amount, 0);
+  });
+
+  testWidgets('press again mid-release springs back up from where it was', (
+    t,
+  ) async {
+    final c = GlassPressController(
+      vsync: const TestVSync(),
+      motion: motion.motion,
+    );
+    addTearDown(c.dispose);
+    c.down(const Offset(50, 20), const Size(100, 40));
+    await t.pump();
+    await t.pump(const Duration(seconds: 1));
+    c.up();
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 100));
+    final mid = c.amount;
+    expect(mid, inExclusiveRange(0.05, 0.95));
+    c.down(const Offset(50, 20), const Size(100, 40));
+    await t.pump();
+    // Continuous: no jump at the interruption.
+    expect(c.amount, closeTo(mid, 0.05));
+    await t.pump(const Duration(seconds: 2));
+    expect(c.amount, closeTo(1, 0.01));
+  });
+
+  testWidgets('release mid-press returns to rest from where it was', (t) async {
+    final c = GlassPressController(
+      vsync: const TestVSync(),
+      motion: motion.motion,
+    );
+    addTearDown(c.dispose);
+    c.down(const Offset(50, 20), const Size(100, 40));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 60));
+    final mid = c.amount;
+    expect(mid, inExclusiveRange(0.05, 0.95));
+    c.up();
+    await t.pump();
+    expect(c.amount, closeTo(mid, 0.1));
+    await t.pump(const Duration(seconds: 3));
+    expect(c.amount, 0);
+    expect(c.geometry(), same(GlassPressGeometry.identity));
+  });
+
+  test('motion constants round-trip through JSON, new fields included', () {
+    final m = motion.motion;
+    final j = m.toJson();
+    for (final k in [
+      'pressGrowthArea',
+      'pressScaleMax',
+      'releaseResponse',
+      'releaseDamping',
+    ]) {
+      expect(j, contains(k));
+    }
+    expect(GlassMotionConstants.fromJson(j, m), m);
+    final other = GlassMotionConstants.fromJson({
+      'pressGrowthArea': 900.0,
+      'pressScaleMax': 1.2,
+      'releaseResponse': 0.5,
+      'releaseDamping': 0.9,
+    }, m);
+    expect(other.pressGrowthArea, 900);
+    expect(other.pressScaleMax, 1.2);
+    expect(other.releaseResponse, 0.5);
+    expect(other.releaseDamping, 0.9);
+    expect(other.pressResponse, m.pressResponse);
+    expect(GlassMotionConstants.fromJson(other.toJson(), m), other);
+    expect(GlassConstants.fromJson(GlassConstants.standard.toJson()).motion, m);
   });
 }

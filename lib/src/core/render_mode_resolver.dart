@@ -3,10 +3,15 @@ import 'package:flutter/foundation.dart';
 import 'glass_environment.dart';
 import 'glass_render_mode.dart';
 
-/// Resolves the rendering path. Order is spec §5 as amended in §14.2.
+/// Resolves the rendering path. Order is spec §5 as amended in §14.2,
+/// with native glass the default on iOS 26+ (Task N1).
+///
+/// `auto` is SwiftUI's own glass on iOS 26 and later, the shader below
+/// (degraded without shader support) and Material elsewhere. Reduce
+/// Transparency makes the Flutter-drawn paths opaque; native glass handles
+/// it itself, as SwiftUI does.
 EffectiveGlassMode resolveGlassMode({
   required GlassRenderMode requested,
-  required bool nativeEnabled,
   required GlassEnvironment environment,
 }) {
   final isIOS = environment.platform == TargetPlatform.iOS;
@@ -20,11 +25,12 @@ EffectiveGlassMode resolveGlassMode({
     GlassRenderMode.shader => shaderPath,
     GlassRenderMode.native =>
       nativeAvailable ? EffectiveGlassMode.native : shaderPath,
-    GlassRenderMode.auto => !isIOS
-        ? EffectiveGlassMode.material
-        : (nativeEnabled && nativeAvailable)
-            ? EffectiveGlassMode.native
-            : shaderPath,
+    GlassRenderMode.auto =>
+      !isIOS
+          ? EffectiveGlassMode.material
+          : nativeAvailable
+          ? EffectiveGlassMode.native
+          : shaderPath,
   };
 
   if (environment.reduceTransparency &&

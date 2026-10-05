@@ -180,3 +180,54 @@ fits `lens_v3` to 1–2 px rms: amplitude 47 pt, decay 6.4–6.5 pt, cut-off ban
 `halfMin / 38.4 pt` on smaller shapes (clear does not, down to 28 pt). These are
 the shipped `lensStrength`, `lensBand`, `lensDecay` and `lensSizeRef`. Decoding
 Flutter captures of the same scenes returns the shipped values to within 0.3 %.
+
+## Motion: press and morph (Tasks 16, 16b)
+
+`tool/scenes/gen_motion.py` writes `tool/scenes/motion.json` (copy it to
+`example/assets/motion.json`). `record_motion.sh` records every motion in both
+renderers on the motion simulator (7E156D58) and `compare_motion.py` scores
+Flutter against SwiftUI frame by frame with the static bars, and fits springs
+and press amplitudes from the glass bounding box.
+
+```
+tool/fidelity/record_motion.sh build/fidelity/run [id-prefix]       # both renderers
+RENDERERS=swiftui SKIP_BUILD=1 tool/fidelity/record_motion.sh build/fidelity/run-b
+tool/fidelity/.venv/bin/python tool/fidelity/compare_motion.py build/fidelity/run [--strips DIR]
+tool/fidelity/.venv/bin/python tool/fidelity/compare_motion.py build/fidelity/run --noise-ref build/fidelity/run-b
+```
+
+**Capture (lossless).** The app's `-dump x,y,w,h,frames` renders the crop
+through the render server on every display frame, from a display link on its
+own thread (`FrameDump` in `example/ios/Runner/MotionScenes.swift`); the
+pixels equal `simctl io screenshot` within 1/255 for both renderers. The
+recorder resamples the frames to a 60 fps grid by their time stamps
+(`<id>.<renderer>.times.json`; a display frame the capture missed is listed
+as `held` and not scored). `DUMP=0` falls back to h264 (`simctl io
+recordVideo`), which costs about 0.04 SSIM. Disk guards: the recorder stops
+under 20 GB free (`MIN_FREE_GB`) or above 3 GB per run (`MAX_RUN_GB`); a run
+of all motions in both renderers is about 0.4 GB. Delete `frames/` after
+scoring.
+
+**Alignment.** Each clip is aligned at its own first change; presses are
+aligned again at the touch-up (idb's hold timer jitters by frames), and each
+segment gets a sub-frame phase (the second clip is interpolated between
+neighbouring frames, one phase per segment), because SwiftUI animates from
+the touch time while the capture samples at display frames. Every score is
+shift-refined: frames are compared after this alignment. The report keeps
+the raw timing apart: `onset_offset` and `release_offset` are the unaligned
+first-change differences (frames, Flutter minus SwiftUI; each take starts
+its capture 0.8 s before the touch, so they are the touch-to-pixels latency
+difference plus idb's touch jitter), and `shift`/`release_shift` are the
+refinements applied on top.
+
+**Noise floor.** `--noise-ref DIR` scores each renderer's clips of one run
+against the same renderer's clips of another (`noise_report.json`). Measured
+(Task 16b, SwiftUI against SwiftUI): runs B and C pass the static bars on
+every frame in 5 of 5 motions (worst SSIM 0.970, worst ΔE 1.03), but only
+after discarding run A, recorded right after a build, which had SwiftUI
+hitches (a frame repeated mid-motion): A against B passed 3 of 5 and C
+against A 2 of 5 (1–3 failing frames each). The 5 of 5 holds for clean takes
+only. `--noise-ref` flags this: a frame repeated mid-motion in one take but
+not the other prints `HITCH` (`hitch` in the report, window positions per
+take); re-record the hitching run before trusting the floor or a Flutter
+score.

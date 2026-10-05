@@ -11,7 +11,7 @@ final ios = TargetPlatformVariant.only(TargetPlatform.iOS);
 
 void env() => GlassPlatform.instance.debugEnvironment = const GlassEnvironment(
   platform: TargetPlatform.iOS,
-  iosMajorVersion: 26,
+  iosMajorVersion: 18,
   reduceTransparency: false,
   shaderSupported: true,
 );

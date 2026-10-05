@@ -7,8 +7,61 @@ import '../core/glass_constants.dart';
 import '../core/glass_shape.dart';
 import '../core/shape_border.dart';
 
+/// The paint values of shader-less glass: blur, fill and rim.
+@immutable
+class DegradedLook {
+  /// Resolves the look of [glass] in [brightness].
+  factory DegradedLook.of(
+    Glass glass,
+    GlassConstants constants,
+    Brightness brightness,
+  ) {
+    final c = constants.of(glass.variant, brightness);
+    final tint = glass.tintColor;
+    return DegradedLook._(
+      blurSigma: c.blurSigma,
+      fill: tint != null
+          ? tint.withValues(alpha: c.tintStrength * tint.a)
+          : c.fillColor.withValues(alpha: c.fillOpacity),
+      rim: BorderSide(
+        color: const Color(0xFFFFFFFF).withValues(alpha: c.rimIntensity * 0.6),
+        width: c.rimWidth,
+      ),
+    );
+  }
+
+  const DegradedLook._({
+    required this.blurSigma,
+    required this.fill,
+    required this.rim,
+  });
+
+  /// Backdrop blur sigma, logical px.
+  final double blurSigma;
+
+  /// Body fill.
+  final Color fill;
+
+  /// Edge highlight.
+  final BorderSide rim;
+
+  @override
+  bool operator ==(Object other) =>
+      other is DegradedLook &&
+      other.blurSigma == blurSigma &&
+      other.fill == fill &&
+      other.rim == rim;
+
+  @override
+  int get hashCode => Object.hash(blurSigma, fill, rim);
+}
+
 /// Glass without shader support: blur, tint and a rim; no lensing or merging.
-class DegradedGlass extends StatelessWidget {
+///
+/// Under Reduce Transparency it is a solid fill instead. The two trees
+/// differ, so the child sits under a [GlobalKey]: toggling the setting
+/// reparents it rather than remounting it.
+class DegradedGlass extends StatefulWidget {
   /// Creates a degraded glass surface.
   const DegradedGlass({
     super.key,
@@ -35,14 +88,21 @@ class DegradedGlass extends StatelessWidget {
   final Widget child;
 
   @override
+  State<DegradedGlass> createState() => _DegradedGlassState();
+}
+
+class _DegradedGlassState extends State<DegradedGlass> {
+  final GlobalKey _content = GlobalKey();
+
+  @override
   Widget build(BuildContext context) {
+    final glass = widget.glass;
+    final child = KeyedSubtree(key: _content, child: widget.child);
     if (glass.variant == GlassVariant.identity) return child;
+    final shape = widget.shape;
+    final constants = widget.constants;
+    final opaqueColor = widget.opaqueColor;
     final border = sizeIndependentBorder(shape);
-    final c = constants.of(
-      glass.variant,
-      MediaQuery.platformBrightnessOf(context),
-    );
-    final tint = glass.tintColor;
 
     final opaque = opaqueColor;
     if (opaque != null) {
@@ -52,24 +112,22 @@ class DegradedGlass extends StatelessWidget {
       );
     }
 
-    final fill = tint != null
-        ? tint.withValues(alpha: c.tintStrength * tint.a)
-        : c.fillColor.withValues(alpha: c.fillOpacity);
+    final look = DegradedLook.of(
+      glass,
+      constants,
+      MediaQuery.platformBrightnessOf(context),
+    );
     return ClipPath(
       clipper: ShapeBorderClipper(shape: border),
       child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: c.blurSigma, sigmaY: c.blurSigma),
+        filter: ui.ImageFilter.blur(
+          sigmaX: look.blurSigma,
+          sigmaY: look.blurSigma,
+        ),
         child: DecoratedBox(
           decoration: ShapeDecoration(
-            color: fill,
-            shape: border.copyWith(
-              side: BorderSide(
-                color: const Color(
-                  0xFFFFFFFF,
-                ).withValues(alpha: c.rimIntensity * 0.6),
-                width: c.rimWidth,
-              ),
-            ),
+            color: look.fill,
+            shape: border.copyWith(side: look.rim),
           ),
           child: child,
         ),

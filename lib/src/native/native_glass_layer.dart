@@ -4,15 +4,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../core/glass.dart';
-import '../core/glass_shape.dart';
 import '../group/entry_geometry.dart';
 import '../group/glass_registry.dart';
 
 /// How far the native view extends past the group on each side.
 const double kNativeOverhang = 24;
 
-/// Hosts Apple's glass (`UIGlassContainerEffect` + `UIGlassEffect`) behind
-/// the group's content and keeps its shapes in sync.
+/// Hosts SwiftUI's own Liquid Glass (a `GlassEffectContainer` with one
+/// `.glassEffect` view per member) behind the group's content and keeps its
+/// shapes, appearance and unions in sync.
 class NativeGlassLayer extends StatefulWidget {
   /// Creates the layer.
   const NativeGlassLayer({
@@ -41,6 +41,26 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
 
   /// The last payload sent, to skip identical pushes.
   Map<String, Object?>? _lastSent;
+
+  /// Whether the glass renders in dark appearance (the platform brightness
+  /// in scope, as the shader path uses).
+  bool _dark = false;
+
+  /// A stable id per entry (SwiftUI's `ForEach` identity), so a member keeps
+  /// its id when others are added or removed.
+  final Expando<int> _ids = Expando<int>('native glass id');
+  int _nextId = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dark =
+        MediaQuery.maybePlatformBrightnessOf(context) == Brightness.dark;
+    if (dark != _dark) {
+      _dark = dark;
+      _schedule();
+    }
+  }
 
   @override
   void initState() {
@@ -91,6 +111,8 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
     final fromGlobal = Matrix4.tryInvert(toGlobal);
     if (fromGlobal == null) return;
     final shapes = <Map<String, Object?>>[];
+    // unionId objects become small indices (SwiftUI's glassEffectUnion id).
+    final unions = <Object, int>{};
     for (final g in collectEntryGeometry(widget.registry, toGlobal)) {
       final local = MatrixUtils.transformRect(fromGlobal, g.drawn);
       // Same contract as the shader renderer: where the entry was drawn,
@@ -98,26 +120,29 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
       // before the platform view exists.
       g.entry.lastDrawnLocal = local;
       final r = local.shift(const Offset(kNativeOverhang, kNativeOverhang));
-      final shape = g.entry.shape;
       final glass = g.entry.glass;
       shapes.add({
+        'id': _ids[g.entry] ??= _nextId++,
         'x': r.left,
         'y': r.top,
         'w': r.width,
         'h': r.height,
         'radius': g.radius,
-        'capsule':
-            shape is CapsuleGlassShape ||
-            (shape is ConcentricGlassShape && g.entry.container == null),
+        'capsule': g.circularCorners,
         'variant': glass.variant == GlassVariant.clear ? 1 : 0,
         'tint': glass.tintColor?.toARGB32(),
         'interactive': glass.isInteractive,
+        'union': switch (g.entry.unionId) {
+          null => null,
+          final id => unions.putIfAbsent(id, () => unions.length),
+        },
       });
     }
     final channel = _channel;
     if (channel == null) return;
     final payload = <String, Object?>{
       'spacing': widget.spacing,
+      'dark': _dark,
       'shapes': shapes,
     };
     final last = _lastSent;
@@ -127,7 +152,7 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
   }
 
   static bool _samePayload(Map<String, Object?> a, Map<String, Object?> b) {
-    if (a['spacing'] != b['spacing']) return false;
+    if (a['spacing'] != b['spacing'] || a['dark'] != b['dark']) return false;
     final sa = a['shapes']! as List<Map<String, Object?>>;
     final sb = b['shapes']! as List<Map<String, Object?>>;
     if (sa.length != sb.length) return false;
@@ -164,6 +189,7 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
               viewType: 'adaptive_liquid_glass/native_glass',
               creationParams: <String, Object?>{
                 'spacing': widget.spacing,
+                'dark': _dark,
                 'shapes': const <Object?>[],
               },
               creationParamsCodec: const StandardMessageCodec(),
