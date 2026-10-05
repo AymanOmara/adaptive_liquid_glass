@@ -88,6 +88,54 @@ void main() {
     }
   });
 
+  testWidgets('a brightness flip rebuilds the glass and settles again', (
+    tester,
+  ) async {
+    await tester.pumpWidget(scene(120));
+    await settle(tester);
+    final id = tester.allRenderObjects
+        .whereType<RenderUiKitView>()
+        .single
+        .viewController
+        .id;
+    final channel = MethodChannel('adaptive_liquid_glass/native_glass_$id');
+
+    var s = await state(channel);
+    expect(s['visible'], true);
+    expect(s['dark'], false);
+    expect(s['style'], 'light');
+    expect(s['generation'], 0);
+    expect(s['settled'], 1);
+
+    // Geometry alone never rebuilds the glass.
+    await tester.pumpWidget(scene(140));
+    await settle(tester);
+    s = await state(channel);
+    expect(s['generation'], 0);
+    expect(s['settled'], 1);
+
+    // Light to dark: a new container generation, hidden, then drawn again
+    // after the settle frames, with the UIKit style following.
+    await tester.pumpWidget(scene(140, dark: true));
+    await settle(tester);
+    s = await state(channel);
+    expect(s['dark'], true);
+    expect(s['style'], 'dark');
+    expect(s['generation'], 1);
+    expect(s['settled'], 2);
+    expect(s['visible'], true);
+
+    // And back.
+    await tester.pumpWidget(scene(140));
+    await settle(tester);
+    s = await state(channel);
+    expect(s['dark'], false);
+    expect(s['style'], 'light');
+    expect(s['generation'], 2);
+    expect(s['settled'], 3);
+    expect(s['visible'], true);
+  });
+
   testWidgets('native glass hosts SwiftUI, follows setShapes, disposes', (
     tester,
   ) async {
@@ -135,6 +183,13 @@ void main() {
       [overhang + 158, overhang, 60, 50],
     ]);
     expect(rect(s['bounds']), [218 + 2 * overhang, 50 + 2 * overhang]);
+
+    // Stable ids from Dart, not payload indices; contained in the Flutter
+    // view controller; UIKit style follows the app's brightness.
+    expect(s['ids'], hasLength(2));
+    expect((s['ids']! as List).toSet(), hasLength(2));
+    expect(s['contained'], true);
+    expect(s['style'], 'dark');
 
     // Dispose: the view is released and its channel handler cleared.
     await tester.pumpWidget(const SizedBox());

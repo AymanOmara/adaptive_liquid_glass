@@ -2,8 +2,9 @@
 
 * Native glass is SwiftUI's own: native mode hosts a `GlassEffectContainer`
   with a `.glassEffect` view per member (was UIKit `UIGlassEffect`), so it
-  matches SwiftUI pixel for pixel, follows the app's brightness rather than
-  the system's, draws circles as circles and supports `unionId`.
+  matches SwiftUI pixel for pixel, follows `MediaQuery.platformBrightness`
+  like the shader path (and re-themes when it changes at runtime), draws
+  circles as circles and supports `unionId`.
 * **Breaking:** native glass is the default on iOS 26+; `auto` picks it from
   the first frame (the iOS version is read synchronously at startup).
   `LiquidGlassThemeData.nativeEnabled` is removed; use `mode:` or

@@ -206,6 +206,42 @@ void main() {
     expect(unions, [0, null, 0, 1]);
   }, variant: ios);
 
+  testWidgets('each member keeps a stable id when others go away', (t) async {
+    iosEnv();
+    final sent = mockNative(t);
+    Widget row(List<String> keys) => themed(
+      Align(
+        alignment: AlignmentDirectional.topStart,
+        child: GlassGroup(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final k in keys)
+                LiquidGlass(
+                  key: ValueKey(k),
+                  child: const SizedBox(width: 40, height: 40),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    List<Object?> ids() => [
+      for (final s in sent.last['shapes']! as List)
+        (s as Map<Object?, Object?>)['id'],
+    ];
+
+    await t.pumpWidget(row(['a', 'b', 'c']));
+    await t.pump();
+    final first = ids();
+    expect(first.toSet(), hasLength(3));
+    expect(first, everyElement(isA<int>()));
+
+    await t.pumpWidget(row(['b', 'c']));
+    await t.pump();
+    expect(ids(), [first[1], first[2]]);
+  }, variant: ios);
+
   testWidgets('circles are sent with circular corners', (t) async {
     iosEnv();
     final sent = mockNative(t);

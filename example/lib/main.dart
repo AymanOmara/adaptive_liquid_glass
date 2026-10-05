@@ -59,7 +59,15 @@ Future<void> main() async {
       data: LiquidGlassThemeData(constants: constants, defaultMode: mode),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: scene == null ? const Demo() : SceneView(scene: scene),
+        home: scene == null
+            ? const Demo()
+            : SceneView(
+                scene: scene,
+                flipAfter: switch (args.flip) {
+                  null => null,
+                  final s => Duration(milliseconds: (s * 1000).round()),
+                },
+              ),
       ),
     ),
   );

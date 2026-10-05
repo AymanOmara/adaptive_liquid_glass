@@ -46,6 +46,11 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
   /// in scope, as the shader path uses).
   bool _dark = false;
 
+  /// A stable id per entry (SwiftUI's `ForEach` identity), so a member keeps
+  /// its id when others are added or removed.
+  final Expando<int> _ids = Expando<int>('native glass id');
+  int _nextId = 0;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -117,6 +122,7 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
       final r = local.shift(const Offset(kNativeOverhang, kNativeOverhang));
       final glass = g.entry.glass;
       shapes.add({
+        'id': _ids[g.entry] ??= _nextId++,
         'x': r.left,
         'y': r.top,
         'w': r.width,

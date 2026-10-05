@@ -46,6 +46,7 @@ final class GlassPlatformView: NSObject, FlutterPlatformView {
     if #available(iOS 26.0, *) {
       let g = SwiftUIGlass(root: root)
       root.onSettled = { [weak g] in g?.show() }
+      root.onWindowChange = { [weak g] in g?.windowChanged() }
       glass = g
     }
     channel.setMethodCallHandler { [weak self] call, result in
@@ -58,7 +59,8 @@ final class GlassPlatformView: NSObject, FlutterPlatformView {
         self?.apply(a)
         result(nil)
       case "debugState":
-        // For the example's integration tests: what SwiftUI is drawing.
+        // Test hook, not API: the example's integration tests ask what
+        // SwiftUI is drawing. The package's Dart code never calls it.
         result(self?.debugState())
       default:
         result(FlutterMethodNotImplemented)
@@ -82,6 +84,7 @@ final class GlassPlatformView: NSObject, FlutterPlatformView {
     var state: [String: Any] = [
       "bounds": [root.bounds.width, root.bounds.height],
       "interactive": root.isUserInteractionEnabled,
+      "settled": root.settledCount,
     ]
     if #available(iOS 26.0, *), let g = glass as? SwiftUIGlass {
       state.merge(g.debugState()) { $1 }
@@ -103,8 +106,9 @@ struct GlassSpec: Identifiable, Equatable {
   /// Shapes with the same union index merge (`glassEffectUnion`).
   let union: Int?
 
-  init(id: Int, _ s: [String: Any]) {
-    self.id = id
+  /// [fallbackId] (the payload index) is used only when Dart sends no `id`.
+  init(fallbackId: Int, _ s: [String: Any]) {
+    id = s["id"] as? Int ?? fallbackId
     frame = CGRect(
       x: s["x"] as? Double ?? 0, y: s["y"] as? Double ?? 0,
       width: s["w"] as? Double ?? 0, height: s["h"] as? Double ?? 0)
@@ -124,6 +128,9 @@ final class GlassModel: ObservableObject {
   @Published var shapes: [GlassSpec] = []
   /// False until the view has been on screen for a few frames.
   @Published var visible = false
+  /// Bumped when `dark` changes after the first draw: the container is
+  /// rebuilt (`.id`), since Apple's glass keeps the look it first drew with.
+  @Published var generation = 0
 }
 
 /// The group's glass, drawn the way the SwiftUI reference host draws it.
@@ -141,6 +148,7 @@ struct GlassHostView: View {
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
+    .id(model.generation)
     .ignoresSafeArea()
     // The Flutter side's platform brightness, like the shader path; UIKit
     // traits would follow the system instead of the app.
@@ -181,9 +189,19 @@ struct GlassHostView: View {
 final class SwiftUIGlass {
   private let model = GlassModel()
   private let host: UIHostingController<GlassHostView>
+  private weak var root: GlassRootView?
+  /// False until the creation payload has been applied.
+  private var configured = false
 
-  init(root: UIView) {
-    host = UIHostingController(rootView: GlassHostView(model: model))
+  init(root: GlassRootView) {
+    self.root = root
+    host = Self.makeHost(model, in: root)
+  }
+
+  private static func makeHost(
+    _ model: GlassModel, in root: UIView
+  ) -> UIHostingController<GlassHostView> {
+    let host = UIHostingController(rootView: GlassHostView(model: model))
     host.sizingOptions = []
     host.safeAreaRegions = []
     host.view.backgroundColor = .clear
@@ -191,14 +209,20 @@ final class SwiftUIGlass {
     host.view.frame = root.bounds
     host.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
     root.addSubview(host.view)
+    return host
   }
 
   func apply(_ args: [String: Any]) {
     let shapes = (args["shapes"] as? [[String: Any]] ?? []).enumerated().map {
-      GlassSpec(id: $0.offset, $0.element)
+      GlassSpec(fallbackId: $0.offset, $0.element)
     }
     let spacing = args["spacing"] as? Double ?? 0
     let dark = args["dark"] as? Bool ?? false
+    let rethemed = configured && model.dark != dark
+    configured = true
+    // UIKit traits under the host follow the app's brightness too, not the
+    // system's (the SwiftUI colour scheme alone leaves them on the system).
+    host.overrideUserInterfaceStyle = dark ? .dark : .light
     // Flutter animates; SwiftUI must not add its own transitions on top.
     var t = Transaction(animation: nil)
     t.disablesAnimations = true
@@ -206,6 +230,29 @@ final class SwiftUIGlass {
       if model.spacing != spacing { model.spacing = spacing }
       if model.dark != dark { model.dark = dark }
       if model.shapes != shapes { model.shapes = shapes }
+      if rethemed {
+        // Glass already drawn keeps its old look: hide it, rebuild the
+        // container and draw again once the re-themed Flutter content
+        // beneath has been on screen for the settle frames.
+        model.generation += 1
+        model.visible = false
+      }
+    }
+    if rethemed { root?.rearm() }
+  }
+
+  /// Contains the hosting controller in the view controller that shows the
+  /// platform view (found through the responder chain), so SwiftUI gets
+  /// appearance and trait updates; released again when the view leaves.
+  func windowChanged() {
+    guard let root else { return }
+    if root.window != nil {
+      guard host.parent == nil, let parent = root.owningViewController else { return }
+      parent.addChild(host)
+      host.didMove(toParent: parent)
+    } else if host.parent != nil {
+      host.willMove(toParent: nil)
+      host.removeFromParent()
     }
   }
 
@@ -227,6 +274,10 @@ final class SwiftUIGlass {
       "spacing": model.spacing,
       "dark": model.dark,
       "visible": model.visible,
+      "generation": model.generation,
+      "contained": host.parent != nil,
+      "style": host.overrideUserInterfaceStyle == .dark ? "dark" : "light",
+      "ids": model.shapes.map { $0.id },
       "shapes": model.shapes.map {
         [$0.frame.minX, $0.frame.minY, $0.frame.width, $0.frame.height]
       },
@@ -236,20 +287,40 @@ final class SwiftUIGlass {
 }
 
 /// The platform view's root. Reports once it has been in a window for a
-/// few display frames: glass that first draws before Flutter's content
-/// beneath it is on screen can settle on the wrong (light) look for good,
-/// even under a dark colour scheme, so the glass waits for that.
+/// few display frames, and again after each `rearm`: glass that first draws
+/// before Flutter's content beneath it is on screen can settle on the wrong
+/// (light) look for good, even under a dark colour scheme, so the glass
+/// waits for that.
 final class GlassRootView: UIView {
   /// Display frames to wait after entering a window.
   static let settleFrames = 3
 
+  /// Called each time the wait completes (first draw, and after `rearm`).
   var onSettled: (() -> Void)?
+  var onWindowChange: (() -> Void)?
   private var link: CADisplayLink?
   private var frames = 0
+  private var armed = true
+  /// How many times the wait has completed (for `debugState`).
+  private(set) var settledCount = 0
 
   override func didMoveToWindow() {
     super.didMoveToWindow()
-    guard window != nil, onSettled != nil, link == nil else { return }
+    onWindowChange?()
+    start()
+  }
+
+  /// Waits the settle frames again (after a brightness change).
+  func rearm() {
+    armed = true
+    link?.invalidate()
+    link = nil
+    start()
+  }
+
+  private func start() {
+    guard armed, window != nil, onSettled != nil, link == nil else { return }
+    frames = 0
     let l = CADisplayLink(target: self, selector: #selector(tick))
     l.add(to: .main, forMode: .common)
     link = l
@@ -259,11 +330,25 @@ final class GlassRootView: UIView {
     frames += 1
     guard frames >= Self.settleFrames else { return }
     link?.invalidate()
+    link = nil
+    armed = false
+    settledCount += 1
     onSettled?()
-    onSettled = nil
   }
 
   deinit { link?.invalidate() }
+}
+
+private extension UIView {
+  /// The nearest view controller up the responder chain.
+  var owningViewController: UIViewController? {
+    var r: UIResponder? = next
+    while let current = r {
+      if let vc = current as? UIViewController { return vc }
+      r = current.next
+    }
+    return nil
+  }
 }
 
 private extension UIColor {
