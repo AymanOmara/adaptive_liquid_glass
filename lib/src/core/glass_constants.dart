@@ -251,11 +251,14 @@ class GlassVariantConstants {
 class GlassMotionConstants {
   /// Creates motion constants.
   const GlassMotionConstants({
-    required this.pressScale,
+    required this.pressGrowthArea,
+    required this.pressScaleMax,
     required this.pressStretch,
     required this.glowRadius,
     required this.pressResponse,
     required this.pressDamping,
+    required this.releaseResponse,
+    required this.releaseDamping,
     required this.morphResponse,
     required this.morphDamping,
   });
@@ -265,17 +268,25 @@ class GlassMotionConstants {
     Map<String, Object?> j,
     GlassMotionConstants base,
   ) => GlassMotionConstants(
-    pressScale: _d(j, 'pressScale', base.pressScale),
+    pressGrowthArea: _d(j, 'pressGrowthArea', base.pressGrowthArea),
+    pressScaleMax: _d(j, 'pressScaleMax', base.pressScaleMax),
     pressStretch: _d(j, 'pressStretch', base.pressStretch),
     glowRadius: _d(j, 'glowRadius', base.glowRadius),
     pressResponse: _d(j, 'pressResponse', base.pressResponse),
     pressDamping: _d(j, 'pressDamping', base.pressDamping),
+    releaseResponse: _d(j, 'releaseResponse', base.releaseResponse),
+    releaseDamping: _d(j, 'releaseDamping', base.releaseDamping),
     morphResponse: _d(j, 'morphResponse', base.morphResponse),
     morphDamping: _d(j, 'morphDamping', base.morphDamping),
   );
 
-  /// Uniform scale gained at full press.
-  final double pressScale;
+  /// Area (pt²) a pressed shape gains at full press: its uniform scale is
+  /// `sqrt(1 + pressGrowthArea / (w·h))`, capped at [pressScaleMax], so
+  /// small shapes grow more than large ones.
+  final double pressGrowthArea;
+
+  /// Largest uniform press scale.
+  final double pressScaleMax;
 
   /// Extra scale along the touch direction at full press.
   final double pressStretch;
@@ -283,11 +294,17 @@ class GlassMotionConstants {
   /// Radius of the touch glow.
   final double glowRadius;
 
-  /// SwiftUI spring response for press/release.
+  /// SwiftUI spring response for the press-in.
   final double pressResponse;
 
-  /// SwiftUI damping fraction for press/release.
+  /// SwiftUI damping fraction for the press-in.
   final double pressDamping;
+
+  /// SwiftUI spring response for the release.
+  final double releaseResponse;
+
+  /// SwiftUI damping fraction for the release.
+  final double releaseDamping;
 
   /// SwiftUI spring response for morphs.
   final double morphResponse;
@@ -297,11 +314,14 @@ class GlassMotionConstants {
 
   /// JSON form.
   Map<String, double> toJson() => {
-    'pressScale': pressScale,
+    'pressGrowthArea': pressGrowthArea,
+    'pressScaleMax': pressScaleMax,
     'pressStretch': pressStretch,
     'glowRadius': glowRadius,
     'pressResponse': pressResponse,
     'pressDamping': pressDamping,
+    'releaseResponse': releaseResponse,
+    'releaseDamping': releaseDamping,
     'morphResponse': morphResponse,
     'morphDamping': morphDamping,
   };
@@ -462,21 +482,16 @@ class GlassConstants {
     // Fitted to SwiftUI recordings (Task 16, iOS 26.4 simulator; bounding
     // box over time of press/morph clips, tool/fidelity/compare_motion.py).
     motion: GlassMotionConstants(
-      // Capsule 200×56 grows 6.6% (height +11–12 px of 176 px, light and
-      // dark), symmetrically: no shift toward the touch, stretch ≈ 0.01.
-      // SwiftUI scales small shapes more (72 pt circle: +22%), which one
-      // uniform factor cannot follow.
-      pressScale: 0.066,
+      // PROVISIONAL (Task 16b, refit pending): growth model from lossless
+      // SwiftUI captures, springs from the press-in/release split.
+      pressGrowthArea: 1800,
+      pressScaleMax: 1.36,
       pressStretch: 0.011,
-      // Gaussian σ of the touch glow: SwiftUI 42.7–44.5 pt; 41 measures
-      // 43.5 in Flutter. SwiftUI's glow is 3–10× fainter than the shader's
-      // fixed 0.25 amplitude.
       glowRadius: 41,
-      // SwiftUI press-in (0.34, 0.52) and release (0.38, 0.57), mean
-      // (0.36, 0.54) over two runs; one spring serves both here, set so that
-      // Flutter measures the same mean (0.36, 0.54 ± 0.04).
-      pressResponse: 0.36,
-      pressDamping: 0.56,
+      pressResponse: 0.28,
+      pressDamping: 0.63,
+      releaseResponse: 0.38,
+      releaseDamping: 0.55,
       // `withAnimation(.bouncy)` morphs measure (0.50, 0.72): `.bouncy`
       // (response 0.5, bounce 0.3); Flutter at these values measures
       // (0.50, 0.69).

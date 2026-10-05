@@ -69,6 +69,111 @@
       "hold_ms": 700
     },
     {
+      "id": "press-size-circle44x44-photo-light",
+      "kind": "press",
+      "background": "photo",
+      "brightness": "light",
+      "shape": {
+        "w": 44,
+        "h": 44,
+        "shape": "circle",
+        "radius": 0,
+        "x": 179.0,
+        "y": 560,
+        "variant": "regular",
+        "tint": null
+      },
+      "touch": {
+        "x": 201,
+        "y": 582
+      },
+      "hold_ms": 700
+    },
+    {
+      "id": "press-size-circle120x120-photo-light",
+      "kind": "press",
+      "background": "photo",
+      "brightness": "light",
+      "shape": {
+        "w": 120,
+        "h": 120,
+        "shape": "circle",
+        "radius": 0,
+        "x": 141.0,
+        "y": 560,
+        "variant": "regular",
+        "tint": null
+      },
+      "touch": {
+        "x": 201,
+        "y": 620
+      },
+      "hold_ms": 700
+    },
+    {
+      "id": "press-size-capsule120x44-photo-light",
+      "kind": "press",
+      "background": "photo",
+      "brightness": "light",
+      "shape": {
+        "w": 120,
+        "h": 44,
+        "shape": "capsule",
+        "radius": 0,
+        "x": 141.0,
+        "y": 560,
+        "variant": "regular",
+        "tint": null
+      },
+      "touch": {
+        "x": 201,
+        "y": 582
+      },
+      "hold_ms": 700
+    },
+    {
+      "id": "press-size-capsule200x56-photo-light",
+      "kind": "press",
+      "background": "photo",
+      "brightness": "light",
+      "shape": {
+        "w": 200,
+        "h": 56,
+        "shape": "capsule",
+        "radius": 0,
+        "x": 101.0,
+        "y": 560,
+        "variant": "regular",
+        "tint": null
+      },
+      "touch": {
+        "x": 201,
+        "y": 588
+      },
+      "hold_ms": 700
+    },
+    {
+      "id": "press-size-capsule300x72-photo-light",
+      "kind": "press",
+      "background": "photo",
+      "brightness": "light",
+      "shape": {
+        "w": 300,
+        "h": 72,
+        "shape": "capsule",
+        "radius": 0,
+        "x": 51.0,
+        "y": 560,
+        "variant": "regular",
+        "tint": null
+      },
+      "touch": {
+        "x": 201,
+        "y": 596
+      },
+      "hold_ms": 700
+    },
+    {
       "id": "morph-expand-photo-light",
       "kind": "morph",
       "background": "photo",

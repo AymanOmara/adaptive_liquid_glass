@@ -1,9 +1,23 @@
+import 'dart:math' as math;
+
 import 'package:flutter/physics.dart';
 import 'package:flutter/widgets.dart';
 
 import '../core/glass_constants.dart';
 import '../core/swiftui_spring.dart';
 import '../group/glass_entry.dart';
+
+/// Uniform scale of a box of [size] at full press: SwiftUI adds about the
+/// same area to every pressed shape (Task 16b, measured on circles 44–120 pt
+/// and capsules 120–300 pt), so small shapes grow more.
+double pressScaleFor(GlassMotionConstants motion, Size size) {
+  final area = size.width * size.height;
+  if (area <= 0) return motion.pressScaleMax;
+  return math.min(
+    motion.pressScaleMax,
+    math.sqrt(1 + motion.pressGrowthArea / area),
+  );
+}
 
 /// Drives `.interactive()`: a spring from 0 (rest) to 1 (pressed).
 class GlassPressController extends ChangeNotifier {
@@ -31,7 +45,7 @@ class GlassPressController extends ChangeNotifier {
   void down(Offset local, Size size) {
     _touch = local;
     _size = size;
-    _animateTo(1);
+    _animateTo(1, motion.pressResponse, motion.pressDamping);
   }
 
   /// Pointer moved while pressed.
@@ -41,19 +55,16 @@ class GlassPressController extends ChangeNotifier {
   }
 
   /// Pointer released or cancelled.
-  void up() => _animateTo(0);
+  void up() => _animateTo(0, motion.releaseResponse, motion.releaseDamping);
 
-  void _animateTo(double target) {
+  void _animateTo(double target, double response, double damping) {
     // The unbounded controller leaves the spring's residual (within its
     // tolerance) as its value; snap to the target once the spring is done so
     // the glass returns to its exact rest geometry.
     _controller
         .animateWith(
           SpringSimulation(
-            swiftUISpring(
-              response: motion.pressResponse,
-              dampingFraction: motion.pressDamping,
-            ),
+            swiftUISpring(response: response, dampingFraction: damping),
             _controller.value,
             target,
             _controller.velocity,
@@ -76,7 +87,7 @@ class GlassPressController extends ChangeNotifier {
     final touch = _touch ?? centre;
     final dx = ((touch.dx - centre.dx) / (_size.width / 2)).clamp(-1.0, 1.0);
     final dy = ((touch.dy - centre.dy) / (_size.height / 2)).clamp(-1.0, 1.0);
-    final s = 1 + motion.pressScale * a;
+    final s = 1 + (pressScaleFor(motion, _size) - 1) * a;
     return GlassPressGeometry(
       scaleX: s + motion.pressStretch * a * dx.abs(),
       scaleY: s + motion.pressStretch * a * dy.abs(),

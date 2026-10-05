@@ -37,6 +37,21 @@ motion = [
     press("press-circle-photo-light", "light", CIRCLE, {"x": 201, "y": 596}),
 ]
 
+
+def centre_touch(shape):
+    return {"x": W // 2, "y": 560 + shape["h"] // 2}
+
+
+# Task 16b: press growth against size. Centre touches show pure scale; with
+# the 72 pt circle above, three sizes per shape.
+for shape in ({"w": 44, "h": 44, "shape": "circle", "radius": 0},
+              {"w": 120, "h": 120, "shape": "circle", "radius": 0},
+              {"w": 120, "h": 44, "shape": "capsule", "radius": 0},
+              {"w": 200, "h": 56, "shape": "capsule", "radius": 0},
+              {"w": 300, "h": 72, "shape": "capsule", "radius": 0}):
+    motion.append(press(f"press-size-{shape['shape']}{shape['w']}x{shape['h']}-photo-light",
+                        "light", shape, centre_touch(shape)))
+
 # One 60 pt circle g0; expanding adds g1 70 pt to its right (a 10 pt gap,
 # inside the 20 pt spacing, so the two merge). Contract is the reverse.
 g0 = {"x": W / 2 - 65, "y": 600, "w": 60, "h": 60, "shape": "circle", "radius": 0,

@@ -24,7 +24,10 @@ void main() {
     final g = c.geometry();
     expect(c.amount, closeTo(1, 0.01));
     expect(g.scaleX, greaterThan(g.scaleY)); // stretched along x
-    expect(g.scaleY, closeTo(1 + motion.motion.pressScale, 0.01));
+    expect(
+      g.scaleY,
+      closeTo(pressScaleFor(motion.motion, const Size(100, 40)), 0.01),
+    );
     expect(g.translation.dx, greaterThan(0));
     expect(g.translation.dy, closeTo(0, 1e-6));
     expect(g.glow, closeTo(1, 0.01));
@@ -70,5 +73,46 @@ void main() {
     expect(g.scaleY, 1);
     expect(g.translation, Offset.zero);
     expect(g.glow, greaterThan(0.9));
+  });
+
+  test('press scale grows a fixed area, capped (SwiftUI, Task 16b)', () {
+    const m = GlassMotionConstants(
+      pressGrowthArea: 1800,
+      pressScaleMax: 1.36,
+      pressStretch: 0,
+      glowRadius: 41,
+      pressResponse: 0.3,
+      pressDamping: 0.6,
+      releaseResponse: 0.4,
+      releaseDamping: 0.5,
+      morphResponse: 0.5,
+      morphDamping: 0.7,
+    );
+    // sqrt(1 + 1800 / (200·56)) = 1.077; a 120 pt circle 1.060.
+    expect(pressScaleFor(m, const Size(200, 56)), closeTo(1.077, 0.001));
+    expect(pressScaleFor(m, const Size(120, 120)), closeTo(1.0606, 0.001));
+    // Small shapes hit the cap.
+    expect(pressScaleFor(m, const Size(20, 20)), 1.36);
+    expect(pressScaleFor(m, Size.zero), 1.36);
+  });
+
+  testWidgets('release follows the release spring', (t) async {
+    final slow = GlassMotionConstants.fromJson({
+      'pressResponse': 0.1,
+      'releaseResponse': 1.5,
+      'releaseDamping': 1.0,
+    }, motion.motion);
+    final c = GlassPressController(vsync: const TestVSync(), motion: slow);
+    addTearDown(c.dispose);
+    c.down(const Offset(50, 20), const Size(100, 40));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400)); // fast press-in
+    expect(c.amount, closeTo(1, 0.02));
+    c.up();
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400)); // slow release
+    expect(c.amount, greaterThan(0.5));
+    await t.pump(const Duration(seconds: 6));
+    expect(c.amount, 0);
   });
 }
