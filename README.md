@@ -302,14 +302,18 @@ Stack(
   children: [
     pages[tab],
     Positioned(
-      left: 0,
-      right: 0,
+      left: 21,
+      right: 21,
       bottom: 21,
       child: Center(
         child: GlassTabBar(
           items: const [
             GlassTabBarItem(icon: CupertinoIcons.clock_fill, label: 'History'),
-            GlassTabBarItem(icon: CupertinoIcons.text_quote, label: 'Snippets'),
+            GlassTabBarItem(
+              icon: CupertinoIcons.text_quote,
+              label: 'Snippets',
+              badge: '3', // '' shows a dot
+            ),
             GlassTabBarItem(icon: CupertinoIcons.gear_solid, label: 'Settings'),
           ],
           selectedIndex: tab,
@@ -321,8 +325,11 @@ Stack(
 )
 ```
 
-The selected tab takes `selectedColor` (default: the Cupertino theme's
-primary colour); the others take glass's readable colour. Each tab is a
+Tabs are `itemWidth` (88) wide and shrink evenly when the bar would not
+fit, so five tabs fit a phone. Give a tab an `activeIcon` for its selected
+state. The selected tab takes `selectedColor` (default: the Cupertino theme's
+primary colour); the others take glass's readable colour. On Android it is a
+Material 3 `NavigationBar` in the same floating capsule. Each tab is a
 selectable button for VoiceOver and TalkBack, the order follows the
 reading direction, and with Reduce Motion the pill moves without animating.
 

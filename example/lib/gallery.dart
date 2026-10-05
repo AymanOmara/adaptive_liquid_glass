@@ -30,6 +30,7 @@ class Gallery extends StatelessWidget {
                 _Recipe('Clear glass over media', _ClearOverMedia()),
                 _Recipe('Tinted glass', _Tinted()),
                 _Recipe('Tab bar', _TabBar()),
+                _Recipe('Five tabs, badges, active icons', _FiveTabs()),
               ],
             ),
           ),
@@ -217,8 +218,54 @@ class _TabBarState extends State<_TabBar> {
   Widget build(BuildContext context) => GlassTabBar(
     items: const [
       GlassTabBarItem(icon: CupertinoIcons.clock_fill, label: 'History'),
-      GlassTabBarItem(icon: CupertinoIcons.text_quote, label: 'Snippets'),
+      GlassTabBarItem(
+        icon: CupertinoIcons.text_quote,
+        label: 'Snippets',
+        badge: '3',
+      ),
       GlassTabBarItem(icon: CupertinoIcons.gear_solid, label: 'Settings'),
+    ],
+    selectedIndex: _tab,
+    onSelected: (i) => setState(() => _tab = i),
+  );
+}
+
+class _FiveTabs extends StatefulWidget {
+  const _FiveTabs();
+
+  @override
+  State<_FiveTabs> createState() => _FiveTabsState();
+}
+
+class _FiveTabsState extends State<_FiveTabs> {
+  int _tab = 0;
+
+  @override
+  Widget build(BuildContext context) => GlassTabBar(
+    items: const [
+      GlassTabBarItem(
+        icon: CupertinoIcons.house,
+        activeIcon: CupertinoIcons.house_fill,
+        label: 'Home',
+      ),
+      GlassTabBarItem(icon: CupertinoIcons.search, label: 'Search'),
+      GlassTabBarItem(
+        icon: CupertinoIcons.mail,
+        activeIcon: CupertinoIcons.mail_solid,
+        label: 'Inbox',
+        badge: '12',
+      ),
+      GlassTabBarItem(
+        icon: CupertinoIcons.bell,
+        activeIcon: CupertinoIcons.bell_fill,
+        label: 'Alerts',
+        badge: '',
+      ),
+      GlassTabBarItem(
+        icon: CupertinoIcons.person,
+        activeIcon: CupertinoIcons.person_fill,
+        label: 'Profile',
+      ),
     ],
     selectedIndex: _tab,
     onSelected: (i) => setState(() => _tab = i),

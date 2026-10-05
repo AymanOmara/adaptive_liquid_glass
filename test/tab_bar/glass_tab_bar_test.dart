@@ -2,6 +2,7 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show Badge, NavigationBar;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../api/hosts.dart';
@@ -16,9 +17,10 @@ const _blue = Color(0xFF0000FF);
 
 /// A tab bar that keeps its own selection, and records every pick.
 class _Harness extends StatefulWidget {
-  const _Harness(this.picks);
+  const _Harness(this.picks, {this.items = _items});
 
   final List<int> picks;
+  final List<GlassTabBarItem> items;
 
   @override
   State<_Harness> createState() => _HarnessState();
@@ -29,7 +31,7 @@ class _HarnessState extends State<_Harness> {
 
   @override
   Widget build(BuildContext context) => GlassTabBar(
-    items: _items,
+    items: widget.items,
     selectedIndex: _selected,
     selectedColor: _blue,
     onSelected: (i) {
@@ -53,12 +55,15 @@ void main() {
   setUp(() => GlassProgram.instance.debugReset(skipLoad: true));
   tearDown(() => GlassPlatform.instance.debugReset());
 
-  for (final (name, variant) in [('shader', ios), ('Material', android)]) {
+  for (final (name, variant, host) in [
+    ('shader', ios, plainHost),
+    ('Material', android, (Widget w) => appHost(w)),
+  ]) {
     testWidgets('$name: the selected tab is tinted, the others are not', (
       t,
     ) async {
       shaderEnv();
-      await t.pumpWidget(plainHost(_Harness(_picks())));
+      await t.pumpWidget(host(_Harness(_picks())));
       expect(_labelColor(t, 'History'), _blue);
       expect(_labelColor(t, 'Snippets'), isNot(_blue));
       expect(_lens, findsNothing);
@@ -67,36 +72,34 @@ void main() {
     testWidgets('$name: tapping a tab selects it', (t) async {
       shaderEnv();
       final picks = <int>[];
-      await t.pumpWidget(plainHost(_Harness(picks)));
+      await t.pumpWidget(host(_Harness(picks)));
       await t.tap(find.text('Settings'));
       await t.pumpAndSettle();
       expect(picks, [2]);
       expect(_labelColor(t, 'Settings'), _blue);
     }, variant: variant);
-
-    testWidgets('$name: holding shows the lens; dragging picks on release', (
-      t,
-    ) async {
-      shaderEnv();
-      final picks = <int>[];
-      await t.pumpWidget(plainHost(_Harness(picks)));
-      final from = t.getCenter(find.text('History'));
-      final to = t.getCenter(find.text('Settings'));
-      final gesture = await t.startGesture(from);
-      await t.pump();
-      await t.pump(const Duration(milliseconds: 200));
-      expect(_lens, findsOneWidget);
-      for (var i = 1; i <= 10; i++) {
-        await gesture.moveTo(Offset.lerp(from, to, i / 10)!);
-        await t.pump(const Duration(milliseconds: 16));
-      }
-      expect(picks, isEmpty, reason: 'nothing is picked while held');
-      await gesture.up();
-      await t.pumpAndSettle();
-      expect(picks, [2]);
-      expect(_lens, findsNothing);
-    }, variant: variant);
   }
+
+  testWidgets('holding shows the lens; dragging picks on release', (t) async {
+    shaderEnv();
+    final picks = <int>[];
+    await t.pumpWidget(plainHost(_Harness(picks)));
+    final from = t.getCenter(find.text('History'));
+    final to = t.getCenter(find.text('Settings'));
+    final gesture = await t.startGesture(from);
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 200));
+    expect(_lens, findsOneWidget);
+    for (var i = 1; i <= 10; i++) {
+      await gesture.moveTo(Offset.lerp(from, to, i / 10)!);
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    expect(picks, isEmpty, reason: 'nothing is picked while held');
+    await gesture.up();
+    await t.pumpAndSettle();
+    expect(picks, [2]);
+    expect(_lens, findsNothing);
+  }, variant: ios);
 
   testWidgets('right to left: the first tab is on the right', (t) async {
     shaderEnv();
@@ -169,4 +172,133 @@ void main() {
     );
     expect(_lens, findsNothing);
   }, variant: ios);
+
+  testWidgets('five tabs shrink to fit a phone instead of overflowing', (
+    t,
+  ) async {
+    shaderEnv();
+    t.view.physicalSize = const Size(402, 874);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    final picks = <int>[];
+    final five = [
+      for (final l in ['A', 'B', 'C', 'D', 'E'])
+        GlassTabBarItem(icon: CupertinoIcons.circle, label: l),
+    ];
+    await t.pumpWidget(plainHost(_Harness(picks, items: five)));
+    expect(t.takeException(), isNull);
+    expect(t.getSize(find.byType(GlassTabBar)).width, lessThanOrEqualTo(402));
+    // (402 - 2 × 4 inset) / 5 tabs, not the 88 that would overflow.
+    expect(
+      t.getCenter(find.text('E')).dx - t.getCenter(find.text('D')).dx,
+      moreOrLessEquals(78.8, epsilon: 0.01),
+    );
+    await t.tap(find.text('E'));
+    await t.pumpAndSettle();
+    expect(picks, [4]);
+    expect(_labelColor(t, 'E'), _blue);
+  }, variant: ios);
+
+  testWidgets('three tabs keep their full width when there is room', (t) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    expect(t.getSize(find.byType(GlassTabBar)).width, 3 * 88 + 8);
+  }, variant: ios);
+
+  testWidgets('the selected tab shows its active icon', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      plainHost(
+        _Harness(
+          _picks(),
+          items: const [
+            GlassTabBarItem(
+              icon: CupertinoIcons.house,
+              activeIcon: CupertinoIcons.house_fill,
+              label: 'Home',
+            ),
+            GlassTabBarItem(
+              icon: CupertinoIcons.person,
+              activeIcon: CupertinoIcons.person_fill,
+              label: 'Me',
+            ),
+          ],
+        ),
+      ),
+    );
+    expect(find.byIcon(CupertinoIcons.house_fill), findsOneWidget);
+    expect(find.byIcon(CupertinoIcons.person), findsOneWidget);
+    await t.tap(find.text('Me'));
+    await t.pumpAndSettle();
+    expect(find.byIcon(CupertinoIcons.house), findsOneWidget);
+    expect(find.byIcon(CupertinoIcons.person_fill), findsOneWidget);
+  }, variant: ios);
+
+  testWidgets('a badge shows its text and is read with the tab', (t) async {
+    shaderEnv();
+    final semantics = t.ensureSemantics();
+    await t.pumpWidget(
+      plainHost(
+        _Harness(
+          _picks(),
+          items: const [
+            GlassTabBarItem(
+              icon: CupertinoIcons.mail,
+              label: 'Mail',
+              badge: '3',
+            ),
+            GlassTabBarItem(icon: CupertinoIcons.gear, label: 'Settings'),
+          ],
+        ),
+      ),
+    );
+    expect(find.text('3'), findsOneWidget);
+    expect(
+      t.getSemantics(find.text('Mail')),
+      matchesSemantics(
+        label: 'Mail',
+        value: '3',
+        isButton: true,
+        hasSelectedState: true,
+        isSelected: true,
+        isInMutuallyExclusiveGroup: true,
+        hasTapAction: true,
+      ),
+    );
+    semantics.dispose();
+  }, variant: ios);
+
+  testWidgets('Material: a Material 3 navigation bar, no glass lens', (
+    t,
+  ) async {
+    shaderEnv();
+    final picks = <int>[];
+    await t.pumpWidget(
+      appHost(
+        _Harness(
+          picks,
+          items: const [
+            GlassTabBarItem(
+              icon: CupertinoIcons.mail,
+              label: 'Mail',
+              badge: '3',
+            ),
+            GlassTabBarItem(
+              icon: CupertinoIcons.bell,
+              label: 'Alerts',
+              badge: '',
+            ),
+            GlassTabBarItem(icon: CupertinoIcons.gear, label: 'Settings'),
+          ],
+        ),
+      ),
+    );
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(LiquidGlass), findsNothing);
+    expect(find.byType(Badge), findsNWidgets(2));
+    expect(find.text('3'), findsOneWidget);
+    await t.tap(find.text('Settings'));
+    await t.pumpAndSettle();
+    expect(picks, [2]);
+  }, variant: android);
 }

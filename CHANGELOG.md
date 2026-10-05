@@ -7,6 +7,13 @@
   timing measured from iOS 26.4). Works in every render mode, follows the
   reading direction and Reduce Motion, and exposes each tab as a selectable
   button to assistive tech.
+* Tabs shrink evenly to fit the width the bar is given (`itemWidth` is
+  now the maximum), so five tabs fit a phone.
+* `GlassTabBarItem.activeIcon` (the selected tab's icon) and `.badge` (a
+  count or short text in a red capsule, a dot when empty; read with the
+  tab by assistive tech).
+* On the Material path (Android by default) the bar is a Material 3
+  `NavigationBar` in the same floating capsule, with ripple and badges.
 
 ## 0.1.0-dev.2
 

@@ -1,25 +1,49 @@
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart'
+    show
+        Badge,
+        NavigationBar,
+        NavigationDestination,
+        Theme,
+        WidgetState,
+        WidgetStateProperty;
 import 'package:flutter/physics.dart';
 
 import '../core/glass.dart';
+import '../core/glass_environment.dart';
 import '../core/glass_render_mode.dart';
+import '../core/render_mode_resolver.dart';
 import '../core/swiftui_spring.dart';
+import '../core/theme.dart';
 import '../group/glass_group.dart';
 import '../liquid_glass.dart';
+import '../platform/glass_platform.dart';
 
 /// One tab of a [GlassTabBar]: an icon over a short label.
 @immutable
 class GlassTabBarItem {
   /// Creates a tab.
-  const GlassTabBarItem({required this.icon, required this.label});
+  const GlassTabBarItem({
+    required this.icon,
+    required this.label,
+    this.activeIcon,
+    this.badge,
+  });
 
   /// The tab's icon.
   final IconData icon;
 
   /// The tab's label, also its accessibility label.
   final String label;
+
+  /// The icon while this tab is selected; defaults to [icon].
+  final IconData? activeIcon;
+
+  /// A badge on the icon: a count or short text, or a dot when empty.
+  /// Null shows none.
+  final String? badge;
 }
 
 /// iOS 26's floating tab bar: a glass capsule with the selected tab on a
@@ -42,9 +66,14 @@ class GlassTabBarItem {
 /// ```
 ///
 /// Float it over the content (for example at the bottom of a `Stack`) and
-/// leave room under the content for it, as iOS does. Unselected tabs take
-/// the readable colour glass gives text and icons. Follows the reading
-/// direction; with Reduce Motion the lens and pill move without animating.
+/// leave room under the content for it, as iOS does. Tabs are [itemWidth]
+/// wide, narrower when the bar would not fit the width it is given.
+/// Unselected tabs take the readable colour glass gives text and icons.
+/// Follows the reading direction; with Reduce Motion the lens and pill move
+/// without animating.
+///
+/// On the Material path (Android by default) it is a Material 3
+/// [NavigationBar] in the same floating capsule.
 class GlassTabBar extends StatefulWidget {
   /// Creates a glass tab bar.
   const GlassTabBar({
@@ -71,11 +100,12 @@ class GlassTabBar extends StatefulWidget {
   final ValueChanged<int> onSelected;
 
   /// The selected tab's icon and label, and the tabs under the lens.
-  /// Defaults to `CupertinoTheme.primaryColor` (system blue).
+  /// Defaults to `CupertinoTheme.primaryColor` (system blue), or Material
+  /// 3's colours on the Material path.
   final Color? selectedColor;
 
   /// The pill behind the selected tab at rest. Defaults to the system's
-  /// tertiary fill.
+  /// tertiary fill, or Material 3's indicator on the Material path.
   final Color? indicatorColor;
 
   /// The bar's glass. Defaults to the theme's default glass.
@@ -84,7 +114,8 @@ class GlassTabBar extends StatefulWidget {
   /// The rendering path for the bar and its lens; see [GlassRenderMode].
   final GlassRenderMode? mode;
 
-  /// The width of one tab, which is also the pill's width.
+  /// The widest a tab gets, which is also the pill's width. Tabs shrink
+  /// evenly when the bar would not fit the width it is given.
   final double itemWidth;
 
   /// The bar's height.
@@ -97,7 +128,9 @@ class GlassTabBar extends StatefulWidget {
 /// Measured from iOS 26.4's tab bar (Kept, iPhone 17 Pro).
 abstract final class _Metrics {
   static const double inset = 4;
-  static const double lensWidth = 108;
+
+  /// How much wider than a tab the held lens is (108 over 88).
+  static const double lensGrow = 20;
   static const double lensOverhang = 8;
   static const double growX = 8;
   static const double growY = 3;
@@ -109,6 +142,13 @@ abstract final class _Metrics {
     fontWeight: FontWeight.w500,
     letterSpacing: 0.1,
   );
+  static const double badgeHeight = 18;
+  static const double badgeDot = 10;
+  static const TextStyle badge = TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.w500,
+    height: 1,
+  );
   static const Duration grow = Duration(milliseconds: 180);
   static const Duration settle = Duration(milliseconds: 380);
   static final SpringDescription slide = swiftUISpring(
@@ -119,7 +159,8 @@ abstract final class _Metrics {
 
 class _GlassTabBarState extends State<GlassTabBar>
     with TickerProviderStateMixin {
-  /// The selection's centre, in the tab row's coordinates (left to right).
+  /// The selection's centre, in tab widths from the row's left edge (the
+  /// centre of the leftmost tab is 0.5), so a width change keeps it put.
   late final AnimationController _x = AnimationController.unbounded(
     vsync: this,
   );
@@ -134,25 +175,27 @@ class _GlassTabBarState extends State<GlassTabBar>
   bool _placed = false;
   bool _held = false;
 
-  /// Where the finger is, which the lens may still be springing towards.
+  /// Where the finger is, in tab widths; the lens may still be springing
+  /// towards it.
   double _finger = 0;
 
-  int get _count => widget.items.length;
+  /// The width of one tab as last laid out.
+  late double _itemWidth = widget.itemWidth;
 
-  double get _rowWidth => _count * widget.itemWidth;
+  int get _count => widget.items.length;
 
   double get _contentHeight => widget.height - _Metrics.inset * 2;
 
   bool get _rtl => Directionality.of(context) == TextDirection.rtl;
 
-  /// Visual slot (left to right) of tab [index], and back.
+  /// Visual slot (left to right) of tab [index].
   int _slot(int index) => _rtl ? _count - 1 - index : index;
 
-  double _centerOf(int index) => widget.itemWidth * (_slot(index) + 0.5);
+  double _centerOf(int index) => _slot(index) + 0.5;
 
-  double _clamp(double x) => x
-      .clamp(widget.itemWidth / 2, _rowWidth - widget.itemWidth / 2)
-      .toDouble();
+  /// [dx] (pixels from the bar's left edge) in tab widths, kept on a tab.
+  double _toSlots(double dx) =>
+      ((dx - _Metrics.inset) / _itemWidth).clamp(0.5, _count - 0.5);
 
   bool get _reduceMotion =>
       MediaQuery.maybeDisableAnimationsOf(context) ?? false;
@@ -182,8 +225,7 @@ class _GlassTabBarState extends State<GlassTabBar>
     if (_held) return;
     if (old.selectedIndex != widget.selectedIndex) {
       _springTo(_centerOf(widget.selectedIndex));
-    } else if (old.itemWidth != widget.itemWidth ||
-        old.items.length != widget.items.length) {
+    } else if (old.items.length != widget.items.length) {
       _x.value = _centerOf(widget.selectedIndex);
     }
   }
@@ -197,28 +239,98 @@ class _GlassTabBarState extends State<GlassTabBar>
 
   void _down(DragDownDetails details) {
     _held = true;
-    _finger = _clamp(details.localPosition.dx - _Metrics.inset);
+    _finger = _toSlots(details.localPosition.dx);
     _reduceMotion ? _press.value = 1 : _press.forward();
     _springTo(_finger);
   }
 
   void _drag(DragUpdateDetails details) {
-    _finger = _clamp(details.localPosition.dx - _Metrics.inset);
+    _finger = _toSlots(details.localPosition.dx);
     _x.stop();
     _x.value = _finger;
   }
 
   void _release(double velocity) {
     _held = false;
-    final slot = (_finger / widget.itemWidth).floor().clamp(0, _count - 1);
+    final slot = _finger.floor().clamp(0, _count - 1);
     final index = _rtl ? _count - 1 - slot : slot;
-    _springTo(_centerOf(index), velocity: velocity);
+    _springTo(_centerOf(index), velocity: velocity / _itemWidth);
     _reduceMotion ? _press.value = 0 : _press.reverse();
     if (index != widget.selectedIndex) widget.onSelected(index);
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final fit = (constraints.maxWidth - _Metrics.inset * 2) / _count;
+      _itemWidth = fit < widget.itemWidth ? fit : widget.itemWidth;
+      return ValueListenableBuilder<GlassEnvironment>(
+        valueListenable: GlassPlatform.instance.environment,
+        builder: (context, environment, _) {
+          final mode = resolveGlassMode(
+            requested: widget.mode ?? LiquidGlassTheme.of(context).defaultMode,
+            environment: environment,
+          );
+          return mode == EffectiveGlassMode.material
+              ? _materialBar(context)
+              : _glassBar(context);
+        },
+      );
+    },
+  );
+
+  /// Material 3's navigation bar, floating in the same capsule.
+  Widget _materialBar(BuildContext context) {
+    final selected = widget.selectedColor;
+    final label = Theme.of(context).textTheme.labelMedium;
+    return SizedBox(
+      width: _rowWidth + _Metrics.inset * 2,
+      child: ClipPath(
+        clipper: const ShapeBorderClipper(shape: StadiumBorder()),
+        // Floating above the bottom edge, so no safe-area padding.
+        child: MediaQuery.removePadding(
+          context: context,
+          removeBottom: true,
+          child: NavigationBar(
+            height: widget.height,
+            selectedIndex: widget.selectedIndex,
+            onDestinationSelected: widget.onSelected,
+            indicatorColor: widget.indicatorColor,
+            labelTextStyle: selected == null
+                ? null
+                : WidgetStateProperty.resolveWith(
+                    (states) => states.contains(WidgetState.selected)
+                        ? label?.copyWith(color: selected) ??
+                              TextStyle(color: selected)
+                        : null,
+                  ),
+            destinations: [
+              for (final item in widget.items)
+                NavigationDestination(
+                  icon: _materialBadge(item, Icon(item.icon)),
+                  selectedIcon: _materialBadge(
+                    item,
+                    Icon(item.activeIcon ?? item.icon, color: selected),
+                  ),
+                  label: item.label,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static Widget _materialBadge(GlassTabBarItem item, Widget icon) =>
+      switch (item.badge) {
+        null => icon,
+        '' => Badge(child: icon),
+        final text => Badge(label: Text(text), child: icon),
+      };
+
+  double get _rowWidth => _count * _itemWidth;
+
+  Widget _glassBar(BuildContext context) {
     final selected = CupertinoDynamicColor.resolve(
       widget.selectedColor ?? CupertinoTheme.of(context).primaryColor,
       context,
@@ -250,10 +362,11 @@ class _GlassTabBarState extends State<GlassTabBar>
   }
 
   Widget _bar(double t, Color selected, Color indicator) {
-    final itemWidth = widget.itemWidth;
+    final itemWidth = _itemWidth;
+    final x = _x.value * itemWidth;
     final lens = Rect.fromCenter(
-      center: Offset(_x.value, _contentHeight / 2),
-      width: lerpDouble(itemWidth, _Metrics.lensWidth, t)!,
+      center: Offset(x, _contentHeight / 2),
+      width: itemWidth + _Metrics.lensGrow * t,
       height: _contentHeight + _Metrics.lensOverhang * 2 * t,
     );
     final growX = _Metrics.growX * t;
@@ -281,7 +394,7 @@ class _GlassTabBarState extends State<GlassTabBar>
                     child: Stack(
                       children: [
                         Positioned(
-                          left: _x.value - itemWidth / 2,
+                          left: x - itemWidth / 2,
                           width: itemWidth,
                           top: 0,
                           bottom: 0,
@@ -333,7 +446,7 @@ class _GlassTabBarState extends State<GlassTabBar>
                           height: _contentHeight,
                           child: Transform.scale(
                             scale: lerpDouble(1, _Metrics.magnify, t),
-                            origin: Offset(_x.value - _rowWidth / 2, 0),
+                            origin: Offset(x - _rowWidth / 2, 0),
                             child: _row((_) => selected, semantics: false),
                           ),
                         ),
@@ -358,18 +471,19 @@ class _GlassTabBarState extends State<GlassTabBar>
             inMutuallyExclusiveGroup: true,
             selected: i == widget.selectedIndex,
             label: widget.items[i].label,
+            value: widget.items[i].badge,
             onTap: () => widget.onSelected(i),
             child: ExcludeSemantics(
               child: SizedBox(
-                width: widget.itemWidth,
+                width: _itemWidth,
                 height: _contentHeight,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      widget.items[i].icon,
-                      size: _Metrics.iconSize,
-                      color: colorOf(i),
+                    _icon(
+                      widget.items[i],
+                      i == widget.selectedIndex,
+                      colorOf(i),
                     ),
                     const SizedBox(height: _Metrics.labelGap),
                     Text(
@@ -387,6 +501,54 @@ class _GlassTabBarState extends State<GlassTabBar>
       ],
     );
     return semantics ? row : ExcludeSemantics(child: row);
+  }
+
+  /// The tab's icon, with its badge at the top trailing corner.
+  Widget _icon(GlassTabBarItem item, bool isSelected, Color? color) {
+    final icon = Icon(
+      isSelected ? item.activeIcon ?? item.icon : item.icon,
+      size: _Metrics.iconSize,
+      color: color,
+    );
+    final badge = item.badge;
+    if (badge == null) return icon;
+    final dot = badge.isEmpty;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        icon,
+        PositionedDirectional(
+          start: _Metrics.iconSize * (dot ? 0.7 : 0.55),
+          top: dot ? -1 : -6,
+          child: Container(
+            height: dot ? _Metrics.badgeDot : _Metrics.badgeHeight,
+            constraints: BoxConstraints(
+              minWidth: dot ? _Metrics.badgeDot : _Metrics.badgeHeight,
+            ),
+            padding: dot
+                ? null
+                : const EdgeInsetsDirectional.symmetric(horizontal: 5),
+            alignment: Alignment.center,
+            decoration: ShapeDecoration(
+              shape: const StadiumBorder(),
+              color: CupertinoDynamicColor.resolve(
+                CupertinoColors.systemRed,
+                context,
+              ),
+            ),
+            child: dot
+                ? null
+                : Text(
+                    badge,
+                    maxLines: 1,
+                    style: _Metrics.badge.copyWith(
+                      color: const Color(0xFFFFFFFF),
+                    ),
+                  ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
