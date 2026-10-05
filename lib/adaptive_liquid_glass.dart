@@ -12,6 +12,7 @@
 /// tab bar, built from them.
 library;
 
+export 'src/button/glass_button.dart' hide GlassButtonMetricsScope;
 export 'src/core/glass.dart' show Glass, GlassVariant;
 export 'src/core/glass_render_mode.dart' show GlassRenderMode;
 export 'src/core/glass_shape.dart' hide concentricRadius;
