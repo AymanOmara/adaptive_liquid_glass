@@ -3,3 +3,4 @@ pillow>=11
 scikit-image>=0.25
 scipy>=1.14
 pytest>=8
+flip-evaluator>=1.7

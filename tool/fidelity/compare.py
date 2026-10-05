@@ -14,6 +14,9 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 SSIM_MIN = 0.97
 DELTA_E_MAX = 2.0
 INFLATE_PT = 12
+# Interior = deeper than this inside the shape union; band = the ring between
+# the outline and it (the status notes' per-region convention).
+INTERIOR_PT = 18.0
 
 
 def region_for(scene, scale, width_px, height_px):
@@ -25,11 +28,51 @@ def region_for(scene, scale, width_px, height_px):
     return clamp(xs0, width_px), clamp(ys0, height_px), clamp(xs1, width_px), clamp(ys1, height_px)
 
 
-def score(a, b):
-    ssim = structural_similarity(a, b, channel_axis=2, data_range=1.0)
-    de = float(deltaE_ciede2000(rgb2lab(a), rgb2lab(b)).mean())
-    return {"ssim": float(ssim), "delta_e": de,
-            "pass": bool(ssim >= SSIM_MIN and de <= DELTA_E_MAX)}
+def region_masks(scene, scale, width_px, height_px):
+    """Boolean (interior, band) masks over the whole frame: interior = at
+    least [INTERIOR_PT] pt inside the shape union, band = inside the union
+    but shallower (the outer ring the rim and mirrored lens live in)."""
+    import measure_lens as ml
+    x0, y0, x1, y1 = region_for(scene, scale, width_px, height_px)
+    py, px = np.mgrid[y0:y1, x0:x1] + 0.5
+    inside = np.zeros(py.shape, bool)
+    interior = np.zeros(py.shape, bool)
+    for sh in scene["shapes"]:
+        # Minimal shape dicts (as in tests) default to a sharp rect.
+        d = ml.shape_geometry({"shape": "rect", "radius": 0, **sh}, scale, px, py)["depth"] / scale
+        inside |= d >= 0
+        interior |= d >= INTERIOR_PT
+    band = inside & ~interior
+    out_i = np.zeros((height_px, width_px), bool)
+    out_b = np.zeros((height_px, width_px), bool)
+    out_i[y0:y1, x0:x1] = interior
+    out_b[y0:y1, x0:x1] = band
+    return out_i, out_b
+
+
+def _flip(a, b):
+    """(mean, p99) LDR FLIP (official NVIDIA implementation, raw map)."""
+    from flip_evaluator import evaluate
+    m = np.asarray(evaluate(a.astype(np.float32), b.astype(np.float32),
+                            "LDR", applyMagma=False)[0], np.float64).squeeze()
+    return float(m.mean()), float(np.percentile(m, 99))
+
+
+def score(a, b, interior=None, band=None):
+    ssim, full = structural_similarity(a, b, channel_axis=2, data_range=1.0, full=True)
+    de = deltaE_ciede2000(rgb2lab(a), rgb2lab(b))
+    flip, flip_p99 = _flip(a, b)
+    out = {"ssim": float(ssim), "delta_e": float(de.mean()),
+           "de_p99": float(np.percentile(de, 99)), "de_max": float(de.max()),
+           "flip": flip, "flip_p99": flip_p99,
+           "pass": bool(ssim >= SSIM_MIN and de.mean() <= DELTA_E_MAX)}
+    if interior is not None and interior.any():
+        out["ssim_interior"] = float(full[interior].mean())
+        out["delta_e_interior"] = float(de[interior].mean())
+    if band is not None and band.any():
+        out["ssim_band"] = float(full[band].mean())
+        out["delta_e_band"] = float(de[band].mean())
+    return out
 
 
 def load(path):
@@ -61,7 +104,9 @@ def run(run_dir, no_fail=False, spec=None, prefix=""):
         if a.shape != b.shape:
             raise ValueError(f"{scene['id']}: flutter {a.shape} != swiftui {b.shape}")
         x0, y0, x1, y1 = region_for(scene, scale, a.shape[1], a.shape[0])
-        r = score(a[y0:y1, x0:x1], b[y0:y1, x0:x1])
+        interior, band = region_masks(scene, scale, a.shape[1], a.shape[0])
+        r = score(a[y0:y1, x0:x1], b[y0:y1, x0:x1],
+                  interior=interior[y0:y1, x0:x1], band=band[y0:y1, x0:x1])
         diff = (np.abs(a[y0:y1, x0:x1] - b[y0:y1, x0:x1]).mean(axis=2) * 4).clip(0, 1)
         Image.fromarray((diff * 255).astype(np.uint8)).save(run_dir / f"{scene['id']}.diff.png")
         rows.append({"id": scene["id"], **r, "region": [x0, y0, x1, y1]})
@@ -72,7 +117,9 @@ def run(run_dir, no_fail=False, spec=None, prefix=""):
         indent=2))
     cells = "".join(
         f"<tr class={'ok' if r['pass'] else 'bad'}><td>{html.escape(r['id'])}</td>"
-        f"<td>{r['ssim']:.4f}</td><td>{r['delta_e']:.2f}</td>"
+        f"<td>{r['ssim']:.4f}</td><td>{r['delta_e']:.2f}</td><td>{r['de_p99']:.2f}</td>"
+        f"<td>{r['flip']:.4f}</td><td>{r.get('delta_e_interior', float('nan')):.2f}</td>"
+        f"<td>{r.get('delta_e_band', float('nan')):.2f}</td>"
         f"<td><img src='{r['id']}.flutter.png'></td><td><img src='{r['id']}.swiftui.png'></td>"
         f"<td><img src='{r['id']}.diff.png'></td></tr>" for r in rows)
     missing_html = (f"<p class=bad>{len(missing)} missing: "
@@ -82,7 +129,9 @@ def run(run_dir, no_fail=False, spec=None, prefix=""):
         "td{padding:4px;font:13px system-ui}</style>"
         f"<p>{passed}/{len(rows)} pass "
         f"(SSIM ≥ {SSIM_MIN}, ΔE ≤ {DELTA_E_MAX})</p>{missing_html}"
-        f"<table><tr><th>scene<th>SSIM<th>ΔE<th>Flutter<th>SwiftUI<th>diff</tr>{cells}</table>")
+        f"<table><tr><th>scene<th>SSIM<th>ΔE<th>ΔE p99<th>FLIP"
+        f"<th>ΔE int<th>ΔE band"
+        f"<th>Flutter<th>SwiftUI<th>diff</tr>{cells}</table>")
     failed = [r["id"] for r in rows if not r["pass"]]
     print(f"{passed}/{len(rows)} pass, {len(missing)} missing")
     for i in failed:

@@ -90,3 +90,52 @@ def test_prefix_limits_missing_to_the_subset(tmp_path):
         _png(tmp_path / f"a.{r}.png", 0)
     assert run(tmp_path, spec=SPEC, prefix="a") == 0
     assert json.loads((tmp_path / "report.json").read_text())["missing"] == []
+
+
+# --- Task 17d: worst-pixel dE, FLIP and the interior/band split --------------
+
+def test_identical_images_have_zero_worst_pixel_and_flip():
+    rng = np.random.default_rng(2)
+    a = rng.random((120, 160, 3))
+    s = score(a, a.copy())
+    assert s["de_p99"] == pytest.approx(0.0, abs=1e-9)
+    assert s["de_max"] == pytest.approx(0.0, abs=1e-9)
+    assert s["flip"] == pytest.approx(0.0, abs=1e-6)
+
+
+def test_worst_pixel_and_flip_increase_with_distortion_and_stay_bounded():
+    rng = np.random.default_rng(3)
+    a = rng.random((120, 160, 3))
+    small = score(a, np.clip(a + 0.01, 0, 1))
+    big = score(a, np.clip(a + 0.05, 0, 1))
+    assert big["de_p99"] > small["de_p99"] > 0
+    assert big["de_max"] >= big["de_p99"]
+    assert big["flip"] > small["flip"] > 0
+    assert 0.0 <= small["flip"] <= 1.0 and 0.0 <= big["flip"] <= 1.0
+
+
+def test_region_masks_follow_the_18pt_convention():
+    from compare import region_masks
+    # 60x60 sharp rect at (20, 20): centre depth 30 pt = interior, 1 pt
+    # inside the outline is the band, far outside is neither.
+    scene = {"shapes": [{"x": 20, "y": 20, "w": 60, "h": 60, "shape": "rect", "radius": 0}]}
+    interior, band = region_masks(scene, scale=3, width_px=1000, height_px=1000)
+    c = 50 * 3  # centre of the shape, in px
+    assert interior[c - 30:c + 30, c - 30:c + 30].all()  # ±10 pt: depth ≥ 20 pt
+    assert not interior[21 * 3 + 3, c] and band[21 * 3 + 3, c]  # 1 pt inside: band
+    assert not interior[10 * 3, 10 * 3] and not band[10 * 3, 10 * 3]  # outside: neither
+
+
+def test_score_reports_region_metrics_with_masks():
+    rng = np.random.default_rng(4)
+    a = rng.random((240, 240, 3))
+    b = a.copy()
+    b[40:80, 40:80] = rng.random((40, 40, 3))  # a corner block
+    interior = np.zeros(a.shape[:2], bool)
+    interior[100:140, 100:140] = True  # away from the block
+    band = np.zeros(a.shape[:2], bool)
+    band[40:80, 40:80] = True  # exactly the block
+    s = score(a, b, interior=interior, band=band)
+    assert s["delta_e_interior"] == pytest.approx(0.0, abs=1e-9)
+    assert s["delta_e_band"] > 1.0
+    assert s["ssim_interior"] > s["ssim_band"]
