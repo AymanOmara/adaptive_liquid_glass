@@ -148,7 +148,7 @@ List<GlassShapeUniform> mergeUnions(List<GlassShapeUniform> shapes) {
 }
 
 /// Number of user floats after `uSize`.
-const int kGlassUniformFloats = 288;
+const int kGlassUniformFloats = 296;
 
 /// Packs [u] into the float layout documented in `shaders/liquid_glass.frag`:
 ///
@@ -161,7 +161,7 @@ const int kGlassUniformFloats = 288;
 /// | 16–79   | uRects[16]     | x, y, w, h px                             |
 /// | 80–143  | uInfo[16]      | radius px, clear?, cornerExponent, fill scale |
 /// | 144–207 | uTints[16]     | rgb, strength                             |
-/// | 208–287 | uVar[20]       | regular A–J, then clear A–J               |
+/// | 208–295 | uVar[22]       | regular A–K, then clear A–K               |
 ///
 /// Per variant: A = (lens decay px, lens band px, lens strength, dispersion),
 /// B = (rim width px, rim intensity, fillOpacity, dim),
@@ -171,8 +171,9 @@ const int kGlassUniformFloats = 288;
 /// F = (wide size drop, glow strength, post-lens blur share, normal radius
 /// scale),
 /// G, H, I.x = tone LUT: 9 grey output knots at inputs i/8,
-/// I.yzw = (lens edge px, lens edge decay px, -),
-/// J = (rim mix, rim mix width px, rim mix cut px, rim mix luma floor).
+/// I.yzw = (lens edge px, lens edge decay px, tone lift),
+/// J = (rim mix, rim mix width px, rim mix cut px, rim mix luma floor),
+/// K = (tone lift knee, tone lift size ref px, -, -).
 ///
 /// uGlobal2.w (float 7) is the composed frost sigma in physical px.
 List<double> packGlassUniforms(GlassFrameUniforms u) {
@@ -274,7 +275,7 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
       v.toneKnots[8],
       v.lensEdge * dpr,
       v.lensEdgeDecay * dpr,
-      0,
+      v.toneLift,
     ]);
     f.setAll(k + 36, [
       v.rimMix,
@@ -282,7 +283,8 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
       v.rimMixCut * dpr,
       v.rimMixLumaFloor,
     ]);
-    k += 40;
+    f.setAll(k + 40, [v.toneLiftKnee, v.toneLiftSizeRef * dpr, 0, 0]);
+    k += 44;
   }
   return f;
 }

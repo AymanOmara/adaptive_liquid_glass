@@ -92,6 +92,9 @@ class GlassVariantConstants {
     this.rimMixWidth = 1.5,
     this.rimMixCut = 1,
     this.rimMixLumaFloor = 1,
+    this.toneLift = 0,
+    this.toneLiftKnee = 0.5,
+    this.toneLiftSizeRef = 0,
     required this.lensBand,
     required this.lensStrength,
     required this.lensDecay,
@@ -132,6 +135,9 @@ class GlassVariantConstants {
     rimMixWidth: _d(j, 'rimMixWidth', base.rimMixWidth),
     rimMixCut: _d(j, 'rimMixCut', base.rimMixCut),
     rimMixLumaFloor: _d(j, 'rimMixLumaFloor', base.rimMixLumaFloor),
+    toneLift: _d(j, 'toneLift', base.toneLift),
+    toneLiftKnee: _d(j, 'toneLiftKnee', base.toneLiftKnee),
+    toneLiftSizeRef: _d(j, 'toneLiftSizeRef', base.toneLiftSizeRef),
     lensBand: _d(j, 'lensBand', base.lensBand),
     lensStrength: _d(j, 'lensStrength', base.lensStrength),
     lensDecay: _d(j, 'lensDecay', base.lensDecay),
@@ -270,6 +276,20 @@ class GlassVariantConstants {
   /// glass under it; 1 disables the scaling (dark mode measured 0.05).
   final double rimMixLumaFloor;
 
+  /// Small-shape shadow lift (Task 17d / 8b, fitted on dark regular glass):
+  /// after the tone LUT each channel gains `toneLift × size × max(0, 1 −
+  /// c / toneLiftKnee)²`, with `size = max(0, 1 − halfMin /
+  /// toneLiftSizeRef)`. SwiftUI lifts the dark end behind small dark glass
+  /// (a capsule over a dark photo reads grey, not black). 0 disables it.
+  final double toneLift;
+
+  /// Input level where [toneLift] fades to 0.
+  final double toneLiftKnee;
+
+  /// Half shorter side (logical px) at and above which [toneLift] is 0;
+  /// 0 disables the lift.
+  final double toneLiftSizeRef;
+
   /// Width of the specular rim.
   final double rimWidth;
 
@@ -331,6 +351,9 @@ class GlassVariantConstants {
     'rimMixWidth': rimMixWidth,
     'rimMixCut': rimMixCut,
     'rimMixLumaFloor': rimMixLumaFloor,
+    'toneLift': toneLift,
+    'toneLiftKnee': toneLiftKnee,
+    'toneLiftSizeRef': toneLiftSizeRef,
     'lensBand': lensBand,
     'lensStrength': lensStrength,
     'lensDecay': lensDecay,

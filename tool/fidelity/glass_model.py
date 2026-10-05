@@ -51,6 +51,9 @@ VARIANT_DEFAULTS = {
     "rimMixWidth": 1.5,
     "rimMixCut": 1.0,
     "rimMixLumaFloor": 1.0,
+    "toneLift": 0.0,
+    "toneLiftKnee": 0.5,
+    "toneLiftSizeRef": 0.0,
 }
 
 
@@ -330,9 +333,10 @@ def _uvar(constants, brightness, scale):
             "G": knots[0:4].copy(),
             "H": knots[4:8].copy(),
             "I": np.array([knots[8], v["lensEdge"] * scale,
-                           v["lensEdgeDecay"] * scale, 0.0]),
+                           v["lensEdgeDecay"] * scale, v["toneLift"]]),
             "J": np.array([v["rimMix"], v["rimMixWidth"] * scale,
                            v["rimMixCut"] * scale, v["rimMixLumaFloor"]]),
+            "K": np.array([v["toneLiftKnee"], v["toneLiftSizeRef"] * scale, 0.0, 0.0]),
         })
     return res
 
@@ -444,12 +448,12 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     uv = _uvar(constants, brightness, scale)
     if np.all(clear_mix == 0) or np.all(clear_mix == 1):
         u = uv[1] if np.all(clear_mix == 1) else uv[0]
-        A, B, C, D, E, F, G, H, I, J = (u[n] for n in "ABCDEFGHIJ")
+        A, B, C, D, E, F, G, H, I, J, K = (u[n] for n in "ABCDEFGHIJK")
     else:
         cm = np.asarray(clear_mix)[..., None]
-        A, B, C, D, E, F, G, H, I, J = (uv[0][n] * (1 - cm) + uv[1][n] * cm for n in "ABCDEFGHIJ")
-    A, B, C, D, E, F, I, J = (np.broadcast_to(x, g["d"].shape + (4,))
-                              for x in (A, B, C, D, E, F, I, J))
+        A, B, C, D, E, F, G, H, I, J, K = (uv[0][n] * (1 - cm) + uv[1][n] * cm for n in "ABCDEFGHIJK")
+    A, B, C, D, E, F, I, J, K = (np.broadcast_to(x, g["d"].shape + (4,))
+                                 for x in (A, B, C, D, E, F, I, J, K))
 
     d, nx, ny, px, py = g["d"], g["nx"], g["ny"], g["px"], g["py"]
     inside = 1.0 - _smoothstep(-0.75, 0.75, d)
@@ -545,6 +549,14 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     kc = np.concatenate([uv[1]["G"][:4], uv[1]["H"][:4], uv[1]["I"][:1]])
     cm1 = np.broadcast_to(np.asarray(clear_mix), g["d"].shape)[m]
     col = tone_apply(col.T, kr[:, None] * (1 - cm1) + kc[:, None] * cm1).T
+    # Small-shape shadow lift (Task 17d / 8b, fitted: SwiftUI lifts the dark
+    # end behind small dark glass): + toneLift x size x max(0, 1 - c/knee)^2,
+    # size = max(0, 1 - halfMin / toneLiftSizeRef).
+    Km = K[m]
+    hmm = np.broadcast_to(g["half_min"], g["d"].shape)[m]
+    lsz = np.where(Km[:, 1] > 0, np.maximum(0.0, 1.0 - hmm / np.maximum(Km[:, 1], 1e-3)), 0.0)
+    lk = np.maximum(1.0 - col / np.maximum(Km[:, 0:1], 1e-3), 0.0)
+    col = col + (I[..., 3][m] * lsz)[:, None] * lk * lk
     fsm = np.broadcast_to(fill_scale, g["d"].shape)[m][:, None]
     col = col + (Dm[:, :3] - col) * (Bm[:, 2:3] * fsm)
     col = col * (1.0 - Bm[:, 3:4])

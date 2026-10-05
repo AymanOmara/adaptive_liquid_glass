@@ -11,14 +11,15 @@ uniform vec4 uTouch;       // x, y, glow, glowRadius px
 uniform vec4 uRects[16];   // x, y, w, h px
 uniform vec4 uInfo[16];    // radius px, variant(0 regular, 1 clear), cornerExponent (0 = global), fill scale
 uniform vec4 uTints[16];   // rgb, strength
-uniform vec4 uVar[20];     // per variant (regular A-J, then clear A-J):
+uniform vec4 uVar[22];     // per variant (regular A-K, then clear A-K):
                            //   A(lens decay px, band px, lens strength, disp) B(rimW, rimI, fillOpacity, dim)
                            //   C(shadowR, shadowO, tintS, lens size ref px) D(fillR, fillG, fillB, saturation)
                            //   E(frost wide sigma px, wide mix edge, wide mix centre, wide size ref px)
                            //   F(wide size drop, glow strength, post-lens blur share, normal radius scale)
                            //   G, H, I.x: tone LUT, 9 grey output knots at inputs i/8 (Task 17d)
-                           //   I.yz(lens edge px, lens edge decay px)
+                           //   I.yzw(lens edge px, lens edge decay px, tone lift)
                            //   J(rim mix, rim mix width px, rim mix cut px, rim mix luma floor)
+                           //   K(tone lift knee, tone lift size ref px, -, -)
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -68,7 +69,7 @@ float lensField(vec2 p) {
   for (int i = 0; i < 16; i++) {
     if (i >= int(uGlobal.x)) break;
     vec4 info = uInfo[i];
-    float rs = mix(uVar[5].w, uVar[15].w, info.y);
+    float rs = mix(uVar[5].w, uVar[16].w, info.y);
     d = smin(d, shapeOf(p, uRects[i], info, rs), uGlobal2.x);
   }
   return d;
@@ -120,16 +121,17 @@ void main() {
   fillScale /= wsum;
   tint /= wsum;
 
-  vec4 A = mix(uVar[0], uVar[10], clearMix);
-  vec4 B = mix(uVar[1], uVar[11], clearMix);
-  vec4 C = mix(uVar[2], uVar[12], clearMix);
-  vec4 D = mix(uVar[3], uVar[13], clearMix);
-  vec4 E = mix(uVar[4], uVar[14], clearMix);
-  vec4 F = mix(uVar[5], uVar[15], clearMix);
-  vec4 G = mix(uVar[6], uVar[16], clearMix);
-  vec4 H = mix(uVar[7], uVar[17], clearMix);
-  vec4 I = mix(uVar[8], uVar[18], clearMix);
-  vec4 J = mix(uVar[9], uVar[19], clearMix);
+  vec4 A = mix(uVar[0], uVar[11], clearMix);
+  vec4 B = mix(uVar[1], uVar[12], clearMix);
+  vec4 C = mix(uVar[2], uVar[13], clearMix);
+  vec4 D = mix(uVar[3], uVar[14], clearMix);
+  vec4 E = mix(uVar[4], uVar[15], clearMix);
+  vec4 F = mix(uVar[5], uVar[16], clearMix);
+  vec4 G = mix(uVar[6], uVar[17], clearMix);
+  vec4 H = mix(uVar[7], uVar[18], clearMix);
+  vec4 I = mix(uVar[8], uVar[19], clearMix);
+  vec4 J = mix(uVar[9], uVar[20], clearMix);
+  vec4 K = mix(uVar[10], uVar[21], clearMix);
   float hc = uGlobal2.z;
 
   float inside = 1.0 - smoothstep(-0.75, 0.75, d);
@@ -261,6 +263,13 @@ void main() {
       + (vec3(H.z) - vec3(H.y)) * clamp(c8 - 5.0, 0.0, 1.0)
       + (vec3(H.w) - vec3(H.z)) * clamp(c8 - 6.0, 0.0, 1.0)
       + (vec3(I.x) - vec3(H.w)) * clamp(c8 - 7.0, 0.0, 1.0);
+
+  // Small-shape shadow lift (Task 17d / 8b, fitted): SwiftUI lifts the dark
+  // end behind small dark glass. + I.w x size x max(0, 1 - col / K.x)^2,
+  // size = max(0, 1 - halfMin / K.y).
+  float liftSz = K.y > 0.0 ? max(0.0, 1.0 - halfMin / max(K.y, 1e-3)) : 0.0;
+  vec3 lk = max(vec3(1.0) - col / max(K.x, 1e-3), vec3(0.0));
+  col += (I.w * liftSz) * lk * lk;
 
   col = mix(col, D.rgb, B.z * fillScale);
   col *= (1.0 - B.w);

@@ -47,7 +47,8 @@ KEYS = ["blurSigma", "blurSizeRef", "frostWideSigma", "frostWideMixEdge", "frost
         "shadowRadius", "shadowOpacity", "tintStrength",
         "tone0", "tone1", "tone2", "tone3", "tone4", "tone5", "tone6", "tone7", "tone8",
         "postBlurShare", "normalRadiusScale", "lensEdge", "lensEdgeDecay",
-        "rimMix", "rimMixWidth", "rimMixCut", "rimMixLumaFloor"]
+        "rimMix", "rimMixWidth", "rimMixCut", "rimMixLumaFloor",
+        "toneLift", "toneLiftKnee", "toneLiftSizeRef"]
 TONE_KEYS = [f"tone{i}" for i in range(9)]
 BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
           # Task 17b: frost sigma x min(1, halfMin / blurSizeRef) (pt); 0 = off.
@@ -69,6 +70,8 @@ BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
           "lensEdge": (0, 20), "lensEdgeDecay": (0.1, 3),
           "rimMix": (0, 1), "rimMixWidth": (0.3, 4), "rimMixCut": (0.3, 4),
           "rimMixLumaFloor": (0, 1),
+          # Task 8b small-shape shadow lift (amount, knee, size ref pt).
+          "toneLift": (0, 1), "toneLiftKnee": (0.05, 1), "toneLiftSizeRef": (0, 200),
           # Lens v3 (pt); Task 15c measured 6.4-6.5 and 38.4 (regular) / 0 (clear).
           "lensDecay": (0.5, 20), "lensSizeRef": (0, 100),
           "dispersion": (0, 0.6), "rimWidth": (0.3, 4), "rimIntensity": (0, 1.5),
@@ -193,7 +196,7 @@ def get(c, set_name, key):
         h = v["fillColor"].lstrip("#")
         rgb = v.get("_fill") or [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
         return rgb["RGB".index(key[-1])]
-    if key.startswith("tone"):
+    if key.startswith("tone") and key[4:].isdigit():
         return float(v["toneKnots"][int(key[4:])])
     return float(v[key])
 
@@ -206,7 +209,7 @@ def put(c, set_name, key, value):
         rgb["RGB".index(key[-1])] = float(value)
         v["_fill"] = rgb
         v["fillColor"] = "#" + "".join(f"{int(round(x * 255)):02X}" for x in rgb)
-    elif key.startswith("tone"):
+    elif key.startswith("tone") and key[4:].isdigit():
         v.setdefault("toneKnots", [i / 8 for i in range(9)])[int(key[4:])] = float(value)
     else:
         v[key] = float(value)
@@ -261,7 +264,8 @@ def scan(pool, c, key, values):
     return c
 
 
-CHECKPOINT = [None]  # path: best-so-far constants, rewritten as the fit improves
+CHECKPOINT = [None]
+FTOL = [1e-4]  # path: best-so-far constants, rewritten as the fit improves
 
 
 def fit_sets(pool, c, targets, keys, restarts, maxfev, seed=0):
@@ -305,7 +309,7 @@ def fit_sets(pool, c, targets, keys, restarts, maxfev, seed=0):
             best_u, best_f = u, fu
     print(f"  after {restarts} random starts: {best_f:.4f}")
     res = minimize(f, best_u, method="Powell", bounds=[(0, 1)] * n,
-                   options={"maxfev": maxfev, "xtol": 1e-3, "ftol": 1e-4})
+                   options={"maxfev": maxfev, "xtol": 1e-3, "ftol": FTOL[0]})
     u = res.x if res.fun < best_f else best_u
     print(f"  Powell: loss {min(res.fun, best_f):.4f}, {evals[0]} evals, {time.time() - t0:.0f}s")
     return apply(u)
@@ -328,6 +332,7 @@ def main():
     ap.add_argument("--seed", type=int, default=0, help="random-restart seed")
     ap.add_argument("--ssim-floor", type=float,
                     help="add 100 x mean shortfall below this SSIM to the loss")
+    ap.add_argument("--ftol", type=float, default=1e-4, help="Powell ftol")
     ap.add_argument("--checkpoint", type=pathlib.Path,
                     help="rewrite best-so-far constants here during the fit")
     ap.add_argument("--lo", type=float, help="corner: scan start (default 2.0)")
@@ -338,6 +343,7 @@ def main():
     # from standard_constants.json, as GlassConstants.fromJson does.
     SSIM_FLOOR[0] = args.ssim_floor
     CHECKPOINT[0] = args.checkpoint
+    FTOL[0] = args.ftol
     c = resolve_constants(json.loads(args.start.read_text()))
     if args.stage == "score":
         scenes = [s for s in SPEC["scenes"] if s["id"].startswith(args.scenes)]

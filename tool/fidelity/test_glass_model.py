@@ -315,3 +315,16 @@ def test_rim_mix_whitens_outer_pixels_and_dark_floor_scales_it():
     c, _ = _feat("clear-rect28-text-light", rimMix=0.63, rimMixLumaFloor=0.0)
     assert b.sum() > a.sum()
     assert a.sum() <= c.sum() <= b.sum()
+
+
+def test_tone_lift_lifts_small_dark_shapes_only():
+    bg = np.full((2622, 1206, 3), 0.1)
+    c = json.loads(json.dumps(STANDARD))
+    c["regularDark"].update(toneLift=0.4, toneLiftKnee=0.5, toneLiftSizeRef=50.0)
+    small = _scene("regular-capsule-photo-dark")  # halfMin 28 pt
+    large = _scene("regular-rect28-photo-dark")   # halfMin 70 pt
+    for sc, lifted in ((small, True), (large, False)):
+        a, _ = render_window(bg, sc, STANDARD)
+        b, _ = render_window(bg, sc, c)
+        assert (b.sum() > a.sum()) == lifted
+
