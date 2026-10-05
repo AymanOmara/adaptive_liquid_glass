@@ -482,12 +482,28 @@ class GlassConstants {
     // Fitted to SwiftUI recordings (Task 16, iOS 26.4 simulator; bounding
     // box over time of press/morph clips, tool/fidelity/compare_motion.py).
     motion: GlassMotionConstants(
-      // PROVISIONAL (Task 16b, refit pending): growth model from lossless
-      // SwiftUI captures, springs from the press-in/release split.
+      // Task 16b: lossless captures (in-app render-server crop, identical
+      // to screenshots), iOS 26.4 simulator, compare_motion.py bboxes.
+      // SwiftUI adds about the same area to every pressed shape: centre
+      // presses of circles 44/72/120 pt and capsules 120×44/200×56/300×72
+      // grow by scale 1.356/1.229/1.069 and 1.136/1.072/1.041. Least
+      // squares on the long-side growth (pt) of sqrt(1 + G/(w·h)), capped:
+      // G 1796, cap 1.356, RMS 2.4 pt (worst: 72 pt circle, 11.5 vs
+      // 16.5 pt). Below 44 pt the cap is unmeasured.
       pressGrowthArea: 1800,
       pressScaleMax: 1.36,
-      pressStretch: 0.011,
-      glowRadius: 41,
+      // SwiftUI (sx − sy)/0.79 = 0.0055 on the 200×56 capsule; Flutter
+      // measured 0.0103 at 0.011.
+      pressStretch: 0.006,
+      // Gaussian σ of the touch glow: SwiftUI 42.3 (light) / 42.5 (dark) pt,
+      // Flutter at 41 measured 46.0 / 40.9. SwiftUI's glow is 6–9× fainter
+      // (lift 0.019 vs 0.175 light, 0.041 vs 0.238 dark): the shader's
+      // amplitude, not fitted here.
+      glowRadius: 40,
+      // Press-in and release differ: SwiftUI (0.280, 0.633) in and
+      // (0.383, 0.545) out (median over 7 clips, bbox height). Circles
+      // release under-damped (ζ ≈ 0.37), capsules at 0.51–0.76. Flutter
+      // at these values measures (0.274, 0.625) and (0.375, 0.554).
       pressResponse: 0.28,
       pressDamping: 0.63,
       releaseResponse: 0.38,

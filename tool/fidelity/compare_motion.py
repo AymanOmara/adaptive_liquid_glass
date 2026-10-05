@@ -387,6 +387,9 @@ def _score_pair(m, dirs, bg, scale, crop, frames):
         "pass": bool(scored and all(per[i]["pass"] for i in scored) and not unsettled),
         "unsettled": unsettled,
         "held_frames": skip,
+        # Clip frame shown at each scored position (the phase-interpolated
+        # neighbour's lower index), for strips.
+        "clip_index": {r: [k for k, _ in v] for r, v in idx.items()},
         "passed_frames": sum(per[i]["pass"] for i in scored),
         "worst_frame": worst,
         "worst": per[worst] if worst is not None else None,
@@ -473,14 +476,10 @@ def strips(run_dir, out_dir):
         picks = [1, peak, o["frames"] - 1]
         for r in ("flutter", "swiftui"):
             files = sorted((run_dir / "frames" / f"{o['id']}.{r}").glob("*.png"))
-            start = max(0, o["onset"][r] - 1)
-            if r == "swiftui" and o["shift"] > 0:
-                start += o["shift"]
-            if r == "flutter" and o["shift"] < 0:
-                start -= o["shift"]
+            index = o["clip_index"][r]
             imgs = []
             for i in picks:
-                img = load(files[min(len(files) - 1, start + i)])
+                img = load(files[index[min(len(index) - 1, i)]])
                 x0, y0, x1, y1 = o["region"]
                 imgs.append(img[y0:y1, x0:x1])
             rows.append(np.hstack(imgs))
