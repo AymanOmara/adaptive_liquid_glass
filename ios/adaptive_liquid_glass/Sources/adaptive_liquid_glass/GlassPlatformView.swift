@@ -47,12 +47,20 @@ final class GlassPlatformView: NSObject, FlutterPlatformView {
       glass = SwiftUIGlass(root: root)
     }
     channel.setMethodCallHandler { [weak self] call, result in
-      guard call.method == "setShapes", let a = call.arguments as? [String: Any] else {
+      switch call.method {
+      case "setShapes":
+        guard let a = call.arguments as? [String: Any] else {
+          result(FlutterError(code: "bad-args", message: "setShapes needs a map", details: nil))
+          return
+        }
+        self?.apply(a)
+        result(nil)
+      case "debugState":
+        // For the example's integration tests: what SwiftUI is drawing.
+        result(self?.debugState())
+      default:
         result(FlutterMethodNotImplemented)
-        return
       }
-      self?.apply(a)
-      result(nil)
     }
     apply(args)
   }
@@ -66,6 +74,17 @@ final class GlassPlatformView: NSObject, FlutterPlatformView {
   private func apply(_ args: [String: Any]) {
     guard #available(iOS 26.0, *) else { return }
     (glass as? SwiftUIGlass)?.apply(args)
+  }
+
+  private func debugState() -> [String: Any] {
+    var state: [String: Any] = [
+      "bounds": [root.bounds.width, root.bounds.height],
+      "interactive": root.isUserInteractionEnabled,
+    ]
+    if #available(iOS 26.0, *), let g = glass as? SwiftUIGlass {
+      state.merge(g.debugState()) { $1 }
+    }
+    return state
   }
 }
 
@@ -182,6 +201,22 @@ final class SwiftUIGlass {
       if model.dark != dark { model.dark = dark }
       if model.shapes != shapes { model.shapes = shapes }
     }
+  }
+
+  func debugState() -> [String: Any] {
+    let v = host.view!
+    let insets = v.safeAreaInsets
+    return [
+      "hosted": v.superview != nil,
+      "hostFrame": [v.frame.minX, v.frame.minY, v.frame.width, v.frame.height],
+      "safeArea": [insets.top, insets.left, insets.bottom, insets.right],
+      "clearBackground": v.backgroundColor == .clear,
+      "spacing": model.spacing,
+      "dark": model.dark,
+      "shapes": model.shapes.map {
+        [$0.frame.minX, $0.frame.minY, $0.frame.width, $0.frame.height]
+      },
+    ]
   }
 }
 
