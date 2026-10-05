@@ -16516,6 +16516,294 @@
           "tint": null
         }
       ]
+    },
+    {
+      "id": "regular-rect16-light--gradient-r000",
+      "background": "gradient-r000",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-light--gradient-r090",
+      "background": "gradient-r090",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-light--gradient-r180",
+      "background": "gradient-r180",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-light--gradient-r270",
+      "background": "gradient-r270",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-dark--gradient-r000",
+      "background": "gradient-r000",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-dark--gradient-r090",
+      "background": "gradient-r090",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-dark--gradient-r180",
+      "background": "gradient-r180",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "regular-rect16-dark--gradient-r270",
+      "background": "gradient-r270",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "regular",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-light--gradient-r000",
+      "background": "gradient-r000",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-light--gradient-r090",
+      "background": "gradient-r090",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-light--gradient-r180",
+      "background": "gradient-r180",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-light--gradient-r270",
+      "background": "gradient-r270",
+      "brightness": "light",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-dark--gradient-r000",
+      "background": "gradient-r000",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-dark--gradient-r090",
+      "background": "gradient-r090",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-dark--gradient-r180",
+      "background": "gradient-r180",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
+    },
+    {
+      "id": "clear-rect16-dark--gradient-r270",
+      "background": "gradient-r270",
+      "brightness": "dark",
+      "spacing": null,
+      "shapes": [
+        {
+          "w": 240,
+          "h": 140,
+          "shape": "rect",
+          "radius": 16,
+          "x": 81.0,
+          "y": 560,
+          "variant": "clear",
+          "tint": null
+        }
+      ]
     }
   ],
   "motion": []

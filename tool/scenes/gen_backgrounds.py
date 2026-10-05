@@ -109,6 +109,26 @@ def gradient() -> Image.Image:
     return img
 
 
+# Task 9 (rim direction): the gradient ramp on the four screen axes — the
+# same palette as `gradient`, rotation only, canvas unrotated. r000 is
+# `gradient` itself (dark top -> light bottom); r090 runs the ramp left ->
+# right; r180 and r270 are those two reversed (a 180-deg rotation of each).
+GRADIENT_DEGREES = (0, 90, 180, 270)
+
+
+def gradient_rotated(degrees: int, w: int = W, h: int = H) -> Image.Image:
+    horizontal = degrees % 180 == 90
+    n = w if horizontal else h
+    t = np.arange(n, dtype=np.float64) / (n - 1)
+    if degrees in (180, 270):
+        t = 1.0 - t
+    ramp = np.stack([np.floor(30 + 200 * t), np.floor(80 + 100 * (1 - t)),
+                     np.floor(200 - 150 * t)], -1).astype(np.uint8)
+    grid = np.broadcast_to(ramp[None, :, :], (h, n, 3)) if horizontal \
+        else np.broadcast_to(ramp[:, None, :], (n, w, 3))
+    return Image.fromarray(grid.copy(), "RGB")
+
+
 if __name__ == "__main__":
     import sys
 
@@ -118,6 +138,9 @@ if __name__ == "__main__":
     for name, fn in [] if only_codes else [("photo", photo), ("text", text), ("gradient", gradient)]:
         fn().save(OUT / f"{name}.png", optimize=True)
         print("wrote", OUT / f"{name}.png")
+    for deg in GRADIENT_DEGREES:
+        gradient_rotated(deg).save(OUT / f"gradient-r{deg:03d}.png", optimize=True)
+        print("wrote", OUT / f"gradient-r{deg:03d}.png")
     for name, (axis, period, step) in {**CODES, **FROST_CODES}.items():
         code(axis, period, step).save(OUT / f"{name}.png", optimize=True)
         print("wrote", OUT / f"{name}.png")

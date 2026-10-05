@@ -75,6 +75,16 @@ for gap in (4, 16, 30):
         scenes.append({"id": f"regular-merge{gap}-{b}--flat-v128", "background": "flat-v128",
                        "brightness": b, "spacing": 20, "shapes": [a, {**a, "x": W / 2 + gap / 2}]})
 
+# Task 9 (rim direction): rect16 over the four rotated gradients
+# (gen_backgrounds.gradient_rotated), both appearances and brightnesses.
+# Regular is the failing rect band's variant; clear is the control (its rim
+# measured isotropic in the model-only clear analysis, M5). measure_rim.py
+# decodes the rim ring's azimuthal profile per rotation.
+for v in ("regular", "clear"):
+    for b in ("light", "dark"):
+        for deg in (0, 90, 180, 270):
+            scenes.append(scene(v, "rect16", b, f"gradient-r{deg:03d}"))
+
 if __name__ == "__main__":
     OUT.write_text(json.dumps(
         {"device": {"width": W, "height": 874, "scale": 3}, "scenes": scenes, "motion": []},
