@@ -16,6 +16,7 @@ import '../shader/glass_program.dart';
 import '../shader/render_glass_backdrop.dart';
 import 'glass_registry.dart';
 import 'morph_controller.dart';
+import 'scroll_chain.dart';
 
 /// How members of a group render themselves.
 enum GlassMemberRendering {
@@ -29,7 +30,13 @@ enum GlassMemberRendering {
   degraded,
 
   /// Registered with the group's native (UIKit) glass layer, iOS 26+.
-  native,
+  native;
+
+  /// Whether the group draws its members' glass (shader backdrop or native
+  /// layer) rather than each member drawing its own surface.
+  bool get drawnByGroup =>
+      this == GlassMemberRendering.backdrop ||
+      this == GlassMemberRendering.native;
 }
 
 /// Shares a group's registry and resolved mode with its members.
@@ -190,8 +197,7 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
 
   void _updateSampler(GlassMemberRendering rendering) {
     final want =
-        (rendering == GlassMemberRendering.backdrop ||
-            rendering == GlassMemberRendering.native) &&
+        rendering.drawnByGroup &&
         GlassBackdropSources.instance.boundaries.isNotEmpty;
     if (want && _sampler == null) {
       _sampler = Timer.periodic(
@@ -240,12 +246,9 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
     for (final l in _motion) {
       l.removeListener(_registry.markNeedsPaint);
     }
-    _motion.clear();
-    var scrollable = Scrollable.maybeOf(context);
-    while (scrollable != null) {
-      _motion.add(scrollable.position);
-      scrollable = Scrollable.maybeOf(scrollable.context);
-    }
+    _motion
+      ..clear()
+      ..addAll(enclosingScrollPositions(context));
     final route = ModalRoute.of(context);
     if (route != null) {
       final a = route.animation;
