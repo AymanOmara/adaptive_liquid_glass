@@ -112,6 +112,15 @@ double composedBlurSigma(GlassVariantConstants v, double halfMin) {
   return v.blurSigma * k * math.sqrt(1 - share);
 }
 
+/// sigmaX / sigma of the composed blur for a shape of [size] (logical px):
+/// `(height / width) ^ blurAspectPower`, so a wide shape blurs less along
+/// its long axis and more across it (sigmaY = sigma / aspect). 1 when the
+/// power is 0 or the shape is square.
+double composedBlurAspect(GlassVariantConstants v, Size size) {
+  if (v.blurAspectPower == 0 || size.width <= 0 || size.height <= 0) return 1;
+  return math.pow(size.height / size.width, v.blurAspectPower).toDouble();
+}
+
 bool _drawable(GlassShapeUniform s) =>
     s.variant != GlassVariant.identity &&
     s.rect.isFinite &&

@@ -77,8 +77,9 @@ class GlassBackdropDebugFrame {
     this.uniforms,
     this.localBounds,
     this.filterOriginGlobal,
-    this.blurSigma,
-  );
+    this.blurSigma, [
+    this.blurAspect = 1,
+  ]);
 
   /// Uniforms sent to the shader.
   final GlassFrameUniforms uniforms;
@@ -89,8 +90,13 @@ class GlassBackdropDebugFrame {
   /// Global logical position of the clip origin.
   final Offset filterOriginGlobal;
 
-  /// Sigma (logical px) of the frost blur composed before the shader.
+  /// Sigma (logical px) of the frost blur composed before the shader (the
+  /// geometric mean of its x and y sigmas).
   final double blurSigma;
+
+  /// sigmaX / [blurSigma] (sigmaY = [blurSigma] / blurAspect); 1 = isotropic
+  /// (`blurAspectPower`).
+  final double blurAspect;
 }
 
 /// Paints the group's glass behind its child.
@@ -258,14 +264,17 @@ class RenderGlassBackdrop extends RenderProxyBox {
     // scaled down on shapes smaller than blurSizeRef and by the post-lens
     // share. Known limitation: a group mixing regular and clear (or large
     // and small) glass blurs every member as strongly as the strongest one.
-    final blurSigma = drawn
-        .map(
-          (g) => composedBlurSigma(
-            c.of(g.entry.glass.variant, _config.brightness),
-            g.drawn.shortestSide / 2,
-          ),
-        )
-        .reduce(math.max);
+    // The strongest member also sets the blur's aspect (blurAspectPower).
+    var blurSigma = -1.0;
+    var blurAspect = 1.0;
+    for (final g in drawn) {
+      final v = c.of(g.entry.glass.variant, _config.brightness);
+      final s = composedBlurSigma(v, g.drawn.shortestSide / 2);
+      if (s > blurSigma) {
+        blurSigma = s;
+        blurAspect = composedBlurAspect(v, g.drawn.size);
+      }
+    }
 
     Offset? touch;
     var glow = 0.0;
@@ -302,6 +311,7 @@ class RenderGlassBackdrop extends RenderProxyBox {
       localBounds,
       origin,
       blurSigma,
+      blurAspect,
     );
   }
 
@@ -338,8 +348,8 @@ class RenderGlassBackdrop extends RenderProxyBox {
           ? ui.ImageFilter.compose(
               outer: shaderFilter,
               inner: ui.ImageFilter.blur(
-                sigmaX: sigma,
-                sigmaY: sigma,
+                sigmaX: sigma * frame.blurAspect,
+                sigmaY: sigma / frame.blurAspect,
                 tileMode: TileMode.clamp,
               ),
             )

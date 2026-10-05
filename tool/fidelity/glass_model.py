@@ -52,6 +52,7 @@ VARIANT_DEFAULTS = {
     "rimMixCut": 1.0,
     "rimMixLumaFloor": 1.0,
     "toneLift": 0.0,
+    "blurAspectPower": 0.0,
     "toneLiftKnee": 0.5,
     "toneLiftSizeRef": 0.0,
 }
@@ -174,33 +175,35 @@ def lens_v3(depth, half_min, amp, decay, band, size_ref):
 
 
 @functools.lru_cache(maxsize=64)
-def _blurred_cached(bg_id, sigma_px, box):
+def _blurred_cached(bg_id, sigma_px, box, aspect=1.0):
     bg = _BG[bg_id]
-    return _blur_box(bg, sigma_px, box)
+    return _blur_box(bg, sigma_px, box, aspect)
 
 
 _BG = {}
 
 
-def _blur_box(bg, sigma_px, box):
-    """Blurs `bg` (edge clamped) with impeller_kernel and returns the window
-    `box`."""
+def _blur_box(bg, sigma_px, box, aspect=1.0):
+    """Blurs `bg` (edge clamped) with impeller_kernel (sigma x aspect along x,
+    sigma / aspect along y) and returns the window `box`."""
     x0, y0, x1, y1 = box
     h, w = bg.shape[:2]
-    k = impeller_kernel(sigma_px) if sigma_px > 0 else np.ones(1)
-    m = k.size // 2 + 2
+    kx = impeller_kernel(sigma_px * aspect) if sigma_px > 0 else np.ones(1)
+    ky = impeller_kernel(sigma_px / aspect) if sigma_px > 0 else np.ones(1)
+    m = max(kx.size, ky.size) // 2 + 2
     ys = np.clip(np.arange(y0 - m, y1 + m), 0, h - 1)
     xs = np.clip(np.arange(x0 - m, x1 + m), 0, w - 1)
     win = bg[np.ix_(ys, xs)]
     if sigma_px > 0:
-        win = convolve1d(convolve1d(win, k, axis=0, mode="nearest"), k, axis=1, mode="nearest")
+        win = convolve1d(convolve1d(win, ky, axis=0, mode="nearest"), kx, axis=1, mode="nearest")
     return win[m:m + (y1 - y0), m:m + (x1 - x0)]
 
 
-def blurred_window(bg, sigma_px, box):
+def blurred_window(bg, sigma_px, box, aspect=1.0):
     key = id(bg)
     _BG[key] = bg
-    return _blurred_cached(key, round(float(sigma_px), 4), tuple(int(v) for v in box))
+    return _blurred_cached(key, round(float(sigma_px), 4), tuple(int(v) for v in box),
+                           round(float(aspect), 6))
 
 
 # --- frost v2 (Task 17c) -------------------------------------------------------
@@ -228,6 +231,7 @@ def frost_taps(sigma_px):
 
 
 # 3-point Gauss-Hermite rule for a unit Gaussian: nodes 0, +-sqrt(3).
+POST_JMAX = 4.0  # Jacobian clamp of the post-lens taps
 POST_TAPS = ((-np.sqrt(3.0), 1.0 / 6.0), (0.0, 2.0 / 3.0), (np.sqrt(3.0), 1.0 / 6.0))
 
 
@@ -275,6 +279,21 @@ def group_blur_sigma(scene, constants):
         share = min(max(float(v.get("postBlurShare", 0.0)), 0.0), POST_SHARE_MAX)
         out = max(out, float(v["blurSigma"]) * k * np.sqrt(1.0 - share))
     return out
+
+
+def group_blur_aspect(scene, constants):
+    """sigmaX / sigma of the group's blur: (h / w) ^ blurAspectPower of the
+    member with the largest sigma (first on ties), as the renderer picks it
+    (Task 17d)."""
+    best, aspect = -1.0, 1.0
+    for s in scene["shapes"]:
+        v = constants[variant_key(s, scene["brightness"])]
+        sig = group_blur_sigma({"shapes": [s], "brightness": scene["brightness"]}, constants)
+        if sig > best:
+            best = sig
+            p = float(v.get("blurAspectPower", 0.0))
+            aspect = (s["h"] / s["w"]) ** p if p != 0 else 1.0
+    return aspect
 
 
 # --- render -----------------------------------------------------------------
@@ -500,7 +519,8 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     reach = int(np.ceil(reach / TAP_BUCKET_PX)) * TAP_BUCKET_PX
     tx0, ty0 = bx0 - reach, by0 - reach
     tex = blurred_window(bg, sigma * scale * blur_scale,
-                         (tx0, ty0, bx1 + reach, by1 + reach))
+                         (tx0, ty0, bx1 + reach, by1 + reach),
+                         group_blur_aspect(scene, constants))
 
     sharp = bg[by0:by1, bx0:bx1]
     m = inside > 0  # the shader returns the shadow only where inside <= 0
@@ -512,8 +532,8 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
         # sqrt(share) in screen space, mapped through the lens's Jacobian
         # (normal: 1 - dL/ddepth, tangent: 1 + L x curvature).
         sp_post = sigma * scale * np.sqrt(share / np.maximum(1.0 - share, 1e-6))
-        ja = np.clip(1.0 - dlens[m], -4.0, 4.0)
-        jb = np.clip(1.0 + lens_amt[m] * g["kappa"][m], -4.0, 4.0)
+        ja = np.clip(1.0 - dlens[m], -POST_JMAX, POST_JMAX)
+        jb = np.clip(1.0 + lens_amt[m] * g["kappa"][m], -POST_JMAX, POST_JMAX)
         nxm, nym = nx[m], ny[m]
         col = 0.0
         for on, wn in POST_TAPS:

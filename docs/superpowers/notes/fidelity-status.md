@@ -135,7 +135,7 @@ all within 0.005 of the line:
 |---|---|---|---|
 | clear-capsule-text-dark | 0.9452 | 0.74 | the unmeasured tone curve below the 0.15 code floor (SwiftUI lifts the black text strokes) plus edge-local blur variation; was 0.9017. |
 | clear-rect28-text-light | 0.9463 | 0.78 | same tone-floor + edge-blur residual; was 0.8490 (the round-1 minimum). |
-| regular-capsule-photo-dark | 0.9476 | 2.25 | dark small-capsule interior still ~1.15x too contrasty; the tone lift recovered most of the 0.9017 gap, the rest is the size-dependent fill the single wash cannot express. |
+| regular-capsule-photo-dark | 0.9476 | 2.25 | dark small-capsule interior still ~1.15x too contrasty; the tone lift recovered most of the 0.8980 gap (this scene's round-1 SSIM; 0.9017 belongs to clear-capsule-text-dark), the rest is the size-dependent fill the single wash cannot express. |
 
 Next candidates (Task 17d): measure the clear tone curve below the 0.15
 floor (grey-ramp captures) — it is the shared residual of both clear text
@@ -153,3 +153,33 @@ scenes; the dark capsule wants a per-shape contrast term, not more fill.
   now use the features, so "STANDARD is at defaults" no longer holds);
   tone-LUT identity test now pins that identity differs from the shipped
   fitted knots.
+
+## Task 17d round 4 (shipped): hard target met
+
+Device run (reference simulator, build/fidelity/final): **46/75 pass,
+min SSIM 0.9532, 0 scenes below 0.95**, median SSIM 0.9828 / ΔE 1.09.
+Model↔Flutter parity: 75/75, min SSIM 0.9960, max ΔE 0.34.
+
+What changed from round 2 (all measured on the model first, then verified
+on device):
+
+- **Anisotropic frost (`blurAspectPower`, regularDark 0.28).** Directional
+  gradient energy inside the dark capsule shows SwiftUI keeps detail along
+  a wide shape's long axis and blurs more across it (SwiftUI gx/gy 1.02/0.56
+  on capsule-photo-dark vs model 0.80/0.55; capsule-text-dark gy 0.21 vs
+  1.04). The composed blur is now σ·(h/w)^p along x and σ·(w/h)^p along y
+  for the strongest member. regular-capsule-photo-dark 0.9476 → 0.9540,
+  regular-capsule-text-dark 0.953 → 0.963. Light regular sets keep p = 0
+  (any p > 0 lowered the light capsule).
+- **Clear lens grid (max-min).** The band shows a mirrored copy of the
+  content, so SSIM is a phase match on text lines and Powell stalls (round 3
+  returned the start point). A max-min grid fixed `lensSizeRef` 28.8 / 28.7
+  and `lensStrength` −2.54 for clear / clearDark, and for clear light
+  `blurSigma` 1.2 with `postBlurShare` 0.45 (more of the frost after the
+  lens: the capsule band wants more blur, the rect interior less).
+
+Lowest scenes now: clear-capsule-text-light 0.9532, regular-capsule-photo-dark
+0.9540, clear-capsule-text-dark 0.9541, clear-rect28-text-light 0.9558.
+The clear margin rests on a sharp optimum (lensSizeRef ±0.3 pt moves the
+capsule by 0.01–0.05), so any later change to the clear lens must be
+re-gridded, not Powell-polished.

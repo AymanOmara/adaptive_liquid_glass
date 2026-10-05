@@ -231,6 +231,18 @@ void main() {
     expect(f.sublist(288, 292), [0.63, 1.5 * 3, 1.0 * 3, 0.05]);
   });
 
+  test('composed blur aspect follows (h / w) ^ blurAspectPower', () {
+    final v = GlassConstants.fromJson({
+      'regular': {'blurAspectPower': 0.5},
+    }).regular;
+    expect(composedBlurAspect(v, const Size(200, 50)), closeTo(0.5, 1e-12));
+    expect(composedBlurAspect(v, const Size(60, 60)), 1);
+    expect(
+      composedBlurAspect(GlassConstants.standard.regular, const Size(200, 50)),
+      1,
+    );
+  });
+
   test('composed blur sigma scales by size and post-lens share', () {
     const v = GlassVariantConstants(
       blurSigma: 4,

@@ -93,6 +93,7 @@ class GlassVariantConstants {
     this.rimMixCut = 1,
     this.rimMixLumaFloor = 1,
     this.toneLift = 0,
+    this.blurAspectPower = 0,
     this.toneLiftKnee = 0.5,
     this.toneLiftSizeRef = 0,
     required this.lensBand,
@@ -136,6 +137,7 @@ class GlassVariantConstants {
     rimMixCut: _d(j, 'rimMixCut', base.rimMixCut),
     rimMixLumaFloor: _d(j, 'rimMixLumaFloor', base.rimMixLumaFloor),
     toneLift: _d(j, 'toneLift', base.toneLift),
+    blurAspectPower: _d(j, 'blurAspectPower', base.blurAspectPower),
     toneLiftKnee: _d(j, 'toneLiftKnee', base.toneLiftKnee),
     toneLiftSizeRef: _d(j, 'toneLiftSizeRef', base.toneLiftSizeRef),
     lensBand: _d(j, 'lensBand', base.lensBand),
@@ -283,6 +285,11 @@ class GlassVariantConstants {
   /// (a capsule over a dark photo reads grey, not black). 0 disables it.
   final double toneLift;
 
+  /// Anisotropic frost (Task 17d, fitted from SwiftUI's directional detail
+  /// on dark regular capsules: a wide shape keeps more detail along its long
+  /// axis): sigmaX = σ·(h/w)^power, sigmaY = σ·(w/h)^power. 0 = isotropic.
+  final double blurAspectPower;
+
   /// Input level where [toneLift] fades to 0.
   final double toneLiftKnee;
 
@@ -352,6 +359,7 @@ class GlassVariantConstants {
     'rimMixCut': rimMixCut,
     'rimMixLumaFloor': rimMixLumaFloor,
     'toneLift': toneLift,
+    'blurAspectPower': blurAspectPower,
     'toneLiftKnee': toneLiftKnee,
     'toneLiftSizeRef': toneLiftSizeRef,
     'lensBand': lensBand,
@@ -517,7 +525,7 @@ class GlassConstants {
     ),
     // Device median SSIM/ΔE 0.937/1.98 (4/12).
     clear: GlassVariantConstants(
-      blurSigma: 1.2794,
+      blurSigma: 1.2,
       blurSizeRef: 0,
       frostWideSigma: 1.7973,
       frostWideMixEdge: -0.0117,
@@ -525,14 +533,14 @@ class GlassConstants {
       frostWideSizeRef: 85.2463,
       frostWideSizeDrop: 0.0002,
       toneKnots: [0, 0.0289, 0.1865, 0.3476, 0.5063, 0.6651, 0.8265, 0.9772, 1],
-      postBlurShare: 0.3,
+      postBlurShare: 0.45,
       normalRadiusScale: 1.55,
       lensEdge: 9,
       rimMix: 0.63,
       lensBand: 18.442,
-      lensStrength: -2.5235,
+      lensStrength: -2.54,
       lensDecay: 6.5573,
-      lensSizeRef: 28.6499,
+      lensSizeRef: 28.8,
       dispersion: 0,
       rimWidth: 1.2475,
       rimIntensity: 0,
@@ -558,6 +566,7 @@ class GlassConstants {
       toneLift: 0.7827,
       toneLiftKnee: 0.9995,
       toneLiftSizeRef: 48.0387,
+      blurAspectPower: 0.28,
       lensBand: 18.8261,
       lensStrength: -2.6267,
       lensDecay: 5.9001,
@@ -604,9 +613,9 @@ class GlassConstants {
       rimMixCut: 3.9722,
       rimMixLumaFloor: 0.05,
       lensBand: 18.3411,
-      lensStrength: -2.512,
+      lensStrength: -2.54,
       lensDecay: 6.6262,
-      lensSizeRef: 14.7722,
+      lensSizeRef: 28.7,
       dispersion: 0,
       rimWidth: 1.2475,
       rimIntensity: 0,

@@ -353,3 +353,15 @@ def test_dispersion_keeps_post_blur_offset():
     c["clear"].update(postBlurShare=0.3, dispersion=0.0, fillColor="#FFFFFF")
     out, _ = render_window(bg, _scene("clear-rect16-text-light"), c)
     assert np.abs(out[..., 0] - out[..., 1]).max() <= 1 / 255 + 1e-9
+
+
+def test_blur_aspect_follows_the_strongest_member():
+    from glass_model import group_blur_aspect
+    c = json.loads(json.dumps(STANDARD))
+    for n in ("regular", "regularDark"):
+        c[n]["blurAspectPower"] = 0.5
+    cap = _scene("regular-capsule-photo-dark")  # 200 x 56
+    assert group_blur_aspect(cap, c) == pytest.approx((56 / 200) ** 0.5)
+    assert group_blur_aspect(_scene("regular-circle-photo-dark"), c) == 1.0
+    c["regularDark"]["blurAspectPower"] = 0.0
+    assert group_blur_aspect(cap, c) == 1.0
