@@ -32,21 +32,25 @@ class SceneView extends StatelessWidget {
     return MediaQuery(
       data: MediaQuery.of(context)
           .copyWith(platformBrightness: scene.brightness),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset(
-              'assets/backgrounds/${scene.background}.png',
-              fit: BoxFit.fill,
-              filterQuality: FilterQuality.none,
-            ),
-          ),
-          Positioned.fill(
-            child: scene.spacing == null
-                ? shapes
-                : GlassGroup(spacing: scene.spacing!, child: shapes),
-          ),
-        ],
+      // The glass appears with the decoded background, as in the SwiftUI
+      // host, where the image is there from the first frame. Apple's glass
+      // takes its light or dark look from what is behind it when it first
+      // draws, and in mid-tone scenes keeps it, so native glass must not
+      // first draw over the empty frames before the image decodes.
+      child: Image.asset(
+        'assets/backgrounds/${scene.background}.png',
+        fit: BoxFit.fill,
+        filterQuality: FilterQuality.none,
+        frameBuilder: (context, image, frame, sync) => Stack(
+          fit: StackFit.expand,
+          children: [
+            image,
+            if (frame != null || sync)
+              scene.spacing == null
+                  ? shapes
+                  : GlassGroup(spacing: scene.spacing!, child: shapes),
+          ],
+        ),
       ),
     );
   }

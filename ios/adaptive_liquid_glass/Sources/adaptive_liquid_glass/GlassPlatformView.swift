@@ -31,20 +31,22 @@ final class GlassViewFactory: NSObject, FlutterPlatformViewFactory {
 /// apply without animation. Below iOS 26 the view stays empty (Dart never
 /// asks for it there).
 final class GlassPlatformView: NSObject, FlutterPlatformView {
-  private let root: UIView
+  private let root: GlassRootView
   private let channel: FlutterMethodChannel
   /// `SwiftUIGlass` on iOS 26+ (stored untyped for the availability check).
   private var glass: AnyObject?
 
   init(frame: CGRect, viewId: Int64, args: [String: Any], messenger: FlutterBinaryMessenger) {
-    root = UIView(frame: frame)
+    root = GlassRootView(frame: frame)
     root.backgroundColor = .clear
     root.isUserInteractionEnabled = false
     channel = FlutterMethodChannel(
       name: "adaptive_liquid_glass/native_glass_\(viewId)", binaryMessenger: messenger)
     super.init()
     if #available(iOS 26.0, *) {
-      glass = SwiftUIGlass(root: root)
+      let g = SwiftUIGlass(root: root)
+      root.onSettled = { [weak g] in g?.show() }
+      glass = g
     }
     channel.setMethodCallHandler { [weak self] call, result in
       switch call.method {
@@ -120,6 +122,8 @@ final class GlassModel: ObservableObject {
   @Published var spacing: Double = 0
   @Published var dark = false
   @Published var shapes: [GlassSpec] = []
+  /// False until the view has been on screen for a few frames.
+  @Published var visible = false
 }
 
 /// The group's glass, drawn the way the SwiftUI reference host draws it.
@@ -131,7 +135,9 @@ struct GlassHostView: View {
   var body: some View {
     GlassEffectContainer(spacing: model.spacing) {
       ZStack(alignment: .topLeading) {
-        ForEach(model.shapes) { shapeView($0) }
+        if model.visible {
+          ForEach(model.shapes) { shapeView($0) }
+        }
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
@@ -203,6 +209,13 @@ final class SwiftUIGlass {
     }
   }
 
+  /// Starts drawing the glass (see `GlassRootView.onSettled`).
+  func show() {
+    var t = Transaction(animation: nil)
+    t.disablesAnimations = true
+    withTransaction(t) { model.visible = true }
+  }
+
   func debugState() -> [String: Any] {
     let v = host.view!
     let insets = v.safeAreaInsets
@@ -213,11 +226,44 @@ final class SwiftUIGlass {
       "clearBackground": v.backgroundColor == .clear,
       "spacing": model.spacing,
       "dark": model.dark,
+      "visible": model.visible,
       "shapes": model.shapes.map {
         [$0.frame.minX, $0.frame.minY, $0.frame.width, $0.frame.height]
       },
+      "unions": model.shapes.map { $0.union ?? -1 },
     ]
   }
+}
+
+/// The platform view's root. Reports once it has been in a window for a
+/// few display frames: glass that first draws before Flutter's content
+/// beneath it is on screen can settle on the wrong (light) look for good,
+/// even under a dark colour scheme, so the glass waits for that.
+final class GlassRootView: UIView {
+  /// Display frames to wait after entering a window.
+  static let settleFrames = 3
+
+  var onSettled: (() -> Void)?
+  private var link: CADisplayLink?
+  private var frames = 0
+
+  override func didMoveToWindow() {
+    super.didMoveToWindow()
+    guard window != nil, onSettled != nil, link == nil else { return }
+    let l = CADisplayLink(target: self, selector: #selector(tick))
+    l.add(to: .main, forMode: .common)
+    link = l
+  }
+
+  @objc private func tick() {
+    frames += 1
+    guard frames >= Self.settleFrames else { return }
+    link?.invalidate()
+    onSettled?()
+    onSettled = nil
+  }
+
+  deinit { link?.invalidate() }
 }
 
 private extension UIColor {
