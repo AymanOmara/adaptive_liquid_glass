@@ -4,6 +4,7 @@ import 'core/glass.dart';
 import 'core/glass_render_mode.dart';
 import 'core/glass_shape.dart';
 import 'core/theme.dart';
+import 'glass_effect.dart';
 import 'group/glass_group.dart';
 import 'group/glass_member.dart';
 import 'shader/glass_program.dart';
@@ -12,6 +13,20 @@ import 'shader/glass_program.dart';
 ///
 /// On iOS this is shader glass (or Apple's own on iOS 26+ when
 /// `LiquidGlassThemeData.nativeEnabled`); on Android a Material 3 surface.
+/// No setup is needed: no theme, no `precache`, no platform checks.
+///
+/// ```dart
+/// LiquidGlass(
+///   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+///   onPressed: () => debugPrint('tapped'),
+///   child: const Text('Continue'),
+/// )
+/// ```
+///
+/// Text and icons on the glass get a readable colour (see
+/// [adaptiveForeground]). Glass outside a [GlassGroup] gets one of its own;
+/// put neighbouring glass in one group so it can blend and morph. The
+/// [GlassEffect.glassEffect] extension is a one-line shorthand.
 class LiquidGlass extends StatelessWidget {
   /// Creates Liquid Glass.
   const LiquidGlass({

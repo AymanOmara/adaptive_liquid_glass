@@ -1,4 +1,14 @@
 /// iOS 26 Liquid Glass for Flutter with Material 3 counterparts on Android.
+///
+/// ```dart
+/// import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+///
+/// const Text('Hello').glassEffect(padding: const EdgeInsets.all(12));
+/// ```
+///
+/// Start with [LiquidGlass] (or the [GlassEffect.glassEffect] shorthand),
+/// group neighbours with [GlassGroup], and pick the material with [Glass]
+/// and the outline with [GlassShape].
 library;
 
 export 'src/core/glass.dart' show Glass, GlassVariant;

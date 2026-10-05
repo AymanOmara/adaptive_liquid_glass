@@ -15,7 +15,15 @@ enum GlassVariant {
 
 /// An immutable description of a Liquid Glass material.
 ///
-/// Mirrors SwiftUI: `Glass.regular.tint(color).interactive()`.
+/// Mirrors SwiftUI's `Glass`: start from a preset and chain modifiers.
+///
+/// ```dart
+/// Glass.regular                          // the default
+/// Glass.clear                            // for photos and video
+/// Glass.regular.tint(Colors.blue)        // tinted
+/// Glass.regular.interactive()            // reacts to touch
+/// Glass.clear.tint(Colors.orange).interactive()
+/// ```
 @immutable
 class Glass {
   const Glass._(this.variant, {this.tintColor, bool? interactive})

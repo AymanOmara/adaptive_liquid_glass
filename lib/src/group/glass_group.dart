@@ -99,6 +99,26 @@ class GlassGroupScope extends InheritedWidget {
 /// Merges nearby `LiquidGlass` descendants into one shape, like SwiftUI's
 /// `GlassEffectContainer(spacing:)`.
 ///
+/// Members are drawn in one pass, sample the same backdrop, and can morph
+/// into each other by `glassId`. Shapes closer than [spacing] blend; with
+/// the default of 0 only touching shapes do, so a row of separate buttons
+/// stays separate. Set [spacing] to at least the gap between members to
+/// make them flow together as they near.
+///
+/// ```dart
+/// GlassGroup(
+///   spacing: 16, // >= the 12 px gap: the buttons blend
+///   child: Row(
+///     mainAxisSize: MainAxisSize.min,
+///     spacing: 12,
+///     children: [
+///       const Icon(Icons.edit).glassEffect(padding: const EdgeInsets.all(14)),
+///       const Icon(Icons.share).glassEffect(padding: const EdgeInsets.all(14)),
+///     ],
+///   ),
+/// )
+/// ```
+///
 /// Inside a group, the group's [mode] wins over members' modes.
 class GlassGroup extends StatefulWidget {
   /// Creates a group.
@@ -109,7 +129,8 @@ class GlassGroup extends StatefulWidget {
     required this.child,
   });
 
-  /// Shapes closer than this (logical px) blend together.
+  /// Shapes closer than this (logical px) blend together; 0 (the default)
+  /// blends only shapes that touch.
   final double spacing;
 
   /// Rendering mode; defaults to the theme's.
