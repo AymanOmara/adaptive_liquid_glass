@@ -11,6 +11,13 @@
   button to assistive tech.
 * Tabs shrink evenly to fit the width the bar is given (`itemWidth` is
   now the maximum), so five tabs fit a phone.
+* Tab bar motion measured frame by frame against iOS 26.4's own tab bar:
+  pill 7.55 wider than the 86.15 tab spacing; the lens (114 × 74) grows on
+  a 0.38 s spring, trails the finger on a 0.3 s spring at 1.06× its offset
+  from the bar's centre, wobbles in height with its acceleration, and
+  settles back with a squash on a 0.36 s spring; the bar grows towards the
+  lens; tabs under it magnify 1.21 × 1.10. The tabs now lie beneath the
+  lens glass, so it refracts them at its rim.
 * `GlassTabBarItem.activeIcon` (the selected tab's icon) and `.badge` (a
   count or short text in a red capsule, a dot when empty; read with the
   tab by assistive tech).

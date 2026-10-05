@@ -10,6 +10,7 @@ import 'package:flutter/material.dart'
         WidgetState,
         WidgetStateProperty;
 import 'package:flutter/physics.dart';
+import 'package:flutter/scheduler.dart' show Ticker;
 
 import '../core/glass.dart';
 import '../core/glass_environment.dart';
@@ -85,7 +86,7 @@ class GlassTabBar extends StatefulWidget {
     this.indicatorColor,
     this.glass,
     this.mode,
-    this.itemWidth = 88,
+    this.itemWidth = 86.15,
     this.height = 62,
   }) : assert(items.length >= 2, 'A tab bar needs at least two tabs.');
 
@@ -114,8 +115,9 @@ class GlassTabBar extends StatefulWidget {
   /// The rendering path for the bar and its lens; see [GlassRenderMode].
   final GlassRenderMode? mode;
 
-  /// The widest a tab gets, which is also the pill's width. Tabs shrink
-  /// evenly when the bar would not fit the width it is given.
+  /// The distance between neighbouring tabs at most (the selection pill is
+  /// 7.55 wider, as on iOS). Tabs move closer evenly when the bar would not
+  /// fit the width it is given.
   final double itemWidth;
 
   /// The bar's height.
@@ -125,16 +127,46 @@ class GlassTabBar extends StatefulWidget {
   State<GlassTabBar> createState() => _GlassTabBarState();
 }
 
-/// Measured from iOS 26.4's tab bar (Kept, iPhone 17 Pro).
+/// Measured from iOS 26.4's tab bar (Kept, iPhone 17 Pro) by frame-by-frame
+/// tracking of press, hold, drag and release (`example/lib/tab_bar_probe.dart`
+/// lays the bar out the same way).
 abstract final class _Metrics {
   static const double inset = 4;
 
-  /// How much wider than a tab the held lens is (108 over 88).
-  static const double lensGrow = 20;
-  static const double lensOverhang = 8;
-  static const double growX = 8;
-  static const double growY = 3;
-  static const double magnify = 1.15;
+  /// How much wider than the tab spacing the pill is (93.7 over 86.15).
+  static const double pillExtra = 7.55;
+
+  /// The held lens over the pill: 114.3 by 74 against 93.7 by 54.
+  static const double lensGrowX = 20.6;
+  static const double lensGrowY = 20;
+
+  /// The lens sits 1.06 times as far from the bar's centre as the finger,
+  /// up to this far past the outermost tab.
+  static const double lensGain = 1.06;
+  static const double lensReach = 7.1;
+
+  /// While held the bar grows this much on each side, plus [growLean] of
+  /// the lens's offset from the centre towards the lens.
+  static const double growX = 9.15;
+  static const double growY = 1.65;
+  static const double growLean = 0.0237;
+
+  /// Tabs under the lens are magnified more across than down.
+  static const double magnifyX = 1.21;
+  static const double magnifyY = 1.10;
+
+  /// The band at the lens's edge where content is refracted, not sharp.
+  static const double lensRim = 9;
+
+  /// The lens's height wobbles with its sideways acceleration (taller when
+  /// it accelerates to the left), as a damped oscillator: points of extra
+  /// overhang per side per pt/s² of acceleration.
+  static const double wobbleGain = 0.002607;
+  static final SpringDescription wobble = swiftUISpring(
+    response: 1.159,
+    dampingFraction: 0.499,
+  );
+
   static const double iconSize = 26;
   static const double labelGap = 2;
   static const TextStyle label = TextStyle(
@@ -149,8 +181,24 @@ abstract final class _Metrics {
     fontWeight: FontWeight.w500,
     height: 1,
   );
-  static const Duration grow = Duration(milliseconds: 180);
-  static const Duration settle = Duration(milliseconds: 380);
+
+  /// Pill to lens, lens back to pill (it undershoots: the pill squashes).
+  static final SpringDescription press = swiftUISpring(
+    response: 0.381,
+    dampingFraction: 0.752,
+  );
+  static final SpringDescription release = swiftUISpring(
+    response: 0.36,
+    dampingFraction: 0.55,
+  );
+
+  /// The lens following the finger.
+  static final SpringDescription follow = swiftUISpring(
+    response: 0.3,
+    dampingFraction: 0.8,
+  );
+
+  /// The pill moving to a newly selected tab.
   static final SpringDescription slide = swiftUISpring(
     response: 0.3,
     dampingFraction: 0.78,
@@ -159,30 +207,38 @@ abstract final class _Metrics {
 
 class _GlassTabBarState extends State<GlassTabBar>
     with TickerProviderStateMixin {
-  /// The selection's centre, in tab widths from the row's left edge (the
-  /// centre of the leftmost tab is 0.5), so a width change keeps it put.
+  /// The selection's centre in visual slots, left to right (the leftmost
+  /// tab's centre is 0), so a width change keeps it put.
   late final AnimationController _x = AnimationController.unbounded(
     vsync: this,
   );
 
-  /// 0 at rest (the pill), 1 while held (the lens).
-  late final AnimationController _press = AnimationController(
+  /// 0 at rest (the pill), 1 while held (the lens); springs past both.
+  late final AnimationController _press = AnimationController.unbounded(
     vsync: this,
-    duration: _Metrics.grow,
-    reverseDuration: _Metrics.settle,
   );
+
+  /// Extra lens overhang per side from the sideways wobble, in points.
+  final ValueNotifier<double> _wobble = ValueNotifier(0);
+  late final Ticker _wobbleTicker = createTicker(_stepWobble);
+  double _wobbleVelocity = 0;
+  double _lastVelocity = 0;
+  Duration _lastTick = Duration.zero;
 
   bool _placed = false;
   bool _held = false;
 
-  /// Where the finger is, in tab widths; the lens may still be springing
-  /// towards it.
+  /// Where the finger is, in visual slots.
   double _finger = 0;
 
-  /// The width of one tab as last laid out.
+  /// The spacing of the tabs as last laid out.
   late double _itemWidth = widget.itemWidth;
 
   int get _count => widget.items.length;
+
+  double get _pillWidth => _itemWidth + _Metrics.pillExtra;
+
+  double get _rowWidth => _pillWidth + (_count - 1) * _itemWidth;
 
   double get _contentHeight => widget.height - _Metrics.inset * 2;
 
@@ -191,23 +247,83 @@ class _GlassTabBarState extends State<GlassTabBar>
   /// Visual slot (left to right) of tab [index].
   int _slot(int index) => _rtl ? _count - 1 - index : index;
 
-  double _centerOf(int index) => _slot(index) + 0.5;
+  double get _middle => (_count - 1) / 2;
 
-  /// [dx] (pixels from the bar's left edge) in tab widths, kept on a tab.
+  /// [dx] (pixels from the bar's left edge) in visual slots.
   double _toSlots(double dx) =>
-      ((dx - _Metrics.inset) / _itemWidth).clamp(0.5, _count - 0.5);
+      (dx - _Metrics.inset - _pillWidth / 2) / _itemWidth;
+
+  /// Where the lens heads for a finger at [finger] (visual slots).
+  double _lensTarget(double finger) {
+    final reach = _Metrics.lensGain * _middle + _Metrics.lensReach / _itemWidth;
+    return _middle +
+        (_Metrics.lensGain * (finger - _middle)).clamp(-reach, reach);
+  }
+
+  /// Pixels from the row's left edge of visual slot position [slots].
+  double _toPixels(double slots) => _pillWidth / 2 + slots * _itemWidth;
 
   bool get _reduceMotion =>
       MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
-  void _springTo(double target, {double velocity = 0}) {
+  void _springX(SpringDescription spring, double target) {
     if (_reduceMotion) {
       _x.value = target;
     } else {
-      _x.animateWith(
-        SpringSimulation(_Metrics.slide, _x.value, target, velocity),
+      _x.animateWith(SpringSimulation(spring, _x.value, target, _x.velocity));
+    }
+  }
+
+  void _springPress(SpringDescription spring, double target) {
+    if (_reduceMotion) {
+      _press.value = target;
+    } else {
+      _press.animateWith(
+        SpringSimulation(spring, _press.value, target, _press.velocity),
       );
     }
+  }
+
+  /// Integrates the wobble from the lens's acceleration each frame.
+  void _stepWobble(Duration elapsed) {
+    final dt = (elapsed - _lastTick).inMicroseconds / 1e6;
+    _lastTick = elapsed;
+    if (dt <= 0 || dt > 0.1) {
+      _lastVelocity = _x.velocity;
+      return;
+    }
+    final velocity = _x.isAnimating ? _x.velocity : 0.0;
+    final acceleration = (velocity - _lastVelocity) / dt * _itemWidth;
+    _lastVelocity = velocity;
+    final spring = _Metrics.wobble;
+    final k = spring.stiffness / spring.mass;
+    final c = spring.damping / spring.mass;
+    // Semi-implicit Euler in small steps for stability.
+    const steps = 4;
+    final h = dt / steps;
+    var y = _wobble.value;
+    for (var i = 0; i < steps; i++) {
+      final a =
+          -k * y - c * _wobbleVelocity - k * _Metrics.wobbleGain * acceleration;
+      _wobbleVelocity += a * h;
+      y += _wobbleVelocity * h;
+    }
+    _wobble.value = y;
+    if (!_held &&
+        !_x.isAnimating &&
+        y.abs() < 0.01 &&
+        _wobbleVelocity.abs() < 0.01) {
+      _wobble.value = 0;
+      _wobbleVelocity = 0;
+      _wobbleTicker.stop();
+    }
+  }
+
+  void _startWobble() {
+    if (_reduceMotion || _wobbleTicker.isActive) return;
+    _lastTick = Duration.zero;
+    _lastVelocity = _x.velocity;
+    _wobbleTicker.start();
   }
 
   @override
@@ -215,7 +331,7 @@ class _GlassTabBarState extends State<GlassTabBar>
     super.didChangeDependencies();
     // Needs the reading direction, so not in initState; a direction change
     // re-places the pill too.
-    if (!_placed || !_held) _x.value = _centerOf(widget.selectedIndex);
+    if (!_placed || !_held) _x.value = _slot(widget.selectedIndex).toDouble();
     _placed = true;
   }
 
@@ -224,14 +340,16 @@ class _GlassTabBarState extends State<GlassTabBar>
     super.didUpdateWidget(old);
     if (_held) return;
     if (old.selectedIndex != widget.selectedIndex) {
-      _springTo(_centerOf(widget.selectedIndex));
+      _springX(_Metrics.slide, _slot(widget.selectedIndex).toDouble());
     } else if (old.items.length != widget.items.length) {
-      _x.value = _centerOf(widget.selectedIndex);
+      _x.value = _slot(widget.selectedIndex).toDouble();
     }
   }
 
   @override
   void dispose() {
+    _wobbleTicker.dispose();
+    _wobble.dispose();
     _x.dispose();
     _press.dispose();
     super.dispose();
@@ -240,29 +358,31 @@ class _GlassTabBarState extends State<GlassTabBar>
   void _down(DragDownDetails details) {
     _held = true;
     _finger = _toSlots(details.localPosition.dx);
-    _reduceMotion ? _press.value = 1 : _press.forward();
-    _springTo(_finger);
+    _springPress(_Metrics.press, 1);
+    _springX(_Metrics.follow, _lensTarget(_finger));
+    _startWobble();
   }
 
   void _drag(DragUpdateDetails details) {
     _finger = _toSlots(details.localPosition.dx);
-    _x.stop();
-    _x.value = _finger;
+    _springX(_Metrics.follow, _lensTarget(_finger));
   }
 
   void _release(double velocity) {
     _held = false;
-    final slot = _finger.floor().clamp(0, _count - 1);
+    final slot = _finger.round().clamp(0, _count - 1);
     final index = _rtl ? _count - 1 - slot : slot;
-    _springTo(_centerOf(index), velocity: velocity / _itemWidth);
-    _reduceMotion ? _press.value = 0 : _press.reverse();
+    _springX(_Metrics.slide, slot.toDouble());
+    _springPress(_Metrics.release, 0);
     if (index != widget.selectedIndex) widget.onSelected(index);
   }
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
-      final fit = (constraints.maxWidth - _Metrics.inset * 2) / _count;
+      final fit =
+          (constraints.maxWidth - _Metrics.inset * 2 - _Metrics.pillExtra) /
+          _count;
       _itemWidth = fit < widget.itemWidth ? fit : widget.itemWidth;
       return ValueListenableBuilder<GlassEnvironment>(
         valueListenable: GlassPlatform.instance.environment,
@@ -328,8 +448,6 @@ class _GlassTabBarState extends State<GlassTabBar>
         final text => Badge(label: Text(text), child: icon),
       };
 
-  double get _rowWidth => _count * _itemWidth;
-
   Widget _glassBar(BuildContext context) {
     final selected = CupertinoDynamicColor.resolve(
       widget.selectedColor ?? CupertinoTheme.of(context).primaryColor,
@@ -350,25 +468,25 @@ class _GlassTabBarState extends State<GlassTabBar>
         onPanEnd: (d) => _release(d.velocity.pixelsPerSecond.dx),
         onPanCancel: () => _release(0),
         child: AnimatedBuilder(
-          animation: Listenable.merge([_x, _press]),
-          builder: (context, _) => _bar(
-            Curves.easeOutCubic.transform(_press.value),
-            selected,
-            indicator,
-          ),
+          animation: Listenable.merge([_x, _press, _wobble]),
+          builder: (context, _) => _bar(_press.value, selected, indicator),
         ),
       ),
     );
   }
 
-  Widget _bar(double t, Color selected, Color indicator) {
-    final itemWidth = _itemWidth;
-    final x = _x.value * itemWidth;
+  Widget _bar(double p, Color selected, Color indicator) {
+    // p springs past 0 and 1; the lens shows only while it is above 0,
+    // but the pill and lens sizes follow p itself (the pill squashes).
+    final t = p.clamp(0.0, 1.0);
+    final x = _toPixels(_x.value);
+    final wobble = _wobble.value;
     final lens = Rect.fromCenter(
       center: Offset(x, _contentHeight / 2),
-      width: itemWidth + _Metrics.lensGrow * t,
-      height: _contentHeight + _Metrics.lensOverhang * 2 * t,
+      width: _pillWidth + _Metrics.lensGrowX * p,
+      height: _contentHeight + _Metrics.lensGrowY * p + wobble * 2,
     );
+    final lean = _Metrics.growLean * (x - _rowWidth / 2) * t;
     final growX = _Metrics.growX * t;
     final growY = _Metrics.growY * t;
     return SizedBox(
@@ -378,8 +496,8 @@ class _GlassTabBarState extends State<GlassTabBar>
         clipBehavior: Clip.none,
         children: [
           Positioned(
-            left: -growX,
-            right: -growX,
+            left: -growX + lean,
+            right: -growX - lean,
             top: -growY,
             bottom: -growY,
             child: GlassGroup(
@@ -393,11 +511,14 @@ class _GlassTabBarState extends State<GlassTabBar>
                     height: _contentHeight,
                     child: Stack(
                       children: [
-                        Positioned(
-                          left: x - itemWidth / 2,
-                          width: itemWidth,
-                          top: 0,
-                          bottom: 0,
+                        Positioned.fromRect(
+                          rect: p < 0
+                              ? lens
+                              : Rect.fromCenter(
+                                  center: lens.center,
+                                  width: _pillWidth,
+                                  height: _contentHeight,
+                                ),
                           child: Opacity(
                             opacity: 1 - t,
                             child: DecoratedBox(
@@ -408,8 +529,10 @@ class _GlassTabBarState extends State<GlassTabBar>
                             ),
                           ),
                         ),
-                        // Under a held lens the row has a hole: the lens
-                        // shows its own magnified, tinted copy instead.
+                        // Under a held lens the row has a hole filled by a
+                        // magnified, tinted copy. Both lie beneath the
+                        // lens, so its glass refracts them (bending them at
+                        // its rim, as iOS does).
                         ClipPath(
                           clipper: _Hole(t > 0 ? lens : null),
                           child: _row(
@@ -419,6 +542,16 @@ class _GlassTabBarState extends State<GlassTabBar>
                             semantics: true,
                           ),
                         ),
+                        if (t > 0)
+                          ClipPath(
+                            clipper: _Capsule(lens),
+                            child: Transform.scale(
+                              scaleX: lerpDouble(1, _Metrics.magnifyX, t),
+                              scaleY: lerpDouble(1, _Metrics.magnifyY, t),
+                              origin: Offset(x - _rowWidth / 2, 0),
+                              child: _row((_) => selected, semantics: false),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -434,6 +567,19 @@ class _GlassTabBarState extends State<GlassTabBar>
                 child: LiquidGlass(
                   glass: Glass.clear,
                   mode: widget.mode,
+                  child: const SizedBox.expand(),
+                ),
+              ),
+            ),
+          // The lens's glass refracts and blurs the copy beneath it; iOS's
+          // lens keeps its middle sharp and bends only the rim, so a sharp
+          // copy goes on top, faded out towards the rim.
+          if (t > 0)
+            Positioned.fromRect(
+              rect: lens.shift(const Offset(_Metrics.inset, _Metrics.inset)),
+              child: IgnorePointer(
+                child: _RimFade(
+                  rim: _Metrics.lensRim,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(lens.height / 2),
                     child: Stack(
@@ -445,7 +591,8 @@ class _GlassTabBarState extends State<GlassTabBar>
                           width: _rowWidth,
                           height: _contentHeight,
                           child: Transform.scale(
-                            scale: lerpDouble(1, _Metrics.magnify, t),
+                            scaleX: lerpDouble(1, _Metrics.magnifyX, t),
+                            scaleY: lerpDouble(1, _Metrics.magnifyY, t),
                             origin: Offset(x - _rowWidth / 2, 0),
                             child: _row((_) => selected, semantics: false),
                           ),
@@ -465,6 +612,7 @@ class _GlassTabBarState extends State<GlassTabBar>
   Widget _row(Color? Function(int index) colorOf, {required bool semantics}) {
     final row = Row(
       children: [
+        const SizedBox(width: _Metrics.pillExtra / 2),
         for (var i = 0; i < _count; i++)
           Semantics(
             button: true,
@@ -550,6 +698,64 @@ class _GlassTabBarState extends State<GlassTabBar>
       ],
     );
   }
+}
+
+/// Fades [child] out over the [rim] at each edge.
+class _RimFade extends StatelessWidget {
+  const _RimFade({required this.rim, required this.child});
+
+  final double rim;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      Gradient fade(Axis axis) {
+        final extent = axis == Axis.horizontal
+            ? constraints.maxWidth
+            : constraints.maxHeight;
+        final f = extent <= 0 ? 0.5 : (rim / extent).clamp(0.0, 0.5);
+        const clear = Color(0x00000000);
+        const solid = Color(0xFF000000);
+        return LinearGradient(
+          begin: axis == Axis.horizontal
+              ? Alignment.centerLeft
+              : Alignment.topCenter,
+          end: axis == Axis.horizontal
+              ? Alignment.centerRight
+              : Alignment.bottomCenter,
+          colors: const [clear, solid, solid, clear],
+          stops: [0, f, 1 - f, 1],
+        );
+      }
+
+      return ShaderMask(
+        blendMode: BlendMode.dstIn,
+        shaderCallback: (bounds) => fade(Axis.horizontal).createShader(bounds),
+        child: ShaderMask(
+          blendMode: BlendMode.dstIn,
+          shaderCallback: (bounds) => fade(Axis.vertical).createShader(bounds),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
+/// Just [capsule].
+class _Capsule extends CustomClipper<Path> {
+  const _Capsule(this.capsule);
+
+  final Rect capsule;
+
+  @override
+  Path getClip(Size size) => Path()
+    ..addRRect(
+      RRect.fromRectAndRadius(capsule, Radius.circular(capsule.height / 2)),
+    );
+
+  @override
+  bool shouldReclip(_Capsule old) => old.capsule != capsule;
 }
 
 /// Everything but [hole] (a capsule); everything when it is null.

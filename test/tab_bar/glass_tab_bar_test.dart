@@ -188,10 +188,11 @@ void main() {
     await t.pumpWidget(plainHost(_Harness(picks, items: five)));
     expect(t.takeException(), isNull);
     expect(t.getSize(find.byType(GlassTabBar)).width, lessThanOrEqualTo(402));
-    // (402 - 2 × 4 inset) / 5 tabs, not the 88 that would overflow.
+    // (402 - 2 × 4 inset - 7.55 pill) / 5 tabs, not the 86.15 that would
+    // overflow.
     expect(
       t.getCenter(find.text('E')).dx - t.getCenter(find.text('D')).dx,
-      moreOrLessEquals(78.8, epsilon: 0.01),
+      moreOrLessEquals(77.29, epsilon: 0.01),
     );
     await t.tap(find.text('E'));
     await t.pumpAndSettle();
@@ -202,7 +203,10 @@ void main() {
   testWidgets('three tabs keep their full width when there is room', (t) async {
     shaderEnv();
     await t.pumpWidget(plainHost(_Harness(_picks())));
-    expect(t.getSize(find.byType(GlassTabBar)).width, 3 * 88 + 8);
+    expect(
+      t.getSize(find.byType(GlassTabBar)).width,
+      moreOrLessEquals(3 * 86.15 + 7.55 + 8, epsilon: 0.01),
+    );
   }, variant: ios);
 
   testWidgets('the selected tab shows its active icon', (t) async {
