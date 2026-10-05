@@ -271,11 +271,15 @@ void main() {
   // mix, not before it).
   if (A.w != 0.0) {
     vec3 coreOff = col - base;
-    vec2 disp = nrm * lensAmt * A.w;
+    vec2 disp = nrm * lensAmt * abs(A.w);
     // The ring splits colour across its whole width, like iOS's tab lens.
     float dw = max(v, ringW > 0.0 ? 1.0 : 0.0);
     col.r = mix(col.r, tex(sp + disp).r + coreOff.r, dw);
-    col.b = mix(col.b, tex(sp - disp).b + coreOff.b, dw);
+    // Negative dispersion (iOS's tab lens) moves green with blue, so a
+    // blue tint fringes in shades of blue instead of green.
+    vec3 sm = tex(sp - disp).rgb + coreOff;
+    col.b = mix(col.b, sm.b, dw);
+    if (A.w < 0.0) col.g = mix(col.g, sm.g, dw);
   }
 
   float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));

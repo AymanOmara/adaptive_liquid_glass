@@ -239,6 +239,8 @@ class GlassVariantConstants {
 
   /// Red/blue split as a fraction of the lens displacement, weighted by the
   /// lens profile (so it sits on the outer pixels). SwiftUI shows none.
+  /// Negative splits red from green and blue together (iOS's tab lens),
+  /// so a blue tint fringes in shades of blue rather than green.
   final double dispersion;
 
   /// Grey tone curve applied to the frosted backdrop: piecewise linear

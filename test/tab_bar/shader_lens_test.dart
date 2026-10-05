@@ -43,14 +43,16 @@ void main() {
   setUp(() => GlassProgram.instance.debugReset(skipLoad: true));
   tearDown(() => GlassPlatform.instance.debugReset());
 
-  test('the tab lens refracts outward, with dispersion and no frost', () {
+  test('the tab lens bends smoothly, fringes in blue and has no frost', () {
     for (final c in [tabLensLight, tabLensDark]) {
       expect(c.blurSigma, 0);
       expect(c.frostWideSigma, 0);
       expect(c.postBlurShare, 0);
-      expect(c.lensRingEnd, greaterThan(c.lensRingStart));
-      expect(c.lensRingReach, greaterThan(0), reason: 'samples outward');
-      expect(c.dispersion, greaterThan(0));
+      // A continuous inward lens: no ring, whose ends break the image.
+      expect(c.lensStrength, lessThan(0));
+      expect(c.lensRingEnd, lessThanOrEqualTo(c.lensRingStart));
+      // Negative: green moves with blue, so blue fringes stay blue.
+      expect(c.dispersion, lessThan(0));
     }
   });
 
@@ -70,6 +72,33 @@ void main() {
         .widgetList<LiquidGlass>(find.byType(LiquidGlass))
         .firstWhere((w) => w.glass != Glass.clear);
     expect(barGlass.mode, GlassRenderMode.shader);
+    // UIKit's bar is flat dark glass with an even rim (Kept over black).
+    final barTheme = LiquidGlassTheme.of(t.element(find.byWidget(barGlass)));
+    for (final v in [
+      barTheme.constants.regular,
+      barTheme.constants.regularDark,
+    ]) {
+      expect(v.toneLift, 0);
+      expect(v.rimIntensity, 0);
+      expect(v.rimMix, greaterThan(0));
+    }
+    await g.up();
+    await t.pumpAndSettle();
+  }, variant: ios);
+
+  testWidgets('the lens magnifies each tab about its own centre', (t) async {
+    // iOS keeps a tab at the lens's rim in view; magnifying about the lens
+    // centre would push it out past the rim.
+    env(ios: 26);
+    await t.pumpWidget(bar());
+    final g = await hold(t);
+    final xs = find
+        .text('Settings')
+        .evaluate()
+        .map((e) => t.getCenter(find.byElementPredicate((x) => x == e)).dx)
+        .toList();
+    expect(xs.length, 2, reason: 'the tab and its copy under the lens');
+    expect(xs[0], closeTo(xs[1], 0.5));
     await g.up();
     await t.pumpAndSettle();
   }, variant: ios);

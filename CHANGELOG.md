@@ -1,8 +1,11 @@
 ## 0.1.0-dev.4
 
 * `GlassTabBar`: the lens is shader glass fitted to iOS 26.4's tab lens
-  (unfrosted, outward edge refraction, colour dispersion), and the bar is
-  shader glass too so the lens can refract it; an explicit `mode:` wins.
+  (unfrosted, a smooth magnifying edge that bends the tabs into the rim,
+  blue-preserving colour fringes), and the bar is shader glass too so the
+  lens can refract it, fitted to UIKit's bar (flat fill, even 1 pt rim);
+  an explicit `mode:` wins. Each tab under the lens is magnified about its
+  own centre, and the lens trails the finger as iOS's does.
   The selected tint no longer flickers as the release settles. Tapping a
   far tab sends the lens across from the selection and settles it on
   arrival (~180 ms, as iOS 26.4), instead of snapping.

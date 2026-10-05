@@ -196,8 +196,8 @@ abstract final class _Metrics {
 
   /// The lens following the finger.
   static final SpringDescription follow = swiftUISpring(
-    response: 0.3,
-    dampingFraction: 0.8,
+    response: 0.35,
+    dampingFraction: 1.0,
   );
 
   /// The pill moving to a newly selected tab.
@@ -548,6 +548,10 @@ class _GlassTabBarState extends State<GlassTabBar>
     final lean = _Metrics.growLean * (x - _rowWidth / 2) * t;
     final growX = _Metrics.growX * t;
     final growY = _Metrics.growY * t;
+    final magnify = Offset(
+      lerpDouble(1, _Metrics.magnifyX, t)!,
+      lerpDouble(1, _Metrics.magnifyY, t)!,
+    );
     return SizedBox(
       width: _rowWidth + _Metrics.inset * 2,
       height: widget.height,
@@ -559,66 +563,68 @@ class _GlassTabBarState extends State<GlassTabBar>
             right: -growX - lean,
             top: -growY,
             bottom: -growY,
-            child: GlassGroup(
-              mode: _barMode,
-              child: LiquidGlass(
-                glass: widget.glass,
+            child: withTabBarGlass(
+              context,
+              GlassGroup(
                 mode: _barMode,
-                child: Center(
-                  child: SizedBox(
-                    width: _rowWidth,
-                    height: _contentHeight,
-                    child: Stack(
-                      children: [
-                        Positioned.fromRect(
-                          rect: p < 0
-                              ? lens
-                              : Rect.fromCenter(
-                                  center: lens.center,
-                                  width: _pillWidth,
-                                  height: _contentHeight,
+                child: LiquidGlass(
+                  glass: widget.glass,
+                  mode: _barMode,
+                  child: Center(
+                    child: SizedBox(
+                      width: _rowWidth,
+                      height: _contentHeight,
+                      child: Stack(
+                        children: [
+                          Positioned.fromRect(
+                            rect: p < 0
+                                ? lens
+                                : Rect.fromCenter(
+                                    center: lens.center,
+                                    width: _pillWidth,
+                                    height: _contentHeight,
+                                  ),
+                            child: Opacity(
+                              opacity: 1 - t,
+                              child: DecoratedBox(
+                                decoration: ShapeDecoration(
+                                  shape: const StadiumBorder(),
+                                  color: indicator,
                                 ),
-                          child: Opacity(
-                            opacity: 1 - t,
-                            child: DecoratedBox(
-                              decoration: ShapeDecoration(
-                                shape: const StadiumBorder(),
-                                color: indicator,
                               ),
                             ),
                           ),
-                        ),
-                        // Under a held lens the row has a hole filled by a
-                        // magnified, tinted copy. Both lie beneath the
-                        // lens, so its glass refracts them (bending them at
-                        // its rim, as iOS does).
-                        ClipPath(
-                          clipper: _Hole(lensShown ? lens : null),
-                          child: _row(
-                            // Gated like the lens, not on p == 0: the
-                            // settling spring crosses zero several times and
-                            // would flicker the tint off and on.
-                            (i) => !lensShown && i == widget.selectedIndex
-                                ? selected
-                                : null,
-                            semantics: true,
-                          ),
-                        ),
-                        if (lensShown)
+                          // Under a held lens the row has a hole filled by a
+                          // magnified, tinted copy. Both lie beneath the
+                          // lens, so its glass refracts them (bending them at
+                          // its rim, as iOS does).
                           ClipPath(
-                            // The shader lens bends the whole copy; native
-                            // glass only gets the ends (see _LensEnds).
-                            clipper: _shaderLens
-                                ? _Capsule(lens)
-                                : _LensEnds(lens),
-                            child: Transform.scale(
-                              scaleX: lerpDouble(1, _Metrics.magnifyX, t),
-                              scaleY: lerpDouble(1, _Metrics.magnifyY, t),
-                              origin: Offset(x - _rowWidth / 2, 0),
-                              child: _row((_) => selected, semantics: false),
+                            clipper: _Hole(lensShown ? lens : null),
+                            child: _row(
+                              // Gated like the lens, not on p == 0: the
+                              // settling spring crosses zero several times and
+                              // would flicker the tint off and on.
+                              (i) => !lensShown && i == widget.selectedIndex
+                                  ? selected
+                                  : null,
+                              semantics: true,
                             ),
                           ),
-                      ],
+                          if (lensShown)
+                            ClipPath(
+                              // The shader lens bends the whole copy; native
+                              // glass only gets the ends (see _LensEnds).
+                              clipper: _shaderLens
+                                  ? _Capsule(lens)
+                                  : _LensEnds(lens),
+                              child: _row(
+                                (_) => selected,
+                                semantics: false,
+                                scale: magnify,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -669,11 +675,10 @@ class _GlassTabBarState extends State<GlassTabBar>
                           top: -lens.top,
                           width: _rowWidth,
                           height: _contentHeight,
-                          child: Transform.scale(
-                            scaleX: lerpDouble(1, _Metrics.magnifyX, t),
-                            scaleY: lerpDouble(1, _Metrics.magnifyY, t),
-                            origin: Offset(x - _rowWidth / 2, 0),
-                            child: _row((_) => selected, semantics: false),
+                          child: _row(
+                            (_) => selected,
+                            semantics: false,
+                            scale: magnify,
                           ),
                         ),
                       ],
@@ -688,7 +693,11 @@ class _GlassTabBarState extends State<GlassTabBar>
   }
 
   /// The tabs; [colorOf] null leaves a tab to the glass's readable colour.
-  Widget _row(Color? Function(int index) colorOf, {required bool semantics}) {
+  Widget _row(
+    Color? Function(int index) colorOf, {
+    required bool semantics,
+    Offset scale = const Offset(1, 1),
+  }) {
     final row = Row(
       children: [
         const SizedBox(width: _Metrics.pillExtra / 2),
@@ -704,23 +713,26 @@ class _GlassTabBarState extends State<GlassTabBar>
               child: SizedBox(
                 width: _itemWidth,
                 height: _contentHeight,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _icon(
-                      widget.items[i],
-                      i == widget.selectedIndex,
-                      colorOf(i),
-                    ),
-                    const SizedBox(height: _Metrics.labelGap),
-                    Text(
-                      widget.items[i].label,
-                      maxLines: 1,
-                      overflow: TextOverflow.fade,
-                      softWrap: false,
-                      style: _Metrics.label.copyWith(color: colorOf(i)),
-                    ),
-                  ],
+                child: _scaled(
+                  scale,
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _icon(
+                        widget.items[i],
+                        i == widget.selectedIndex,
+                        colorOf(i),
+                      ),
+                      const SizedBox(height: _Metrics.labelGap),
+                      Text(
+                        widget.items[i].label,
+                        maxLines: 1,
+                        overflow: TextOverflow.fade,
+                        softWrap: false,
+                        style: _Metrics.label.copyWith(color: colorOf(i)),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -729,6 +741,12 @@ class _GlassTabBarState extends State<GlassTabBar>
     );
     return semantics ? row : ExcludeSemantics(child: row);
   }
+
+  /// iOS magnifies each tab under the lens about its own centre, so a tab
+  /// at the lens's rim stays in view.
+  Widget _scaled(Offset scale, Widget child) => scale == const Offset(1, 1)
+      ? child
+      : Transform.scale(scaleX: scale.dx, scaleY: scale.dy, child: child);
 
   /// The tab's icon, with its badge at the top trailing corner.
   Widget _icon(GlassTabBarItem item, bool isSelected, Color? color) {

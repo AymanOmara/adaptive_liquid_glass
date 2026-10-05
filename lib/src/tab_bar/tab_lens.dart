@@ -12,17 +12,17 @@ import '../core/theme.dart';
 /// these constants, even over native glass.
 const tabLensLight = GlassVariantConstants(
   blurSigma: 0,
-  lensBand: 1,
-  lensStrength: 0,
-  lensDecay: 1,
+  lensBand: 16,
+  lensStrength: -1.2,
+  lensDecay: 7,
   lensSizeRef: 0,
-  dispersion: 0.15,
+  dispersion: -0.3,
   normalRadiusScale: 1,
   lensEdge: 0,
   lensEdgeDecay: 1.6,
-  lensRingStart: 1,
-  lensRingEnd: 7.5,
-  lensRingReach: 4,
+  lensRingStart: 0,
+  lensRingEnd: 0,
+  lensRingReach: 0,
   rimMix: 0.3,
   rimMixWidth: 1.2,
   rimMixCut: 2,
@@ -40,17 +40,17 @@ const tabLensLight = GlassVariantConstants(
 /// [tabLensLight] in dark mode.
 const tabLensDark = GlassVariantConstants(
   blurSigma: 0,
-  lensBand: 1,
-  lensStrength: 0,
-  lensDecay: 1,
+  lensBand: 16,
+  lensStrength: -1.2,
+  lensDecay: 7,
   lensSizeRef: 0,
-  dispersion: 0.15,
+  dispersion: -0.3,
   normalRadiusScale: 1,
   lensEdge: 0,
   lensEdgeDecay: 1.6,
-  lensRingStart: 1,
-  lensRingEnd: 7.5,
-  lensRingReach: 4,
+  lensRingStart: 0,
+  lensRingEnd: 0,
+  lensRingReach: 0,
   rimMix: 0.3,
   rimMixWidth: 1.2,
   rimMixCut: 2,
@@ -74,6 +74,42 @@ Widget withTabLens(BuildContext context, Widget child) {
       constants: theme.constants.copyWith(
         clear: tabLensLight,
         clearDark: tabLensDark,
+      ),
+    ),
+    child: child,
+  );
+}
+
+/// Overrides on regular glass for the tab bar itself, fitted to iOS 26.4's
+/// tab bar (Kept) over black: UIKit's bar is flatter than SwiftUI's small
+/// glass (no dark-end lift) with an even 1 pt rim.
+const _tabBarOverrides = <String, Object?>{
+  'toneLift': 0.0,
+  'rimIntensity': 0.0,
+  'rimMix': 0.144,
+  'rimMixWidth': 1.33,
+  'rimMixCut': 1.0,
+  'rimMixLumaFloor': 1.0,
+};
+
+/// Dark-mode extras on [_tabBarOverrides]: the bar reads #191919 over black.
+const _tabBarDarkOverrides = <String, Object?>{
+  ..._tabBarOverrides,
+  'fillColor': '#2B2A2B',
+};
+
+/// [child] with regular glass drawn as the tab bar.
+Widget withTabBarGlass(BuildContext context, Widget child) {
+  final theme = LiquidGlassTheme.of(context);
+  final c = theme.constants;
+  return LiquidGlassTheme(
+    data: theme.copyWith(
+      constants: c.copyWith(
+        regular: GlassVariantConstants.fromJson(_tabBarOverrides, c.regular),
+        regularDark: GlassVariantConstants.fromJson(
+          _tabBarDarkOverrides,
+          c.regularDark,
+        ),
       ),
     ),
     child: child,
