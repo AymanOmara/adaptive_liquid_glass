@@ -306,8 +306,11 @@ class GlassVariantConstants {
   final double rimIntensity;
 
   /// Rim strength on the side facing away from the light, relative to the
-  /// lit side (0.35 = the pre-17d literal). Task 9 measured a fixed light
-  /// whose far side is about as bright as the near side.
+  /// lit side (0.35 = the pre-17d literal, shipped unfitted). Task 9
+  /// measured a fixed light with a directional mismatch — the device rim is
+  /// brightest around 135°, where the model's 315° light is weakest — so
+  /// this key exists for a bounded refit; it is not itself the measured
+  /// far/near ratio.
   final double rimBack;
 
   /// Colour the content behind the glass is washed toward (opaque; JSON

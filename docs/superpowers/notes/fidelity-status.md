@@ -200,3 +200,24 @@ Lowest scenes now: clear-capsule-text-light 0.9532, regular-capsule-photo-dark
 The clear margin rests on a sharp optimum (lensSizeRef ±0.3 pt moves the
 capsule by 0.01–0.05), so any later change to the clear lens must be
 re-gridded, not Powell-polished.
+
+**Capture-tree caveat and re-certification.** The device numbers above were
+captured at f0f780a, before ed4b2c6 (per-variant post-lens sigma) and the
+behaviour-neutral rimBack landing. Re-certified on a fresh capture at the
+final tree (build/fidelity/final-17d): **46/75, min SSIM 0.9532
+(clear-capsule-text-light), 0 scenes below 0.95, median 0.9828 / ΔE 1.09**
+— identical; the post-capture commits are below capture noise. (The round-4
+note's "regular-capsule-text-dark 0.953 → 0.963" cites the model value;
+device is 0.9513 → 0.9613.)
+
+**Held-out robustness (48 scenes the fit never saw** — off-size capsules
+200×50/60/64, text bands phase-shifted 1/2.33 pt, one 350×64 rect;
+`compare.py build/fidelity/holdout --scenes tool/scenes/measure.json
+--prefix holdout-`): **18/48 official bars, min SSIM 0.9470, 2 scenes below
+0.95** (holdout-regular-capsule50-photo-dark 0.9470,
+holdout-regular-rect350x64-photo-dark 0.9474), median 0.9686 / 1.08,
+parity min 0.9925. The hard target is defined and met on the 75 in-set
+scenes; off-grid it holds to within 0.003 on the two hardest — both in the
+known regular-dark small-shape family. Do not cite "hard target met" as
+generalising off-grid; a future round should fit a regular-dark size term
+against the holdout set.
