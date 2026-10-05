@@ -7,6 +7,7 @@ import 'core/theme.dart';
 import 'glass_effect.dart';
 import 'group/glass_group.dart';
 import 'group/glass_member.dart';
+import 'group/glass_union_scope.dart';
 import 'shader/glass_program.dart';
 
 /// Liquid Glass behind [child], like SwiftUI's `.glassEffect(_:in:)`.
@@ -107,7 +108,7 @@ class LiquidGlass extends StatelessWidget {
       glass: onPressed == null ? resolved : pressableGlass(resolved),
       shape: shape,
       glassId: glassId,
-      unionId: unionId,
+      unionId: unionId ?? GlassUnionScope.maybeOf(context),
       mode: mode,
       adaptiveForeground: adaptiveForeground,
       onPressed: onPressed,

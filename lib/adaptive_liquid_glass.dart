@@ -23,4 +23,5 @@ export 'src/glass_effect.dart';
 export 'src/group/glass_group.dart' show GlassGroup;
 export 'src/liquid_glass.dart' show LiquidGlass;
 export 'src/navigation/glass_back_button.dart' show GlassBackButton;
+export 'src/navigation/glass_navigation_bar.dart';
 export 'src/tab_bar/glass_tab_bar.dart';
