@@ -3,8 +3,8 @@
 iOS 26 **Liquid Glass** for Flutter, measured against SwiftUI, with Material 3
 counterparts on Android, behind one API. App code never branches on platform.
 
-- **iOS:** a fragment-shader glass tuned to SwiftUI's, or Apple's own UIKit
-  glass on iOS 26+ when you opt in.
+- **iOS 26+:** SwiftUI's own Liquid Glass, pixel-identical to a SwiftUI app.
+- **Older iOS:** a fragment-shader glass tuned to SwiftUI's.
 - **Android:** a Material 3 surface (colours from your `Theme`, ink ripple
   for interactive glass). No glass code runs.
 - **RTL-safe:** directional insets throughout; the light angle is not
@@ -107,20 +107,25 @@ A `LiquidGlassTheme` is optional; without one the defaults apply.
 LiquidGlassTheme(
   data: const LiquidGlassThemeData(
     defaultGlass: Glass.clear,  // glass for widgets that do not pick one
-    nativeEnabled: true,        // Apple's own glass on iOS 26+
   ),
   child: MaterialApp(home: const HomePage()),
 )
 ```
 
-`nativeEnabled` draws with UIKit's `UIGlassEffect` on iOS 26 and later
-(through a platform view), and falls back to the shader elsewhere. To force a
-path for one subtree, pass `mode:` to `GlassGroup` or `LiquidGlass`
-(`GlassRenderMode.auto`, `shader`, `native` or `material`).
+On iOS 26 and later, glass is SwiftUI's own Liquid Glass: each `GlassGroup`
+hosts one `GlassEffectContainer` with a `.glassEffect` view per member in a
+platform view behind its content, so it matches a SwiftUI app pixel for pixel
+(including dark mode, tint, merging and Reduce Transparency, which SwiftUI
+handles itself). There is no flag: the iOS version is read at startup, so the
+first frame already uses it. Older iOS gets the shader. To force a path for
+one subtree, pass `mode:` to `GlassGroup` or `LiquidGlass`
+(`GlassRenderMode.auto`, `shader`, `native` or `material`); set
+`defaultMode: GlassRenderMode.shader` in the theme to opt out of native glass
+app-wide.
 
-The shader loads on first use. Until it is ready (usually a frame or two),
-glass draws as a plain blur and then switches over in place. To skip that,
-optionally load it before the first frame:
+The shader (older iOS, or `mode: shader`) loads on first use. Until it is
+ready (usually a frame or two), glass draws as a plain blur and then switches
+over in place. To skip that, optionally load it before the first frame:
 
 ```dart
 Future<void> main() async {
@@ -148,8 +153,9 @@ the tint's `onPrimaryContainer`).
 ### Accessibility
 
 - **Reduce Transparency** (iOS) turns glass into an opaque surface, as iOS
-  does.
-- **Increase Contrast** strengthens the rim and reduces lensing.
+  does (on iOS 26+ SwiftUI's glass does this itself).
+- **Increase Contrast** strengthens the rim and reduces lensing on the shader
+  path; on iOS 26+ it is whatever SwiftUI's own glass does.
 - **Reduce Motion** keeps the press glow and drops the stretch and bounce.
 - Glass is decoration: semantics come from the child, plus button semantics
   when `onPressed` is set.

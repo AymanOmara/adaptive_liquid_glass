@@ -11,8 +11,8 @@ import 'shader/glass_program.dart';
 
 /// Liquid Glass behind [child], like SwiftUI's `.glassEffect(_:in:)`.
 ///
-/// On iOS this is shader glass (or Apple's own on iOS 26+ when
-/// `LiquidGlassThemeData.nativeEnabled`); on Android a Material 3 surface.
+/// On iOS 26+ this is SwiftUI's own Liquid Glass, on older iOS shader glass
+/// fitted to it, and on Android a Material 3 surface.
 /// No setup is needed: no theme, no `precache`, no platform checks.
 ///
 /// ```dart

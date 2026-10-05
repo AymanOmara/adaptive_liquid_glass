@@ -77,7 +77,7 @@ void main() {
   testWidgets('Reduce Transparency falls back to the opaque fill', (t) async {
     GlassPlatform.instance.debugEnvironment = const GlassEnvironment(
       platform: TargetPlatform.iOS,
-      iosMajorVersion: 26,
+      iosMajorVersion: 18,
       reduceTransparency: true,
       shaderSupported: true,
     );
@@ -87,15 +87,14 @@ void main() {
   }, variant: ios);
 
   testWidgets('native glass does not wait for the shader', (t) async {
-    shaderEnv();
-    await t.pumpWidget(
-      plainHost(
-        const LiquidGlassTheme(
-          data: LiquidGlassThemeData(nativeEnabled: true),
-          child: LiquidGlass(child: _Stateful()),
-        ),
-      ),
+    GlassPlatform.instance.debugEnvironment = const GlassEnvironment(
+      platform: TargetPlatform.iOS,
+      iosMajorVersion: 26,
+      reduceTransparency: false,
+      shaderSupported: true,
     );
+    // iOS 26: native by default, no theme needed.
+    await t.pumpWidget(plainHost(const LiquidGlass(child: _Stateful())));
     expect(_blurOn(t), isFalse);
   }, variant: ios);
 

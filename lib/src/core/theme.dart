@@ -14,7 +14,6 @@ class LiquidGlassThemeData {
     this.lightAngle = -3 * math.pi / 4,
     this.defaultGlass = Glass.regular,
     this.defaultMode = GlassRenderMode.auto,
-    this.nativeEnabled = false,
     this.constants = GlassConstants.standard,
   });
 
@@ -26,10 +25,11 @@ class LiquidGlassThemeData {
   final Glass defaultGlass;
 
   /// Mode used when a widget does not specify one.
+  ///
+  /// [GlassRenderMode.auto] (the default) draws SwiftUI's own glass on
+  /// iOS 26+, the shader on older iOS and Material elsewhere. Set
+  /// [GlassRenderMode.shader] to keep Flutter-drawn glass everywhere.
   final GlassRenderMode defaultMode;
-
-  /// Whether `auto` may use Apple's native glass on iOS 26+.
-  final bool nativeEnabled;
 
   /// Rendering constants fitted to SwiftUI. Override only for fidelity
   /// work; the type is exported from
@@ -41,13 +41,11 @@ class LiquidGlassThemeData {
     double? lightAngle,
     Glass? defaultGlass,
     GlassRenderMode? defaultMode,
-    bool? nativeEnabled,
     GlassConstants? constants,
   }) => LiquidGlassThemeData(
     lightAngle: lightAngle ?? this.lightAngle,
     defaultGlass: defaultGlass ?? this.defaultGlass,
     defaultMode: defaultMode ?? this.defaultMode,
-    nativeEnabled: nativeEnabled ?? this.nativeEnabled,
     constants: constants ?? this.constants,
   );
 
@@ -57,17 +55,11 @@ class LiquidGlassThemeData {
       other.lightAngle == lightAngle &&
       other.defaultGlass == defaultGlass &&
       other.defaultMode == defaultMode &&
-      other.nativeEnabled == nativeEnabled &&
       other.constants == constants;
 
   @override
-  int get hashCode => Object.hash(
-    lightAngle,
-    defaultGlass,
-    defaultMode,
-    nativeEnabled,
-    constants,
-  );
+  int get hashCode =>
+      Object.hash(lightAngle, defaultGlass, defaultMode, constants);
 }
 
 /// Provides [LiquidGlassThemeData] to descendants. Optional: without one,
@@ -77,7 +69,6 @@ class LiquidGlassThemeData {
 /// LiquidGlassTheme(
 ///   data: const LiquidGlassThemeData(
 ///     defaultGlass: Glass.clear,
-///     nativeEnabled: true, // Apple's own glass on iOS 26+
 ///   ),
 ///   child: MaterialApp(home: const HomePage()),
 /// )

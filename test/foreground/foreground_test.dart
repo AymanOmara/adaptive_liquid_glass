@@ -17,7 +17,7 @@ void main() {
   Future<Brightness> run(WidgetTester t, Color background) async {
     GlassPlatform.instance.debugEnvironment = const GlassEnvironment(
       platform: TargetPlatform.iOS,
-      iosMajorVersion: 26,
+      iosMajorVersion: 18,
       reduceTransparency: false,
       shaderSupported: true,
     );
@@ -72,7 +72,7 @@ void main() {
 
   const iosEnv = GlassEnvironment(
     platform: TargetPlatform.iOS,
-    iosMajorVersion: 26,
+    iosMajorVersion: 18,
     reduceTransparency: false,
     shaderSupported: true,
   );

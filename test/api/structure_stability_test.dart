@@ -23,10 +23,10 @@ class _StatefulState extends State<_Stateful> {
   Widget build(BuildContext context) => const Text('Go');
 }
 
-void _env({bool rt = false, bool shader = true}) {
+void _env({bool rt = false, bool shader = true, int ios = 18}) {
   GlassPlatform.instance.debugEnvironment = GlassEnvironment(
     platform: defaultTargetPlatform,
-    iosMajorVersion: defaultTargetPlatform == TargetPlatform.iOS ? 26 : null,
+    iosMajorVersion: defaultTargetPlatform == TargetPlatform.iOS ? ios : null,
     reduceTransparency: rt,
     shaderSupported: shader,
   );
@@ -57,15 +57,8 @@ void main() {
   }, variant: ios);
 
   testWidgets('native members add no compositing for the fallback', (t) async {
-    _env();
-    await t.pumpWidget(
-      plainHost(
-        const LiquidGlassTheme(
-          data: LiquidGlassThemeData(nativeEnabled: true),
-          child: LiquidGlass(child: _Stateful()),
-        ),
-      ),
-    );
+    _env(ios: 26);
+    await t.pumpWidget(plainHost(const LiquidGlass(child: _Stateful())));
     expect(_memberComposites(t), isFalse);
   }, variant: ios);
 

@@ -63,6 +63,31 @@ List<double> rect(Object? r) => [
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
+  // Must run first: the package has not read the platform channel yet, so
+  // this is what an app sees on its very first glass frame.
+  testWidgets('iOS 26+ is native from the first frame, with no flag', (
+    tester,
+  ) async {
+    bool isBackdrop(Widget w) => w.runtimeType.toString() == 'GlassBackdrop';
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(
+          child: LiquidGlass(child: SizedBox(width: 120, height: 50)),
+        ),
+      ),
+    );
+    // The first frame already hosts the platform view: no shader frame
+    // before the environment channel answers.
+    expect(find.byType(UiKitView), findsOneWidget);
+    expect(find.byWidgetPredicate(isBackdrop), findsNothing);
+    for (var i = 0; i < 10; i++) {
+      await settle(tester);
+      expect(find.byType(UiKitView), findsOneWidget);
+      expect(find.byWidgetPredicate(isBackdrop), findsNothing);
+    }
+  });
+
   testWidgets('native glass hosts SwiftUI, follows setShapes, disposes', (
     tester,
   ) async {
@@ -81,6 +106,8 @@ void main() {
 
     var s = await state(channel);
     expect(s['hosted'], true);
+    // Drawn once on screen for a few frames (GlassRootView.settleFrames).
+    expect(s['visible'], true);
     expect(s['interactive'], false);
     expect(s['clearBackground'], true);
     // The hosting view fills the platform view, with no safe area.

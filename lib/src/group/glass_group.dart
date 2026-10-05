@@ -303,7 +303,6 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
     final environment = GlassPlatform.instance.environment.value;
     final mode = resolveGlassMode(
       requested: widget.mode ?? theme.defaultMode,
-      nativeEnabled: theme.nativeEnabled,
       environment: environment,
     );
     final opaque = mode == EffectiveGlassMode.opaque

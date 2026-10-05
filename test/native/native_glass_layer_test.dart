@@ -5,6 +5,7 @@ import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/native/native_glass_layer.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
+import 'package:adaptive_liquid_glass/src/shader/render_glass_backdrop.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -18,11 +19,15 @@ Widget host(Widget child) => MediaQuery(
   child: Directionality(textDirection: TextDirection.ltr, child: child),
 );
 
+/// iOS 26 picks native glass by default; `native: false` opts out to the
+/// shader through the theme.
 Widget themed(Widget child, {bool native = true}) => host(
-  LiquidGlassTheme(
-    data: LiquidGlassThemeData(nativeEnabled: native),
-    child: child,
-  ),
+  native
+      ? child
+      : LiquidGlassTheme(
+          data: const LiquidGlassThemeData(defaultMode: GlassRenderMode.shader),
+          child: child,
+        ),
 );
 
 void iosEnv() {
@@ -110,6 +115,34 @@ void main() {
     expect(shape['variant'], 1);
     expect(shape['tint'], 0xFF336699);
     expect(shape['interactive'], false);
+  }, variant: ios);
+
+  testWidgets('iOS 26: native from the first frame, no theme or flag', (
+    t,
+  ) async {
+    iosEnv();
+    mockNative(t);
+    await t.pumpWidget(
+      host(const LiquidGlass(child: SizedBox(width: 100, height: 40))),
+    );
+    // One frame: already native, never the shader backdrop.
+    expect(find.byType(NativeGlassLayer), findsOneWidget);
+    expect(find.byType(GlassBackdrop), findsNothing);
+  }, variant: ios);
+
+  testWidgets('explicit shader mode opts out of native on iOS 26', (t) async {
+    iosEnv();
+    mockNative(t);
+    await t.pumpWidget(
+      host(
+        const LiquidGlass(
+          mode: GlassRenderMode.shader,
+          child: SizedBox(width: 100, height: 40),
+        ),
+      ),
+    );
+    expect(find.byType(NativeGlassLayer), findsNothing);
+    expect(find.byType(GlassBackdrop), findsOneWidget);
   }, variant: ios);
 
   testWidgets('native payload carries the platform brightness', (t) async {

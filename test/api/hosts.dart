@@ -10,11 +10,11 @@ final ios = TargetPlatformVariant.only(TargetPlatform.iOS);
 /// Android only: the Material path.
 final android = TargetPlatformVariant.only(TargetPlatform.android);
 
-/// A shader-capable iOS 26 environment (or Android when the variant says so).
+/// A shader-capable iOS 18 environment (the shader is the default there) (or Android when the variant says so).
 void shaderEnv() {
   GlassPlatform.instance.debugEnvironment = GlassEnvironment(
     platform: defaultTargetPlatform,
-    iosMajorVersion: defaultTargetPlatform == TargetPlatform.iOS ? 26 : null,
+    iosMajorVersion: defaultTargetPlatform == TargetPlatform.iOS ? 18 : null,
     reduceTransparency: false,
     shaderSupported: true,
   );

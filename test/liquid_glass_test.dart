@@ -18,7 +18,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 final ios = TargetPlatformVariant.only(TargetPlatform.iOS);
 
-void env({bool rt = false, bool shader = true, int? version = 26}) {
+void env({bool rt = false, bool shader = true, int? version = 18}) {
   GlassPlatform.instance.debugEnvironment = GlassEnvironment(
     platform: defaultTargetPlatform,
     iosMajorVersion: defaultTargetPlatform == TargetPlatform.iOS
