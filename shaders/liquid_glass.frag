@@ -5,7 +5,7 @@ precision highp float;
 // Float layout must match lib/src/shader/glass_uniforms.dart.
 uniform vec2 uSize;        // engine: texture size
 uniform vec4 uGlobal;      // count, dpr, lightAngle, opaque
-uniform vec4 uGlobal2;     // smoothing px, cornerExponent, highContrast, composed frost sigma px
+uniform vec4 uGlobal2;     // smoothing px, cornerExponent, highContrast, -
 uniform vec4 uOpaque;      // rgb
 uniform vec4 uTouch;       // x, y, glow, glowRadius px
 uniform vec4 uRects[16];   // x, y, w, h px
@@ -19,7 +19,7 @@ uniform vec4 uVar[22];     // per variant (regular A-K, then clear A-K):
                            //   G, H, I.x: tone LUT, 9 grey output knots at inputs i/8 (Task 17d)
                            //   I.yzw(lens edge px, lens edge decay px, tone lift)
                            //   J(rim mix, rim mix width px, rim mix cut px, rim mix luma floor)
-                           //   K(tone lift knee, tone lift size ref px, -, -)
+                           //   K(tone lift knee, tone lift size ref px, post-lens sigma px, blur size ref px)
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -198,32 +198,35 @@ void main() {
   // shorter side, minus a size term for small shapes. Cost: 16 extra taps,
   // only where w > 0 (glass_model.py places them identically).
   // Post-lens blur (Task 17d): SwiftUI applies part of the frost after
-  // refraction. The composed blur is sigma x sqrt(1 - share) (uGlobal2.w);
-  // the rest, sigma x sqrt(share), is a 3x3 Gauss-Hermite rule in screen
-  // space mapped through the lens's Jacobian: 1 - dL/ddepth along the
-  // normal, 1 + L x curvature along the tangent (curvature of the lens
-  // field's level set, Laplacian / |gradient|).
-  vec3 col;
-  float share = F.z;
-  if (share > 0.0) {
-    float sPost = uGlobal2.w * sqrt(share / max(1.0 - share, 1e-6));
-    float lap = fxp + fxm + fyp + fym - 4.0 * lensField(px);
+  // refraction. The composed blur is sigma x sqrt(1 - share); the rest,
+  // per variant K.z = sigma x sqrt(share) (x the frost size scale when
+  // K.w > 0), is a 3x3 Gauss-Hermite rule in screen space mapped through
+  // the lens's Jacobian: 1 - dL/ddepth along the normal, 1 + L x curvature
+  // along the tangent (curvature of the lens field's level set,
+  // Laplacian / |gradient|). Skipped below 0.25 px. The centre tap is the
+  // plain lens sample `base`, reused by dispersion.
+  vec3 base = tex(sp).rgb;
+  vec3 col = base;
+  float sPost = K.z * (K.w > 0.0 ? min(1.0, halfMin / K.w) : 1.0);
+  if (sPost >= 0.25) {
+    // The lens field equals the outline's field when no variant rounds it.
+    float fc = (uVar[5].w == 1.0 && uVar[16].w == 1.0) ? d : lensField(px);
+    float lap = fxp + fxm + fyp + fym - 4.0 * fc;
     float kappa = lap / max(0.5 * gradLen, 1e-3);
     float ja = clamp(1.0 - dLens, -4.0, 4.0) * sPost;
     float jb = clamp(1.0 + lensAmt * kappa, -4.0, 4.0) * sPost;
     vec2 tng = vec2(-nrm.y, nrm.x);
-    col = vec3(0.0);
+    col = base * 0.44444445;
     for (int i = 0; i < 3; i++) {
       float on = float(i - 1) * 1.7320508;
       float wn = i == 1 ? 0.6666667 : 0.1666667;
       for (int j = 0; j < 3; j++) {
+        if (i == 1 && j == 1) continue;
         float ot = float(j - 1) * 1.7320508;
         float wt = j == 1 ? 0.6666667 : 0.1666667;
         col += (wn * wt) * tex(sp + nrm * (ja * on) + tng * (jb * ot)).rgb;
       }
     }
-  } else {
-    col = tex(sp).rgb;
   }
   float hmw = max(halfMin, 1.0);
   float wideW = E.y + (E.z - E.y) * (depth - lensAmt) / hmw;
@@ -247,10 +250,12 @@ void main() {
   // (post-lens blur + wide mix), so dispersion 0 is an exact no-op and a
   // grey backdrop stays grey (the offset must be measured after the wide
   // mix, not before it).
-  vec3 coreOff = col - tex(sp).rgb;
-  vec2 disp = nrm * lensAmt * A.w;
-  col.r = mix(col.r, tex(sp + disp).r + coreOff.r, v);
-  col.b = mix(col.b, tex(sp - disp).b + coreOff.b, v);
+  if (A.w != 0.0) {
+    vec3 coreOff = col - base;
+    vec2 disp = nrm * lensAmt * A.w;
+    col.r = mix(col.r, tex(sp + disp).r + coreOff.r, v);
+    col.b = mix(col.b, tex(sp - disp).b + coreOff.b, v);
+  }
 
   float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));
   col = mix(vec3(luma), col, D.w);

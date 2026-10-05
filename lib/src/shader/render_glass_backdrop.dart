@@ -306,7 +306,6 @@ class RenderGlassBackdrop extends RenderProxyBox {
         opaqueColor: _config.opaqueColor,
         touch: touch,
         glow: glow,
-        blurSigma: blurSigma,
       ),
       localBounds,
       origin,

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_uniforms.dart';
 import 'package:adaptive_liquid_glass/testing.dart';
@@ -198,7 +200,7 @@ void main() {
     // F.yzw: glow 0.25, no post-lens blur, outline normals.
     expect(d.sublist(229, 232), [0.25, 0, 1]);
     expect(d.sublist(241, 244), [0, closeTo(0.6 * 3, 1e-12), 0]);
-    expect(d.sublist(248, 252), [0.5, 0, 0, 0]);
+    expect(d.sublist(248, 251), [0.5, 0, 0]); // K.w = blurSizeRef·dpr
     expect(d.sublist(244, 248), [0, 1.5 * 3, 1 * 3, 1]);
     expect(d[7], 0);
 
@@ -222,14 +224,63 @@ void main() {
         lightAngle: 0,
         smoothing: 0,
         constants: c,
-        blurSigma: 1.5,
       ),
     );
-    expect(f[7], 1.5 * 3);
+    expect(f[7], 0);
+    // K.zw: post-lens sigma = blurSigma·√0.9·dpr, blur size ref·dpr.
+    expect(f[294], closeTo(c.clear.blurSigma * math.sqrt(0.9) * 3, 1e-12));
+    expect(f[295], c.clear.blurSizeRef * 3);
     expect(f.sublist(273, 276), [0.4, 0.9, 1.55]);
     expect(f.sublist(285, 288), [9.0 * 3, closeTo(0.6 * 3, 1e-12), 0]);
     expect(f.sublist(288, 292), [0.63, 1.5 * 3, 1.0 * 3, 0.05]);
   });
+
+  test('toneLift keys pack into I.w and K.xy (size ref × dpr)', () {
+    final c = GlassConstants.fromJson({
+      'regularDark': {
+        'toneLift': 0.7,
+        'toneLiftKnee': 0.8,
+        'toneLiftSizeRef': 48.0,
+      },
+    });
+    final f = packGlassUniforms(
+      GlassFrameUniforms(
+        shapes: const [],
+        devicePixelRatio: 2,
+        lightAngle: 0,
+        smoothing: 0,
+        constants: c,
+        brightness: Brightness.dark,
+      ),
+    );
+    expect(f[243], 0.7); // regular I.w
+    expect(f.sublist(248, 250), [0.8, 48.0 * 2]); // regular K.xy
+    expect(f[287], 0); // clear I.w: lift off
+  });
+
+  test(
+    'mixed regular + clear group: each variant keeps its own post sigma',
+    () {
+      final c = GlassConstants.fromJson({
+        'regular': {
+          'blurSigma': 6.0,
+          'postBlurShare': 0.0,
+          'blurSizeRef': 60.0,
+        },
+        'clear': {'blurSigma': 1.2, 'postBlurShare': 0.36, 'blurSizeRef': 0.0},
+      });
+      final f = packGlassUniforms(
+        frame([
+          s(const Rect.fromLTWH(0, 0, 300, 300)),
+          s(const Rect.fromLTWH(0, 400, 60, 60), v: GlassVariant.clear),
+        ], constants: c),
+      );
+      // regular K.zw: no post blur; clear K.zw: 1.2·0.6·3 px, no size scale.
+      expect(f.sublist(250, 252), [0, 60.0 * 3]);
+      expect(f[294], closeTo(1.2 * 0.6 * 3, 1e-12));
+      expect(f[295], 0);
+    },
+  );
 
   test('composed blur aspect follows (h / w) ^ blurAspectPower', () {
     final v = GlassConstants.fromJson({

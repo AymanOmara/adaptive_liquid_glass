@@ -59,7 +59,6 @@ class GlassFrameUniforms {
     this.opaqueColor,
     this.touch,
     this.glow = 0,
-    this.blurSigma = 0,
   });
 
   /// Light or dark appearance (selects constant sets).
@@ -92,10 +91,6 @@ class GlassFrameUniforms {
 
   /// Touch glow strength 0..1.
   final double glow;
-
-  /// Sigma of the composed frost blur (logical px), which the shader needs
-  /// to size the post-lens blur (`postBlurShare`).
-  final double blurSigma;
 }
 
 /// Largest usable `postBlurShare` (the composed blur keeps √0.1 of σ).
@@ -182,9 +177,8 @@ const int kGlassUniformFloats = 296;
 /// G, H, I.x = tone LUT: 9 grey output knots at inputs i/8,
 /// I.yzw = (lens edge px, lens edge decay px, tone lift),
 /// J = (rim mix, rim mix width px, rim mix cut px, rim mix luma floor),
-/// K = (tone lift knee, tone lift size ref px, -, -).
-///
-/// uGlobal2.w (float 7) is the composed frost sigma in physical px.
+/// K = (tone lift knee, tone lift size ref px, post-lens sigma px =
+/// blurSigma·√postBlurShare, blur size ref px).
 List<double> packGlassUniforms(GlassFrameUniforms u) {
   final dpr = u.devicePixelRatio;
   final shapes = u.shapes.where(_drawable).take(_maxShapes).toList();
@@ -198,7 +192,6 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
   f[4] = u.smoothing;
   f[5] = u.constants.cornerExponent;
   f[6] = u.highContrast ? 1 : 0;
-  f[7] = u.blurSigma * dpr;
 
   final o = u.opaqueColor;
   if (o != null) {
@@ -292,7 +285,16 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
       v.rimMixCut * dpr,
       v.rimMixLumaFloor,
     ]);
-    f.setAll(k + 40, [v.toneLiftKnee, v.toneLiftSizeRef * dpr, 0, 0]);
+    // Post-lens sigma per variant, so a mixed group does not inherit the
+    // strongest member's frost (the shader applies the size scale).
+    f.setAll(k + 40, [
+      v.toneLiftKnee,
+      v.toneLiftSizeRef * dpr,
+      v.blurSigma *
+          math.sqrt(v.postBlurShare.clamp(0.0, kMaxPostBlurShare)) *
+          dpr,
+      v.blurSizeRef * dpr,
+    ]);
     k += 44;
   }
   return f;

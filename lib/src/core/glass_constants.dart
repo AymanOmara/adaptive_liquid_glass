@@ -19,7 +19,7 @@ double _d(Map<String, Object?> j, String k, double fallback) =>
 List<double> _knots(Map<String, Object?> j, String k, List<double> fallback) {
   final v = j[k];
   if (v is List && v.length == 9 && v.every((e) => e is num)) {
-    return [for (final e in v) (e as num).toDouble()];
+    return List.unmodifiable([for (final e in v) (e as num).toDouble()]);
   }
   return fallback;
 }

@@ -71,7 +71,7 @@ BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
           "rimMix": (0, 1), "rimMixWidth": (0.3, 4), "rimMixCut": (0.3, 4),
           "rimMixLumaFloor": (0, 1),
           # Task 8b small-shape shadow lift (amount, knee, size ref pt).
-          "toneLift": (0, 1), "toneLiftKnee": (0.05, 1), "toneLiftSizeRef": (0, 200),
+          "toneLift": (0, 1), "toneLiftKnee": (0.05, 2), "toneLiftSizeRef": (0, 200),
           "blurAspectPower": (-1, 1),
           # Lens v3 (pt); Task 15c measured 6.4-6.5 and 38.4 (regular) / 0 (clear).
           "lensDecay": (0.5, 20), "lensSizeRef": (0, 100),

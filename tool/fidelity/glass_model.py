@@ -355,7 +355,10 @@ def _uvar(constants, brightness, scale):
                            v["lensEdgeDecay"] * scale, v["toneLift"]]),
             "J": np.array([v["rimMix"], v["rimMixWidth"] * scale,
                            v["rimMixCut"] * scale, v["rimMixLumaFloor"]]),
-            "K": np.array([v["toneLiftKnee"], v["toneLiftSizeRef"] * scale, 0.0, 0.0]),
+            "K": np.array([v["toneLiftKnee"], v["toneLiftSizeRef"] * scale,
+                           v["blurSigma"] * np.sqrt(min(max(v["postBlurShare"], 0.0),
+                                                        POST_SHARE_MAX)) * scale,
+                           v["blurSizeRef"] * scale]),
         })
     return res
 
@@ -524,26 +527,35 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
 
     sharp = bg[by0:by1, bx0:bx1]
     m = inside > 0  # the shader returns the shadow only where inside <= 0
-    share = F[..., 2][m]
-    if np.any(share > 0):
-        # Post-lens blur (Task 17d): the share of the frost variance that
-        # SwiftUI applies after refraction. The composed blur is sigma x
-        # sqrt(1 - share); here a 3x3 Gauss-Hermite rule of sigma x
-        # sqrt(share) in screen space, mapped through the lens's Jacobian
-        # (normal: 1 - dL/ddepth, tangent: 1 + L x curvature).
-        sp_post = sigma * scale * np.sqrt(share / np.maximum(1.0 - share, 1e-6))
-        ja = np.clip(1.0 - dlens[m], -POST_JMAX, POST_JMAX)
-        jb = np.clip(1.0 + lens_amt[m] * g["kappa"][m], -POST_JMAX, POST_JMAX)
-        nxm, nym = nx[m], ny[m]
-        col = 0.0
-        for on, wn in POST_TAPS:
-            for ot, wt in POST_TAPS:
-                a_ = ja * on * sp_post
-                b_ = jb * ot * sp_post
-                col = col + (wn * wt) * _sample(tex, tx0, ty0, spx[m] + nxm * a_ - nym * b_,
-                                                spy[m] + nym * a_ + nxm * b_)
-    else:
-        col = _sample(tex, tx0, ty0, spx[m], spy[m])
+    # Post-lens blur (Task 17d): the share of the frost variance that SwiftUI
+    # applies after refraction. The composed blur is sigma x sqrt(1 - share);
+    # here a 3x3 Gauss-Hermite rule of the per-variant K.z = blurSigma x
+    # sqrt(share) (x the frost size scale when K.w > 0) in screen space,
+    # mapped through the lens's Jacobian (normal: 1 - dL/ddepth, tangent:
+    # 1 + L x curvature); skipped below 0.25 px. The centre tap is `base`.
+    base = _sample(tex, tx0, ty0, spx[m], spy[m])
+    col = base.copy()
+    Km = K[m]
+    hm_ = np.broadcast_to(g["half_min"], g["d"].shape)[m]
+    sp_post = Km[:, 2] * np.where(Km[:, 3] > 0, np.minimum(
+        1.0, hm_ / np.maximum(Km[:, 3], 1e-6)), 1.0) * blur_scale
+    pm = sp_post >= 0.25
+    if np.any(pm):
+        sp_ = sp_post[pm]
+        ja = np.clip(1.0 - dlens[m][pm], -POST_JMAX, POST_JMAX)
+        jb = np.clip(1.0 + lens_amt[m][pm] * g["kappa"][m][pm], -POST_JMAX, POST_JMAX)
+        nxm, nym = nx[m][pm], ny[m][pm]
+        sxm, sym = spx[m][pm], spy[m][pm]
+        acc = base[pm] * (4.0 / 9.0)
+        for i, (on, wn) in enumerate(POST_TAPS):
+            for j, (ot, wt) in enumerate(POST_TAPS):
+                if i == 1 and j == 1:
+                    continue
+                a_ = ja * on * sp_
+                b_ = jb * ot * sp_
+                acc = acc + (wn * wt) * _sample(tex, tx0, ty0, sxm + nxm * a_ - nym * b_,
+                                                sym + nym * a_ + nxm * b_)
+        col[pm] = acc
     wm = wide_w[m]
     if np.any(wm > 0):
         unit = frost_taps(1.0)
@@ -556,7 +568,7 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     # full frost offset (post-lens blur + wide mix) over to them, so
     # dispersion 0 is an exact no-op and a grey backdrop stays grey. The
     # offset is measured after the wide mix, matching the shader.
-    core_off = col - _sample(tex, tx0, ty0, spx[m], spy[m])
+    core_off = col - base
     tm = t[m]
     r2 = _sample(tex, tx0, ty0, spx[m] + dxp[m], spy[m] + dyp[m])[:, 0]
     b2 = _sample(tex, tx0, ty0, spx[m] - dxp[m], spy[m] - dyp[m])[:, 2]

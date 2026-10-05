@@ -346,13 +346,37 @@ def test_tone_lift_lifts_small_dark_shapes_only():
 
 
 def test_dispersion_keeps_post_blur_offset():
-    """Red/blue single taps carry the post-lens blur offset: a grey backdrop
-    stays grey with dispersion and post blur on."""
+    """Red/blue single taps carry the frost offset (post-lens blur + wide
+    mix): a tiny non-zero dispersion stays within a level of none, instead
+    of snapping red/blue to the unblurred tap (green/magenta fringes)."""
     bg = np.repeat(np.random.default_rng(5).random((2622, 1206, 1)), 3, -1)
     c = json.loads(json.dumps(STANDARD))
     c["clear"].update(postBlurShare=0.3, dispersion=0.0, fillColor="#FFFFFF")
-    out, _ = render_window(bg, _scene("clear-rect16-text-light"), c)
-    assert np.abs(out[..., 0] - out[..., 1]).max() <= 1 / 255 + 1e-9
+    off, _ = render_window(bg, _scene("clear-rect16-text-light"), c)
+    c["clear"]["dispersion"] = 1e-4
+    on, _ = render_window(bg, _scene("clear-rect16-text-light"), c)
+    assert np.abs(on - off).max() <= 1 / 255 + 1e-9
+    assert np.abs(off[..., 0] - off[..., 1]).max() <= 1 / 255 + 1e-9
+
+
+def test_mixed_group_keeps_per_variant_post_sigma():
+    """K.z is per variant (blurSigma x sqrt(share) x scale): a clear member's
+    post-lens blur does not grow with a regular member's frost."""
+    from glass_model import _uvar, resolve_constants
+    c = json.loads(json.dumps(STANDARD))
+    c["regular"].update(blurSigma=6.0, postBlurShare=0.0)
+    c["clear"].update(blurSigma=1.2, postBlurShare=0.36, blurSizeRef=0.0)
+    reg, clr = _uvar(resolve_constants(c), "light", 3.0)
+    assert reg["K"][2] == 0.0
+    assert clr["K"][2] == pytest.approx(1.2 * 0.6 * 3)
+    c["regular"]["blurSigma"] = 12.0
+    assert _uvar(resolve_constants(c), "light", 3.0)[1]["K"][2] == clr["K"][2]
+    # The rendered mixed group runs (regular dominates the composed blur).
+    sc = _scene("regular-circle-photo-light")
+    sc["shapes"].append({**_scene("clear-rect16-photo-light")["shapes"][0], "y": 100})
+    bg = np.random.default_rng(2).random((2622, 1206, 3))
+    out, _ = render_window(bg, sc, c)
+    assert np.isfinite(out).all()
 
 
 def test_blur_aspect_follows_the_strongest_member():
