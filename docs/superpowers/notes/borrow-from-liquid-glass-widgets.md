@@ -54,3 +54,24 @@ by us, or out of scope.
 After A-C: borrow their onboarding shape — one-call setup
 (`initialize()` + wrap), a "choose the right widget" table in the README,
 and a consumer `skills/SKILL.md` for AI coding tools.
+
+## Outcome (feat/borrow-lgw, 2026-10-06)
+
+Built by five sub-agents in worktrees; GLM (glm-5.3 via opencode) wrote first
+drafts of B4, B5, B8, the B3 semantics tests and every C component, all
+reviewed and fixed by Claude.
+
+- A1 shipped: `GlassConstants.cornerZone` 1.2 (outline only). Device 46/75 →
+  46/75, median SSIM 0.9828 → 0.9830, all 8 clear-rect scenes up 0.002-0.006
+  but still under 0.97. Also fixed: global-corner shapes packed the global
+  exponent, so the shader could not tell rects from capsules.
+- A2 not attempted.
+- B1-B8 done. B6 default stays `uniform` (progressive is opt-in, unverified on
+  device). B7 needed no fix (tests added).
+- C done: text field (+password), toast, list section/tile, chip, badge (tab
+  bar reuses it), page control, action sheet, progress. All geometry estimated,
+  not measured against SwiftUI yet; SwiftUI references + twins exist for
+  `tool/reference/side_by_side.sh`.
+- Open: GLES uv flip in liquid_glass.frag / tab_lens_content.frag may be wrong
+  on Flutter ≥ 3.46 (Android); toast `closed` never completes if its overlay
+  is torn down; default English strings in chip/page control not localized.
