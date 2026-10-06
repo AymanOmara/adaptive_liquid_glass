@@ -17,40 +17,20 @@ import '../core/glass.dart';
 import '../core/glass_environment.dart';
 import '../core/glass_render_mode.dart';
 import '../core/render_mode_resolver.dart';
-import '../core/swiftui_spring.dart';
 import '../core/theme.dart';
 import '../group/glass_group.dart';
 import '../liquid_glass.dart';
 import '../platform/glass_platform.dart';
 import 'bar_glow.dart';
+import 'capsule_clipper.dart';
+import 'glass_tab_bar_item.dart';
+import 'hole_clipper.dart';
+import 'lens_ends_clipper.dart';
+import 'rim_fade.dart';
+import 'tab_bar_metrics.dart';
 import 'tab_lens.dart';
 import 'tab_lens_content.dart';
 import 'tab_lens_program.dart';
-
-/// One tab of a [GlassTabBar]: an icon over a short label.
-@immutable
-class GlassTabBarItem {
-  /// Creates a tab.
-  const GlassTabBarItem({
-    required this.icon,
-    required this.label,
-    this.activeIcon,
-    this.badge,
-  });
-
-  /// The tab's icon.
-  final IconData icon;
-
-  /// The tab's label, also its accessibility label.
-  final String label;
-
-  /// The icon while this tab is selected; defaults to [icon].
-  final IconData? activeIcon;
-
-  /// A badge on the icon: a count or short text, or a dot when empty.
-  /// Null shows none.
-  final String? badge;
-}
 
 /// iOS 26's floating tab bar: a glass capsule with the selected tab on a
 /// pill.
@@ -138,107 +118,6 @@ class GlassTabBar extends StatefulWidget {
   State<GlassTabBar> createState() => _GlassTabBarState();
 }
 
-/// Measured from iOS 26.4's tab bar (Kept, iPhone 17 Pro) by frame-by-frame
-/// tracking of press, hold, drag and release (`example/lib/tab_bar_probe.dart`
-/// lays the bar out the same way).
-abstract final class _Metrics {
-  static const double inset = 4;
-
-  /// How much wider than the tab spacing the pill is (93.7 over 86.15).
-  static const double pillExtra = 7.55;
-
-  /// The held lens over the pill: 114.3 by 74 against 93.7 by 54.
-  static const double lensGrowX = 20.6;
-  static const double lensGrowY = 20;
-
-  /// The lens sits 1.06 times as far from the bar's centre as the finger,
-  /// up to this far past the outermost tab.
-  static const double lensGain = 1.06;
-  static const double lensReach = 7.1;
-
-  /// While held the bar grows this much on each side, plus [growLean] of
-  /// the lens's offset from the centre towards the lens.
-  static const double growX = 9.15;
-  static const double growY = 1.65;
-  static const double growLean = 0.0237;
-
-  /// Tabs under the lens are magnified about their own centres (Kept).
-  static const double magnifyX = 1.21;
-  static const double magnifyY = 1.19;
-
-  /// Peak white of the light a held lens casts on the bar (see BarGlow).
-  static const double glow = 0.095;
-
-  /// The bar's light coming on (press, drag) and fading after release
-  /// (Kept: about a third left 16 frames after letting go).
-  static final SpringDescription light = swiftUISpring(
-    response: 0.3,
-    dampingFraction: 1,
-  );
-
-  /// See [light].
-  static final SpringDescription lightOff = swiftUISpring(
-    response: 0.45,
-    dampingFraction: 1,
-  );
-
-  /// The band at the lens's edge where content is refracted, not sharp.
-  static const double lensRim = 9;
-
-  /// The lens's height wobbles with its sideways acceleration (taller when
-  /// it accelerates to the left), as a damped oscillator: points of extra
-  /// overhang per side per pt/s² of acceleration.
-  static const double wobbleGain = 0.002607;
-  static final SpringDescription wobble = swiftUISpring(
-    response: 1.159,
-    dampingFraction: 0.499,
-  );
-
-  static const double iconSize = 26;
-  static const double labelGap = 2;
-  static const TextStyle label = TextStyle(
-    fontSize: 10,
-    fontWeight: FontWeight.w500,
-    letterSpacing: 0.1,
-  );
-  static const double badgeHeight = 18;
-  static const double badgeDot = 10;
-  static const TextStyle badge = TextStyle(
-    fontSize: 13,
-    fontWeight: FontWeight.w500,
-    height: 1,
-  );
-
-  /// Pill to lens, lens back to pill (it undershoots: the pill squashes).
-  static final SpringDescription press = swiftUISpring(
-    response: 0.381,
-    dampingFraction: 0.752,
-  );
-  static final SpringDescription release = swiftUISpring(
-    response: 0.27,
-    dampingFraction: 0.55,
-  );
-
-  /// The lens following the finger.
-  static final SpringDescription follow = swiftUISpring(
-    response: 0.35,
-    dampingFraction: 1.0,
-  );
-
-  /// The pill moving to a newly selected tab.
-  /// The lens travelling from the selection to a pressed or tapped tab:
-  /// History to Settings arrives in ~11 frames on iOS 26.4 (Kept).
-  static final SpringDescription travel = swiftUISpring(
-    response: 0.22,
-    dampingFraction: 0.85,
-  );
-
-  static final SpringDescription slide = swiftUISpring(
-    response: 0.3,
-    dampingFraction: 0.78,
-  );
-}
-
 class _GlassTabBarState extends State<GlassTabBar>
     with TickerProviderStateMixin {
   /// The selection's centre in visual slots, left to right (the leftmost
@@ -323,11 +202,11 @@ class _GlassTabBarState extends State<GlassTabBar>
 
   int get _count => widget.items.length;
 
-  double get _pillWidth => _itemWidth + _Metrics.pillExtra;
+  double get _pillWidth => _itemWidth + TabBarMetrics.pillExtra;
 
   double get _rowWidth => _pillWidth + (_count - 1) * _itemWidth;
 
-  double get _contentHeight => widget.height - _Metrics.inset * 2;
+  double get _contentHeight => widget.height - TabBarMetrics.inset * 2;
 
   bool get _rtl => Directionality.of(context) == TextDirection.rtl;
 
@@ -338,13 +217,14 @@ class _GlassTabBarState extends State<GlassTabBar>
 
   /// [dx] (pixels from the bar's left edge) in visual slots.
   double _toSlots(double dx) =>
-      (dx - _Metrics.inset - _pillWidth / 2) / _itemWidth;
+      (dx - TabBarMetrics.inset - _pillWidth / 2) / _itemWidth;
 
   /// Where the lens heads for a finger at [finger] (visual slots).
   double _lensTarget(double finger) {
-    final reach = _Metrics.lensGain * _middle + _Metrics.lensReach / _itemWidth;
+    final reach =
+        TabBarMetrics.lensGain * _middle + TabBarMetrics.lensReach / _itemWidth;
     return _middle +
-        (_Metrics.lensGain * (finger - _middle)).clamp(-reach, reach);
+        (TabBarMetrics.lensGain * (finger - _middle)).clamp(-reach, reach);
   }
 
   /// Pixels from the row's left edge of visual slot position [slots].
@@ -389,7 +269,7 @@ class _GlassTabBarState extends State<GlassTabBar>
         ? 1 / 60
         : ((elapsed - _followLast).inMicroseconds / 1e6).clamp(0.0, 0.05);
     _followLast = elapsed;
-    final spring = _Metrics.follow;
+    final spring = TabBarMetrics.follow;
     final k = spring.stiffness / spring.mass;
     final c = spring.damping / spring.mass;
     const steps = 4;
@@ -430,7 +310,7 @@ class _GlassTabBarState extends State<GlassTabBar>
     final velocity = _xVelocity;
     final acceleration = (velocity - _lastVelocity) / dt * _itemWidth;
     _lastVelocity = velocity;
-    final spring = _Metrics.wobble;
+    final spring = TabBarMetrics.wobble;
     final k = spring.stiffness / spring.mass;
     final c = spring.damping / spring.mass;
     // Semi-implicit Euler in small steps for stability.
@@ -439,7 +319,9 @@ class _GlassTabBarState extends State<GlassTabBar>
     var y = _wobble.value;
     for (var i = 0; i < steps; i++) {
       final a =
-          -k * y - c * _wobbleVelocity - k * _Metrics.wobbleGain * acceleration;
+          -k * y -
+          c * _wobbleVelocity -
+          k * TabBarMetrics.wobbleGain * acceleration;
       _wobbleVelocity += a * h;
       y += _wobbleVelocity * h;
     }
@@ -472,7 +354,7 @@ class _GlassTabBarState extends State<GlassTabBar>
     super.didUpdateWidget(old);
     if (_held) return;
     if (old.selectedIndex != widget.selectedIndex) {
-      _springX(_Metrics.slide, _slot(widget.selectedIndex).toDouble());
+      _springX(TabBarMetrics.slide, _slot(widget.selectedIndex).toDouble());
     } else if (old.items.length != widget.items.length) {
       _x.value = _slot(widget.selectedIndex).toDouble();
     }
@@ -494,12 +376,12 @@ class _GlassTabBarState extends State<GlassTabBar>
     _finger = _toSlots(details.localPosition.dx);
     _fingerSlot = _nearestSlot;
     _cancelPendingRelease();
-    _springPress(_Metrics.press, 1);
+    _springPress(TabBarMetrics.press, 1);
     _dragging = false;
-    _springLight(_Metrics.light, 1);
+    _springLight(TabBarMetrics.light, 1);
     // The lens grows at the current selection and travels to the finger,
     // as iOS does (a tap on a far tab sends it across the bar).
-    _springX(_Metrics.travel, _lensTarget(_finger));
+    _springX(TabBarMetrics.travel, _lensTarget(_finger));
     _startWobble();
   }
 
@@ -513,23 +395,26 @@ class _GlassTabBarState extends State<GlassTabBar>
     }
     if (!_dragging) {
       _dragging = true;
-      _springLight(_Metrics.light, 2);
+      _springLight(TabBarMetrics.light, 2);
     }
   }
 
   void _release(double velocity) {
     _held = false;
-    _springLight(_Metrics.lightOff, 0);
+    _springLight(TabBarMetrics.lightOff, 0);
     final slot = _nearestSlot;
     final index = _rtl ? _count - 1 - slot : slot;
     final travelling = (_x.value - slot).abs() > 0.15;
-    _springX(travelling ? _Metrics.travel : _Metrics.slide, slot.toDouble());
+    _springX(
+      travelling ? TabBarMetrics.travel : TabBarMetrics.slide,
+      slot.toDouble(),
+    );
     if (travelling && !_reduceMotion) {
       // iOS keeps the lens until it arrives, then settles it into the pill.
       _arrival = slot.toDouble();
       _x.addListener(_settleOnArrival);
     } else {
-      _springPress(_Metrics.release, 0);
+      _springPress(TabBarMetrics.release, 0);
     }
     if (index != widget.selectedIndex) widget.onSelected(index);
   }
@@ -541,7 +426,7 @@ class _GlassTabBarState extends State<GlassTabBar>
     final target = _arrival;
     if (target == null || (_x.value - target).abs() > 0.15) return;
     _cancelPendingRelease();
-    _springPress(_Metrics.release, 0);
+    _springPress(TabBarMetrics.release, 0);
   }
 
   void _cancelPendingRelease() {
@@ -553,7 +438,9 @@ class _GlassTabBarState extends State<GlassTabBar>
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final fit =
-          (constraints.maxWidth - _Metrics.inset * 2 - _Metrics.pillExtra) /
+          (constraints.maxWidth -
+              TabBarMetrics.inset * 2 -
+              TabBarMetrics.pillExtra) /
           _count;
       _itemWidth = fit < widget.itemWidth ? fit : widget.itemWidth;
       return ValueListenableBuilder<GlassEnvironment>(
@@ -578,7 +465,7 @@ class _GlassTabBarState extends State<GlassTabBar>
     final selected = widget.selectedColor;
     final label = Theme.of(context).textTheme.labelMedium;
     return SizedBox(
-      width: _rowWidth + _Metrics.inset * 2,
+      width: _rowWidth + TabBarMetrics.inset * 2,
       child: ClipPath(
         clipper: const ShapeBorderClipper(shape: StadiumBorder()),
         // Floating above the bottom edge, so no safe-area padding.
@@ -666,20 +553,20 @@ class _GlassTabBarState extends State<GlassTabBar>
     final wobble = _wobble.value * t;
     final lens = Rect.fromCenter(
       center: Offset(x, _contentHeight / 2),
-      width: _pillWidth + _Metrics.lensGrowX * p,
-      height: _contentHeight + _Metrics.lensGrowY * p + wobble * 2,
+      width: _pillWidth + TabBarMetrics.lensGrowX * p,
+      height: _contentHeight + TabBarMetrics.lensGrowY * p + wobble * 2,
     );
-    final lean = _Metrics.growLean * (x - _rowWidth / 2) * t;
-    final growX = _Metrics.growX * t;
-    final growY = _Metrics.growY * t;
+    final lean = TabBarMetrics.growLean * (x - _rowWidth / 2) * t;
+    final growX = TabBarMetrics.growX * t;
+    final growY = TabBarMetrics.growY * t;
     // The bar's glass reaches past the row by the inset plus its growth.
-    final glowInsetX = _Metrics.inset + growX;
-    final glowInsetY = _Metrics.inset + growY;
+    final glowInsetX = TabBarMetrics.inset + growX;
+    final glowInsetY = TabBarMetrics.inset + growY;
     // The glow belongs to a held lens; dragging lights the bar evenly.
     final light = _light.value;
     final glow = light.clamp(0.0, 1.0) * (2 - light).clamp(0.0, 1.0);
     final baseRow = ClipPath(
-      clipper: _Hole(lensShown ? lens : null),
+      clipper: HoleClipper(lensShown ? lens : null),
       child: _row(
         // Gated like the lens, not on p == 0: the settling spring crosses
         // zero several times and would flicker the tint off and on.
@@ -688,11 +575,11 @@ class _GlassTabBarState extends State<GlassTabBar>
       ),
     );
     final magnify = Offset(
-      lerpDouble(1, _Metrics.magnifyX, t)!,
-      lerpDouble(1, _Metrics.magnifyY, t)!,
+      lerpDouble(1, TabBarMetrics.magnifyX, t)!,
+      lerpDouble(1, TabBarMetrics.magnifyY, t)!,
     );
     return SizedBox(
-      width: _rowWidth + _Metrics.inset * 2,
+      width: _rowWidth + TabBarMetrics.inset * 2,
       height: widget.height,
       child: Stack(
         clipBehavior: Clip.none,
@@ -733,7 +620,7 @@ class _GlassTabBarState extends State<GlassTabBar>
                                       x + glowInsetX,
                                       _contentHeight / 2 + glowInsetY,
                                     ),
-                                    opacity: _Metrics.glow * glow,
+                                    opacity: TabBarMetrics.glow * glow,
                                   ),
                                 ),
                               ),
@@ -764,10 +651,10 @@ class _GlassTabBarState extends State<GlassTabBar>
                           if (lensShown && !lensContent)
                             ClipPath(
                               // The shader lens bends the whole copy; native
-                              // glass only gets the ends (see _LensEnds).
+                              // glass only gets the ends (see LensEndsClipper).
                               clipper: _shaderLens
-                                  ? _Capsule(lens)
-                                  : _LensEnds(lens),
+                                  ? CapsuleClipper(lens)
+                                  : LensEndsClipper(lens),
                               child: _row(
                                 (_) => selected,
                                 semantics: false,
@@ -784,7 +671,9 @@ class _GlassTabBarState extends State<GlassTabBar>
           ),
           if (lensShown)
             Positioned.fromRect(
-              rect: lens.shift(const Offset(_Metrics.inset, _Metrics.inset)),
+              rect: lens.shift(
+                const Offset(TabBarMetrics.inset, TabBarMetrics.inset),
+              ),
               child: _shaderLens
                   ? withTabLens(
                       context,
@@ -811,8 +700,8 @@ class _GlassTabBarState extends State<GlassTabBar>
           // shows the plain tabs).
           if (lensContent)
             Positioned(
-              left: _Metrics.inset + lean,
-              top: _Metrics.inset,
+              left: TabBarMetrics.inset + lean,
+              top: TabBarMetrics.inset,
               width: _rowWidth,
               height: _contentHeight,
               child: baseRow,
@@ -822,8 +711,8 @@ class _GlassTabBarState extends State<GlassTabBar>
           // behind them (as iOS does).
           if (lensShown && lensContent)
             Positioned(
-              left: _Metrics.inset + lean - _lensPad,
-              top: _Metrics.inset - _lensPad,
+              left: TabBarMetrics.inset + lean - _lensPad,
+              top: TabBarMetrics.inset - _lensPad,
               width: _rowWidth + _lensPad * 2,
               height: _contentHeight + _lensPad * 2,
               child: TabLensContent(
@@ -853,10 +742,12 @@ class _GlassTabBarState extends State<GlassTabBar>
           // keeps the middle sharp itself.)
           if (lensShown && !_shaderLens)
             Positioned.fromRect(
-              rect: lens.shift(const Offset(_Metrics.inset, _Metrics.inset)),
+              rect: lens.shift(
+                const Offset(TabBarMetrics.inset, TabBarMetrics.inset),
+              ),
               child: IgnorePointer(
-                child: _RimFade(
-                  rim: _Metrics.lensRim,
+                child: RimFade(
+                  rim: TabBarMetrics.lensRim,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(lens.height / 2),
                     child: Stack(
@@ -892,7 +783,7 @@ class _GlassTabBarState extends State<GlassTabBar>
   }) {
     final row = Row(
       children: [
-        const SizedBox(width: _Metrics.pillExtra / 2),
+        const SizedBox(width: TabBarMetrics.pillExtra / 2),
         for (var i = 0; i < _count; i++)
           Semantics(
             button: true,
@@ -915,13 +806,13 @@ class _GlassTabBarState extends State<GlassTabBar>
                         i == widget.selectedIndex,
                         colorOf(i),
                       ),
-                      const SizedBox(height: _Metrics.labelGap),
+                      const SizedBox(height: TabBarMetrics.labelGap),
                       Text(
                         widget.items[i].label,
                         maxLines: 1,
                         overflow: TextOverflow.fade,
                         softWrap: false,
-                        style: _Metrics.label.copyWith(color: colorOf(i)),
+                        style: TabBarMetrics.label.copyWith(color: colorOf(i)),
                       ),
                     ],
                   ),
@@ -944,7 +835,7 @@ class _GlassTabBarState extends State<GlassTabBar>
   Widget _icon(GlassTabBarItem item, bool isSelected, Color? color) {
     final icon = Icon(
       isSelected ? item.activeIcon ?? item.icon : item.icon,
-      size: _Metrics.iconSize,
+      size: TabBarMetrics.iconSize,
       color: color,
     );
     final badge = item.badge;
@@ -955,12 +846,14 @@ class _GlassTabBarState extends State<GlassTabBar>
       children: [
         icon,
         PositionedDirectional(
-          start: _Metrics.iconSize * (dot ? 0.7 : 0.55),
+          start: TabBarMetrics.iconSize * (dot ? 0.7 : 0.55),
           top: dot ? -1 : -6,
           child: Container(
-            height: dot ? _Metrics.badgeDot : _Metrics.badgeHeight,
+            height: dot ? TabBarMetrics.badgeDot : TabBarMetrics.badgeHeight,
             constraints: BoxConstraints(
-              minWidth: dot ? _Metrics.badgeDot : _Metrics.badgeHeight,
+              minWidth: dot
+                  ? TabBarMetrics.badgeDot
+                  : TabBarMetrics.badgeHeight,
             ),
             padding: dot
                 ? null
@@ -978,7 +871,7 @@ class _GlassTabBarState extends State<GlassTabBar>
                 : Text(
                     badge,
                     maxLines: 1,
-                    style: _Metrics.badge.copyWith(
+                    style: TabBarMetrics.badge.copyWith(
                       color: const Color(0xFFFFFFFF),
                     ),
                   ),
@@ -987,108 +880,4 @@ class _GlassTabBarState extends State<GlassTabBar>
       ],
     );
   }
-}
-
-/// Fades [child] out over the [rim] at its leading and trailing ends.
-class _RimFade extends StatelessWidget {
-  const _RimFade({required this.rim, required this.child});
-
-  final double rim;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      Gradient fade(Axis axis) {
-        final extent = axis == Axis.horizontal
-            ? constraints.maxWidth
-            : constraints.maxHeight;
-        final f = extent <= 0 ? 0.5 : (rim / extent).clamp(0.0, 0.5);
-        const clear = Color(0x00000000);
-        const solid = Color(0xFF000000);
-        return LinearGradient(
-          begin: axis == Axis.horizontal
-              ? Alignment.centerLeft
-              : Alignment.topCenter,
-          end: axis == Axis.horizontal
-              ? Alignment.centerRight
-              : Alignment.bottomCenter,
-          colors: const [clear, solid, solid, clear],
-          stops: [0, f, 1 - f, 1],
-        );
-      }
-
-      return ShaderMask(
-        blendMode: BlendMode.dstIn,
-        shaderCallback: (bounds) => fade(Axis.horizontal).createShader(bounds),
-        child: child,
-      );
-    },
-  );
-}
-
-/// The rounded ends of [lens] (one corner radius in from each side): the
-/// only part of the lens whose glass refracts the tabs beneath it. Its
-/// middle shows the sharp copy on top, and its top and bottom rims refract
-/// the bar, as iOS's lens does.
-class _LensEnds extends CustomClipper<Path> {
-  const _LensEnds(this.lens);
-
-  final Rect lens;
-
-  @override
-  Path getClip(Size size) {
-    final r = lens.height / 2;
-    final capsule = Path()
-      ..addRRect(RRect.fromRectAndRadius(lens, Radius.circular(r)));
-    final ends = Path()
-      ..addRect(Rect.fromLTRB(lens.left, lens.top, lens.left + r, lens.bottom))
-      ..addRect(
-        Rect.fromLTRB(lens.right - r, lens.top, lens.right, lens.bottom),
-      );
-    return Path.combine(PathOperation.intersect, capsule, ends);
-  }
-
-  @override
-  bool shouldReclip(_LensEnds old) => old.lens != lens;
-}
-
-/// Just [capsule].
-class _Capsule extends CustomClipper<Path> {
-  const _Capsule(this.capsule);
-
-  final Rect capsule;
-
-  @override
-  Path getClip(Size size) => Path()
-    ..addRRect(
-      RRect.fromRectAndRadius(capsule, Radius.circular(capsule.height / 2)),
-    );
-
-  @override
-  bool shouldReclip(_Capsule old) => old.capsule != capsule;
-}
-
-/// Everything but [hole] (a capsule); everything when it is null.
-class _Hole extends CustomClipper<Path> {
-  const _Hole(this.hole);
-
-  final Rect? hole;
-
-  @override
-  Path getClip(Size size) {
-    final all = Path()..addRect(Offset.zero & size);
-    final hole = this.hole;
-    if (hole == null) return all;
-    return Path.combine(
-      PathOperation.difference,
-      all,
-      Path()..addRRect(
-        RRect.fromRectAndRadius(hole, Radius.circular(hole.height / 2)),
-      ),
-    );
-  }
-
-  @override
-  bool shouldReclip(_Hole old) => old.hole != hole;
 }

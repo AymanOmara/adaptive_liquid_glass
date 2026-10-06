@@ -2,6 +2,7 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
+import 'package:adaptive_liquid_glass/src/tab_bar/lens_ends_clipper.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/tab_lens.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/tab_lens_content.dart';
 import 'package:flutter/cupertino.dart';
@@ -181,7 +182,7 @@ void main() {
     final g = await hold(t);
     expect(
       find.byWidgetPredicate(
-        (w) => w is ClipPath && w.clipper.runtimeType.toString() == '_LensEnds',
+        (w) => w is ClipPath && w.clipper is LensEndsClipper,
       ),
       findsNothing,
     );
@@ -205,7 +206,7 @@ void main() {
     expect(t.widget<LiquidGlass>(lens).mode, isNull);
     expect(
       find.byWidgetPredicate(
-        (w) => w is ClipPath && w.clipper.runtimeType.toString() == '_LensEnds',
+        (w) => w is ClipPath && w.clipper is LensEndsClipper,
       ),
       findsOneWidget,
     );

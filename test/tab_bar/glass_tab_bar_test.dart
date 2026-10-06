@@ -2,6 +2,7 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
+import 'package:adaptive_liquid_glass/src/tab_bar/lens_ends_clipper.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Badge, NavigationBar;
 import 'package:flutter/services.dart';
@@ -423,8 +424,7 @@ void main() {
     final clip = t
         .widgetList<ClipPath>(find.byType(ClipPath))
         .map((c) => c.clipper)
-        .whereType<CustomClipper<Path>>()
-        .where((c) => c.runtimeType.toString() == '_LensEnds')
+        .whereType<LensEndsClipper>()
         .single;
     final lensBox = t.getRect(_lens);
     final path = clip.getClip(const Size(400, 54));

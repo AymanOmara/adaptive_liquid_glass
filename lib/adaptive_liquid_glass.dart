@@ -27,3 +27,4 @@ export 'src/navigation/glass_navigation_bar.dart';
 export 'src/navigation/sliver_glass_navigation_bar.dart'
     show SliverGlassNavigationBar;
 export 'src/tab_bar/glass_tab_bar.dart';
+export 'src/tab_bar/glass_tab_bar_item.dart';
