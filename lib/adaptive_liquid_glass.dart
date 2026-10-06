@@ -29,6 +29,7 @@ export 'src/core/glass_system_colors.dart';
 export 'src/core/glass_variant.dart';
 export 'src/core/liquid_glass_theme_data.dart';
 export 'src/core/theme.dart';
+export 'src/date_picker/glass_date_picker.dart';
 export 'src/dialog/glass_dialog_action.dart';
 export 'src/dialog/show_glass_alert.dart';
 export 'src/dialog/show_glass_confirmation_dialog.dart';

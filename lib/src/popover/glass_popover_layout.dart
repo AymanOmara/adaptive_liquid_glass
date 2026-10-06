@@ -34,7 +34,8 @@ class GlassPopoverLayout extends SingleChildLayoutDelegate {
       size.width - m - childSize.width,
     );
     final below = anchor.top + PopoverMetrics.overlap;
-    final fitsBelow = below + childSize.height <= size.height - padding.bottom - m;
+    final fitsBelow =
+        below + childSize.height <= size.height - padding.bottom - m;
     final y = fitsBelow
         ? below
         : (anchor.bottom - PopoverMetrics.overlap - childSize.height).clamp(
