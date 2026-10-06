@@ -161,7 +161,14 @@ class _PageControlState extends State<_PageControl> {
         controller: _controller,
         children: [
           for (var i = 0; i < 5; i++)
-            ColoredBox(color: Color.fromRGBO(0, 0, 0, 0.15 + i * 0.05)),
+            ColoredBox(
+              color: Color.from(
+                alpha: 1,
+                red: 0.85 - i * 0.05,
+                green: 0.85 - i * 0.05,
+                blue: 0.85 - i * 0.05,
+              ),
+            ),
         ],
       ),
       Positioned(
