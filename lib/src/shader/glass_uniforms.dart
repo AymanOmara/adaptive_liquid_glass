@@ -195,7 +195,8 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
     f.setAll(80 + i * 4, [
       s.radius,
       s.variant == GlassVariant.clear ? 1 : 0,
-      s.cornerExponent ?? u.constants.cornerExponent,
+      // 0: the global exponent and continuous-corner zone (uGlobal2.yw).
+      s.cornerExponent ?? 0,
       fillScale,
     ]);
     final tint = s.tint;

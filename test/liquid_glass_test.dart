@@ -163,7 +163,7 @@ void main() {
     ]);
     expect(
       [for (var i = 0; i < 4; i++) packed[80 + i * 4 + 2]],
-      [2.0, GlassConstants.standard.cornerExponent, 2.0, 2.0],
+      [2.0, 0, 2.0, 2.0], // 0: global exponent + continuous-corner zone
     );
   }, variant: ios);
 

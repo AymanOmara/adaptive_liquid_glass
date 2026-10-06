@@ -62,7 +62,7 @@ void main() {
     expect(f.sublist(80, 84), [
       10,
       0,
-      GlassConstants.standard.cornerExponent,
+      0, // global exponent (uGlobal2.y) + continuous-corner zone
       1, // fill scale: fillSizeRef 0 disables size scaling
     ]);
   });
@@ -95,7 +95,7 @@ void main() {
       ]),
     );
     expect(f[82], 2);
-    expect(f[86], GlassConstants.standard.cornerExponent);
+    expect(f[86], 0); // global exponent + continuous-corner zone
   });
 
   test('variant constants are scaled to physical px', () {
