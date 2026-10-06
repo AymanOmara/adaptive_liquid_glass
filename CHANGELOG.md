@@ -1,3 +1,24 @@
+## Unreleased
+
+* `GlassScaffold`: an iOS 26 screen in one widget. The navigation bar sits
+  on top, the tab bar or toolbar floats at the bottom with an optional
+  `GlassBottomAccessory`, and the body runs under the bars, padded clear
+  of them.
+* `GlassToolbar` and `GlassToolbarSpacer`: the floating bottom toolbar.
+* `GlassToggle`, `GlassSlider` and `GlassSegmentedControl`: their thumbs
+  turn into clear glass lenses while pressed.
+* `showGlassSheet` and `GlassSheet`: a floating glass sheet.
+* `GlassMenuButton` and `GlassMenuItem`: a glass pull-down menu.
+* `GlassSearchField`: a glass search capsule.
+* `GlassSwipeActions` and `GlassSwipeAction`: list swipe actions with
+  tinted glass capsules, a full swipe and a haptic.
+* `GlassTabBar`: a selection haptic as the dragged lens reaches each tab
+  (`enableFeedback`).
+* Internal: one class per file, and fixed colours moved to `GlassColors`.
+  The public API is unchanged.
+* The sizes of the components above are approximate and not yet measured
+  against SwiftUI (see Known limitations).
+
 ## 0.1.0-dev.4
 
 * `GlassTabBar`, matched frame by frame to iOS 26.4's tab bar (Kept):

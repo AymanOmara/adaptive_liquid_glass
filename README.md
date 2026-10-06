@@ -387,6 +387,116 @@ the inline title fades in once it has gone, and pulling down stretches the
 large title. Metrics are measured from SwiftUI's `NavigationStack`
 (`tool/reference/`). On Android these are `AppBar` and `SliverAppBar.large`.
 
+### Screen layout
+
+```dart
+GlassScaffold(
+  navigationBar: const GlassNavigationBar(title: Text('Inbox')),
+  tabBar: GlassTabBar(items: tabs, selectedIndex: tab, onSelected: pick),
+  bottomAccessory: GlassBottomAccessory(child: nowPlaying), // optional
+  body: ListView(children: rows),
+)
+```
+
+One widget lays out an iOS 26 screen. The body runs under the bars. The
+tab bar floats 21 pt above the home indicator, and an optional accessory
+floats above it, like Music's mini-player. The body's `MediaQuery`
+padding grows by the bars, so scroll views keep their content clear of
+them. Read that padding inside the body, not with a context from above
+the scaffold. The body is a `GlassBackdropSource` unless
+`sampleBackdrop: false`.
+
+### Toolbar
+
+```dart
+GlassScaffold(
+  toolbar: GlassToolbar(children: [
+    GlassButton.icon(onPressed: reply, icon: CupertinoIcons.reply,
+        semanticLabel: 'Reply'),
+    const GlassToolbarSpacer(),
+    GlassButton.icon(onPressed: compose, icon: CupertinoIcons.pencil,
+        semanticLabel: 'Compose'),
+  ]),
+  body: ...,
+)
+```
+
+Neighbouring items merge into one glass capsule. A `GlassToolbarSpacer`
+starts a new capsule and pushes the groups apart, like SwiftUI's
+`ToolbarSpacer`.
+
+### Toggle, slider, segmented control
+
+```dart
+GlassToggle(value: wifi, onChanged: (v) => setState(() => wifi = v))
+GlassSlider(value: volume, onChanged: (v) => setState(() => volume = v))
+GlassSegmentedControl<Period>(
+  segments: const [
+    GlassSegment(value: Period.day, label: Text('Day')),
+    GlassSegment(value: Period.week, label: Text('Week')),
+  ],
+  selected: period,
+  onChanged: (p) => setState(() => period = p),
+)
+```
+
+As in iOS 26, each thumb turns into a clear glass lens while it is
+pressed or dragged. The segmented control's lens slides between segments
+with a haptic on each one. All three follow the reading direction and
+Reduce Motion. On Android they are `Switch`, `Slider` and
+`SegmentedButton`.
+
+### Sheet, menu, search
+
+```dart
+showGlassSheet<void>(context: context, builder: (_) => details);
+
+GlassMenuButton(
+  icon: CupertinoIcons.ellipsis,
+  semanticLabel: 'More',
+  items: [
+    GlassMenuItem(label: 'Copy', icon: CupertinoIcons.doc_on_doc,
+        onSelected: copy),
+    GlassMenuItem(label: 'Delete', icon: CupertinoIcons.trash,
+        destructive: true, onSelected: delete),
+  ],
+)
+
+GlassSearchField(onChanged: (q) => setState(() => query = q))
+```
+
+- **Sheet:** floats in from the screen's edges with continuous corners.
+- **Menu:** a glass panel that springs out of its button.
+- **Search field:** a glass capsule with a localized placeholder and a
+  clear button.
+
+On Android they become a modal bottom sheet, a `MenuAnchor` and a
+`SearchBar`.
+
+### Swipe actions
+
+```dart
+GlassSwipeActions(
+  key: ValueKey(item.id),
+  leading: [GlassSwipeAction(icon: CupertinoIcons.pin_fill, label: 'Pin',
+      color: CupertinoColors.systemOrange, onPressed: () => pin(item))],
+  trailing: [GlassSwipeAction(icon: CupertinoIcons.trash, label: 'Delete',
+      color: CupertinoColors.systemRed, onPressed: () => delete(item))],
+  child: ItemRow(item),
+)
+```
+
+Swiping a row aside reveals tinted glass capsules with their labels
+underneath:
+- The row rubber-bands past its actions and springs open or shut.
+- A full swipe runs the outermost action, with a haptic as it passes the
+  threshold.
+- Only one row is open at a time. A scroll or a tap closes it.
+- VoiceOver and TalkBack get the actions as custom actions.
+
+All of these are in `example/lib/components_demo.dart`
+(`flutter run -t lib/components_demo.dart`).
+
 ## Adaptive foreground over busy content
 
 By default the label colour follows the platform brightness. To follow the
@@ -425,6 +535,11 @@ and `.bouncy` morph) and a size-dependent press growth. The harness lives in
 
 ## Known limitations
 
+- **Newer components are approximate:** `GlassScaffold`, `GlassToolbar`,
+  the toggle, slider and segmented control, the sheet, menu, search field
+  and swipe actions were sized from iOS 26.4 screenshots. Unlike the glass,
+  buttons, navigation bar and tab bar, they have not yet been measured
+  against SwiftUI. Their sizes live in each folder's `*_metrics.dart`.
 - **Native mode, runtime light→dark flip:** on iOS 26, 71 of 72 measured
   brightness flips at runtime match SwiftUI. One does not: a regular glass
   capsule over a photo, flipped from light to dark, keeps part of Apple's
