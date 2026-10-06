@@ -47,6 +47,7 @@ export 'src/navigation/sliver_glass_navigation_bar.dart'
     show SliverGlassNavigationBar;
 export 'src/picker/glass_picker.dart';
 export 'src/picker/glass_picker_item.dart';
+export 'src/popover/glass_popover_anchor.dart';
 export 'src/popover/show_glass_popover.dart';
 export 'src/scaffold/glass_bottom_accessory.dart';
 export 'src/scaffold/glass_scaffold.dart';

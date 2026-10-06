@@ -461,27 +461,30 @@ class _PopoverButton extends StatefulWidget {
 }
 
 class _PopoverButtonState extends State<_PopoverButton> {
+  VoidCallback? _open;
+
   @override
   void initState() {
     super.initState();
     Future<void>.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) _open();
+      if (mounted) _open?.call();
     });
   }
 
-  void _open() => showGlassPopover<void>(
-    context: context,
-    builder: (_) => const Padding(
-      padding: EdgeInsets.all(16),
-      child: Text('Liquid Glass popover', style: TextStyle(fontSize: 17)),
-    ),
-  );
-
   @override
-  Widget build(BuildContext context) => GlassButton.icon(
-    onPressed: _open,
-    icon: CupertinoIcons.info,
-    semanticLabel: 'Info',
+  Widget build(BuildContext context) => GlassPopoverAnchor(
+    popoverBuilder: (_) => const Padding(
+      padding: EdgeInsets.all(16),
+      child: Text('Liquid Glass popover'),
+    ),
+    builder: (context, open) {
+      _open = open;
+      return GlassButton.icon(
+        onPressed: open,
+        icon: CupertinoIcons.info,
+        semanticLabel: 'Info',
+      );
+    },
   );
 }
 

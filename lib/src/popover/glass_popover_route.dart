@@ -64,6 +64,8 @@ class GlassPopoverRoute<T> extends PopupRoute<T> {
         child: LiquidGlass(
           mode: mode,
           shape: const GlassShape.rect(PopoverMetrics.cornerRadius),
+          // SwiftUI's popover text is the plain label colour.
+          adaptiveForeground: false,
           child: Builder(builder: builder),
         ),
       ),

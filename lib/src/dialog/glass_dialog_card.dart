@@ -54,7 +54,11 @@ class GlassDialogCard extends StatelessWidget {
     final message = this.message;
     final buttons = [
       for (final a in actions)
-        GlassDialogButton(action: a, onTap: () => onAction(a)),
+        GlassDialogButton(
+          action: a,
+          emphasised: confirmation,
+          onTap: () => onAction(a),
+        ),
     ];
     final side = !confirmation && buttons.length == 2;
     final text = Padding(

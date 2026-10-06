@@ -16,7 +16,12 @@ class GlassDialogButton extends StatelessWidget {
     super.key,
     required this.action,
     required this.onTap,
+    this.emphasised = false,
   });
+
+  /// A confirmation dialog's heavier labels (semibold; destructive
+  /// medium), as SwiftUI draws them.
+  final bool emphasised;
 
   /// The action shown.
   final GlassDialogAction action;
@@ -52,7 +57,12 @@ class GlassDialogButton extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: IOSText.style(
                     DialogMetrics.buttonSize,
-                    weight: destructive ? FontWeight.w400 : FontWeight.w500,
+                    weight: switch ((emphasised, destructive)) {
+                      (true, true) => FontWeight.w500,
+                      (true, false) => FontWeight.w600,
+                      (false, true) => FontWeight.w400,
+                      (false, false) => FontWeight.w500,
+                    },
                     color: colour,
                   ),
                 ),

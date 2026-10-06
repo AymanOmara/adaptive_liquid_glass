@@ -80,4 +80,28 @@ void main() {
     expect(style.decoration, isNot(TextDecoration.underline));
     expect(style.letterSpacing, -0.43);
   }, variant: ios);
+
+  testWidgets('GlassPopoverAnchor: the opener steps aside while open', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: GlassPopoverAnchor(
+            popoverBuilder: (_) => const Text('Popover'),
+            builder: (context, open) =>
+                TextButton(onPressed: open, child: const Text('Anchor')),
+          ),
+        ),
+      ),
+    );
+    await t.tap(find.text('Anchor'));
+    await t.pumpAndSettle();
+    expect(find.text('Anchor'), findsNothing);
+    expect(find.text('Popover'), findsOneWidget);
+    await t.tapAt(const Offset(5, 5));
+    await t.pumpAndSettle();
+    expect(find.text('Anchor'), findsOneWidget);
+  }, variant: ios);
 }
