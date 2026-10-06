@@ -33,6 +33,7 @@ const tabLensLight = GlassVariantConstants(
   // The bend acts where the lens faces up or down; its round ends stay
   // clear (Kept).
   lensVertical: 1,
+  rimRainbow: 0.35,
   rimMix: 0.55,
   rimMixWidth: 1.9,
   rimMixCut: 3,
@@ -70,6 +71,7 @@ const tabLensDark = GlassVariantConstants(
   // The bend acts where the lens faces up or down; its round ends stay
   // clear (Kept).
   lensVertical: 1,
+  rimRainbow: 0.35,
   rimMix: 0.55,
   rimMixWidth: 1.9,
   rimMixCut: 3,

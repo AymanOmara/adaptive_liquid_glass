@@ -20,7 +20,7 @@ uniform vec4 uVar[24];     // per variant (regular A-L, then clear A-L):
                            //   I.yzw(lens edge px, lens edge decay px, tone lift)
                            //   J(rim mix, rim mix width px, rim mix cut px, rim mix luma floor)
                            //   K(tone lift knee, tone lift size ref px, post-lens sigma px, blur size ref px)
-                           //   L(rim back strength, lens vertical-only weight, -, -)
+                           //   L(rim back strength, lens vertical-only weight, rim rainbow, -)
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -313,7 +313,18 @@ void main() {
       * (1.0 - smoothstep(J.z - 0.5, J.z + 0.5, depth));
   float rl = dot(col, vec3(0.2126, 0.7152, 0.0722));
   ra *= J.w + (1.0 - J.w) * clamp(rl / 0.5, 0.0, 1.0);
-  col += (1.0 - col) * ra;
+  // Rainbow rim (L.z, iOS 26's tab lens): the rim's white turns to a hue
+  // that runs round the outline twice (orange top-left, green at the
+  // side, blue-violet below on a capsule's left end).
+  vec3 rimTarget = vec3(1.0);
+  if (L4.z > 0.0) {
+    float turns = atan(nrm.y, nrm.x) / 6.2831853;
+    float hue = fract(-2.0 * turns - 0.67);
+    vec3 rgb = clamp(abs(fract(hue + vec3(0.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0
+        - 3.0) - 1.0, 0.0, 1.0);
+    rimTarget = mix(vec3(1.0), rgb, L4.z);
+  }
+  col += (rimTarget - col) * ra;
 
   if (uTouch.z > 0.0) {
     vec2 dt = px - uTouch.xy;

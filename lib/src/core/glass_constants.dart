@@ -96,6 +96,7 @@ class GlassVariantConstants {
     this.blurAspectPower = 0,
     this.rimBack = 0.35,
     this.lensVertical = 0,
+    this.rimRainbow = 0,
     this.toneLiftKnee = 0.5,
     this.toneLiftSizeRef = 0,
     required this.lensBand,
@@ -142,6 +143,7 @@ class GlassVariantConstants {
     blurAspectPower: _d(j, 'blurAspectPower', base.blurAspectPower),
     rimBack: _d(j, 'rimBack', base.rimBack),
     lensVertical: _d(j, 'lensVertical', base.lensVertical),
+    rimRainbow: _d(j, 'rimRainbow', base.rimRainbow),
     toneLiftKnee: _d(j, 'toneLiftKnee', base.toneLiftKnee),
     toneLiftSizeRef: _d(j, 'toneLiftSizeRef', base.toneLiftSizeRef),
     lensBand: _d(j, 'lensBand', base.lensBand),
@@ -323,6 +325,11 @@ class GlassVariantConstants {
   /// ends stay clear (iOS 26's tab lens, fitted to Kept).
   final double lensVertical;
 
+  /// How far the isotropic rim ([rimMix]) turns from white to a hue that
+  /// runs round the outline (0 = white, the default; iOS 26's tab lens
+  /// shows a rainbow rim).
+  final double rimRainbow;
+
   /// Colour the content behind the glass is washed toward (opaque; JSON
   /// `"#RRGGBB"` or an int ARGB).
   final Color fillColor;
@@ -382,6 +389,7 @@ class GlassVariantConstants {
     'blurAspectPower': blurAspectPower,
     'rimBack': rimBack,
     'lensVertical': lensVertical,
+    'rimRainbow': rimRainbow,
     'toneLiftKnee': toneLiftKnee,
     'toneLiftSizeRef': toneLiftSizeRef,
     'lensBand': lensBand,

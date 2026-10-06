@@ -416,16 +416,16 @@ void main() {
     expect(out.single.cornerExponent, 2);
   });
 
-  test('lensVertical packs into L.y (off by default)', () {
+  test('lensVertical and rimRainbow pack into L.yz (off by default)', () {
     final d = packGlassUniforms(frame(const []));
     expect(d.sublist(253, 256), [0, 0, 0]);
     expect(d.sublist(301, 304), [0, 0, 0]);
     final c = GlassConstants.fromJson({
-      'clear': {'lensVertical': 1.0},
+      'clear': {'lensVertical': 1.0, 'rimRainbow': 0.5},
     });
     final f = packGlassUniforms(frame(const [], constants: c));
-    // A weight, not a length: no dpr scaling. Clear variant's L at 300.
-    expect(f.sublist(301, 304), [1.0, 0, 0]);
+    // Weights, not lengths: no dpr scaling. Clear variant's L at 300.
+    expect(f.sublist(301, 304), [1.0, 0.5, 0]);
     expect(f.sublist(253, 256), [0, 0, 0]);
   });
 }
