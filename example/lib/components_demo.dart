@@ -344,6 +344,18 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                 ),
               ),
               const SizedBox(height: 24),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GlassBadge(
+                    label: '3',
+                    child: Icon(CupertinoIcons.mail, size: 28),
+                  ),
+                  SizedBox(width: 32),
+                  GlassBadge(child: Icon(CupertinoIcons.bell, size: 28)),
+                ],
+              ),
+              const SizedBox(height: 24),
               for (final name in _rows)
                 GlassSwipeActions(
                   key: ValueKey(name),

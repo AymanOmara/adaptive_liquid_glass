@@ -84,19 +84,6 @@ abstract final class TabBarMetrics {
     letterSpacing: 0.1,
   );
 
-  /// A text badge's height (and least width).
-  static const double badgeHeight = 18;
-
-  /// An empty badge's diameter.
-  static const double badgeDot = 10;
-
-  /// A text badge's text.
-  static const TextStyle badge = TextStyle(
-    fontSize: 13,
-    fontWeight: FontWeight.w500,
-    height: 1,
-  );
-
   /// Pill to lens.
   static final SpringDescription press = swiftUISpring(
     response: 0.381,
