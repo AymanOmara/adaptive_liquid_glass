@@ -1,9 +1,10 @@
 import 'dart:ui' as ui;
 
+import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
+import 'package:adaptive_liquid_glass/src/shader/glass_shape_uniform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_uniforms.dart';
 import 'package:adaptive_liquid_glass/src/shader/texture_space.dart';
-import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/testing.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
