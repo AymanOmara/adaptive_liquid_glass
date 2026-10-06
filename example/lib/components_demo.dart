@@ -401,6 +401,16 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                 ),
               ),
               const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(child: GlassProgressIndicator(value: _volume)),
+                  const SizedBox(width: 16),
+                  GlassProgressIndicator.circular(value: _volume),
+                  const SizedBox(width: 16),
+                  const GlassProgressIndicator.circular(),
+                ],
+              ),
+              const SizedBox(height: 24),
               const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

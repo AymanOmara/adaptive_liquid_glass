@@ -54,6 +54,8 @@ export 'src/picker/glass_picker.dart';
 export 'src/picker/glass_picker_item.dart';
 export 'src/popover/glass_popover_anchor.dart';
 export 'src/popover/show_glass_popover.dart';
+export 'src/progress/glass_progress_indicator.dart';
+export 'src/progress/glass_progress_style.dart';
 export 'src/scaffold/glass_bottom_accessory.dart';
 export 'src/scaffold/glass_scaffold.dart';
 export 'src/search/glass_search_field.dart';
