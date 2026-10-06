@@ -344,6 +344,38 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                 ),
               ),
               const SizedBox(height: 24),
+              GlassListSection(
+                glass: Glass.regular,
+                margin: EdgeInsets.zero,
+                header: const Text('Settings'),
+                footer: const Text(
+                  'A glass platter; omit glass for iOS cells.',
+                ),
+                children: [
+                  GlassListTile(
+                    leading: const Icon(CupertinoIcons.wifi),
+                    title: const Text('Wi-Fi'),
+                    trailing: GlassToggle(
+                      value: _wifi,
+                      onChanged: (v) => setState(() => _wifi = v),
+                    ),
+                  ),
+                  GlassListTile(
+                    leading: const Icon(CupertinoIcons.bluetooth),
+                    title: const Text('Bluetooth'),
+                    value: 'On',
+                    chevron: true,
+                    onTap: () => _snack('Bluetooth'),
+                  ),
+                  GlassListTile(
+                    title: const Text('General'),
+                    subtitle: const Text('About, storage, updates'),
+                    chevron: true,
+                    onTap: () => _snack('General'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
               const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

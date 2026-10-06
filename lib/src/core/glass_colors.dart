@@ -106,4 +106,13 @@ abstract final class GlassColors {
         color: Color(0xFFB9B9BC),
         darkColor: Color(0xFF535356),
       );
+
+  // List
+
+  /// A list row while pressed (estimated: iOS's systemGray4).
+  static const CupertinoDynamicColor listRowPressed =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFFD1D1D6),
+        darkColor: Color(0xFF3A3A3C),
+      );
 }
