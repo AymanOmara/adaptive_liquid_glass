@@ -6,6 +6,10 @@ abstract final class PopoverMetrics {
   /// The bubble's corner radius (a one-line popover is 52 pt tall).
   static const double cornerRadius = 26;
 
+  /// The bubble's own padding above and below its content (measured: 16
+  /// pt of content padding makes a 68-pt bubble for 17-pt text).
+  static const double verticalInset = 8;
+
   /// The closest the bubble comes to the screen's edges.
   static const double margin = 10;
 

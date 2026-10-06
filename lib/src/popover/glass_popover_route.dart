@@ -66,6 +66,9 @@ class GlassPopoverRoute<T> extends PopupRoute<T> {
           shape: const GlassShape.rect(PopoverMetrics.cornerRadius),
           // SwiftUI's popover text is the plain label colour.
           adaptiveForeground: false,
+          padding: const EdgeInsets.symmetric(
+            vertical: PopoverMetrics.verticalInset,
+          ),
           child: Builder(builder: builder),
         ),
       ),

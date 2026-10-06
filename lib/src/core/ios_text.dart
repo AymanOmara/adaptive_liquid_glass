@@ -40,5 +40,8 @@ abstract final class IOSText {
     fontWeight: weight,
     letterSpacing: tracking(size),
     color: color,
+    // Without an app text style above, Flutter's fallback underlines
+    // text; iOS text never is.
+    decoration: TextDecoration.none,
   );
 }
