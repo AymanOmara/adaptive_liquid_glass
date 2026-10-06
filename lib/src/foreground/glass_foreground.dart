@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import '../core/glass_colors.dart';
 
 /// Brightness of the content behind the nearest glass group.
 class GlassForeground extends InheritedWidget {
@@ -22,8 +23,8 @@ class GlassForeground extends InheritedWidget {
   /// A label colour readable on the glass.
   static Color labelColorOf(BuildContext context) =>
       backgroundBrightnessOf(context) == Brightness.light
-      ? const Color(0xD9000000)
-      : const Color(0xFFFFFFFF);
+      ? GlassColors.labelOnLight
+      : GlassColors.labelOnDark;
 
   @override
   bool updateShouldNotify(GlassForeground old) =>

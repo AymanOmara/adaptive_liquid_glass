@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 
 import '../core/effective_glass_mode.dart';
 import '../core/glass.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
@@ -140,7 +141,7 @@ class GlassButton extends StatelessWidget {
         ? red
         : resolve(tint ?? CupertinoTheme.of(context).primaryColor);
     final Color? labelColor = prominent
-        ? const Color(0xFFFFFFFF)
+        ? GlassColors.white
         : role == GlassButtonRole.destructive
         ? red
         : null;

@@ -2,6 +2,7 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/widgets.dart';
 
+import '../core/glass_colors.dart';
 import '../core/glass_variant_constants.dart';
 import '../core/theme.dart';
 
@@ -43,7 +44,7 @@ const tabLensLight = GlassVariantConstants(
   rimMixLumaFloor: 1,
   rimWidth: 1.2,
   rimIntensity: 0,
-  fillColor: Color(0xFFFFFFFF),
+  fillColor: GlassColors.white,
   fillOpacity: 0.07,
   saturation: 1,
   dim: 0,
@@ -84,7 +85,7 @@ const tabLensDark = GlassVariantConstants(
   rimMixLumaFloor: 1,
   rimWidth: 1.2,
   rimIntensity: 0,
-  fillColor: Color(0xFFFFFFFF),
+  fillColor: GlassColors.white,
   // Kept over black: the lit bar (about 48 by the lens) reads 53 under the
   // lens and black stays near black (a gain, not a wash); the tinted tabs
   // above keep their colour (TabLensContent).
@@ -153,15 +154,9 @@ const _tabBarDarkOverrides = <String, Object?>{
   'fillColor': '#2B2A2B',
 };
 
-/// The bar's dark glass while a lens is held (Kept over black): more
-/// see-through and brightened like the lens backdrop. Away from the lens
-/// the bar reads about 34 instead of 25 (BarGlow lights it near the lens),
-/// and the page behind it gains contrast.
-const _barPressedFill = Color(0xFF5C5C5C);
+/// The bar's dark glass while a lens is held is more see-through
+/// (GlassColors.tabBarPressedFill at this opacity).
 const _barPressedFillOpacity = 0.35;
-
-/// The dark bar while the lens is dragged: evenly lit, about 45 over black.
-const _barDraggedFill = Color(0xFF7A7A7A);
 
 /// [child] with regular glass drawn as the tab bar. [light] blends the dark
 /// bar from rest (0) to its held look (1) and its dragged look (2).
@@ -181,7 +176,11 @@ Widget withTabBarGlass(BuildContext context, Widget child, {double light = 0}) {
           'fillColor': _hex(
             Color.lerp(
               rest.fillColor,
-              Color.lerp(_barPressedFill, _barDraggedFill, m),
+              Color.lerp(
+                GlassColors.tabBarPressedFill,
+                GlassColors.tabBarDraggedFill,
+                m,
+              ),
               p,
             )!,
           ),

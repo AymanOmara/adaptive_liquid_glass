@@ -15,6 +15,7 @@ import 'package:flutter/services.dart' show HapticFeedback;
 
 import '../core/effective_glass_mode.dart';
 import '../core/glass.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_environment.dart';
 import '../core/glass_render_mode.dart';
 import '../core/render_mode_resolver.dart';
@@ -725,7 +726,7 @@ class _GlassTabBarState extends State<GlassTabBar>
                 fallback: const SizedBox.shrink(),
                 child: ColoredBox(
                   // Keeps the filter's layer the size of the box.
-                  color: const Color(0x01000000),
+                  color: GlassColors.invisible,
                   child: Padding(
                     padding: const EdgeInsets.all(_lensPad),
                     child: _row(
@@ -873,7 +874,7 @@ class _GlassTabBarState extends State<GlassTabBar>
                     badge,
                     maxLines: 1,
                     style: TabBarMetrics.badge.copyWith(
-                      color: const Color(0xFFFFFFFF),
+                      color: GlassColors.white,
                     ),
                   ),
           ),

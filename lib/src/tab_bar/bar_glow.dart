@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
+import '../core/glass_colors.dart';
 
 /// The light a held tab lens casts on its bar: iOS brightens the bar
 /// around the lens (Kept over black: about +25 grey within 50 pt, fading
@@ -30,7 +31,7 @@ class BarGlow extends CustomPainter {
       final s = i / _stops;
       final r = s * 3;
       colors.add(
-        const Color(0xFFFFFFFF).withValues(
+        GlassColors.white.withValues(
           alpha: opacity * math.exp(-r * r / 2) * (i == _stops ? 0 : 1),
         ),
       );

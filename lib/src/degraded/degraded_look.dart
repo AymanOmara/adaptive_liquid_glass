@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../core/glass.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_constants.dart';
 
 /// The paint values of shader-less glass: blur, fill and rim.
@@ -20,7 +21,7 @@ class DegradedLook {
           ? tint.withValues(alpha: c.tintStrength * tint.a)
           : c.fillColor.withValues(alpha: c.fillOpacity),
       rim: BorderSide(
-        color: const Color(0xFFFFFFFF).withValues(alpha: c.rimIntensity * 0.6),
+        color: GlassColors.white.withValues(alpha: c.rimIntensity * 0.6),
         width: c.rimWidth,
       ),
     );

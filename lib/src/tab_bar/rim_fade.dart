@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import '../core/glass_colors.dart';
 
 /// Fades [child] out over the [rim] at its leading and trailing ends.
 class RimFade extends StatelessWidget {
@@ -19,8 +20,6 @@ class RimFade extends StatelessWidget {
             ? constraints.maxWidth
             : constraints.maxHeight;
         final f = extent <= 0 ? 0.5 : (rim / extent).clamp(0.0, 0.5);
-        const clear = Color(0x00000000);
-        const solid = Color(0xFF000000);
         return LinearGradient(
           begin: axis == Axis.horizontal
               ? Alignment.centerLeft
@@ -28,7 +27,12 @@ class RimFade extends StatelessWidget {
           end: axis == Axis.horizontal
               ? Alignment.centerRight
               : Alignment.bottomCenter,
-          colors: const [clear, solid, solid, clear],
+          colors: const [
+            GlassColors.transparent,
+            GlassColors.black,
+            GlassColors.black,
+            GlassColors.transparent,
+          ],
           stops: [0, f, 1 - f, 1],
         );
       }
