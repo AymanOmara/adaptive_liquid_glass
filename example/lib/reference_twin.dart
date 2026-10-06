@@ -11,7 +11,8 @@ import 'borrowed_twins.dart';
 /// `tool/reference/measure_components.py` measures both the same way.
 /// Scenes: controls, toolbar, accessory, sheet, sheetlarge, menu, search,
 /// swipe, swipetall, alert, dialog, popover, stepper, picker, datepicker,
-/// searchtab.
+/// searchtab; and borrowedTwin's (tabbar, tabbarphoto, tabbardark,
+/// tabbarphotodark, badge…).
 void main() => runApp(const ReferenceTwin());
 
 /// The twin app.
@@ -230,6 +231,7 @@ class _Accessory extends StatelessWidget {
       ],
       selectedIndex: 0,
       onSelected: (_) {},
+      mode: twinBarMode(context),
     ),
     bottomAccessory: const GlassBottomAccessory(
       child: Row(
@@ -604,6 +606,7 @@ class _SearchTab extends StatelessWidget {
       ],
       selectedIndex: 0,
       onSelected: (_) {},
+      mode: twinBarMode(context),
       onSearch: () {},
     ),
     body: const SizedBox.expand(),

@@ -12,8 +12,20 @@ Widget? borrowedTwin(String scene) => switch (scene) {
   'pagecontrol' => const _PageControl(),
   'actionsheet' => const _ActionSheet(),
   'badge' => const _Badge(),
+  'tabbar' => const _TabBar(photo: false, dark: false),
+  'tabbarphoto' => const _TabBar(photo: true, dark: false),
+  'tabbardark' => const _TabBar(photo: false, dark: true),
+  'tabbarphotodark' => const _TabBar(photo: true, dark: true),
   _ => null,
 };
+
+/// The tab bar's path for `-mode native|shader`: the bar keeps to shader
+/// glass on iOS 26 unless asked, so the twin asks; null under `auto`.
+GlassRenderMode? twinBarMode(BuildContext context) =>
+    switch (LiquidGlassTheme.of(context).defaultMode) {
+      GlassRenderMode.auto => null,
+      final mode => mode,
+    };
 
 /// [child] centred at ([x], [y]) in screen points.
 Widget _at(double x, double y, Widget child) => Positioned(
@@ -231,7 +243,43 @@ class _Badge extends StatelessWidget {
       ],
       selectedIndex: 0,
       onSelected: (_) {},
+      mode: twinBarMode(context),
     ),
     body: const SizedBox.expand(),
   );
+}
+
+/// `-controls tabbar` / `tabbarphoto` / `tabbardark` / `tabbarphotodark`:
+/// Home, Music, Settings with Home selected, over a white (or, dark, black)
+/// page or the full-screen `photo.png`.
+class _TabBar extends StatelessWidget {
+  const _TabBar({required this.photo, required this.dark});
+
+  final bool photo;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    final scaffold = GlassScaffold(
+      backgroundColor: dark ? Colors.black : Colors.white,
+      tabBar: GlassTabBar(
+        items: const [
+          GlassTabBarItem(icon: CupertinoIcons.house_fill, label: 'Home'),
+          GlassTabBarItem(icon: CupertinoIcons.music_note, label: 'Music'),
+          GlassTabBarItem(icon: CupertinoIcons.gear_solid, label: 'Settings'),
+        ],
+        selectedIndex: 0,
+        onSelected: (_) {},
+        mode: twinBarMode(context),
+      ),
+      body: photo
+          ? Image.asset(
+              'assets/backgrounds/photo.png',
+              fit: BoxFit.fill,
+              filterQuality: FilterQuality.none,
+            )
+          : const SizedBox.expand(),
+    );
+    return dark ? _dark(context, scaffold) : scaffold;
+  }
 }
