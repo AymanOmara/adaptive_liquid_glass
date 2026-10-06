@@ -2,6 +2,8 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import 'borrowed_twins.dart';
+
 /// `flutter run -t lib/reference_twin.dart --dart-define=SCENE=<name>`, or
 /// the example app launched with `-twin <name>`:
 /// this package's components laid out exactly as the SwiftUI reference
@@ -59,7 +61,7 @@ class ReferenceTwin extends StatelessWidget {
         'searchtab' => const _SearchTab(),
         'swipe' => const _Swipe(tall: false),
         'swipetall' => const _Swipe(tall: true),
-        _ => const _Controls(),
+        _ => borrowedTwin(scene) ?? const _Controls(),
       },
     ),
   );
