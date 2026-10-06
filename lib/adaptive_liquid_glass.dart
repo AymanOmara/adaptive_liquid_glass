@@ -13,8 +13,8 @@
 /// preloads the shaders in `main()`.
 library;
 
-export 'src/adaptive_liquid_glass_setup.dart';
 export 'src/action_sheet/show_glass_action_sheet.dart';
+export 'src/adaptive_liquid_glass_setup.dart';
 export 'src/badge/glass_badge.dart';
 export 'src/button/glass_button.dart';
 export 'src/button/glass_button_role.dart';
