@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'effective_glass_mode.dart';
 import 'glass_environment.dart';
 import 'glass_render_mode.dart';
 

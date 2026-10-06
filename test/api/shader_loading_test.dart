@@ -2,6 +2,7 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/core/shape_border.dart';
 import 'package:adaptive_liquid_glass/src/degraded/glass_loading_surface.dart';
+import 'package:adaptive_liquid_glass/src/degraded/render_glass_loading_surface.dart';
 import 'package:adaptive_liquid_glass/src/group/glass_member.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';

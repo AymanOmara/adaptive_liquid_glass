@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 
-import '../core/glass.dart';
 import '../core/glass_shape.dart';
+import '../core/glass_variant.dart';
 import 'glass_entry.dart';
 import 'glass_registry.dart';
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/effective_glass_mode.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import 'nav_bar_content.dart';

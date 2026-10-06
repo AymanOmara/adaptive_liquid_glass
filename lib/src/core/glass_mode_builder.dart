@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../platform/glass_platform.dart';
+import 'effective_glass_mode.dart';
 import 'glass_environment.dart';
 import 'glass_render_mode.dart';
 import 'render_mode_resolver.dart';

@@ -1,3 +1,4 @@
+import 'package:adaptive_liquid_glass/src/core/effective_glass_mode.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_render_mode.dart';
 import 'package:adaptive_liquid_glass/src/core/render_mode_resolver.dart';

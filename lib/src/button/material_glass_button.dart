@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'glass_button.dart';
+import 'glass_button_role.dart';
+import 'glass_button_shape.dart';
+import 'glass_button_style.dart';
+import 'glass_control_size.dart';
 
 /// Material 3 button heights per [GlassControlSize].
 const materialButtonHeights = <GlassControlSize, double>{

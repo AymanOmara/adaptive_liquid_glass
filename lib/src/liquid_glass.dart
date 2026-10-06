@@ -6,6 +6,7 @@ import 'core/glass_shape.dart';
 import 'core/theme.dart';
 import 'glass_effect.dart';
 import 'group/glass_group.dart';
+import 'group/glass_group_scope.dart';
 import 'group/glass_member.dart';
 import 'group/glass_union_scope.dart';
 import 'shader/glass_program.dart';

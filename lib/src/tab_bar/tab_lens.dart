@@ -2,7 +2,7 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/widgets.dart';
 
-import '../core/glass_constants.dart';
+import '../core/glass_variant_constants.dart';
 import '../core/theme.dart';
 
 /// The tab bar's lens, fitted to iOS 26.4's tab bar (Kept) frame by frame.

@@ -3,9 +3,9 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import '../core/glass.dart';
+import '../core/glass_variant.dart';
 import '../group/entry_geometry.dart';
-import '../group/glass_group.dart';
+import '../group/glass_group_scope.dart';
 import '../group/glass_registry.dart';
 
 /// How far the native view extends past the group on each side.

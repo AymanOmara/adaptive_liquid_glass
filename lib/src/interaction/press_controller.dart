@@ -3,9 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/physics.dart';
 import 'package:flutter/widgets.dart';
 
-import '../core/glass_constants.dart';
+import '../core/glass_motion_constants.dart';
 import '../core/swiftui_spring.dart';
-import '../group/glass_entry.dart';
+import '../group/glass_press_geometry.dart';
 
 /// Uniform scale of a box of [size] at full press: SwiftUI adds about the
 /// same area to every pressed shape (Task 16b, measured on circles 44–120 pt

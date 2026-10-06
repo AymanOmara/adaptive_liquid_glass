@@ -2,20 +2,11 @@ import 'package:flutter/physics.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
-import '../core/glass_constants.dart';
+import '../core/glass_motion_constants.dart';
 import '../core/swiftui_spring.dart';
 import 'glass_entry.dart';
 import 'glass_registry.dart';
-
-class _Track {
-  _Track(this.entry, this.controller);
-  GlassEntry entry;
-  final AnimationController controller;
-  Rect from = Rect.zero;
-  Rect? fromOverride; // set when the old view with this id unmounts later
-  Rect? to; // null → resolve from the live box each tick
-  bool ghost = false;
-}
+import 'morph_track.dart';
 
 /// Animates `glassId` appearances, removals and identity moves, like
 /// SwiftUI's `glassEffectID` inside a `GlassEffectContainer`.
@@ -48,7 +39,7 @@ class GlassMorphController {
   /// Current motion constants.
   final GlassMotionConstants Function() motion;
 
-  final Map<Object, _Track> _tracks = {};
+  final Map<Object, MorphTrack> _tracks = {};
   bool _settled = false;
   bool _disposed = false;
 
@@ -66,7 +57,7 @@ class GlassMorphController {
     if (previous != null) _finish(id, removeGhost: true);
     e.morphRect = from ?? Rect.zero; // hidden until laid out
     e.contentOpacity.value = 0;
-    final track = _tracks[id] = _Track(e, _newController());
+    final track = _tracks[id] = MorphTrack(e, _newController());
     // Start after layout, when the target rect exists.
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!identical(_tracks[id], track)) return;
@@ -107,7 +98,7 @@ class GlassMorphController {
       _finish(id, removeGhost: true); // a stale ghost of an older view
     }
     final nearest = _nearestDrawn(e);
-    final track = _tracks[id] = _Track(e, _newController())
+    final track = _tracks[id] = MorphTrack(e, _newController())
       ..ghost = true
       ..from = last
       ..to = Rect.fromCenter(
@@ -171,7 +162,7 @@ class GlassMorphController {
     return Rect.fromCenter(center: r.center, width: 0, height: 0);
   }
 
-  void _run(Object id, _Track track) {
+  void _run(Object id, MorphTrack track) {
     final m = motion();
     final c = track.controller;
     void tick() {

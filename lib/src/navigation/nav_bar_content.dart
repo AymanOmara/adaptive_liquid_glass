@@ -2,7 +2,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/cupertino.dart';
 
-import '../button/glass_button.dart';
+import '../button/glass_button_metrics_scope.dart';
 import '../core/glass_render_mode.dart';
 import '../group/glass_group.dart';
 import '../group/glass_union_scope.dart';

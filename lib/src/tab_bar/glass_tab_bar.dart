@@ -13,6 +13,7 @@ import 'package:flutter/physics.dart';
 import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter/services.dart' show HapticFeedback;
 
+import '../core/effective_glass_mode.dart';
 import '../core/glass.dart';
 import '../core/glass_environment.dart';
 import '../core/glass_render_mode.dart';

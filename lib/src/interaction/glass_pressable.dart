@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'glass_activate_action.dart';
 
 /// Makes glass content a button when [onPressed] is set: tap, focus,
 /// Enter/Space activation and button semantics.
@@ -31,7 +32,7 @@ class GlassPressable extends StatelessWidget {
       enabled: enabled ? true : null,
       child: Actions(
         actions: <Type, Action<Intent>>{
-          ActivateIntent: _ActivateAction(onPressed),
+          ActivateIntent: GlassActivateAction(onPressed),
         },
         child: Focus(
           canRequestFocus: enabled,
@@ -49,20 +50,5 @@ class GlassPressable extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _ActivateAction extends Action<ActivateIntent> {
-  _ActivateAction(this.onPressed);
-
-  final VoidCallback? onPressed;
-
-  @override
-  bool isEnabled(ActivateIntent intent) => onPressed != null;
-
-  @override
-  Object? invoke(ActivateIntent intent) {
-    onPressed?.call();
-    return null;
   }
 }

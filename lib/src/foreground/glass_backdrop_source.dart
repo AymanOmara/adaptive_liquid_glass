@@ -1,41 +1,8 @@
 import 'dart:ui' as ui;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
-
-/// Registry of content regions that glass may sample.
-class GlassBackdropSources {
-  GlassBackdropSources._();
-
-  /// Shared instance.
-  static final GlassBackdropSources instance = GlassBackdropSources._();
-
-  final List<GlobalKey> _keys = [];
-  final ValueNotifier<int> _revision = ValueNotifier(0);
-
-  /// Bumps when sources are added or removed.
-  ValueListenable<int> get revision => _revision;
-
-  /// Attached boundaries.
-  List<RenderRepaintBoundary> get boundaries => [
-    for (final k in _keys)
-      if (k.currentContext?.findRenderObject()
-          case final RenderRepaintBoundary b when b.attached)
-        b,
-  ];
-
-  void _add(GlobalKey k) {
-    if (_keys.contains(k)) return;
-    _keys.add(k);
-    _revision.value++;
-  }
-
-  void _remove(GlobalKey k) {
-    if (!_keys.remove(k)) return;
-    _revision.value++;
-  }
-}
+import 'glass_backdrop_sources.dart';
 
 /// Marks content that glass floats over, enabling `GlassForeground`.
 ///
@@ -57,7 +24,7 @@ class _GlassBackdropSourceState extends State<GlassBackdropSource> {
   @override
   void initState() {
     super.initState();
-    GlassBackdropSources.instance._add(_key);
+    GlassBackdropSources.instance.add(_key);
   }
 
   // Inactive elements have no render object to look up, so a source is
@@ -65,18 +32,18 @@ class _GlassBackdropSourceState extends State<GlassBackdropSource> {
   @override
   void activate() {
     super.activate();
-    GlassBackdropSources.instance._add(_key);
+    GlassBackdropSources.instance.add(_key);
   }
 
   @override
   void deactivate() {
-    GlassBackdropSources.instance._remove(_key);
+    GlassBackdropSources.instance.remove(_key);
     super.deactivate();
   }
 
   @override
   void dispose() {
-    GlassBackdropSources.instance._remove(_key);
+    GlassBackdropSources.instance.remove(_key);
     super.dispose();
   }
 
