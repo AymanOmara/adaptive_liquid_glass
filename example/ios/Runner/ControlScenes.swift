@@ -17,9 +17,18 @@ enum ControlScenes {
     case "toolbar": root = AnyView(ToolbarReference())
     case "accessory": root = AnyView(AccessoryReference(accessory: true))
     case "tabbar": root = AnyView(AccessoryReference(accessory: false))
-    case "sheet": root = AnyView(SheetReference())
+    case "sheet": root = AnyView(SheetReference(large: false))
     case "menu": root = AnyView(MenuReference())
     case "search": root = AnyView(SearchReference())
+    case "sheetlarge": root = AnyView(SheetReference(large: true))
+    case "alert": root = AnyView(AlertReference())
+    case "dialog": root = AnyView(DialogReference())
+    case "popover": root = AnyView(PopoverReference())
+    case "contextmenu": root = AnyView(ContextMenuReference())
+    case "stepper": root = AnyView(StepperReference())
+    case "picker": root = AnyView(PickerReference())
+    case "datepicker": root = AnyView(DatePickerReference())
+    case "searchtab": root = AnyView(SearchTabReference())
     case "swipe": root = AnyView(SwipeReference(tall: false))
     case "swipetall": root = AnyView(SwipeReference(tall: true))
     default: return false
@@ -183,6 +192,8 @@ struct AccessoryReference: View {
 /// page.
 @available(iOS 26.0, *)
 struct SheetReference: View {
+  /// The large detent (`-controls sheetlarge`) instead of the medium one.
+  let large: Bool
   @State private var shown = false
   var body: some View {
     Color(white: 0.5).ignoresSafeArea()
@@ -191,7 +202,7 @@ struct SheetReference: View {
         Text("Glass sheet").font(.title2.bold())
           .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
           .padding(24)
-          .presentationDetents([.medium])
+          .presentationDetents([large ? .large : .medium])
           .presentationDragIndicator(.visible)
           .environment(\.colorScheme, .light)
       }
@@ -259,6 +270,161 @@ struct SwipeReference: View {
       }
     }
     .listStyle(.plain)
+    .environment(\.colorScheme, .light)
+  }
+}
+
+/// An alert (title, message, Cancel and a destructive Delete) shown at
+/// launch over a mid-grey page.
+@available(iOS 26.0, *)
+struct AlertReference: View {
+  @State private var shown = false
+  var body: some View {
+    Color(white: 0.5).ignoresSafeArea()
+      .onAppear { shown = true }
+      .alert("Delete photo?", isPresented: $shown) {
+        Button("Cancel", role: .cancel) {}
+        Button("Delete", role: .destructive) {}
+      } message: {
+        Text("This photo will be deleted from all your devices.")
+      }
+      .environment(\.colorScheme, .light)
+  }
+}
+
+/// A confirmation dialog (title, two actions and Cancel) shown at launch
+/// over a mid-grey page.
+@available(iOS 26.0, *)
+struct DialogReference: View {
+  @State private var shown = false
+  var body: some View {
+    Color(white: 0.5).ignoresSafeArea()
+      .onAppear { shown = true }
+      .confirmationDialog("Photo", isPresented: $shown, titleVisibility: .visible) {
+        Button("Share") {}
+        Button("Delete", role: .destructive) {}
+        Button("Cancel", role: .cancel) {}
+      }
+      .environment(\.colorScheme, .light)
+  }
+}
+
+/// A popover from a toolbar button, shown at launch, kept a popover on
+/// iPhone. Mid-grey page.
+@available(iOS 26.0, *)
+struct PopoverReference: View {
+  @State private var shown = false
+  var body: some View {
+    NavigationStack {
+      Color(white: 0.5).ignoresSafeArea()
+        .toolbar {
+          ToolbarItem(placement: .topBarTrailing) {
+            Button {} label: { Image(systemName: "info.circle") }
+              .popover(isPresented: $shown) {
+                Text("Liquid Glass popover").padding()
+                  .presentationCompactAdaptation(.popover)
+              }
+          }
+        }
+        .onAppear { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { shown = true } }
+    }
+    .environment(\.colorScheme, .light)
+  }
+}
+
+/// A card with a context menu (Copy, Share, Delete); long-press it
+/// (centre 201, 300) to measure. Mid-grey page.
+@available(iOS 26.0, *)
+struct ContextMenuReference: View {
+  var body: some View {
+    ZStack {
+      Color(white: 0.5).ignoresSafeArea()
+      RoundedRectangle(cornerRadius: 20).fill(.white)
+        .frame(width: 200, height: 120)
+        .overlay(Text("Long-press me"))
+        .contextMenu {
+          Button("Copy", systemImage: "doc.on.doc") {}
+          Button("Share", systemImage: "square.and.arrow.up") {}
+          Button("Delete", systemImage: "trash", role: .destructive) {}
+        }
+        .position(x: 201, y: 300)
+    }
+    .environment(\.colorScheme, .light)
+  }
+}
+
+/// Steppers (light at y = 100, dark at y = 200 on black). White page.
+@available(iOS 26.0, *)
+struct StepperReference: View {
+  @State private var value = 3
+  var body: some View {
+    ZStack(alignment: .topLeading) {
+      Color.white
+      Color.black.frame(width: 402, height: 100).position(x: 201, y: 200)
+      Stepper("", value: $value).labelsHidden().fixedSize().position(x: 201, y: 100)
+      Stepper("", value: $value).labelsHidden().fixedSize().position(x: 201, y: 200)
+        .environment(\.colorScheme, .dark)
+    }
+    .frame(width: 402, height: 874)
+    .ignoresSafeArea()
+    .environment(\.colorScheme, .light)
+    .statusBarHidden(true)
+  }
+}
+
+/// A menu-style picker (centre 201, 300); tap it to open. White page.
+@available(iOS 26.0, *)
+struct PickerReference: View {
+  @State private var choice = 1
+  var body: some View {
+    ZStack(alignment: .topLeading) {
+      Color.white
+      Picker("Period", selection: $choice) {
+        Text("Day").tag(0)
+        Text("Week").tag(1)
+        Text("Month").tag(2)
+      }
+      .pickerStyle(.menu).fixedSize().position(x: 201, y: 300)
+    }
+    .frame(width: 402, height: 874)
+    .ignoresSafeArea()
+    .environment(\.colorScheme, .light)
+    .statusBarHidden(true)
+  }
+}
+
+/// A compact date picker (centre 201, 300) for 6 Oct 2026; tap it to
+/// open. White page.
+@available(iOS 26.0, *)
+struct DatePickerReference: View {
+  @State private var date = Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 6))!
+  var body: some View {
+    ZStack(alignment: .topLeading) {
+      Color.white
+      DatePicker("", selection: $date, displayedComponents: .date)
+        .labelsHidden().fixedSize().position(x: 201, y: 300)
+    }
+    .frame(width: 402, height: 874)
+    .ignoresSafeArea()
+    .environment(\.colorScheme, .light)
+    .statusBarHidden(true)
+  }
+}
+
+/// A tab bar with three tabs and a search tab. White page.
+@available(iOS 26.0, *)
+struct SearchTabReference: View {
+  @State private var query = ""
+  var body: some View {
+    TabView {
+      Tab("Home", systemImage: "house.fill") { Color.white.ignoresSafeArea() }
+      Tab("Music", systemImage: "music.note") { Color.white.ignoresSafeArea() }
+      Tab("Settings", systemImage: "gearshape.fill") { Color.white.ignoresSafeArea() }
+      Tab(role: .search) {
+        NavigationStack { List(0..<10) { Text("Result \($0)") } }
+          .searchable(text: $query)
+      }
+    }
     .environment(\.colorScheme, .light)
   }
 }

@@ -45,7 +45,8 @@ class ReferenceTwin extends StatelessWidget {
       home: switch (scene) {
         'toolbar' => const _Toolbar(),
         'accessory' => const _Accessory(),
-        'sheet' => const _Sheet(),
+        'sheet' => const _Sheet(large: false),
+        'sheetlarge' => const _Sheet(large: true),
         'menu' => const _Menu(),
         'search' => const _Search(),
         'swipe' => const _Swipe(tall: false),
@@ -236,7 +237,9 @@ class _Accessory extends StatelessWidget {
 }
 
 class _Sheet extends StatefulWidget {
-  const _Sheet();
+  const _Sheet({required this.large});
+
+  final bool large;
 
   @override
   State<_Sheet> createState() => _SheetState();
@@ -249,10 +252,11 @@ class _SheetState extends State<_Sheet> {
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => showGlassSheet<void>(
         context: context,
-        isScrollControlled: true,
-        builder: (_) => const SizedBox(
-          // SwiftUI's medium detent: the sheet's top at 415 pt.
-          height: 874 - 415 - 8 - 9.67,
+        detents: [
+          widget.large ? GlassSheetDetent.large : GlassSheetDetent.medium,
+        ],
+        builder: (_) => const Align(
+          alignment: AlignmentDirectional.topStart,
           child: Padding(
             padding: EdgeInsets.all(24),
             child: Text(
