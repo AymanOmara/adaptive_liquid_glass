@@ -17,6 +17,9 @@ enum ControlScenes {
     case "toolbar": root = AnyView(ToolbarReference())
     case "accessory": root = AnyView(AccessoryReference(accessory: true))
     case "tabbar": root = AnyView(AccessoryReference(accessory: false))
+    case "tabbarphoto": root = AnyView(TabBarBackdropReference(photo: true, dark: false))
+    case "tabbardark": root = AnyView(TabBarBackdropReference(photo: false, dark: true))
+    case "tabbarphotodark": root = AnyView(TabBarBackdropReference(photo: true, dark: true))
     case "sheet": root = AnyView(SheetReference(large: false))
     case "menu": root = AnyView(MenuReference())
     case "search": root = AnyView(SearchReference())
@@ -191,6 +194,34 @@ struct AccessoryReference: View {
       Image(systemName: "play.fill")
     }
     .padding(.horizontal, 16)
+  }
+}
+
+/// The `-controls tabbar` bar over a page that shows the glass:
+/// `tabbarphoto` the striped, colourful `assets/backgrounds/photo.png`
+/// (full screen), `tabbardark` a black page in dark mode,
+/// `tabbarphotodark` the photo in dark mode.
+@available(iOS 26.0, *)
+struct TabBarBackdropReference: View {
+  let photo: Bool
+  let dark: Bool
+  var body: some View {
+    TabView {
+      Tab("Home", systemImage: "house.fill") { page }
+      Tab("Music", systemImage: "music.note") { page }
+      Tab("Settings", systemImage: "gearshape.fill") { page }
+    }
+    .environment(\.colorScheme, dark ? .dark : .light)
+  }
+
+  @ViewBuilder var page: some View {
+    if photo, let image = ReferenceAssets.image("photo") {
+      // Resizable fills the proposal, which is the whole screen once the
+      // safe area is ignored (a fixed 402 x 874 frame sat 10 pt high).
+      Image(uiImage: image).resizable().interpolation(.none).ignoresSafeArea()
+    } else {
+      (dark ? Color.black : Color.white).ignoresSafeArea()
+    }
   }
 }
 

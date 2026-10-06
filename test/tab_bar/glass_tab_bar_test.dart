@@ -1,4 +1,5 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
@@ -22,11 +23,19 @@ const _blue = Color(0xFF0000FF);
 
 /// A tab bar that keeps its own selection, and records every pick.
 class _Harness extends StatefulWidget {
-  const _Harness(this.picks, {this.items = _items, this.enableFeedback = true});
+  const _Harness(
+    this.picks, {
+    this.items = _items,
+    this.enableFeedback = true,
+    this.selectedColor = _blue,
+    this.mode,
+  });
 
   final List<int> picks;
   final List<GlassTabBarItem> items;
   final bool enableFeedback;
+  final Color? selectedColor;
+  final GlassRenderMode? mode;
 
   @override
   State<_Harness> createState() => _HarnessState();
@@ -39,7 +48,8 @@ class _HarnessState extends State<_Harness> {
   Widget build(BuildContext context) => GlassTabBar(
     items: widget.items,
     selectedIndex: _selected,
-    selectedColor: _blue,
+    selectedColor: widget.selectedColor,
+    mode: widget.mode,
     enableFeedback: widget.enableFeedback,
     onSelected: (i) {
       widget.picks.add(i);
@@ -85,6 +95,82 @@ void main() {
       expect(picks, [2]);
       expect(_labelColor(t, 'Settings'), _blue);
     }, variant: variant);
+  }
+
+  /// The pill's centre (it is at rest: the lens is gone).
+  double pillX(WidgetTester t) => t
+      .getCenter(
+        find.byWidgetPredicate(
+          (w) => w is DecoratedBox && w.decoration is ShapeDecoration,
+        ),
+      )
+      .dx;
+
+  Widget controlled(
+    int selected,
+    ValueChanged<int> onSelected,
+    GlassRenderMode? mode,
+  ) => plainHost(
+    GlassTabBar(
+      items: _items,
+      selectedIndex: selected,
+      selectedColor: _blue,
+      mode: mode,
+      onSelected: onSelected,
+    ),
+  );
+
+  for (final mode in [null, GlassRenderMode.native]) {
+    final name = mode == null ? 'shader' : mode.name;
+
+    testWidgets('$name: a tap the parent rejects leaves pill and tint', (
+      t,
+    ) async {
+      shaderEnv();
+      final picks = <int>[];
+      await t.pumpWidget(controlled(0, picks.add, mode));
+      final home = pillX(t);
+      await t.tap(find.text('Settings'));
+      await t.pumpAndSettle();
+      expect(picks, [2]);
+      expect(_lens, findsNothing);
+      expect(pillX(t), moreOrLessEquals(home, epsilon: 0.5));
+      expect(
+        pillX(t),
+        moreOrLessEquals(t.getCenter(find.text('History')).dx, epsilon: 1),
+      );
+      expect(_labelColor(t, 'History'), _blue);
+      expect(_labelColor(t, 'Settings'), isNot(_blue));
+    }, variant: ios);
+
+    testWidgets('$name: a tap the parent accepts moves pill and tint', (
+      t,
+    ) async {
+      shaderEnv();
+      await t.pumpWidget(plainHost(_Harness(_picks(), mode: mode)));
+      await t.tap(find.text('Settings'));
+      await t.pumpAndSettle();
+      expect(_lens, findsNothing);
+      expect(
+        pillX(t),
+        moreOrLessEquals(t.getCenter(find.text('Settings')).dx, epsilon: 1),
+      );
+      expect(_labelColor(t, 'Settings'), _blue);
+      expect(_labelColor(t, 'History'), isNot(_blue));
+    }, variant: ios);
+
+    testWidgets('$name: an outside change moves pill and tint', (t) async {
+      shaderEnv();
+      await t.pumpWidget(controlled(0, (_) {}, mode));
+      await t.pumpWidget(controlled(1, (_) {}, mode));
+      await t.pumpAndSettle();
+      expect(
+        pillX(t),
+        moreOrLessEquals(t.getCenter(find.text('Snippets')).dx, epsilon: 1),
+      );
+      expect(_labelColor(t, 'Snippets'), _blue);
+      expect(_labelColor(t, 'History'), isNot(_blue));
+    }, variant: ios);
   }
 
   testWidgets('holding shows the lens; dragging picks on release', (t) async {
@@ -313,7 +399,7 @@ void main() {
     expect(picks, [2]);
   }, variant: android);
 
-  testWidgets('the pill defaults to the secondary system fill, as on iOS', (
+  testWidgets('the pill defaults to the tab bar fill measured on iOS', (
     t,
   ) async {
     shaderEnv();
@@ -326,11 +412,39 @@ void main() {
     final ctx = t.element(find.byType(GlassTabBar));
     expect(
       (pill.decoration as ShapeDecoration).color!.toARGB32(),
-      CupertinoDynamicColor.resolve(
-        CupertinoColors.secondarySystemFill,
-        ctx,
-      ).toARGB32(),
+      CupertinoDynamicColor.resolve(GlassColors.tabBarPill, ctx).toARGB32(),
     );
+  }, variant: ios);
+
+  testWidgets('the selected tab defaults to the measured tab bar blue', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks(), selectedColor: null)));
+    final ctx = t.element(find.byType(GlassTabBar));
+    expect(
+      _labelColor(t, 'History')!.toARGB32(),
+      CupertinoDynamicColor.resolve(GlassColors.tabBarSelected, ctx).toARGB32(),
+    );
+  }, variant: ios);
+
+  testWidgets('unselected tabs use the tab bar label colour', (t) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    expect(_labelColor(t, 'Snippets')!.toARGB32(), 0xE6000000);
+    await t.pumpWidget(
+      plainHost(
+        Builder(
+          builder: (context) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(platformBrightness: Brightness.dark),
+            child: _Harness(_picks()),
+          ),
+        ),
+      ),
+    );
+    expect(_labelColor(t, 'Snippets')!.toARGB32(), 0xF2FFFFFF);
   }, variant: ios);
 
   testWidgets('tapping a far tab sends the lens across from the selection', (
@@ -586,7 +700,7 @@ void main() {
         matching: find.byType(TabBarFillScope),
       ),
     );
-    expect(circle.left - bar.right, moreOrLessEquals(10));
+    expect(circle.left - bar.right, moreOrLessEquals(8));
     expect(circle.right - bar.left, moreOrLessEquals(360));
     await t.tap(find.byType(GlassSearchTabButton));
     expect(searched, 1);

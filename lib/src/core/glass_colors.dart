@@ -159,4 +159,30 @@ abstract final class GlassColors {
         color: Color(0xFFE8E8E8),
         darkColor: Color(0xFF38383A),
       );
+
+  // Tab bar (measured from SwiftUI TabView, iOS 26.4, over white / black)
+
+  /// The selected tab's icon and label (reads 0,126,245 on the white bar
+  /// and 27,172,255 on the black one).
+  static const CupertinoDynamicColor tabBarSelected =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFF007EF5),
+        darkColor: Color(0xFF1BACFF),
+      );
+
+  /// Unselected tabs (black at 90% / white at 95%: 25 on the light bar,
+  /// 243 on the dark one).
+  static const CupertinoDynamicColor tabBarLabel =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xE6000000),
+        darkColor: Color(0xF2FFFFFF),
+      );
+
+  /// The pill behind the selected tab at rest (black at 7% / white at
+  /// 14.5%: 235 on the light bar, 53 on the dark one).
+  static const CupertinoDynamicColor tabBarPill =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0x12000000),
+        darkColor: Color(0x25FFFFFF),
+      );
 }

@@ -12,6 +12,15 @@ abstract final class TabBarMetrics {
   /// How much wider than the tab spacing the pill is (93.7 over 86.15).
   static const double pillExtra = 7.55;
 
+  /// [pillExtra] when the bar fills the width beside a search tab or under
+  /// an accessory: the pill is 1.67 pt wider there (measured from SwiftUI
+  /// `TabView`, iOS 26.4, `-controls searchtab` and `accessory`).
+  static const double pillExtraFilled = 9.22;
+
+  /// A count badge's centre from its tab icon's centre, towards the end
+  /// and up (measured from SwiftUI `TabView` `.badge(3)`, iOS 26.4).
+  static const Offset badgeOffset = Offset(22, -7.3);
+
   /// The held lens over the pill: 114.3 by 74 against 93.7 by 54.
   static const double lensGrowX = 20.6;
 
@@ -71,17 +80,25 @@ abstract final class TabBarMetrics {
     dampingFraction: 0.499,
   );
 
-  /// A tab's icon size.
-  static const double iconSize = 26;
+  /// A tab's icon size: CupertinoIcons drawn at 28 cover the ink of
+  /// SwiftUI's tab symbols (gear 24 pt, house 27 pt wide; measured from
+  /// SwiftUI `TabView`, iOS 26.4).
+  static const double iconSize = 28;
 
-  /// The gap between a tab's icon and its label.
+  /// The height a tab's icon takes in the tab's column, less than
+  /// [iconSize]: icon centre 60.8 pt and label ink top 78.7 pt below the
+  /// bar's crop line, as SwiftUI's `TabView` (iOS 26.4, measured).
+  static const double iconSlot = 25.2;
+
+  /// The gap between a tab's icon slot and its label.
   static const double labelGap = 2;
 
-  /// A tab's label.
+  /// A tab's label: 10 pt semibold (measured from SwiftUI `TabView`,
+  /// iOS 26.4: "Settings" 39.7 pt of ink).
   static const TextStyle label = TextStyle(
     fontSize: 10,
-    fontWeight: FontWeight.w500,
-    letterSpacing: 0.1,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0,
   );
 
   /// Pill to lens.

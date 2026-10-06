@@ -12,8 +12,20 @@ Widget? borrowedTwin(String scene) => switch (scene) {
   'pagecontrol' => const _PageControl(),
   'actionsheet' => const _ActionSheet(),
   'badge' => const _Badge(),
+  'tabbar' => const _TabBar(photo: false, dark: false),
+  'tabbarphoto' => const _TabBar(photo: true, dark: false),
+  'tabbardark' => const _TabBar(photo: false, dark: true),
+  'tabbarphotodark' => const _TabBar(photo: true, dark: true),
   _ => null,
 };
+
+/// The tab bar's path for `-mode native|shader`: the bar keeps to shader
+/// glass on iOS 26 unless asked, so the twin asks; null under `auto`.
+GlassRenderMode? twinBarMode(BuildContext context) =>
+    switch (LiquidGlassTheme.of(context).defaultMode) {
+      GlassRenderMode.auto => null,
+      final mode => mode,
+    };
 
 /// [child] centred at ([x], [y]) in screen points.
 Widget _at(double x, double y, Widget child) => Positioned(
@@ -218,8 +230,16 @@ class _ActionSheetState extends State<_ActionSheet> {
       const ColoredBox(color: Colors.white, child: SizedBox.expand());
 }
 
-class _Badge extends StatelessWidget {
+class _Badge extends StatefulWidget {
   const _Badge();
+
+  @override
+  State<_Badge> createState() => _BadgeState();
+}
+
+/// Keeps the selection, as SwiftUI's `TabView` does.
+class _BadgeState extends State<_Badge> {
+  int _tab = 0;
 
   @override
   Widget build(BuildContext context) => GlassScaffold(
@@ -227,12 +247,61 @@ class _Badge extends StatelessWidget {
     tabBar: GlassTabBar(
       items: const [
         GlassTabBarItem(icon: CupertinoIcons.house_fill, label: 'Home'),
-        GlassTabBarItem(icon: CupertinoIcons.tray, label: 'Inbox', badge: '3'),
-        GlassTabBarItem(icon: CupertinoIcons.gear_solid, label: 'Settings'),
+        GlassTabBarItem(
+          icon: CupertinoIcons.tray_fill,
+          label: 'Inbox',
+          badge: '3',
+        ),
+        GlassTabBarItem(icon: CupertinoIcons.gear, label: 'Settings'),
       ],
-      selectedIndex: 0,
-      onSelected: (_) {},
+      selectedIndex: _tab,
+      onSelected: (i) => setState(() => _tab = i),
+      mode: twinBarMode(context),
     ),
     body: const SizedBox.expand(),
   );
+}
+
+/// `-controls tabbar` / `tabbarphoto` / `tabbardark` / `tabbarphotodark`:
+/// Home, Music, Settings with Home selected, over a white (or, dark, black)
+/// page or the full-screen `photo.png`.
+class _TabBar extends StatefulWidget {
+  const _TabBar({required this.photo, required this.dark});
+
+  final bool photo;
+  final bool dark;
+
+  @override
+  State<_TabBar> createState() => _TabBarState();
+}
+
+/// Keeps the selection, as SwiftUI's `TabView` does, so a recorded drag
+/// ends on the same tab in both.
+class _TabBarState extends State<_TabBar> {
+  int _tab = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final scaffold = GlassScaffold(
+      backgroundColor: widget.dark ? Colors.black : Colors.white,
+      tabBar: GlassTabBar(
+        items: const [
+          GlassTabBarItem(icon: CupertinoIcons.house_fill, label: 'Home'),
+          GlassTabBarItem(icon: CupertinoIcons.music_note, label: 'Music'),
+          GlassTabBarItem(icon: CupertinoIcons.gear_solid, label: 'Settings'),
+        ],
+        selectedIndex: _tab,
+        onSelected: (i) => setState(() => _tab = i),
+        mode: twinBarMode(context),
+      ),
+      body: widget.photo
+          ? Image.asset(
+              'assets/backgrounds/photo.png',
+              fit: BoxFit.fill,
+              filterQuality: FilterQuality.none,
+            )
+          : const SizedBox.expand(),
+    );
+    return widget.dark ? _dark(context, scaffold) : scaffold;
+  }
 }

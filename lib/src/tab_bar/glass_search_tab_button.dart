@@ -32,8 +32,9 @@ class GlassSearchTabButton extends StatelessWidget {
   /// The circle's diameter (measured: the tab bar's height).
   static const double size = 62;
 
-  /// The gap between the bar and the circle (measured).
-  static const double gap = 10;
+  /// The gap between the bar and the circle (measured from SwiftUI
+  /// `TabView` with `Tab(role: .search)`, iOS 26.4).
+  static const double gap = 8;
 
   @override
   Widget build(BuildContext context) => MergeSemantics(
