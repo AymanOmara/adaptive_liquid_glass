@@ -54,10 +54,6 @@ class GlassSheet extends StatelessWidget {
       t,
     )!;
     final opaque = (t * 2).clamp(0.0, 1.0);
-    final surface = CupertinoDynamicColor.resolve(
-      CupertinoColors.systemBackground,
-      context,
-    );
     final opaqueShape = RoundedSuperellipseBorder(
       borderRadius: BorderRadius.vertical(
         top: Radius.circular(
@@ -93,6 +89,38 @@ class GlassSheet extends StatelessWidget {
           ),
         Flexible(child: child),
       ],
+    );
+    // A sheet is elevated content: iOS resolves system colours (its
+    // surface, its content's backgrounds) to their elevated variants, e.g.
+    // #1C1C1E instead of black in dark mode.
+    return CupertinoUserInterfaceLevel(
+      data: CupertinoUserInterfaceLevelData.elevated,
+      child: Builder(
+        builder: (context) => _surface(
+          context,
+          t,
+          inset,
+          glassRadius,
+          opaque,
+          opaqueShape,
+          content,
+        ),
+      ),
+    );
+  }
+
+  Widget _surface(
+    BuildContext context,
+    double t,
+    double inset,
+    double glassRadius,
+    double opaque,
+    ShapeBorder opaqueShape,
+    Widget content,
+  ) {
+    final surface = CupertinoDynamicColor.resolve(
+      CupertinoColors.systemBackground,
+      context,
     );
     return Padding(
       padding: EdgeInsetsDirectional.fromSTEB(inset, 0, inset, inset),

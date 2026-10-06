@@ -45,6 +45,8 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
   bool _wifi = true;
   double _volume = 0.6;
   bool _toolbar = false;
+  double _count = 3;
+  DateTime _date = DateTime(2026, 10, 6);
   final _rows = ['Copied Image', 'Meeting notes', 'Shopping list'];
 
   void _snack(String message) => ScaffoldMessenger.of(context)
@@ -93,6 +95,7 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
             ],
             selectedIndex: _tab,
             onSelected: (i) => setState(() => _tab = i),
+            onSearch: () => _snack('Search'),
           ),
     toolbar: _toolbar
         ? GlassToolbar(
@@ -197,30 +200,147 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                 ),
               ),
               const SizedBox(height: 24),
-              Center(
-                child: GlassButton(
-                  onPressed: () => showGlassSheet<void>(
-                    context: context,
-                    builder: (context) => const Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(24, 16, 24, 32),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Glass sheet',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text('Floats in from the edges; drag down to close.'),
-                        ],
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  GlassButton(
+                    onPressed: () => showGlassSheet<void>(
+                      context: context,
+                      detents: const [
+                        GlassSheetDetent.medium,
+                        GlassSheetDetent.large,
+                      ],
+                      builder: (context) => const Padding(
+                        padding: EdgeInsetsDirectional.fromSTEB(24, 16, 24, 32),
+                        child: Text(
+                          'Drag up for the large sheet, down to close.',
+                        ),
                       ),
                     ),
+                    child: const Text('Sheet'),
                   ),
-                  child: const Text('Show sheet'),
+                  GlassButton(
+                    onPressed: () => showGlassAlert(
+                      context: context,
+                      title: 'Delete photo?',
+                      message:
+                          'This photo will be deleted from all your '
+                          'devices.',
+                      actions: const [
+                        GlassDialogAction(
+                          label: 'Cancel',
+                          role: GlassButtonRole.cancel,
+                        ),
+                        GlassDialogAction(
+                          label: 'Delete',
+                          role: GlassButtonRole.destructive,
+                        ),
+                      ],
+                    ),
+                    child: const Text('Alert'),
+                  ),
+                  GlassButton(
+                    onPressed: () => showGlassConfirmationDialog(
+                      context: context,
+                      title: 'Photo',
+                      actions: const [
+                        GlassDialogAction(label: 'Share'),
+                        GlassDialogAction(
+                          label: 'Delete',
+                          role: GlassButtonRole.destructive,
+                        ),
+                        GlassDialogAction(
+                          label: 'Cancel',
+                          role: GlassButtonRole.cancel,
+                        ),
+                      ],
+                    ),
+                    child: const Text('Dialog'),
+                  ),
+                  GlassPopoverAnchor(
+                    popoverBuilder: (_) => const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('Liquid Glass popover'),
+                    ),
+                    builder: (context, open) => GlassButton(
+                      onPressed: open,
+                      child: const Text('Popover'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              LiquidGlass(
+                shape: const GlassShape.rect(26),
+                padding: const EdgeInsetsDirectional.all(16),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(child: Text('Count ${_count.toInt()}')),
+                        GlassStepper(
+                          value: _count,
+                          max: 10,
+                          onChanged: (v) => setState(() => _count = v),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Expanded(child: Text('Period')),
+                        GlassPicker<_Period>(
+                          items: const [
+                            GlassPickerItem(value: _Period.day, label: 'Day'),
+                            GlassPickerItem(value: _Period.week, label: 'Week'),
+                            GlassPickerItem(
+                              value: _Period.month,
+                              label: 'Month',
+                            ),
+                          ],
+                          selected: _period,
+                          onChanged: (p) => setState(() => _period = p),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Expanded(child: Text('Date')),
+                        GlassDatePicker(
+                          value: _date,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2030),
+                          onChanged: (d) => setState(() => _date = d),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              Center(
+                child: GlassContextMenu(
+                  items: [
+                    GlassMenuItem(
+                      label: 'Copy',
+                      icon: CupertinoIcons.doc_on_doc,
+                      onSelected: () => _snack('Copy'),
+                    ),
+                    GlassMenuItem(
+                      label: 'Delete',
+                      icon: CupertinoIcons.trash,
+                      destructive: true,
+                      onSelected: () => _snack('Delete'),
+                    ),
+                  ],
+                  child: const LiquidGlass(
+                    shape: GlassShape.rect(20),
+                    padding: EdgeInsets.all(24),
+                    child: Text('Long-press me'),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
