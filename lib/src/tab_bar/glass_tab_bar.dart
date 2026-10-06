@@ -22,6 +22,8 @@ import '../group/glass_group.dart';
 import '../liquid_glass.dart';
 import '../platform/glass_platform.dart';
 import 'tab_lens.dart';
+import 'tab_lens_content.dart';
+import 'tab_lens_program.dart';
 
 /// One tab of a [GlassTabBar]: an icon over a short label.
 @immutable
@@ -153,9 +155,9 @@ abstract final class _Metrics {
   static const double growY = 1.65;
   static const double growLean = 0.0237;
 
-  /// Tabs under the lens are magnified more across than down.
+  /// Tabs under the lens are magnified about their own centres (Kept).
   static const double magnifyX = 1.21;
-  static const double magnifyY = 1.10;
+  static const double magnifyY = 1.19;
 
   /// The band at the lens's edge where content is refracted, not sharp.
   static const double lensRim = 9;
@@ -243,6 +245,10 @@ class _GlassTabBarState extends State<GlassTabBar>
   /// explicit [GlassTabBar.mode] wins.
   GlassRenderMode? get _barMode =>
       widget.mode ?? (_shaderLens ? GlassRenderMode.shader : null);
+
+  /// Margin around the tab row in the lens content layer, so the lens
+  /// (which outgrows the row) lies inside it.
+  static const double _lensPad = 24;
 
   bool _placed = false;
   bool _held = false;
@@ -439,6 +445,7 @@ class _GlassTabBarState extends State<GlassTabBar>
         valueListenable: GlassPlatform.instance.environment,
         builder: (context, environment, _) {
           _shaderLens = environment.shaderSupported;
+          if (_shaderLens) TabLensProgram.instance.load();
           final mode = resolveGlassMode(
             requested: widget.mode ?? LiquidGlassTheme.of(context).defaultMode,
             environment: environment,
@@ -536,6 +543,8 @@ class _GlassTabBarState extends State<GlassTabBar>
     // refract a ghost of the tabs over the pill.
     // (The release spring's second rebound peaks near 0.016.)
     final lensShown = _held || p > 0.05;
+    final lensContent =
+        _shaderLens && TabLensProgram.instance.program.value != null;
     final x = _toPixels(_x.value);
     // The wobble belongs to the held lens: it fades with it and never
     // reaches the pill.
@@ -548,6 +557,15 @@ class _GlassTabBarState extends State<GlassTabBar>
     final lean = _Metrics.growLean * (x - _rowWidth / 2) * t;
     final growX = _Metrics.growX * t;
     final growY = _Metrics.growY * t;
+    final baseRow = ClipPath(
+      clipper: _Hole(lensShown ? lens : null),
+      child: _row(
+        // Gated like the lens, not on p == 0: the settling spring crosses
+        // zero several times and would flicker the tint off and on.
+        (i) => !lensShown && i == widget.selectedIndex ? selected : null,
+        semantics: true,
+      ),
+    );
     final magnify = Offset(
       lerpDouble(1, _Metrics.magnifyX, t)!,
       lerpDouble(1, _Metrics.magnifyY, t)!,
@@ -595,22 +613,11 @@ class _GlassTabBarState extends State<GlassTabBar>
                             ),
                           ),
                           // Under a held lens the row has a hole filled by a
-                          // magnified, tinted copy. Both lie beneath the
-                          // lens, so its glass refracts them (bending them at
-                          // its rim, as iOS does).
-                          ClipPath(
-                            clipper: _Hole(lensShown ? lens : null),
-                            child: _row(
-                              // Gated like the lens, not on p == 0: the
-                              // settling spring crosses zero several times and
-                              // would flicker the tint off and on.
-                              (i) => !lensShown && i == widget.selectedIndex
-                                  ? selected
-                                  : null,
-                              semantics: true,
-                            ),
-                          ),
-                          if (lensShown)
+                          // magnified, tinted copy. Without the content
+                          // shader both lie beneath the lens, so its glass
+                          // refracts them (bending them at its rim).
+                          if (!lensContent) baseRow,
+                          if (lensShown && !lensContent)
                             ClipPath(
                               // The shader lens bends the whole copy; native
                               // glass only gets the ends (see _LensEnds).
@@ -654,6 +661,47 @@ class _GlassTabBarState extends State<GlassTabBar>
                         child: const SizedBox.expand(),
                       ),
                     ),
+            ),
+          // With the content shader the tabs lie over the lens glass, which
+          // refracts only the bar and the page behind them (iOS's lens never
+          // shows the plain tabs).
+          if (lensContent)
+            Positioned(
+              left: _Metrics.inset + lean,
+              top: _Metrics.inset,
+              width: _rowWidth,
+              height: _contentHeight,
+              child: baseRow,
+            ),
+          // With the content shader the tinted tabs lie over the lens glass,
+          // refracted on their own, so the glass brightens only what is
+          // behind them (as iOS does).
+          if (lensShown && lensContent)
+            Positioned(
+              left: _Metrics.inset + lean - _lensPad,
+              top: _Metrics.inset - _lensPad,
+              width: _rowWidth + _lensPad * 2,
+              height: _contentHeight + _lensPad * 2,
+              child: TabLensContent(
+                box: Size(
+                  _rowWidth + _lensPad * 2,
+                  _contentHeight + _lensPad * 2,
+                ),
+                lens: lens.shift(Offset(_lensPad - lean, _lensPad)),
+                fallback: const SizedBox.shrink(),
+                child: ColoredBox(
+                  // Keeps the filter's layer the size of the box.
+                  color: const Color(0x01000000),
+                  child: Padding(
+                    padding: const EdgeInsets.all(_lensPad),
+                    child: _row(
+                      (_) => selected,
+                      semantics: false,
+                      scale: magnify,
+                    ),
+                  ),
+                ),
+              ),
             ),
           // Native clear glass refracts and blurs the copy beneath it; iOS's
           // lens keeps its middle sharp and bends only the rim, so a sharp

@@ -3,6 +3,7 @@ import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/tab_lens.dart';
+import 'package:adaptive_liquid_glass/src/tab_bar/tab_lens_content.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -43,17 +44,40 @@ void main() {
   setUp(() => GlassProgram.instance.debugReset(skipLoad: true));
   tearDown(() => GlassPlatform.instance.debugReset());
 
-  test('the tab lens bends smoothly, fringes in blue and has no frost', () {
+  test('the lens glass bends the backdrop outward, unfrosted', () {
     for (final c in [tabLensLight, tabLensDark]) {
-      expect(c.blurSigma, 0);
-      expect(c.frostWideSigma, 0);
-      expect(c.postBlurShare, 0);
-      // A continuous inward lens: no ring, whose ends break the image.
-      expect(c.lensStrength, lessThan(0));
+      // iOS squeezes what borders the lens into its rim band: an outward,
+      // continuous bend (no ring, whose ends break the image).
+      expect(c.lensStrength, greaterThan(0));
       expect(c.lensRingEnd, lessThanOrEqualTo(c.lensRingStart));
-      // Negative: green moves with blue, so blue fringes stay blue.
-      expect(c.dispersion, lessThan(0));
+      // Only a light blur, after the bend (it averages the squeezed band).
+      expect(c.frostWideSigma, 0);
+      expect(c.postBlurShare, greaterThanOrEqualTo(0.9));
+      expect(c.blurSigma, lessThan(1));
     }
+  });
+
+  test('the tinted tabs bend inward, softly, towards the lens ends', () {
+    expect(tabLensContentStrength, lessThan(0));
+    expect(tabLensContentBlur, greaterThan(0));
+    expect(tabLensContentDispersion, isNot(0));
+  });
+
+  testWidgets('the lens content shows its fallback until the shader loads', (
+    t,
+  ) async {
+    await t.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: TabLensContent(
+          box: Size(100, 50),
+          lens: Rect.fromLTWH(10, 5, 60, 40),
+          fallback: Text('fallback'),
+          child: SizedBox(),
+        ),
+      ),
+    );
+    expect(find.text('fallback'), findsOneWidget);
   });
 
   testWidgets('on iOS 26 the lens is shader glass over the native bar', (

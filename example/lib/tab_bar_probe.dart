@@ -32,6 +32,71 @@ class _ProbeState extends State<_Probe> {
     color: const Color(0xFF000000),
     child: Stack(
       children: [
+        // Kept's History row behind the bar, so the lens refracts the same
+        // page (positions and colours measured from the Kept recording;
+        // below the separator Kept dims the page to about 7 %).
+        Positioned(
+          left: 16,
+          top: 727.6,
+          child: Container(
+            width: 43.7,
+            height: 43.7,
+            decoration: BoxDecoration(
+              color: const Color(0xFF00101A),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              CupertinoIcons.doc_text,
+              size: 24,
+              color: Color(0xFF008AF2),
+            ),
+          ),
+        ),
+        const Positioned(
+          left: 73,
+          top: 727,
+          child: _Line('Flight KE 902 · Gate 34 · Boarding'),
+        ),
+        const Positioned(left: 73, top: 752, child: _Line('18:40')),
+        const Positioned(
+          left: 72,
+          top: 779,
+          child: Icon(
+            CupertinoIcons.pin_fill,
+            size: 15,
+            color: Color(0xFFE8913A),
+          ),
+        ),
+        const Positioned(
+          left: 92.7,
+          top: 777,
+          child: Text(
+            '40 chars · 40 min ago · Notes',
+            style: TextStyle(fontSize: 12.4, letterSpacing: 0.1, color: Color(0xFF8A8A8E)),
+          ),
+        ),
+        Positioned(
+          left: 65.3,
+          right: 16,
+          top: 812.3,
+          child: Container(height: 1, color: const Color(0xFF131313)),
+        ),
+        const Positioned(
+          left: 73,
+          top: 822,
+          child: Text(
+            'Standup notes',
+            style: TextStyle(fontSize: 15.3, color: Color(0xFF1A1A1A)),
+          ),
+        ),
+        const Positioned(
+          left: 72,
+          top: 858,
+          child: Text(
+            '●  Work  31 chars · 1 hr ago · Maps',
+            style: TextStyle(fontSize: 13.6, color: Color(0xFF121212)),
+          ),
+        ),
         Positioned(
           left: 0,
           right: 0,
@@ -60,5 +125,17 @@ class _ProbeState extends State<_Probe> {
         ),
       ],
     ),
+  );
+}
+
+class _Line extends StatelessWidget {
+  const _Line(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Text(
+    text,
+    style: const TextStyle(fontSize: 15.3, color: Color(0xFFF0F0F0)),
   );
 }

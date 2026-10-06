@@ -30,3 +30,4 @@ flutter:
         pluginClass: AdaptiveLiquidGlassPlugin
   shaders:
     - shaders/liquid_glass.frag
+    - shaders/tab_lens_content.frag
