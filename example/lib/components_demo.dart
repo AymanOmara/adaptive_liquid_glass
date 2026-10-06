@@ -48,6 +48,7 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
   double _count = 3;
   DateTime _date = DateTime(2026, 10, 6);
   final _rows = ['Copied Image', 'Meeting notes', 'Shopping list'];
+  int _page = 0;
   final _tags = {'Travel': true, 'Food': false, 'Music': false};
 
   void _snack(String message) => ScaffoldMessenger.of(context)
@@ -390,6 +391,14 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                       onDeleted: () => setState(() => _tags.remove(tag)),
                     ),
                 ],
+              ),
+              const SizedBox(height: 24),
+              Center(
+                child: GlassPageControl(
+                  count: 4,
+                  currentPage: _page,
+                  onPageChanged: (p) => setState(() => _page = p),
+                ),
               ),
               const SizedBox(height: 24),
               const Row(
