@@ -174,6 +174,30 @@ void main() {
     expect(barGlass.mode, GlassRenderMode.native);
   }, variant: ios);
 
+  testWidgets('a bar asked for native glass holds a native lens', (t) async {
+    // The shader cannot see native glass: a shader lens over the native bar
+    // drew a black capsule.
+    env(ios: 26);
+    await t.pumpWidget(
+      plainHost(
+        GlassTabBar(
+          mode: GlassRenderMode.native,
+          items: const [
+            GlassTabBarItem(icon: CupertinoIcons.clock, label: 'History'),
+            GlassTabBarItem(icon: CupertinoIcons.gear, label: 'Settings'),
+          ],
+          selectedIndex: 0,
+          onSelected: (_) {},
+        ),
+      ),
+    );
+    final g = await hold(t);
+    expect(t.widget<LiquidGlass>(lens).mode, GlassRenderMode.native);
+    expect(find.byType(TabLensContent), findsNothing);
+    await g.up();
+    await t.pumpAndSettle();
+  }, variant: ios);
+
   testWidgets('the shader lens bends a full copy; no sharp overlay needed', (
     t,
   ) async {

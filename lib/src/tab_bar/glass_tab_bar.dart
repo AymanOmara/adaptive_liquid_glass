@@ -192,7 +192,8 @@ class _GlassTabBarState extends State<GlassTabBar>
   Duration _lastTick = Duration.zero;
 
   /// Whether the lens is drawn with the package's shader (fitted to iOS's
-  /// tab lens); without shader support it is the requested glass.
+  /// tab lens); without shader support, or when [GlassTabBar.mode] asks for
+  /// another path, it is the requested glass.
   bool _shaderLens = false;
 
   /// The bar's path: with the shader lens the bar is shader glass too, so
@@ -221,7 +222,10 @@ class _GlassTabBarState extends State<GlassTabBar>
 
   int get _count => widget.items.length;
 
-  double get _pillWidth => _itemWidth + TabBarMetrics.pillExtra;
+  /// How much wider than the tab spacing the pill is, as last laid out.
+  double _pillExtra = TabBarMetrics.pillExtra;
+
+  double get _pillWidth => _itemWidth + _pillExtra;
 
   double get _rowWidth => _pillWidth + (_count - 1) * _itemWidth;
 
@@ -435,7 +439,22 @@ class _GlassTabBarState extends State<GlassTabBar>
     } else {
       _springPress(TabBarMetrics.release, 0);
     }
-    if (index != widget.selectedIndex) widget.onSelected(index);
+    if (index != widget.selectedIndex) {
+      widget.onSelected(index);
+      // The parent owns the selection: if it kept the old one, the pill
+      // and lens go back to it, so they never part from the tint.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_held && widget.selectedIndex != index) _reconcile();
+      });
+      WidgetsBinding.instance.ensureVisualUpdate();
+    }
+  }
+
+  /// Springs the pill (settling any lens) back to [GlassTabBar.selectedIndex].
+  void _reconcile() {
+    _cancelPendingRelease();
+    _springPress(TabBarMetrics.release, 0);
+    _springX(TabBarMetrics.slide, _slot(widget.selectedIndex).toDouble());
   }
 
   /// Where a released lens is travelling to; null when not waiting.
@@ -485,23 +504,28 @@ class _GlassTabBarState extends State<GlassTabBar>
 
   Widget _sizedBar() => LayoutBuilder(
     builder: (context, constraints) {
+      final fills = TabBarFillScope.of(context);
+      _pillExtra = fills
+          ? TabBarMetrics.pillExtraFilled
+          : TabBarMetrics.pillExtra;
       final fit =
-          (constraints.maxWidth -
-              TabBarMetrics.inset * 2 -
-              TabBarMetrics.pillExtra) /
+          (constraints.maxWidth - TabBarMetrics.inset * 2 - _pillExtra) /
           _count;
-      _itemWidth = fit < widget.itemWidth || TabBarFillScope.of(context)
-          ? fit
-          : widget.itemWidth;
+      _itemWidth = fit < widget.itemWidth || fills ? fit : widget.itemWidth;
       return ValueListenableBuilder<GlassEnvironment>(
         valueListenable: GlassPlatform.instance.environment,
         builder: (context, environment, _) {
-          _shaderLens = environment.shaderSupported;
-          if (_shaderLens) TabLensProgram.instance.load();
           final mode = resolveGlassMode(
             requested: widget.mode ?? LiquidGlassTheme.of(context).defaultMode,
             environment: environment,
           );
+          // A bar asked for another path (native) keeps a lens of that
+          // path: the shader cannot see native glass, so a shader lens
+          // over it drew black.
+          _shaderLens =
+              environment.shaderSupported &&
+              (widget.mode == null || mode == EffectiveGlassMode.shader);
+          if (_shaderLens) TabLensProgram.instance.load();
           return mode == EffectiveGlassMode.material
               ? _materialBar(context)
               : _glassBar(context);
@@ -833,7 +857,7 @@ class _GlassTabBarState extends State<GlassTabBar>
   }) {
     final row = Row(
       children: [
-        const SizedBox(width: TabBarMetrics.pillExtra / 2),
+        SizedBox(width: _pillExtra / 2),
         for (var i = 0; i < _count; i++)
           Semantics(
             button: true,
@@ -854,7 +878,20 @@ class _GlassTabBarState extends State<GlassTabBar>
                       return Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _icon(widget.items[i], i == widget.selectedIndex, c),
+                          // The glyph overhangs the bottom of its slot: iOS sets
+                          // the icon and label closer than a 28 pt box allows.
+                          SizedBox(
+                            height: TabBarMetrics.iconSlot,
+                            child: OverflowBox(
+                              maxHeight: TabBarMetrics.iconSize,
+                              alignment: Alignment.topCenter,
+                              child: _icon(
+                                widget.items[i],
+                                i == widget.selectedIndex,
+                                c,
+                              ),
+                            ),
+                          ),
                           const SizedBox(height: TabBarMetrics.labelGap),
                           Text(
                             widget.items[i].label,
@@ -903,12 +940,24 @@ class _GlassTabBarState extends State<GlassTabBar>
       clipBehavior: Clip.none,
       children: [
         icon,
-        PositionedDirectional(
-          start: TabBarMetrics.iconSize * (dot ? 0.7 : 0.55),
-          top: dot ? -1 : -6,
-          // Any glass mode draws the iOS badge; this bar is never Material.
-          child: GlassBadge(label: badge, mode: GlassRenderMode.shader),
-        ),
+        if (dot)
+          PositionedDirectional(
+            start: TabBarMetrics.iconSize * 0.7,
+            top: -1,
+            child: GlassBadge(label: badge, mode: GlassRenderMode.shader),
+          )
+        else
+          // Centred at badgeOffset from the icon's centre.
+          PositionedDirectional(
+            start: TabBarMetrics.iconSize / 2 + TabBarMetrics.badgeOffset.dx,
+            top: TabBarMetrics.iconSize / 2 + TabBarMetrics.badgeOffset.dy,
+            child: FractionalTranslation(
+              translation: Offset(_rtl ? 0.5 : -0.5, -0.5),
+              // Any glass mode draws the iOS badge; this bar is never
+              // Material.
+              child: GlassBadge(label: badge, mode: GlassRenderMode.shader),
+            ),
+          ),
       ],
     );
   }

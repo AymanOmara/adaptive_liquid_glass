@@ -134,10 +134,9 @@ Widget withTabLens(BuildContext context, Widget child) {
 }
 
 /// Overrides on regular glass for the tab bar itself, fitted to iOS 26.4's
-/// tab bar (Kept) over black: UIKit's bar is flatter than SwiftUI's small
-/// glass (no dark-end lift) with an even 1 pt rim.
+/// tab bar (Kept, and SwiftUI's `TabView`): UIKit's bar is flatter than
+/// SwiftUI's small glass (no dark-end lift) with an even 1 pt rim.
 const _tabBarOverrides = <String, Object?>{
-  'toneLift': 0.0,
   // Measured from SwiftUI `TabView` (iOS 26.4) over white: a wider,
   // fainter shadow than SwiftUI's small glass.
   'shadowRadius': 23.0,
@@ -149,21 +148,29 @@ const _tabBarOverrides = <String, Object?>{
   'rimMixLumaFloor': 1.0,
 };
 
-/// Light-mode extras on [_tabBarOverrides]: the bar lets less light fill
-/// in than SwiftUI's small glass (over photo.png the page reads about 10
-/// darker through it; measured from SwiftUI `TabView`, iOS 26.4).
+/// Light-mode extras on [_tabBarOverrides], fitted to SwiftUI's `TabView`
+/// (iOS 26.4) over `photo.png`: less white fill, less saturated and more
+/// frosted than SwiftUI's small glass (the page's stripes fade to faint
+/// strokes).
 const _tabBarLightOverrides = <String, Object?>{
   ..._tabBarOverrides,
-  'fillOpacity': 0.6,
+  'toneLift': 0.0,
+  'fillOpacity': 0.62,
+  'saturation': 1.45,
+  'blurSigma': 7.0,
 };
 
-/// Dark-mode extras on [_tabBarOverrides]: the bar reads #131313 over
-/// black and lets more of the page through than SwiftUI's small glass
-/// (measured from SwiftUI `TabView`, iOS 26.4).
+/// Dark-mode extras on [_tabBarOverrides], fitted to SwiftUI's `TabView`
+/// (iOS 26.4): the bar reads #131313 over black, and over `photo.png` it
+/// lets more of the page through, less saturated and more frosted, than
+/// SwiftUI's small glass.
 const _tabBarDarkOverrides = <String, Object?>{
   ..._tabBarOverrides,
-  'fillColor': '#252525',
-  'fillOpacity': 0.59,
+  'toneLift': 0.0,
+  'fillColor': '#282828',
+  'fillOpacity': 0.55,
+  'saturation': 1.5,
+  'blurSigma': 14.0,
 };
 
 /// The bar's dark glass while a lens is held is more see-through
