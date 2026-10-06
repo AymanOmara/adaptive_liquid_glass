@@ -472,15 +472,21 @@ struct TextFieldReference: View {
 struct ListReference: View {
   @State private var on = true
   var body: some View {
-    List {
-      Section {
-        Label("Wi-Fi", systemImage: "wifi")
-          .badge("Home")
-        NavigationLink(value: 1) { Label("General", systemImage: "gear") }
-        Toggle(isOn: $on) { Label("Airplane Mode", systemImage: "airplane") }
-      } header: { Text("Connections") } footer: { Text("Footer text") }
+    // NavigationStack so the NavigationLink renders enabled (outside one it
+    // greys out); the bar is hidden so the twin needs none.
+    NavigationStack {
+      List {
+        Section {
+          Label("Wi-Fi", systemImage: "wifi")
+            .badge("Home")
+          NavigationLink(value: 1) { Label("General", systemImage: "gear") }
+          Toggle(isOn: $on) { Label("Airplane Mode", systemImage: "airplane") }
+        } header: { Text("Connections") } footer: { Text("Footer text") }
+      }
+      .listStyle(.insetGrouped)
+      .navigationDestination(for: Int.self) { _ in EmptyView() }
+      .toolbar(.hidden, for: .navigationBar)
     }
-    .listStyle(.insetGrouped)
     .environment(\.colorScheme, .light)
     .statusBarHidden(true)
   }
