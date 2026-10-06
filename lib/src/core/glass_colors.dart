@@ -92,4 +92,18 @@ abstract final class GlassColors {
   /// A dialog button's capsule on the glass: black at 12% (measured: the
   /// card's 211 becomes 186).
   static const Color dialogButtonFill = Color(0x1F000000);
+
+  /// The stepper's capsule (measured).
+  static const CupertinoDynamicColor stepperFill =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFFEEEEEF),
+        darkColor: Color(0xFF121213),
+      );
+
+  /// The stepper's divider (measured).
+  static const CupertinoDynamicColor stepperDivider =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFFB9B9BC),
+        darkColor: Color(0xFF535356),
+      );
 }
