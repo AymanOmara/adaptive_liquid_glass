@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../core/glass_render_mode.dart';
+import '../core/theme.dart';
 import '../foreground/glass_backdrop_source.dart';
+import '../platform/glass_platform.dart';
 import '../tab_bar/glass_tab_bar.dart';
+import '../tab_bar/tab_bar_fill_scope.dart';
 import '../toolbar/toolbar_metrics.dart';
 import 'scaffold_metrics.dart';
 
@@ -66,6 +70,25 @@ class GlassScaffold extends StatelessWidget {
   /// [GlassBackdropSource]); costs a small GPU readback every 250 ms.
   final bool sampleBackdrop;
 
+  /// The tab bar draws shader glass wherever shaders run (so its lens can
+  /// refract it); native glass next to it leaves the shader a band it
+  /// cannot sample. The accessory takes the same path, unless the app
+  /// chose one for it.
+  static Widget _sameGlassAsTabBar(
+    BuildContext context,
+    GlassTabBar tabBar,
+    Widget accessory,
+  ) {
+    if (!GlassPlatform.instance.environment.value.shaderSupported) {
+      return accessory;
+    }
+    final theme = LiquidGlassTheme.of(context);
+    return LiquidGlassTheme(
+      data: theme.copyWith(defaultMode: tabBar.mode ?? GlassRenderMode.shader),
+      child: accessory,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
@@ -88,7 +111,17 @@ class GlassScaffold extends StatelessWidget {
     }
     final bottomInset = bars > 0 ? gap + bars : safeBottom;
     Widget content = body;
-    if (sampleBackdrop) content = GlassBackdropSource(child: content);
+    if (sampleBackdrop) {
+      // The page colour is part of what glass floats over: without it the
+      // sampler reads a transparent body as dark, and labels on glass over
+      // a light page turn white.
+      content = GlassBackdropSource(
+        child: ColoredBox(
+          color: backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
+          child: content,
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: backgroundColor,
       extendBody: true,
@@ -125,11 +158,23 @@ class GlassScaffold extends StatelessWidget {
                         padding: const EdgeInsetsDirectional.symmetric(
                           horizontal: ScaffoldMetrics.accessoryInset,
                         ),
-                        child: accessory,
+                        child: tabBar == null
+                            ? accessory
+                            : _sameGlassAsTabBar(context, tabBar, accessory),
                       ),
                     if (accessory != null && bottomBar)
                       const SizedBox(height: ScaffoldMetrics.accessoryGap),
-                    if (tabBar != null) Center(child: tabBar),
+                    if (tabBar != null)
+                      accessory == null
+                          ? Center(child: tabBar)
+                          // As iOS 26: with an accessory the tab bar
+                          // widens to the accessory's width.
+                          : Padding(
+                              padding: const EdgeInsetsDirectional.symmetric(
+                                horizontal: ScaffoldMetrics.accessoryInset,
+                              ),
+                              child: TabBarFillScope(child: tabBar),
+                            ),
                     ?toolbar,
                   ],
                 ),

@@ -5,6 +5,7 @@ import '../core/effective_glass_mode.dart';
 import '../core/glass.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
+import '../core/ios_text.dart';
 import '../liquid_glass.dart';
 import 'search_metrics.dart';
 
@@ -124,12 +125,12 @@ class _GlassSearchFieldState extends State<GlassSearchField> {
                 focusNode: widget.focusNode,
                 autofocus: widget.autofocus,
                 placeholder: placeholder,
-                placeholderStyle: TextStyle(
-                  fontSize: SearchMetrics.fontSize,
+                placeholderStyle: IOSText.style(
+                  SearchMetrics.fontSize,
                   color: secondary,
                 ),
-                style: TextStyle(
-                  fontSize: SearchMetrics.fontSize,
+                style: IOSText.style(
+                  SearchMetrics.fontSize,
                   color: resolve(CupertinoColors.label),
                 ),
                 padding: EdgeInsets.zero,

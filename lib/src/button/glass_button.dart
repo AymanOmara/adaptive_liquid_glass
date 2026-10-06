@@ -6,6 +6,7 @@ import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
+import '../core/glass_system_colors.dart';
 import '../liquid_glass.dart';
 import 'button_metrics.dart';
 import 'glass_button_metrics_scope.dart';
@@ -135,7 +136,7 @@ class GlassButton extends StatelessWidget {
     // Plain colours (not CupertinoDynamicColor) for the glass and label.
     Color resolve(Color c) =>
         Color(CupertinoDynamicColor.resolve(c, context).toARGB32());
-    final red = resolve(GlassColors.systemRed);
+    final red = resolve(GlassSystemColors.red);
     final prominent = style == GlassButtonStyle.glassProminent;
     final accent = role == GlassButtonRole.destructive
         ? red

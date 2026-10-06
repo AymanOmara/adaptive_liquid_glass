@@ -137,4 +137,53 @@ void main() {
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(_bodyPadding(t).bottom, 21 + 62);
   }, variant: android);
+
+  testWidgets('the sampled backdrop includes the page colour', (t) async {
+    shaderEnv();
+    await _pump(
+      t,
+      const GlassScaffold(backgroundColor: Colors.white, body: SizedBox()),
+    );
+    final source = find.byType(GlassBackdropSource);
+    final page = find.descendant(
+      of: source,
+      matching: find.byWidgetPredicate(
+        (w) => w is ColoredBox && w.color == Colors.white,
+      ),
+    );
+    expect(page, findsOneWidget);
+  }, variant: ios);
+
+  testWidgets('with an accessory the tab bar widens to its width', (t) async {
+    shaderEnv();
+    await _pump(
+      t,
+      GlassScaffold(
+        tabBar: _tabBar(),
+        bottomAccessory: const GlassBottomAccessory(child: Text('Playing')),
+        body: const SizedBox(),
+      ),
+    );
+    final bar = t.getRect(find.byType(GlassTabBar));
+    final accessory = t.getRect(find.byType(GlassBottomAccessory));
+    expect(bar.left, moreOrLessEquals(accessory.left));
+    expect(bar.width, moreOrLessEquals(accessory.width));
+    expect(accessory.width, moreOrLessEquals(402 - 2 * 21));
+  }, variant: ios);
+
+  testWidgets('with an accessory the accessory follows the tab bar glass', (
+    t,
+  ) async {
+    shaderEnv();
+    await _pump(
+      t,
+      GlassScaffold(
+        tabBar: _tabBar(),
+        bottomAccessory: const GlassBottomAccessory(child: Text('Playing')),
+        body: const SizedBox(),
+      ),
+    );
+    final theme = LiquidGlassTheme.of(t.element(find.text('Playing')));
+    expect(theme.defaultMode, GlassRenderMode.shader);
+  }, variant: ios);
 }

@@ -1,5 +1,4 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
-import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
 import 'package:adaptive_liquid_glass/src/menu/glass_menu_row.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
@@ -48,9 +47,9 @@ void main() {
     final picks = <String>[];
     await t.pumpWidget(_app(picks));
     expect(find.text('Copy'), findsNothing);
+    final button = t.getRect(find.bySemanticsLabel('More'));
     await t.tap(find.bySemanticsLabel('More'));
     await t.pumpAndSettle();
-    final button = t.getRect(find.bySemanticsLabel('More'));
     final menu = t.getRect(
       find.ancestor(of: find.text('Copy'), matching: find.byType(LiquidGlass)),
     );
@@ -68,9 +67,9 @@ void main() {
   ) async {
     shaderEnv();
     await t.pumpWidget(_app([], at: Alignment.bottomLeft));
+    final button = t.getRect(find.bySemanticsLabel('More'));
     await t.tap(find.bySemanticsLabel('More'));
     await t.pumpAndSettle();
-    final button = t.getRect(find.bySemanticsLabel('More'));
     final menu = t.getRect(
       find.ancestor(of: find.text('Copy'), matching: find.byType(LiquidGlass)),
     );
@@ -96,7 +95,7 @@ void main() {
     await t.tap(find.bySemanticsLabel('More'));
     await t.pumpAndSettle();
     final style = t.widget<Text>(find.text('Delete')).style!;
-    expect(style.color!.toARGB32(), GlassColors.systemRed.color.toARGB32());
+    expect(style.color!.toARGB32(), GlassSystemColors.red.color.toARGB32());
   }, variant: ios);
 
   testWidgets('Material: a Material 3 menu', (t) async {
@@ -134,10 +133,12 @@ void main() {
       of: find.text('Copy'),
       matching: find.byType(GlassGroup),
     );
-    final buttonGroup = find.ancestor(
-      of: find.bySemanticsLabel('More'),
+    // The menu's nearest glass group is its own, not the bar's (the
+    // overlay is the button's descendant, so both are its ancestors).
+    final barGroup = find.ancestor(
+      of: find.byType(GlassMenuButton),
       matching: find.byType(GlassGroup),
     );
-    expect(t.element(menuGroup.first), isNot(t.element(buttonGroup.first)));
+    expect(t.element(menuGroup.first), isNot(t.element(barGroup.first)));
   }, variant: ios);
 }

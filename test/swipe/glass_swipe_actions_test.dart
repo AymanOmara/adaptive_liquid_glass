@@ -58,11 +58,11 @@ Widget _list(
 Finder _rowOf(String name) => find.byKey(ValueKey(name));
 
 /// A compact action's width when [widest] is the side's widest label (the
-/// test font draws each character 13 wide at 13 pt).
+/// test font draws each character 13 wide at 13 pt, plus the tracking).
 double _width(String widest) =>
     SwipeMetrics.compactIconSize +
     SwipeMetrics.compactIconGap +
-    13.0 * widest.length +
+    (13.0 + SwipeMetrics.label.letterSpacing!) * widest.length +
     SwipeMetrics.compactPadding * 2;
 
 /// How far a row moves to open [n] actions of [width].
@@ -89,7 +89,7 @@ void main() {
       const Duration(milliseconds: 400),
     );
     await t.pumpAndSettle();
-    expect(_shift(t, 'A'), moreOrLessEquals(-_trailing));
+    expect(_shift(t, 'A'), moreOrLessEquals(-_trailing, epsilon: 0.01));
     expect(find.text('Delete'), findsOneWidget);
     // The first action is outermost.
     expect(
@@ -156,7 +156,7 @@ void main() {
     await g.up();
     await t.pumpAndSettle();
     expect(log, isEmpty);
-    expect(_shift(t, 'A'), moreOrLessEquals(-_trailing));
+    expect(_shift(t, 'A'), moreOrLessEquals(-_trailing, epsilon: 0.01));
   }, variant: ios);
 
   testWidgets('a swipe right opens the leading actions', (t) async {
@@ -168,7 +168,7 @@ void main() {
       const Duration(milliseconds: 400),
     );
     await t.pumpAndSettle();
-    expect(_shift(t, 'A'), moreOrLessEquals(_leading));
+    expect(_shift(t, 'A'), moreOrLessEquals(_leading, epsilon: 0.01));
     expect(find.text('Pin'), findsOneWidget);
     expect(t.getCenter(find.text('Pin')).dx, lessThan(_leading));
   }, variant: ios);
@@ -182,7 +182,7 @@ void main() {
       const Duration(milliseconds: 400),
     );
     await t.pumpAndSettle();
-    expect(_shift(t, 'A'), moreOrLessEquals(_trailing));
+    expect(_shift(t, 'A'), moreOrLessEquals(_trailing, epsilon: 0.01));
     expect(
       t.getCenter(find.text('Delete')).dx,
       lessThan(t.getCenter(find.text('Flag')).dx),
@@ -214,7 +214,7 @@ void main() {
     );
     await t.pumpAndSettle();
     expect(_shift(t, 'A'), 0);
-    expect(_shift(t, 'B'), moreOrLessEquals(-_trailing));
+    expect(_shift(t, 'B'), moreOrLessEquals(-_trailing, epsilon: 0.01));
   }, variant: ios);
 
   testWidgets('scrolling closes an open row', (t) async {
@@ -286,7 +286,7 @@ void main() {
     final row = t.getRect(find.byType(GlassSwipeActions));
     expect(capsule.height, moreOrLessEquals(54 - 8));
     expect(capsule.top - row.top, moreOrLessEquals(4));
-    expect(capsule.width, moreOrLessEquals(_width('Delete')));
+    expect(capsule.width, moreOrLessEquals(_width('Delete'), epsilon: 0.01));
     expect(800 - capsule.right, moreOrLessEquals(SwipeMetrics.gap));
     // The label is inside the capsule.
     expect(capsule.contains(t.getCenter(find.text('Delete'))), isTrue);

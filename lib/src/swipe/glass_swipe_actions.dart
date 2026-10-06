@@ -20,7 +20,7 @@ import 'swipe_metrics.dart';
 ///     GlassSwipeAction(
 ///       icon: CupertinoIcons.trash,
 ///       label: 'Delete',
-///       color: GlassColors.systemRed,
+///       color: GlassSystemColors.red,
 ///       onPressed: () => delete(item),
 ///     ),
 ///   ],

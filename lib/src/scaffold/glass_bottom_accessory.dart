@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import '../core/glass.dart';
 import '../core/glass_render_mode.dart';
+import '../core/ios_text.dart';
 import '../liquid_glass.dart';
 import 'scaffold_metrics.dart';
 
@@ -53,7 +54,17 @@ class GlassBottomAccessory extends StatelessWidget
       mode: mode,
       onPressed: onPressed,
       padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
-      child: Align(alignment: AlignmentDirectional.centerStart, child: child),
+      // SwiftUI's accessory content is body text: 17 pt.
+      child: DefaultTextStyle.merge(
+        style: IOSText.style(17),
+        child: IconTheme.merge(
+          data: const IconThemeData(size: 20),
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: child,
+          ),
+        ),
+      ),
     ),
   );
 }

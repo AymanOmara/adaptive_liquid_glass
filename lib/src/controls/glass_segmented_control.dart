@@ -7,6 +7,7 @@ import '../core/effective_glass_mode.dart';
 import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
+import '../core/ios_text.dart';
 import 'control_metrics.dart';
 import 'glass_segment.dart';
 import 'glass_thumb.dart';
@@ -247,10 +248,10 @@ class _GlassSegmentedControlState<T> extends State<GlassSegmentedControl<T>>
                 : null,
             child: Center(
               child: DefaultTextStyle(
-                style: TextStyle(
-                  fontSize: ControlMetrics.segmentedFontSize,
+                style: IOSText.style(
+                  ControlMetrics.segmentedFontSize,
                   // As SwiftUI: the selected segment semibold.
-                  fontWeight: i == _selectedIndex
+                  weight: i == _selectedIndex
                       ? FontWeight.w600
                       : FontWeight.w400,
                   color: color,

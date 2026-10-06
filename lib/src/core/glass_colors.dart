@@ -88,33 +88,4 @@ abstract final class GlassColors {
   /// The dimming behind a sheet: black at 20% (measured: a mid-grey page
   /// goes from 128 to 102).
   static const Color sheetBarrier = Color(0x33000000);
-
-  // iOS 26's system palette. Flutter's `CupertinoColors` still has the
-  // iOS 18 values (red #FF3B30, blue #007AFF, orange #FF9500). Light values
-  // measured from SwiftUI on iOS 26.4; dark values from Apple's iOS 26
-  // palette (the measured dark blue agrees).
-
-  /// iOS 26's red: destructive actions, badges.
-  static const CupertinoDynamicColor systemRed =
-      CupertinoDynamicColor.withBrightness(
-        color: Color(0xFFFF383C),
-        darkColor: Color(0xFFFF4245),
-      );
-
-  /// iOS 26's blue: the default accent.
-  static const CupertinoDynamicColor systemBlue = sliderFill;
-
-  /// iOS 26's orange.
-  static const CupertinoDynamicColor systemOrange =
-      CupertinoDynamicColor.withBrightness(
-        color: Color(0xFFFF8D28),
-        darkColor: Color(0xFFFF9230),
-      );
-
-  /// iOS 26's green: a toggle that is on.
-  static const CupertinoDynamicColor systemGreen =
-      CupertinoDynamicColor.withBrightness(
-        color: Color(0xFF34C759),
-        darkColor: Color(0xFF30D158),
-      );
 }

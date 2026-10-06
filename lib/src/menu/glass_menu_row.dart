@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 
-import '../core/glass_colors.dart';
+import '../core/glass_system_colors.dart';
+import '../core/ios_text.dart';
 import 'glass_menu_item.dart';
 import 'menu_metrics.dart';
 
@@ -22,7 +23,7 @@ class GlassMenuRow extends StatelessWidget {
       item.onSelected == null
           ? CupertinoColors.tertiaryLabel
           : item.destructive
-          ? GlassColors.systemRed
+          ? GlassSystemColors.red
           : CupertinoColors.label,
       context,
     );
@@ -58,10 +59,7 @@ class GlassMenuRow extends StatelessWidget {
                     item.label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: MenuMetrics.fontSize,
-                      color: color,
-                    ),
+                    style: IOSText.style(MenuMetrics.fontSize, color: color),
                   ),
                 ),
               ),

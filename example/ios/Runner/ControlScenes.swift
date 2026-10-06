@@ -15,7 +15,8 @@ enum ControlScenes {
       root = AnyView(NavBarReference(scrollY: y))
     case "controls": root = AnyView(ControlsReference())
     case "toolbar": root = AnyView(ToolbarReference())
-    case "accessory": root = AnyView(AccessoryReference())
+    case "accessory": root = AnyView(AccessoryReference(accessory: true))
+    case "tabbar": root = AnyView(AccessoryReference(accessory: false))
     case "sheet": root = AnyView(SheetReference())
     case "menu": root = AnyView(MenuReference())
     case "search": root = AnyView(SearchReference())
@@ -152,22 +153,29 @@ struct ToolbarReference: View {
 /// A three-tab TabView with a bottom accessory. White page.
 @available(iOS 26.0, *)
 struct AccessoryReference: View {
+  /// Without it (`-controls tabbar`), the plain tab bar.
+  let accessory: Bool
   var body: some View {
+    if accessory { tabs.tabViewBottomAccessory { bar } } else { tabs }
+  }
+
+  var tabs: some View {
     TabView {
       Tab("Home", systemImage: "house.fill") { Color.white.ignoresSafeArea() }
       Tab("Music", systemImage: "music.note") { Color.white.ignoresSafeArea() }
       Tab("Settings", systemImage: "gearshape.fill") { Color.white.ignoresSafeArea() }
     }
-    .tabViewBottomAccessory {
-      HStack {
-        Image(systemName: "music.note")
-        Text("Now Playing")
-        Spacer()
-        Image(systemName: "play.fill")
-      }
-      .padding(.horizontal, 16)
-    }
     .environment(\.colorScheme, .light)
+  }
+
+  var bar: some View {
+    HStack {
+      Image(systemName: "music.note")
+      Text("Now Playing")
+      Spacer()
+      Image(systemName: "play.fill")
+    }
+    .padding(.horizontal, 16)
   }
 }
 

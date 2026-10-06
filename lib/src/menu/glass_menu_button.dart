@@ -72,6 +72,9 @@ class _GlassMenuButtonState extends State<GlassMenuButton>
   /// Where the menu hangs from the button.
   Alignment _menuAnchor = Alignment.topRight;
 
+  /// The button's size, kept while the menu stands in for it.
+  Size _buttonSize = Size.zero;
+
   @override
   void dispose() {
     _open.dispose();
@@ -83,6 +86,7 @@ class _GlassMenuButtonState extends State<GlassMenuButton>
 
   void _show() {
     final box = context.findRenderObject()! as RenderBox;
+    _buttonSize = box.size;
     final centre = box.localToGlobal(box.size.center(Offset.zero));
     final screen = MediaQuery.sizeOf(context);
     final below = centre.dy < screen.height * 0.6;
@@ -90,7 +94,7 @@ class _GlassMenuButtonState extends State<GlassMenuButton>
     final x = right ? 1.0 : -1.0;
     // The menu opens over the button, from the button's own corner.
     _menuAnchor = Alignment(x, below ? -1 : 1);
-    _portal.show();
+    setState(_portal.show);
     if (_reduceMotion) {
       _open.value = 1;
     } else {
@@ -104,7 +108,7 @@ class _GlassMenuButtonState extends State<GlassMenuButton>
     if (!_reduceMotion) {
       await _open.animateTo(0, duration: MenuMetrics.close);
     }
-    if (mounted) _portal.hide();
+    if (mounted) setState(_portal.hide);
   }
 
   Future<void> _choose(GlassMenuItem item) async {
@@ -141,12 +145,18 @@ class _GlassMenuButtonState extends State<GlassMenuButton>
     child: OverlayPortal(
       controller: _portal,
       overlayChildBuilder: _menu,
-      child: GlassButton.icon(
-        onPressed: _show,
-        icon: widget.icon,
-        semanticLabel: widget.semanticLabel,
-        mode: widget.mode,
-      ),
+      // The open menu takes the button's place, as SwiftUI's does (and
+      // native glass would otherwise draw over the menu).
+      // The open menu takes the button's place, as SwiftUI's does. The
+      // button leaves the tree (hiding it would not hide native glass).
+      child: _portal.isShowing
+          ? SizedBox.fromSize(size: _buttonSize)
+          : GlassButton.icon(
+              onPressed: _show,
+              icon: widget.icon,
+              semanticLabel: widget.semanticLabel,
+              mode: widget.mode,
+            ),
     ),
   );
 

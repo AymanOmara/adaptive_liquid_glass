@@ -7,6 +7,7 @@ import '../core/effective_glass_mode.dart';
 import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
+import '../core/glass_system_colors.dart';
 import 'control_metrics.dart';
 import 'glass_thumb.dart';
 
@@ -127,7 +128,7 @@ class _GlassToggleState extends State<GlassToggle>
 
   Widget _glass(BuildContext context) {
     final on = CupertinoDynamicColor.resolve(
-      widget.activeColor ?? GlassColors.systemGreen,
+      widget.activeColor ?? GlassSystemColors.green,
       context,
     );
     final off = CupertinoDynamicColor.resolve(GlassColors.toggleOff, context);

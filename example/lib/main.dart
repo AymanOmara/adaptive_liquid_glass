@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import 'demo.dart';
 import 'launch.dart';
+import 'reference_twin.dart';
 import 'scenes/motion_view.dart';
 import 'scenes/scene.dart';
 import 'scenes/scene_view.dart';
@@ -16,6 +17,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LiquidGlass.precache();
   final args = await LaunchArgs.read();
+  if (args.twin != null) {
+    return runApp(ReferenceTwin(scene: args.twin!, mode: args.mode));
+  }
   final constants = args.constants == null
       ? GlassConstants.standard
       : GlassConstants.fromJson(

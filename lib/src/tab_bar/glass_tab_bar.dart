@@ -18,6 +18,7 @@ import '../core/glass.dart';
 import '../core/glass_colors.dart';
 import '../core/glass_environment.dart';
 import '../core/glass_render_mode.dart';
+import '../core/glass_system_colors.dart';
 import '../core/render_mode_resolver.dart';
 import '../core/theme.dart';
 import '../group/glass_group.dart';
@@ -29,6 +30,7 @@ import 'glass_tab_bar_item.dart';
 import 'hole_clipper.dart';
 import 'lens_ends_clipper.dart';
 import 'rim_fade.dart';
+import 'tab_bar_fill_scope.dart';
 import 'tab_bar_metrics.dart';
 import 'tab_lens.dart';
 import 'tab_lens_content.dart';
@@ -89,7 +91,7 @@ class GlassTabBar extends StatefulWidget {
   final ValueChanged<int> onSelected;
 
   /// The selected tab's icon and label, and the tabs under the lens.
-  /// Defaults to `CupertinoTheme.primaryColor` (system blue), or Material
+  /// Defaults to iOS 26's blue, as SwiftUI's `TabView` draws it, or Material
   /// 3's colours on the Material path.
   final Color? selectedColor;
 
@@ -444,7 +446,9 @@ class _GlassTabBarState extends State<GlassTabBar>
               TabBarMetrics.inset * 2 -
               TabBarMetrics.pillExtra) /
           _count;
-      _itemWidth = fit < widget.itemWidth ? fit : widget.itemWidth;
+      _itemWidth = fit < widget.itemWidth || TabBarFillScope.of(context)
+          ? fit
+          : widget.itemWidth;
       return ValueListenableBuilder<GlassEnvironment>(
         valueListenable: GlassPlatform.instance.environment,
         builder: (context, environment, _) {
@@ -513,7 +517,7 @@ class _GlassTabBarState extends State<GlassTabBar>
 
   Widget _glassBar(BuildContext context) {
     final selected = CupertinoDynamicColor.resolve(
-      widget.selectedColor ?? CupertinoTheme.of(context).primaryColor,
+      widget.selectedColor ?? GlassSystemColors.blue,
       context,
     );
     final indicator = CupertinoDynamicColor.resolve(
@@ -864,7 +868,7 @@ class _GlassTabBarState extends State<GlassTabBar>
             decoration: ShapeDecoration(
               shape: const StadiumBorder(),
               color: CupertinoDynamicColor.resolve(
-                GlassColors.systemRed,
+                GlassSystemColors.red,
                 context,
               ),
             ),

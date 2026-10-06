@@ -1,6 +1,5 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/button/button_metrics.dart';
-import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/cupertino.dart';
@@ -152,11 +151,11 @@ void main() {
         ),
       ),
     );
-    expect(styleOf(t, 'Delete').color, GlassColors.systemRed.color);
+    expect(styleOf(t, 'Delete').color, GlassSystemColors.red.color);
     final glasses = t
         .widgetList<LiquidGlass>(find.byType(LiquidGlass))
         .toList();
-    expect(glasses[1].glass!.tintColor, GlassColors.systemRed.color);
+    expect(glasses[1].glass!.tintColor, GlassSystemColors.red.color);
   }, variant: ios);
 
   testWidgets('cancel is semibold', (t) async {

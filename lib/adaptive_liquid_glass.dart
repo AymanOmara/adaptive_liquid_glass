@@ -25,6 +25,7 @@ export 'src/controls/glass_toggle.dart';
 export 'src/core/glass.dart';
 export 'src/core/glass_render_mode.dart' show GlassRenderMode;
 export 'src/core/glass_shape.dart' hide concentricRadius;
+export 'src/core/glass_system_colors.dart';
 export 'src/core/glass_variant.dart';
 export 'src/core/liquid_glass_theme_data.dart';
 export 'src/core/theme.dart';

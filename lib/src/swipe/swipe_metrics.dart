@@ -57,6 +57,8 @@ abstract final class SwipeMetrics {
   static const TextStyle label = TextStyle(
     fontSize: 13,
     fontWeight: FontWeight.w500,
+    // iOS's tracking at 13 pt (see IOSText).
+    letterSpacing: -0.08,
   );
 
   /// The fraction of the row's width past which a swipe runs the
