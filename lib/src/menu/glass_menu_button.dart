@@ -1,19 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show IconButton, MenuAnchor, MenuItemButton;
-import 'package:flutter/physics.dart';
 
 import '../button/glass_button.dart';
 import '../core/effective_glass_mode.dart';
-import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
-import '../core/glass_shape.dart';
-import '../group/glass_group.dart';
-import '../liquid_glass.dart';
+import 'glass_menu_anchor.dart';
 import 'glass_menu_item.dart';
-import 'glass_menu_row.dart';
-import 'menu_metrics.dart';
 
 /// An icon button that opens an iOS 26 pull-down menu: a glass panel that
 /// springs out of the button.
@@ -35,7 +29,7 @@ import 'menu_metrics.dart';
 /// near the bottom of the screen) on the button's nearer side, as SwiftUI's
 /// `Menu` does. Measured from SwiftUI (`MenuMetrics`). Tap outside or choose an
 /// item to close it. On the Material path it is a Material 3 [MenuAnchor].
-class GlassMenuButton extends StatefulWidget {
+class GlassMenuButton extends StatelessWidget {
   /// Creates a menu button.
   const GlassMenuButton({
     super.key,
@@ -58,172 +52,36 @@ class GlassMenuButton extends StatefulWidget {
   final GlassRenderMode? mode;
 
   @override
-  State<GlassMenuButton> createState() => _GlassMenuButtonState();
-}
-
-class _GlassMenuButtonState extends State<GlassMenuButton>
-    with SingleTickerProviderStateMixin {
-  final OverlayPortalController _portal = OverlayPortalController();
-  final LayerLink _link = LayerLink();
-  late final AnimationController _open = AnimationController.unbounded(
-    vsync: this,
-  );
-
-  /// Where the menu hangs from the button.
-  Alignment _menuAnchor = Alignment.topRight;
-
-  /// The button's size, kept while the menu stands in for it.
-  Size _buttonSize = Size.zero;
-
-  @override
-  void dispose() {
-    _open.dispose();
-    super.dispose();
-  }
-
-  bool get _reduceMotion =>
-      MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-
-  void _show() {
-    final box = context.findRenderObject()! as RenderBox;
-    _buttonSize = box.size;
-    final centre = box.localToGlobal(box.size.center(Offset.zero));
-    final screen = MediaQuery.sizeOf(context);
-    final below = centre.dy < screen.height * 0.6;
-    final right = centre.dx > screen.width / 2;
-    final x = right ? 1.0 : -1.0;
-    // The menu opens over the button, from the button's own corner.
-    _menuAnchor = Alignment(x, below ? -1 : 1);
-    setState(_portal.show);
-    if (_reduceMotion) {
-      _open.value = 1;
-    } else {
-      _open.value = 0;
-      _open.animateWith(SpringSimulation(MenuMetrics.open, 0, 1, 0));
-    }
-  }
-
-  Future<void> _hide() async {
-    if (!_portal.isShowing) return;
-    if (!_reduceMotion) {
-      await _open.animateTo(0, duration: MenuMetrics.close);
-    }
-    if (mounted) setState(_portal.hide);
-  }
-
-  Future<void> _choose(GlassMenuItem item) async {
-    await _hide();
-    item.onSelected?.call();
-  }
-
-  @override
   Widget build(BuildContext context) => GlassModeBuilder(
-    mode: widget.mode,
-    builder: (context, mode) =>
-        mode == EffectiveGlassMode.material ? _material() : _glass(),
+    mode: mode,
+    builder: (context, effective) => effective == EffectiveGlassMode.material
+        ? _material()
+        : GlassMenuAnchor(
+            items: items,
+            mode: mode,
+            builder: (context, open) => GlassButton.icon(
+              onPressed: open,
+              icon: icon,
+              semanticLabel: semanticLabel,
+              mode: mode,
+            ),
+          ),
   );
 
   Widget _material() => MenuAnchor(
     menuChildren: [
-      for (final item in widget.items)
+      for (final item in items)
         MenuItemButton(
           onPressed: item.onSelected,
-          trailingIcon: item.icon == null ? null : Icon(item.icon),
+          leadingIcon: item.icon == null ? null : Icon(item.icon),
           child: Text(item.label),
         ),
     ],
     builder: (context, controller, _) => IconButton(
-      icon: Icon(widget.icon),
-      tooltip: widget.semanticLabel,
+      icon: Icon(icon),
+      tooltip: semanticLabel,
       onPressed: () =>
           controller.isOpen ? controller.close() : controller.open(),
     ),
-  );
-
-  Widget _glass() => CompositedTransformTarget(
-    link: _link,
-    child: OverlayPortal(
-      controller: _portal,
-      overlayChildBuilder: _menu,
-      // The open menu takes the button's place, as SwiftUI's does (and
-      // native glass would otherwise draw over the menu).
-      // The open menu takes the button's place, as SwiftUI's does. The
-      // button leaves the tree (hiding it would not hide native glass).
-      child: _portal.isShowing
-          ? SizedBox.fromSize(size: _buttonSize)
-          : GlassButton.icon(
-              onPressed: _show,
-              icon: widget.icon,
-              semanticLabel: widget.semanticLabel,
-              mode: widget.mode,
-            ),
-    ),
-  );
-
-  Widget _menu(BuildContext context) => Stack(
-    children: [
-      // Tapping outside closes the menu without reaching the page.
-      Positioned.fill(
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: _hide,
-          child: const ColoredBox(color: GlassColors.transparent),
-        ),
-      ),
-      // Positioned, so the follower is the menu's size and its anchor is a
-      // corner of the menu.
-      Positioned(
-        left: 0,
-        top: 0,
-        child: CompositedTransformFollower(
-          link: _link,
-          targetAnchor: _menuAnchor,
-          followerAnchor: _menuAnchor,
-          child: AnimatedBuilder(
-            animation: _open,
-            builder: (context, child) => Opacity(
-              opacity: _open.value.clamp(0.0, 1.0),
-              child: Transform.scale(
-                scale: 0.3 + 0.7 * _open.value,
-                alignment: _menuAnchor,
-                child: child,
-              ),
-            ),
-            child: SizedBox(
-              width: MenuMetrics.width,
-              child: Semantics(
-                scopesRoute: true,
-                explicitChildNodes: true,
-                // Its own group: the overlay inherits the button's scopes,
-                // and in a bar's group the menu would merge with the
-                // buttons' capsule.
-                child: GlassGroup(
-                  mode: widget.mode,
-                  child: LiquidGlass(
-                    mode: widget.mode,
-                    shape: const GlassShape.rect(MenuMetrics.cornerRadius),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: MenuMetrics.verticalPadding,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        for (final item in widget.items)
-                          GlassMenuRow(
-                            item: item,
-                            onTap: item.onSelected == null
-                                ? null
-                                : () => _choose(item),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    ],
   );
 }

@@ -30,6 +30,19 @@ abstract final class MenuMetrics {
   /// The label's start from the menu's leading edge.
   static const double labelStart = 66;
 
+  /// In a menu of choices, the checkmark's centre from the leading edge.
+  static const double checkCentre = 29;
+
+  /// In a menu of choices, the label's start from the leading edge.
+  static const double checkLabelStart = 44.67;
+
+  /// The checkmark's size.
+  static const double checkSize = 15;
+
+  /// A picker's menu opens with its top this far above the picker's
+  /// centre.
+  static const double pickerOffset = 19;
+
   /// The space between the label and the menu's trailing edge.
   static const double trailingPadding = 16;
 

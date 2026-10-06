@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
-/// One action in a [GlassMenuButton]'s menu.
+/// One item of a glass menu ([GlassMenuButton], `GlassPicker`,
+/// `GlassContextMenu`).
 @immutable
 class GlassMenuItem {
   /// Creates an item.
@@ -9,6 +10,7 @@ class GlassMenuItem {
     required this.onSelected,
     this.icon,
     this.destructive = false,
+    this.checked,
   });
 
   /// The item's label.
@@ -18,9 +20,14 @@ class GlassMenuItem {
   /// the item.
   final VoidCallback? onSelected;
 
-  /// An icon at the row's end, as on iOS.
+  /// An icon at the row's start, as iOS 26 draws it.
   final IconData? icon;
 
   /// Whether the action destroys data: drawn in red.
   final bool destructive;
+
+  /// For a choice: whether it is the current one (a checkmark). Null for
+  /// a plain action. A menu with any choice gives every row the
+  /// checkmark column, as SwiftUI's picker menu does.
+  final bool? checked;
 }

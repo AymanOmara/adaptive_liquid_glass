@@ -9,13 +9,22 @@ import 'menu_metrics.dart';
 /// 26 lays them out.
 class GlassMenuRow extends StatelessWidget {
   /// Creates a row for [item]; [onTap] chooses it.
-  const GlassMenuRow({super.key, required this.item, required this.onTap});
+  const GlassMenuRow({
+    super.key,
+    required this.item,
+    required this.onTap,
+    this.choices = false,
+  });
 
   /// The item shown.
   final GlassMenuItem item;
 
   /// Called when the row is tapped; null when the item is disabled.
   final VoidCallback? onTap;
+
+  /// Whether the menu is a menu of choices: a checkmark column, the label
+  /// after it.
+  final bool choices;
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +39,7 @@ class GlassMenuRow extends StatelessWidget {
     return Semantics(
       button: true,
       enabled: item.onSelected != null,
+      selected: choices ? (item.checked ?? false) : null,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
@@ -37,7 +47,18 @@ class GlassMenuRow extends StatelessWidget {
           height: MenuMetrics.rowHeight,
           child: Stack(
             children: [
-              if (item.icon != null)
+              if (choices && (item.checked ?? false))
+                PositionedDirectional(
+                  start: MenuMetrics.checkCentre - MenuMetrics.checkSize / 2,
+                  top: 0,
+                  bottom: 0,
+                  child: Icon(
+                    CupertinoIcons.checkmark_alt,
+                    size: MenuMetrics.checkSize,
+                    color: color,
+                  ),
+                ),
+              if (item.icon != null && !choices)
                 PositionedDirectional(
                   start: MenuMetrics.iconCentre - MenuMetrics.iconSize / 2,
                   top: 0,
@@ -49,7 +70,9 @@ class GlassMenuRow extends StatelessWidget {
                   ),
                 ),
               PositionedDirectional(
-                start: MenuMetrics.labelStart,
+                start: choices
+                    ? MenuMetrics.checkLabelStart
+                    : MenuMetrics.labelStart,
                 end: MenuMetrics.trailingPadding,
                 top: 0,
                 bottom: 0,

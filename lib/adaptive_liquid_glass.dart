@@ -43,6 +43,8 @@ export 'src/navigation/glass_back_button.dart' show GlassBackButton;
 export 'src/navigation/glass_navigation_bar.dart';
 export 'src/navigation/sliver_glass_navigation_bar.dart'
     show SliverGlassNavigationBar;
+export 'src/picker/glass_picker.dart';
+export 'src/picker/glass_picker_item.dart';
 export 'src/scaffold/glass_bottom_accessory.dart';
 export 'src/scaffold/glass_scaffold.dart';
 export 'src/search/glass_search_field.dart';
