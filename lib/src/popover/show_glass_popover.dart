@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 
+import '../core/cupertino_l10n.dart';
 import '../core/glass_render_mode.dart';
 import 'glass_popover_route.dart';
 
@@ -39,7 +40,7 @@ Future<T?> showGlassPopover<T>({
       anchor: anchor,
       builder: builder,
       mode: mode,
-      barrierLabel: CupertinoLocalizations.of(context).modalBarrierDismissLabel,
+      barrierLabel: cupertinoL10n(context).modalBarrierDismissLabel,
     ),
   );
 }

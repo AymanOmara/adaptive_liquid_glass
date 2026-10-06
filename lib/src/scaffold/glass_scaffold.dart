@@ -165,8 +165,16 @@ class GlassScaffold extends StatelessWidget {
                     if (accessory != null && bottomBar)
                       const SizedBox(height: ScaffoldMetrics.accessoryGap),
                     if (tabBar != null)
-                      accessory == null
+                      accessory == null && tabBar.onSearch == null
                           ? Center(child: tabBar)
+                          : tabBar.onSearch != null
+                          // The search tab spreads the bar across.
+                          ? Padding(
+                              padding: const EdgeInsetsDirectional.symmetric(
+                                horizontal: ScaffoldMetrics.accessoryInset,
+                              ),
+                              child: tabBar,
+                            )
                           // As iOS 26: with an accessory the tab bar
                           // widens to the accessory's width.
                           : Padding(

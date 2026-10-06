@@ -13,6 +13,7 @@ import 'package:flutter/physics.dart';
 import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter/services.dart' show HapticFeedback;
 
+import '../core/cupertino_l10n.dart';
 import '../core/effective_glass_mode.dart';
 import '../core/glass.dart';
 import '../core/glass_colors.dart';
@@ -26,6 +27,7 @@ import '../liquid_glass.dart';
 import '../platform/glass_platform.dart';
 import 'bar_glow.dart';
 import 'capsule_clipper.dart';
+import 'glass_search_tab_button.dart';
 import 'glass_tab_bar_item.dart';
 import 'hole_clipper.dart';
 import 'lens_ends_clipper.dart';
@@ -78,6 +80,8 @@ class GlassTabBar extends StatefulWidget {
     this.itemWidth = 86.15,
     this.height = 62,
     this.enableFeedback = true,
+    this.onSearch,
+    this.searchLabel,
   }) : assert(items.length >= 2, 'A tab bar needs at least two tabs.');
 
   /// The tabs, in reading order.
@@ -117,6 +121,15 @@ class GlassTabBar extends StatefulWidget {
   /// Whether dragging the lens onto another tab plays a selection haptic,
   /// as iOS does. The Material path follows Material's own feedback.
   final bool enableFeedback;
+
+  /// Adds iOS 26's search tab (SwiftUI's `Tab(role: .search)`): a glass
+  /// circle beside the bar, which then fills the rest of the width.
+  /// Called when it is tapped; null shows none.
+  final VoidCallback? onSearch;
+
+  /// What assistive tech reads for the search tab. Defaults to the
+  /// localized "Search".
+  final String? searchLabel;
 
   @override
   State<GlassTabBar> createState() => _GlassTabBarState();
@@ -439,7 +452,36 @@ class _GlassTabBarState extends State<GlassTabBar>
   }
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
+  Widget build(BuildContext context) {
+    final onSearch = widget.onSearch;
+    if (onSearch == null) return _sizedBar();
+    // The search tab: the bar fills what the circle leaves.
+    return LayoutBuilder(
+      builder: (context, constraints) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width:
+                constraints.maxWidth -
+                GlassSearchTabButton.size -
+                GlassSearchTabButton.gap,
+            child: TabBarFillScope(child: _sizedBar()),
+          ),
+          const SizedBox(width: GlassSearchTabButton.gap),
+          GlassSearchTabButton(
+            onPressed: onSearch,
+            semanticLabel:
+                widget.searchLabel ??
+                cupertinoL10n(context).searchTextFieldPlaceholderLabel,
+            glass: widget.glass,
+            mode: _barMode,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sizedBar() => LayoutBuilder(
     builder: (context, constraints) {
       final fit =
           (constraints.maxWidth -

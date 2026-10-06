@@ -2,7 +2,9 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
+import 'package:adaptive_liquid_glass/src/tab_bar/glass_search_tab_button.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/lens_ends_clipper.dart';
+import 'package:adaptive_liquid_glass/src/tab_bar/tab_bar_fill_scope.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Badge, NavigationBar;
 import 'package:flutter/services.dart';
@@ -558,5 +560,35 @@ void main() {
     await t.pumpWidget(plainHost(_Harness(_picks(), enableFeedback: false)));
     await dragAcross(t);
     expect(haptics, isEmpty);
+  }, variant: ios);
+
+  testWidgets('a search tab: the bar fills beside a 62 circle', (t) async {
+    shaderEnv();
+    var searched = 0;
+    await t.pumpWidget(
+      plainHost(
+        SizedBox(
+          width: 360,
+          child: GlassTabBar(
+            items: _items,
+            selectedIndex: 0,
+            onSelected: (_) {},
+            onSearch: () => searched++,
+          ),
+        ),
+      ),
+    );
+    final circle = t.getRect(find.byType(GlassSearchTabButton));
+    expect(circle.size, const Size(62, 62));
+    final bar = t.getRect(
+      find.descendant(
+        of: find.byType(GlassTabBar),
+        matching: find.byType(TabBarFillScope),
+      ),
+    );
+    expect(circle.left - bar.right, moreOrLessEquals(10));
+    expect(circle.right - bar.left, moreOrLessEquals(360));
+    await t.tap(find.byType(GlassSearchTabButton));
+    expect(searched, 1);
   }, variant: ios);
 }

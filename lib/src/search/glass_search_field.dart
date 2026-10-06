@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show SearchBar;
 
+import '../core/cupertino_l10n.dart';
 import '../core/effective_glass_mode.dart';
 import '../core/glass.dart';
 import '../core/glass_mode_builder.dart';
@@ -82,7 +83,7 @@ class _GlassSearchFieldState extends State<GlassSearchField> {
   Widget build(BuildContext context) {
     final placeholder =
         widget.placeholder ??
-        CupertinoLocalizations.of(context).searchTextFieldPlaceholderLabel;
+        cupertinoL10n(context).searchTextFieldPlaceholderLabel;
     return GlassModeBuilder(
       mode: widget.mode,
       builder: (context, mode) => mode == EffectiveGlassMode.material
@@ -145,9 +146,7 @@ class _GlassSearchFieldState extends State<GlassSearchField> {
                   ? const SizedBox.shrink()
                   : Semantics(
                       button: true,
-                      label: CupertinoLocalizations.of(
-                        context,
-                      ).clearButtonLabel,
+                      label: cupertinoL10n(context).clearButtonLabel,
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: _clear,

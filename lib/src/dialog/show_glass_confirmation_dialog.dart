@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart' show CupertinoLocalizations;
 import 'package:flutter/material.dart';
 
 import '../button/glass_button_role.dart';
+import '../core/cupertino_l10n.dart';
 import '../core/effective_glass_mode.dart';
 import '../core/glass_render_mode.dart';
 import '../core/render_mode_resolver.dart';
@@ -65,9 +65,7 @@ Future<GlassDialogAction?> showGlassConfirmationDialog({
         ],
         confirmation: true,
         mode: mode,
-        barrierLabel: CupertinoLocalizations.of(
-          context,
-        ).modalBarrierDismissLabel,
+        barrierLabel: cupertinoL10n(context).modalBarrierDismissLabel,
       ),
     );
   }
