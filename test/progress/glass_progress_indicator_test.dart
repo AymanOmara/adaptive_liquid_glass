@@ -1,6 +1,5 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
-import 'package:adaptive_liquid_glass/src/progress/glass_progress_indicator.dart';
 import 'package:adaptive_liquid_glass/src/progress/progress_metrics.dart';
 import 'package:adaptive_liquid_glass/src/progress/progress_ring_painter.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';

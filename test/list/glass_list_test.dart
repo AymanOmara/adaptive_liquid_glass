@@ -1,7 +1,5 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
-import 'package:adaptive_liquid_glass/src/list/glass_list_section.dart';
-import 'package:adaptive_liquid_glass/src/list/glass_list_tile.dart';
 import 'package:adaptive_liquid_glass/src/list/list_metrics.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
