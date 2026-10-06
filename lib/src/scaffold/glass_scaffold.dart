@@ -5,8 +5,8 @@ import '../tab_bar/glass_tab_bar.dart';
 import 'scaffold_metrics.dart';
 
 /// An iOS 26 screen in one widget: content running under a
-/// [navigationBar] at the top and a floating [tabBar] (with an optional
-/// [bottomAccessory]) at the bottom.
+/// [navigationBar] at the top and a floating [tabBar] or [toolbar] (with an
+/// optional [bottomAccessory]) at the bottom.
 ///
 /// ```dart
 /// GlassScaffold(
@@ -33,10 +33,14 @@ class GlassScaffold extends StatelessWidget {
     required this.body,
     this.navigationBar,
     this.tabBar,
+    this.toolbar,
     this.bottomAccessory,
     this.backgroundColor,
     this.sampleBackdrop = true,
-  });
+  }) : assert(
+         tabBar == null || toolbar == null,
+         'A screen has a tab bar or a toolbar at the bottom, not both.',
+       );
 
   /// The screen's content, drawn behind the bars.
   final Widget body;
@@ -46,6 +50,10 @@ class GlassScaffold extends StatelessWidget {
 
   /// The floating tab bar at the bottom.
   final GlassTabBar? tabBar;
+
+  /// The floating bottom toolbar, usually a `GlassToolbar`, in place of a
+  /// [tabBar].
+  final PreferredSizeWidget? toolbar;
 
   /// A bar floating just above [tabBar], usually a [GlassBottomAccessory].
   final PreferredSizeWidget? bottomAccessory;
@@ -62,15 +70,18 @@ class GlassScaffold extends StatelessWidget {
     final media = MediaQuery.of(context);
     final safeBottom = media.padding.bottom;
     final tabBar = this.tabBar;
+    final toolbar = this.toolbar;
     final accessory = bottomAccessory;
     final gap = safeBottom > 0
         ? ScaffoldMetrics.tabBarBottom
         : ScaffoldMetrics.tabBarBottomFlat;
     var bars = 0.0;
+    final bottomBar = tabBar != null || toolbar != null;
     if (tabBar != null) bars += tabBar.height;
+    if (toolbar != null) bars += toolbar.preferredSize.height;
     if (accessory != null) {
       bars += accessory.preferredSize.height;
-      if (tabBar != null) bars += ScaffoldMetrics.accessoryGap;
+      if (bottomBar) bars += ScaffoldMetrics.accessoryGap;
     }
     final bottomInset = bars > 0 ? gap + bars : safeBottom;
     Widget content = body;
@@ -113,9 +124,10 @@ class GlassScaffold extends StatelessWidget {
                         ),
                         child: accessory,
                       ),
-                    if (accessory != null && tabBar != null)
+                    if (accessory != null && bottomBar)
                       const SizedBox(height: ScaffoldMetrics.accessoryGap),
                     if (tabBar != null) Center(child: tabBar),
+                    ?toolbar,
                   ],
                 ),
               ),
