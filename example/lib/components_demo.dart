@@ -48,6 +48,7 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
   double _count = 3;
   DateTime _date = DateTime(2026, 10, 6);
   final _rows = ['Copied Image', 'Meeting notes', 'Shopping list'];
+  final _tags = {'Travel': true, 'Food': false, 'Music': false};
 
   void _snack(String message) => ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
@@ -373,6 +374,21 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                     chevron: true,
                     onTap: () => _snack('General'),
                   ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final tag in _tags.keys)
+                    GlassChip(
+                      label: tag,
+                      icon: CupertinoIcons.tag,
+                      selected: _tags[tag]!,
+                      onSelected: (v) => setState(() => _tags[tag] = v),
+                      onDeleted: () => setState(() => _tags.remove(tag)),
+                    ),
                 ],
               ),
               const SizedBox(height: 24),
