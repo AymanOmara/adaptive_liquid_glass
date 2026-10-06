@@ -44,6 +44,7 @@ export 'src/menu/glass_menu_controller.dart' show GlassMenuController;
 export 'src/menu/glass_menu_item.dart';
 export 'src/navigation/glass_back_button.dart' show GlassBackButton;
 export 'src/navigation/glass_navigation_bar.dart';
+export 'src/navigation/glass_scroll_edge_style.dart';
 export 'src/navigation/sliver_glass_navigation_bar.dart'
     show SliverGlassNavigationBar;
 export 'src/picker/glass_picker.dart';

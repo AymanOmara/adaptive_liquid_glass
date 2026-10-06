@@ -115,6 +115,7 @@ class LargeTitleDelegate extends SliverPersistentHeaderDelegate {
               child: GlassScrollEdge(
                 visible: shrinkOffset > 0 || overlapsContent,
                 blurred: shrinkOffset > NavBarMetrics.inlineThreshold,
+                style: bar.scrollEdgeStyle,
                 height: minExtent + 16,
               ),
             ),

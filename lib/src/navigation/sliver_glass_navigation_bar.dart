@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' show SliverAppBar;
 import '../core/effective_glass_mode.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
+import 'glass_scroll_edge_style.dart';
 import 'large_title_delegate.dart';
 import 'nav_bar_metrics.dart';
 
@@ -30,6 +31,7 @@ class SliverGlassNavigationBar extends StatelessWidget {
     this.automaticallyImplyLeading = true,
     this.actions = const [],
     this.mode,
+    this.scrollEdgeStyle = GlassScrollEdgeStyle.uniform,
   });
 
   /// The large title below the bar.
@@ -49,6 +51,10 @@ class SliverGlassNavigationBar extends StatelessWidget {
 
   /// Rendering mode; see [GlassRenderMode].
   final GlassRenderMode? mode;
+
+  /// How content scrolled under the bar is blurred; see
+  /// [GlassScrollEdgeStyle].
+  final GlassScrollEdgeStyle scrollEdgeStyle;
 
   @override
   Widget build(BuildContext context) => GlassModeBuilder(

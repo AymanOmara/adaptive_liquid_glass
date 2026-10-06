@@ -4,6 +4,9 @@ import 'package:flutter/cupertino.dart';
 
 import '../core/effective_glass_mode.dart';
 import '../core/glass_mode_builder.dart';
+import 'glass_scroll_edge_style.dart';
+import 'nav_bar_metrics.dart';
+import 'progressive_blur.dart';
 
 /// iOS 26's scroll edge effect: content under the bar is blurred and the
 /// page background fades out below the top edge, shown while content is
@@ -15,6 +18,7 @@ class GlassScrollEdge extends StatelessWidget {
     required this.visible,
     required this.height,
     this.blurred = true,
+    this.style = GlassScrollEdgeStyle.uniform,
   });
 
   /// Whether content is under the bar.
@@ -33,6 +37,9 @@ class GlassScrollEdge extends StatelessWidget {
   /// content under the bar flickers between blurred, sharp and dimmed.
   final bool blurred;
 
+  /// How content under the bar is blurred.
+  final GlassScrollEdgeStyle style;
+
   @override
   Widget build(BuildContext context) => GlassModeBuilder(
     // The page's glass follows the theme's default.
@@ -45,6 +52,22 @@ class GlassScrollEdge extends StatelessWidget {
       CupertinoTheme.of(context).scaffoldBackgroundColor,
       context,
     );
+    // Blur under the bar itself; the fade below hides its edge.
+    final uniform = Align(
+      alignment: Alignment.topCenter,
+      child: ClipRect(
+        child: SizedBox(
+          height: height * NavBarMetrics.edgeBlurExtent,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(
+              sigmaX: NavBarMetrics.edgeBlurSigma,
+              sigmaY: NavBarMetrics.edgeBlurSigma,
+            ),
+            child: const SizedBox.expand(),
+          ),
+        ),
+      ),
+    );
     return IgnorePointer(
       child: AnimatedOpacity(
         opacity: visible ? 1 : 0,
@@ -54,20 +77,16 @@ class GlassScrollEdge extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Blur under the bar itself; the fade below hides its edge.
               if (blur)
-                Align(
-                  alignment: Alignment.topCenter,
-                  child: ClipRect(
-                    child: SizedBox(
-                      height: height * 0.8,
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                        child: const SizedBox.expand(),
-                      ),
-                    ),
-                  ),
-                ),
+                style == GlassScrollEdgeStyle.progressive
+                    // Graduated over the whole edge: the fade below adds
+                    // to it rather than hiding a hard lower edge.
+                    ? ProgressiveBlur(
+                        maxSigma: NavBarMetrics.edgeProgressiveSigma,
+                        falloff: NavBarMetrics.edgeProgressiveFalloff,
+                        fallback: uniform,
+                      )
+                    : uniform,
               DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
