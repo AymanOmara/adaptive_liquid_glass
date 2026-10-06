@@ -2,7 +2,9 @@
 #include <flutter/runtime_effect.glsl>
 precision highp float;
 
-// Adapted from liquid_glass_widgets (MIT, Sebastian Degenaar).
+// Adapted from liquid_glass_widgets (MIT): Copyright 2026, Rebar Ahmad;
+// Copyright 2026, Sebastian Degenaar for pixel-innovations.com.
+// See THIRD_PARTY_NOTICES.
 //
 // One axis of a separable gaussian whose sigma follows a gradient: strongest
 // at the region's top edge, easing to sharp at its bottom. Run twice
