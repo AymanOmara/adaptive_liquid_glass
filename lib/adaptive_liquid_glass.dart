@@ -18,6 +18,7 @@ export 'src/button/glass_button_shape.dart';
 export 'src/button/glass_button_style.dart';
 export 'src/button/glass_control_size.dart';
 export 'src/button/glass_control_size_scope.dart';
+export 'src/controls/glass_slider.dart';
 export 'src/controls/glass_toggle.dart';
 export 'src/core/glass.dart';
 export 'src/core/glass_render_mode.dart' show GlassRenderMode;
