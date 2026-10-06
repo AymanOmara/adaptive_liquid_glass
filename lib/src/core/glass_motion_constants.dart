@@ -16,6 +16,8 @@ class GlassMotionConstants {
     required this.releaseDamping,
     required this.morphResponse,
     required this.morphDamping,
+    this.dragStretch = 0.08,
+    this.dragStretchDistance = 60,
   });
 
   /// Reads keys present in [j]; missing keys come from [base].
@@ -41,6 +43,12 @@ class GlassMotionConstants {
     releaseDamping: GlassJson.number(j, 'releaseDamping', base.releaseDamping),
     morphResponse: GlassJson.number(j, 'morphResponse', base.morphResponse),
     morphDamping: GlassJson.number(j, 'morphDamping', base.morphDamping),
+    dragStretch: GlassJson.number(j, 'dragStretch', base.dragStretch),
+    dragStretchDistance: GlassJson.number(
+      j,
+      'dragStretchDistance',
+      base.dragStretchDistance,
+    ),
   );
 
   /// Area (pt²) a pressed shape gains at full press: its uniform scale is
@@ -75,6 +83,17 @@ class GlassMotionConstants {
   /// SwiftUI damping fraction for morphs.
   final double morphDamping;
 
+  /// Largest extra scale along an axis when the finger is dragged past the
+  /// pressed shape's edge on that axis: the shape rubber-bands toward the
+  /// finger, its opposite edge anchored. Estimated by eye from iOS 26
+  /// buttons, not measured.
+  final double dragStretch;
+
+  /// Drag distance (pt) past the edge at which the stretch reaches
+  /// `1 − 1/e` (63 %) of [dragStretch]; further drags add less and less.
+  /// Estimated, not measured.
+  final double dragStretchDistance;
+
   /// JSON form.
   Map<String, double> toJson() => {
     'pressGrowthArea': pressGrowthArea,
@@ -87,6 +106,8 @@ class GlassMotionConstants {
     'releaseDamping': releaseDamping,
     'morphResponse': morphResponse,
     'morphDamping': morphDamping,
+    'dragStretch': dragStretch,
+    'dragStretchDistance': dragStretchDistance,
   };
 
   @override

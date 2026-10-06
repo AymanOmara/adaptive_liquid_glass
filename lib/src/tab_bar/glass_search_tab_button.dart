@@ -36,18 +36,20 @@ class GlassSearchTabButton extends StatelessWidget {
   static const double gap = 10;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    label: semanticLabel,
-    excludeSemantics: true,
-    child: SizedBox.square(
-      dimension: size,
-      child: LiquidGlass(
-        glass: glass,
-        mode: mode,
-        shape: const GlassShape.circle(),
-        onPressed: onPressed,
-        child: const Center(child: Icon(CupertinoIcons.search, size: 26)),
+  Widget build(BuildContext context) => MergeSemantics(
+    // One node: the label merges into the glass's button node, which
+    // carries the tap action.
+    child: Semantics(
+      label: semanticLabel,
+      child: SizedBox.square(
+        dimension: size,
+        child: LiquidGlass(
+          glass: glass,
+          mode: mode,
+          shape: const GlassShape.circle(),
+          onPressed: onPressed,
+          child: const Center(child: Icon(CupertinoIcons.search, size: 26)),
+        ),
       ),
     ),
   );

@@ -38,6 +38,7 @@ class GlassPicker<T> extends StatelessWidget {
     required this.onChanged,
     this.color,
     this.mode,
+    this.semanticLabel,
   });
 
   /// The choices, top to bottom.
@@ -54,6 +55,10 @@ class GlassPicker<T> extends StatelessWidget {
 
   /// The rendering path; see [GlassRenderMode].
   final GlassRenderMode? mode;
+
+  /// What assistive tech reads for the picker, with the current choice as
+  /// its value (say, "Period"). Without it the current choice is the label.
+  final String? semanticLabel;
 
   /// The picker's label size (measured: 17 pt).
   static const double fontSize = 17;
@@ -72,13 +77,16 @@ class GlassPicker<T> extends StatelessWidget {
   Widget build(BuildContext context) => GlassModeBuilder(
     mode: mode,
     builder: (context, effective) => effective == EffectiveGlassMode.material
-        ? DropdownButton<T>(
-            value: selected,
-            onChanged: onChanged == null ? null : (v) => onChanged!(v as T),
-            items: [
-              for (final i in items)
-                DropdownMenuItem(value: i.value, child: Text(i.label)),
-            ],
+        ? Semantics(
+            label: semanticLabel,
+            child: DropdownButton<T>(
+              value: selected,
+              onChanged: onChanged == null ? null : (v) => onChanged!(v as T),
+              items: [
+                for (final i in items)
+                  DropdownMenuItem(value: i.value, child: Text(i.label)),
+              ],
+            ),
           )
         : _glass(context),
   );
@@ -100,11 +108,18 @@ class GlassPicker<T> extends StatelessWidget {
             onSelected: enabled ? () => onChanged!(i.value) : null,
           ),
       ],
+      // One node: the visible choice is its label, or its value under an
+      // explicit label; never both.
       builder: (context, open) => Semantics(
+        container: true,
         button: true,
         enabled: enabled,
-        value: _label,
+        label: semanticLabel ?? _label,
+        value: semanticLabel == null ? null : _label,
+        onTap: enabled ? open : null,
+        excludeSemantics: true,
         child: GestureDetector(
+          excludeFromSemantics: true,
           behavior: HitTestBehavior.opaque,
           onTap: enabled ? open : null,
           child: Padding(

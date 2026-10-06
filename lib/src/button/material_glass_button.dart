@@ -71,21 +71,24 @@ class MaterialGlassButton extends StatelessWidget {
                   ? scheme.onPrimary
                   : scheme.onSecondaryContainer);
 
-    Widget withLoading(Widget content) => !b.loading
-        ? content
-        : Stack(
-            alignment: Alignment.center,
-            children: [
-              Opacity(opacity: 0, alwaysIncludeSemantics: true, child: content),
-              SizedBox.square(
-                dimension: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: foreground,
-                ),
-              ),
-            ],
-          );
+    // An explicit label replaces the visible one rather than doubling it.
+    Widget withLoading(Widget visible) {
+      final content = ExcludeSemantics(
+        excluding: b.semanticLabel != null,
+        child: visible,
+      );
+      if (!b.loading) return content;
+      return Stack(
+        alignment: Alignment.center,
+        children: [
+          Opacity(opacity: 0, alwaysIncludeSemantics: true, child: content),
+          SizedBox.square(
+            dimension: 16,
+            child: CircularProgressIndicator(strokeWidth: 2, color: foreground),
+          ),
+        ],
+      );
+    }
 
     final Widget result;
     if (b.icon != null && b.label == null) {

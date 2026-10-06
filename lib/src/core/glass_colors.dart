@@ -1,4 +1,5 @@
-import 'package:flutter/cupertino.dart' show Color, CupertinoDynamicColor;
+import 'package:flutter/cupertino.dart'
+    show Color, CupertinoColors, CupertinoDynamicColor;
 
 /// The package's fixed colours. Fitted glass colours live in
 /// `GlassConstants`; system colours that adapt to the theme come from
@@ -116,4 +117,10 @@ abstract final class GlassColors {
         color: Color(0x1F000000),
         darkColor: Color(0x29FFFFFF),
       );
+
+  // Focus ring
+
+  /// The keyboard focus ring around focused glass controls: the system
+  /// accent (iOS's default blue).
+  static const CupertinoDynamicColor focusRing = CupertinoColors.activeBlue;
 }

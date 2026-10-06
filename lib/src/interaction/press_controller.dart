@@ -90,16 +90,32 @@ class GlassPressController extends ChangeNotifier {
     final dx = ((touch.dx - centre.dx) / (_size.width / 2)).clamp(-1.0, 1.0);
     final dy = ((touch.dy - centre.dy) / (_size.height / 2)).clamp(-1.0, 1.0);
     final s = 1 + (pressScaleFor(motion, _size) - 1) * a;
+    // Dragged past an edge: extra elongation toward the finger, anchored at
+    // the opposite edge (translate by half the extra growth). Zero while
+    // the finger is inside, so in-shape presses are unchanged.
+    final ex = _dragStretch(touch.dx - centre.dx, _size.width) * a;
+    final ey = _dragStretch(touch.dy - centre.dy, _size.height) * a;
     return GlassPressGeometry(
-      scaleX: s + motion.pressStretch * a * dx.abs(),
-      scaleY: s + motion.pressStretch * a * dy.abs(),
+      scaleX: s + motion.pressStretch * a * dx.abs() + ex.abs(),
+      scaleY: s + motion.pressStretch * a * dy.abs() + ey.abs(),
       translation: Offset(
-        dx * motion.pressStretch * a * _size.width / 4,
-        dy * motion.pressStretch * a * _size.height / 4,
+        dx * motion.pressStretch * a * _size.width / 4 + ex * _size.width / 2,
+        dy * motion.pressStretch * a * _size.height / 4 + ey * _size.height / 2,
       ),
       glow: glow,
       touch: touch,
     );
+  }
+
+  /// Signed extra scale for a touch [offset] from the centre along an axis
+  /// of [extent]: zero inside, rising to [GlassMotionConstants.dragStretch]
+  /// with diminishing returns past the edge.
+  double _dragStretch(double offset, double extent) {
+    final past = offset.abs() - extent / 2;
+    if (past <= 0 || motion.dragStretchDistance <= 0) return 0;
+    final e =
+        motion.dragStretch * (1 - math.exp(-past / motion.dragStretchDistance));
+    return offset.sign * e;
   }
 
   /// The same deformation as a transform for the member's content.

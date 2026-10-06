@@ -260,7 +260,11 @@ class _GlassSegmentedControlState<T> extends State<GlassSegmentedControl<T>>
                 overflow: TextOverflow.ellipsis,
                 child: IconTheme.merge(
                   data: IconThemeData(color: color, size: 18),
-                  child: widget.segments[i].label,
+                  // A semantic label replaces the visible one.
+                  child: ExcludeSemantics(
+                    excluding: widget.segments[i].semanticLabel != null,
+                    child: widget.segments[i].label,
+                  ),
                 ),
               ),
             ),

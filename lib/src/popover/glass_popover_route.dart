@@ -19,6 +19,7 @@ class GlassPopoverRoute<T> extends PopupRoute<T> {
     this.overlap = PopoverMetrics.overlap,
     this.mode,
     this.barrierLabel,
+    this.semanticLabel,
   });
 
   /// How far below the anchor's top the bubble starts.
@@ -35,6 +36,9 @@ class GlassPopoverRoute<T> extends PopupRoute<T> {
 
   @override
   final String? barrierLabel;
+
+  /// What assistive tech reads for the popover; it names the route.
+  final String? semanticLabel;
 
   @override
   bool get barrierDismissible => true;
@@ -59,17 +63,24 @@ class GlassPopoverRoute<T> extends PopupRoute<T> {
         padding: MediaQuery.paddingOf(context),
         overlap: overlap,
       ),
-      child: GlassGroup(
-        mode: mode,
-        child: LiquidGlass(
+      // Its own route scope, so screen readers start inside it.
+      child: Semantics(
+        scopesRoute: true,
+        explicitChildNodes: true,
+        namesRoute: semanticLabel != null ? true : null,
+        label: semanticLabel,
+        child: GlassGroup(
           mode: mode,
-          shape: const GlassShape.rect(PopoverMetrics.cornerRadius),
-          // SwiftUI's popover text is the plain label colour.
-          adaptiveForeground: false,
-          padding: const EdgeInsets.symmetric(
-            vertical: PopoverMetrics.verticalInset,
+          child: LiquidGlass(
+            mode: mode,
+            shape: const GlassShape.rect(PopoverMetrics.cornerRadius),
+            // SwiftUI's popover text is the plain label colour.
+            adaptiveForeground: false,
+            padding: const EdgeInsets.symmetric(
+              vertical: PopoverMetrics.verticalInset,
+            ),
+            child: Builder(builder: builder),
           ),
-          child: Builder(builder: builder),
         ),
       ),
     ),

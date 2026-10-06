@@ -32,6 +32,7 @@ class GlassSearchField extends StatefulWidget {
     this.autofocus = false,
     this.glass,
     this.mode,
+    this.semanticLabel,
   });
 
   /// The text; one is made when null.
@@ -57,6 +58,10 @@ class GlassSearchField extends StatefulWidget {
 
   /// The rendering path; see [GlassRenderMode].
   final GlassRenderMode? mode;
+
+  /// What assistive tech reads for the field, before the placeholder.
+  /// Without it the placeholder is the label.
+  final String? semanticLabel;
 
   @override
   State<GlassSearchField> createState() => _GlassSearchFieldState();
@@ -87,18 +92,27 @@ class _GlassSearchFieldState extends State<GlassSearchField> {
     return GlassModeBuilder(
       mode: widget.mode,
       builder: (context, mode) => mode == EffectiveGlassMode.material
-          ? SearchBar(
-              controller: _controller,
-              focusNode: widget.focusNode,
-              hintText: placeholder,
-              autoFocus: widget.autofocus,
-              onChanged: widget.onChanged,
-              onSubmitted: widget.onSubmitted,
-              leading: const Icon(CupertinoIcons.search),
+          ? _labelled(
+              SearchBar(
+                controller: _controller,
+                focusNode: widget.focusNode,
+                hintText: placeholder,
+                autoFocus: widget.autofocus,
+                onChanged: widget.onChanged,
+                onSubmitted: widget.onSubmitted,
+                leading: const Icon(CupertinoIcons.search),
+              ),
             )
           : _glass(context, placeholder),
     );
   }
+
+  /// [field] with [GlassSearchField.semanticLabel] merged into its node.
+  Widget _labelled(Widget field) => widget.semanticLabel == null
+      ? field
+      : MergeSemantics(
+          child: Semantics(label: widget.semanticLabel, child: field),
+        );
 
   Widget _glass(BuildContext context, String placeholder) {
     Color resolve(Color c) => CupertinoDynamicColor.resolve(c, context);
@@ -121,23 +135,25 @@ class _GlassSearchFieldState extends State<GlassSearchField> {
             ),
             const SizedBox(width: SearchMetrics.iconGap),
             Expanded(
-              child: CupertinoTextField.borderless(
-                controller: _controller,
-                focusNode: widget.focusNode,
-                autofocus: widget.autofocus,
-                placeholder: placeholder,
-                placeholderStyle: IOSText.style(
-                  SearchMetrics.fontSize,
-                  color: secondary,
+              child: _labelled(
+                CupertinoTextField.borderless(
+                  controller: _controller,
+                  focusNode: widget.focusNode,
+                  autofocus: widget.autofocus,
+                  placeholder: placeholder,
+                  placeholderStyle: IOSText.style(
+                    SearchMetrics.fontSize,
+                    color: secondary,
+                  ),
+                  style: IOSText.style(
+                    SearchMetrics.fontSize,
+                    color: resolve(CupertinoColors.label),
+                  ),
+                  padding: EdgeInsets.zero,
+                  textInputAction: TextInputAction.search,
+                  onChanged: widget.onChanged,
+                  onSubmitted: widget.onSubmitted,
                 ),
-                style: IOSText.style(
-                  SearchMetrics.fontSize,
-                  color: resolve(CupertinoColors.label),
-                ),
-                padding: EdgeInsets.zero,
-                textInputAction: TextInputAction.search,
-                onChanged: widget.onChanged,
-                onSubmitted: widget.onSubmitted,
               ),
             ),
             ListenableBuilder(
@@ -145,6 +161,7 @@ class _GlassSearchFieldState extends State<GlassSearchField> {
               builder: (context, _) => _controller.text.isEmpty
                   ? const SizedBox.shrink()
                   : Semantics(
+                      container: true,
                       button: true,
                       label: cupertinoL10n(context).clearButtonLabel,
                       child: GestureDetector(

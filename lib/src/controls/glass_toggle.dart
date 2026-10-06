@@ -8,6 +8,7 @@ import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_system_colors.dart';
+import '../interaction/glass_focus_ring.dart';
 import 'control_metrics.dart';
 import 'glass_thumb.dart';
 
@@ -35,7 +36,8 @@ class GlassToggle extends StatefulWidget {
   final bool value;
 
   /// Called with the new value; the toggle shows [value] until the parent
-  /// rebuilds it. Null disables the toggle.
+  /// rebuilds it. If the parent keeps [value] unchanged, the thumb springs
+  /// back to it. Null disables the toggle.
   final ValueChanged<bool>? onChanged;
 
   /// The track while on. Defaults to system green, or Material 3's colour
@@ -62,6 +64,9 @@ class _GlassToggleState extends State<GlassToggle>
     vsync: this,
   );
 
+  /// A drag is in progress; its updates own `_position`.
+  bool _dragging = false;
+
   bool get _enabled => widget.onChanged != null;
 
   bool get _reduceMotion =>
@@ -86,6 +91,7 @@ class _GlassToggleState extends State<GlassToggle>
   void didUpdateWidget(GlassToggle old) {
     super.didUpdateWidget(old);
     if (old.value != widget.value) {
+      _dragging = false; // The external value wins over any drag.
       _spring(_position, ControlMetrics.slide, widget.value ? 1 : 0);
     }
   }
@@ -107,11 +113,38 @@ class _GlassToggleState extends State<GlassToggle>
       HapticFeedback.lightImpact();
       widget.onChanged?.call(value);
     }
+    // If the parent rejects the change, spring back to the authoritative
+    // value once this frame has had a chance to rebuild.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.value != value) _reconcile();
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
+  /// Springs the thumb back to [GlassToggle.value].
+  void _reconcile() =>
+      _spring(_position, ControlMetrics.slide, widget.value ? 1 : 0);
+
   void _drag(DragUpdateDetails d) {
+    if (!_dragging) return;
     final dx = _rtl ? -d.delta.dx : d.delta.dx;
     _position.value = (_position.value + dx / _travel).clamp(0.0, 1.0);
+  }
+
+  /// Ends a drag; an abandoned one just reconciles.
+  void _dragEnd() {
+    if (!_dragging) {
+      _reconcile();
+      return;
+    }
+    _dragging = false;
+    _commit(_position.value > 0.5);
+  }
+
+  /// A cancelled drag changes nothing.
+  void _dragCancel() {
+    _dragging = false;
+    _reconcile();
   }
 
   @override
@@ -143,53 +176,56 @@ class _GlassToggleState extends State<GlassToggle>
             onInvoke: (_) => _commit(!widget.value),
           ),
         },
-        // The thumb turns to glass on touch, before the gesture is known.
-        child: Listener(
-          onPointerDown: _enabled ? (_) => _down() : null,
-          onPointerUp: _enabled ? (_) => _up() : null,
-          onPointerCancel: _enabled ? (_) => _up() : null,
-          child: GestureDetector(
-            excludeFromSemantics: true,
-            onTap: _enabled ? () => _commit(!widget.value) : null,
-            onHorizontalDragUpdate: _enabled ? _drag : null,
-            onHorizontalDragEnd: _enabled
-                ? (_) => _commit(_position.value > 0.5)
-                : null,
-            child: Opacity(
-              opacity: _enabled ? 1 : 0.5,
-              child: SizedBox(
-                width: ControlMetrics.toggleWidth,
-                height: ControlMetrics.toggleHeight,
-                child: AnimatedBuilder(
-                  animation: Listenable.merge([_position, _press]),
-                  builder: (context, _) {
-                    final p = _position.value.clamp(0.0, 1.0);
-                    final x = ControlMetrics.thumbInset + _travel * p;
-                    return Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Positioned.fill(
-                          child: DecoratedBox(
-                            decoration: ShapeDecoration(
-                              shape: const StadiumBorder(),
-                              color: Color.lerp(off, on, p),
+        // Keyboard focus rings the track.
+        child: GlassFocusRing(
+          // The thumb turns to glass on touch, before the gesture is known.
+          child: Listener(
+            onPointerDown: _enabled ? (_) => _down() : null,
+            onPointerUp: _enabled ? (_) => _up() : null,
+            onPointerCancel: _enabled ? (_) => _up() : null,
+            child: GestureDetector(
+              excludeFromSemantics: true,
+              onTap: _enabled ? () => _commit(!widget.value) : null,
+              onHorizontalDragStart: _enabled ? (_) => _dragging = true : null,
+              onHorizontalDragUpdate: _enabled ? _drag : null,
+              onHorizontalDragEnd: _enabled ? (_) => _dragEnd() : null,
+              onHorizontalDragCancel: _enabled ? _dragCancel : null,
+              child: Opacity(
+                opacity: _enabled ? 1 : 0.5,
+                child: SizedBox(
+                  width: ControlMetrics.toggleWidth,
+                  height: ControlMetrics.toggleHeight,
+                  child: AnimatedBuilder(
+                    animation: Listenable.merge([_position, _press]),
+                    builder: (context, _) {
+                      final p = _position.value.clamp(0.0, 1.0);
+                      final x = ControlMetrics.thumbInset + _travel * p;
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Positioned.fill(
+                            child: DecoratedBox(
+                              decoration: ShapeDecoration(
+                                shape: const StadiumBorder(),
+                                color: Color.lerp(off, on, p),
+                              ),
                             ),
                           ),
-                        ),
-                        PositionedDirectional(
-                          start: x,
-                          top: ControlMetrics.thumbInset,
-                          bottom: ControlMetrics.thumbInset,
-                          width: ControlMetrics.toggleThumbWidth,
-                          child: GlassThumb(
-                            pressed: _press.value,
-                            color: GlassColors.thumb,
-                            mode: widget.mode,
+                          PositionedDirectional(
+                            start: x,
+                            top: ControlMetrics.thumbInset,
+                            bottom: ControlMetrics.thumbInset,
+                            width: ControlMetrics.toggleThumbWidth,
+                            child: GlassThumb(
+                              pressed: _press.value,
+                              color: GlassColors.thumb,
+                              mode: widget.mode,
+                            ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
             ),

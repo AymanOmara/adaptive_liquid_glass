@@ -65,6 +65,7 @@ class MaterialGlass extends StatelessWidget {
           )
         : child;
 
+    final interactive = pressable || onPressed != null;
     Widget surface = Material(
       color: color,
       elevation: glass.variant == GlassVariant.regular ? 1 : 0,
@@ -72,8 +73,16 @@ class MaterialGlass extends StatelessWidget {
       surfaceTintColor: Colors.transparent,
       shape: sizeIndependentBorder(shape),
       clipBehavior: Clip.antiAlias,
-      child: _pressable(content),
+      child: _inkWell(content),
     );
+    // Outside the clip, so the keyboard focus ring shows.
+    if (interactive) {
+      surface = GlassPressable(
+        onPressed: onPressed,
+        shape: shape,
+        child: surface,
+      );
+    }
 
     if (fadeIn) {
       surface = TweenAnimationBuilder<double>(
@@ -88,10 +97,11 @@ class MaterialGlass extends StatelessWidget {
 
   /// Interactive glass ripples (InkWell); with [onPressed] the surface is a
   /// button. The button contract — semantics, focus, cursor and Enter/Space
-  /// activation — is `GlassPressable`, the same widget the shader and
-  /// native paths use; the InkWell only adds the Material ripple (its own
-  /// focus and semantics stay off so the contract stays single).
-  Widget _pressable(Widget content) {
+  /// activation — is `GlassPressable` around the surface, the same widget
+  /// the shader and native paths use; the InkWell only adds the Material
+  /// ripple (its own focus and semantics stay off so the contract stays
+  /// single).
+  Widget _inkWell(Widget content) {
     final onPressed = this.onPressed;
     final ripple = glass.isInteractive;
     if (!pressable && onPressed == null) {
@@ -99,18 +109,15 @@ class MaterialGlass extends StatelessWidget {
           ? InkWell(onTap: () {}, excludeFromSemantics: true, child: content)
           : content;
     }
-    return GlassPressable(
-      onPressed: onPressed,
-      child: InkWell(
-        onTap: onPressed ?? (ripple ? () {} : null),
-        excludeFromSemantics: true,
-        canRequestFocus: false,
-        splashFactory: ripple ? null : NoSplash.splashFactory,
-        overlayColor: ripple
-            ? null
-            : const WidgetStatePropertyAll(Colors.transparent),
-        child: content,
-      ),
+    return InkWell(
+      onTap: onPressed ?? (ripple ? () {} : null),
+      excludeFromSemantics: true,
+      canRequestFocus: false,
+      splashFactory: ripple ? null : NoSplash.splashFactory,
+      overlayColor: ripple
+          ? null
+          : const WidgetStatePropertyAll(Colors.transparent),
+      child: content,
     );
   }
 }

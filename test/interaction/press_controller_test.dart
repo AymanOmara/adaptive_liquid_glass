@@ -185,4 +185,95 @@ void main() {
     expect(GlassMotionConstants.fromJson(other.toJson(), m), other);
     expect(GlassConstants.fromJson(GlassConstants.standard.toJson()).motion, m);
   });
+
+  group('drag past the edge', () {
+    Future<GlassPressController> pressed(
+      WidgetTester t, {
+      bool reduceMotion = false,
+    }) async {
+      final c = GlassPressController(
+        vsync: const TestVSync(),
+        motion: motion.motion,
+      )..reduceMotion = reduceMotion;
+      addTearDown(c.dispose);
+      c.down(const Offset(50, 20), const Size(100, 40));
+      await t.pump();
+      await t.pump(const Duration(seconds: 2));
+      return c;
+    }
+
+    testWidgets('inside the shape: no extra stretch', (t) async {
+      final c = await pressed(t);
+      c.move(const Offset(100, 20)); // on the right edge
+      final edge = c.geometry();
+      final s = pressScaleFor(motion.motion, const Size(100, 40));
+      expect(edge.scaleX, closeTo(s + motion.motion.pressStretch, 1e-9));
+      expect(
+        edge.translation.dx,
+        closeTo(motion.motion.pressStretch * 100 / 4, 1e-9),
+      );
+    });
+
+    testWidgets('rubber-bands toward the finger, bounded and decaying', (
+      t,
+    ) async {
+      final c = await pressed(t);
+      c.move(const Offset(100, 20));
+      final edge = c.geometry();
+      c.move(const Offset(130, 20)); // 30 pt past the right edge
+      final near = c.geometry();
+      c.move(const Offset(160, 20));
+      final mid = c.geometry();
+      c.move(const Offset(5000, 20));
+      final far = c.geometry();
+      expect(near.scaleX, greaterThan(edge.scaleX));
+      expect(near.translation.dx, greaterThan(edge.translation.dx));
+      expect(near.scaleY, closeTo(edge.scaleY, 1e-9)); // x only
+      // Diminishing returns: the second 30 pt add less than the first.
+      expect(mid.scaleX - near.scaleX, lessThan(near.scaleX - edge.scaleX));
+      // Bounded by dragStretch.
+      expect(
+        far.scaleX - edge.scaleX,
+        closeTo(motion.motion.dragStretch, 1e-6),
+      );
+      // Anchored: the left edge stays where it was at the edge press.
+      double left(GlassPressGeometry g) =>
+          50 + g.translation.dx - 50 * g.scaleX;
+      expect(left(far), closeTo(left(edge), 1e-6));
+      // Leftward and upward drags stretch the other way.
+      c.move(const Offset(-40, -40));
+      final up = c.geometry();
+      expect(up.translation.dx, lessThan(0));
+      expect(up.translation.dy, lessThan(0));
+      expect(up.scaleY, greaterThan(edge.scaleY));
+    });
+
+    testWidgets('springs back on release', (t) async {
+      final c = await pressed(t);
+      c.move(const Offset(200, 20));
+      c.up();
+      await t.pump();
+      await t.pump(const Duration(seconds: 3));
+      expect(c.geometry(), same(GlassPressGeometry.identity));
+    });
+
+    testWidgets('reduce motion: no deformation when dragged out', (t) async {
+      final c = await pressed(t, reduceMotion: true);
+      c.move(const Offset(300, 200));
+      final g = c.geometry();
+      expect(g.scaleX, 1);
+      expect(g.scaleY, 1);
+      expect(g.translation, Offset.zero);
+    });
+
+    test('drag stretch constants round-trip through JSON', () {
+      final m = GlassMotionConstants.fromJson({
+        'dragStretch': 0.1,
+        'dragStretchDistance': 40.0,
+      }, motion.motion);
+      expect(m.dragStretch, 0.1);
+      expect(m.dragStretchDistance, 40);
+      expect(GlassMotionConstants.fromJson(m.toJson(), motion.motion), m);
+    });
+  });
 }

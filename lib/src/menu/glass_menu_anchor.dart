@@ -2,6 +2,7 @@ import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter/widgets.dart';
 
+import '../core/cupertino_l10n.dart';
 import '../core/glass_colors.dart';
 import '../core/glass_render_mode.dart';
 import 'glass_menu_controller.dart';
@@ -202,12 +203,20 @@ class _GlassMenuAnchorState extends State<GlassMenuAnchor>
 
   Widget _menu(BuildContext context) => Stack(
     children: [
-      // Tapping outside closes the menu without reaching the page.
+      // Tapping outside closes the menu without reaching the page. For
+      // assistive tech it is a labelled dismiss target, as a modal
+      // barrier is.
       Positioned.fill(
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
+        child: Semantics(
+          label: cupertinoL10n(context).modalBarrierDismissLabel,
           onTap: _hide,
-          child: const ColoredBox(color: GlassColors.transparent),
+          onDismiss: _hide,
+          child: GestureDetector(
+            excludeFromSemantics: true,
+            behavior: HitTestBehavior.opaque,
+            onTap: _hide,
+            child: const ColoredBox(color: GlassColors.transparent),
+          ),
         ),
       ),
       // Positioned, so the follower is the menu's size.
