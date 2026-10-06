@@ -101,7 +101,8 @@ class _ListState extends State<_List> {
   Widget build(BuildContext context) => ColoredBox(
     color: CupertinoColors.systemGroupedBackground.resolveFrom(context),
     child: ListView(
-      padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top + 20),
+      // Puts the header where SwiftUI's List does (measured).
+      padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top + 10.67),
       children: [
         GlassListSection(
           header: const Text('Connections'),

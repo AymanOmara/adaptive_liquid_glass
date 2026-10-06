@@ -4,6 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import '../core/effective_glass_mode.dart';
+import '../core/glass_brightness.dart';
 import '../core/glass_constants.dart';
 import '../core/glass_render_mode.dart';
 import '../core/render_mode_resolver.dart';
@@ -245,7 +246,9 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
       requested: widget.mode ?? theme.defaultMode,
       environment: environment,
     );
-    final brightness = MediaQuery.maybePlatformBrightnessOf(context);
+    // The theme's appearance, which Cupertino colours resolve against, so
+    // the glass and the content on it always agree (see glassBrightnessOf).
+    final brightness = glassBrightnessOf(context);
     final opaque = mode == EffectiveGlassMode.opaque
         ? opaqueGlassColor(brightness!)
         : null;

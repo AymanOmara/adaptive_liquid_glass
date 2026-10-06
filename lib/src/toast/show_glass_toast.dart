@@ -93,6 +93,7 @@ GlassToastHandle showGlassToast(
     glass: glass,
     mode: mode,
     material: effective == EffectiveGlassMode.material,
+    capturedThemes: InheritedTheme.capture(from: context, to: overlay.context),
   );
   ToastQueue.of(overlay).add(request);
   return request;

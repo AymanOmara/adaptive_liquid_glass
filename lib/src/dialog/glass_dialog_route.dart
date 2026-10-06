@@ -6,8 +6,9 @@ import '../core/ios_page_text.dart';
 import 'glass_dialog_action.dart';
 import 'glass_dialog_card.dart';
 
-/// The modal route of [showGlassAlert] and [showGlassConfirmationDialog]:
-/// the card in the middle of the screen, scaling in.
+/// The modal route of [showGlassAlert] and [showGlassConfirmationDialog]
+/// (and of `showGlassActionSheet`): the card in the middle of the
+/// screen, scaling in.
 class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
   /// Creates the route.
   GlassDialogRoute({
@@ -16,6 +17,7 @@ class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
     this.title,
     this.message,
     this.mode,
+    this.capturedThemes,
     this.barrierLabel,
   });
 
@@ -33,6 +35,10 @@ class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
 
   /// The rendering path.
   final GlassRenderMode? mode;
+
+  /// Themes captured from the presenting context, wrapped around the page
+  /// so it draws in the caller's appearance; null uses the navigator's.
+  final CapturedThemes? capturedThemes;
 
   @override
   final String? barrierLabel;
@@ -56,22 +62,24 @@ class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
     BuildContext context,
     Animation<double> animation,
     Animation<double> secondaryAnimation,
-  ) => iosPageText(
-    context,
-    // Centred in the safe area, as SwiftUI's (y 451 on iPhone 17 Pro).
-    SafeArea(
-      child: Center(
-        child: GlassDialogCard(
-          title: title,
-          message: message,
-          actions: actions,
-          confirmation: confirmation,
-          mode: mode,
-          onAction: (a) => Navigator.of(context).pop(a),
+  ) {
+    final page = iosPageText(
+      // Centred in the safe area, as SwiftUI's (y 451 on iPhone 17 Pro).
+      SafeArea(
+        child: Center(
+          child: GlassDialogCard(
+            title: title,
+            message: message,
+            actions: actions,
+            confirmation: confirmation,
+            mode: mode,
+            onAction: (a) => Navigator.of(context).pop(a),
+          ),
         ),
       ),
-    ),
-  );
+    );
+    return capturedThemes?.wrap(page) ?? page;
+  }
 
   @override
   Widget buildTransitions(
@@ -80,6 +88,10 @@ class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
+    // Reduce Motion: fade without scaling.
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
+      return FadeTransition(opacity: animation, child: child);
+    }
     final curve = CurvedAnimation(parent: animation, curve: Curves.easeOut);
     return FadeTransition(
       opacity: curve,

@@ -58,7 +58,8 @@ Future<T?> showGlassSheet<T>({
       useSafeArea: true,
     );
   }
-  return Navigator.of(context).push(
+  final navigator = Navigator.of(context);
+  return navigator.push(
     GlassSheetRoute<T>(
       builder: builder,
       detents: detents,
@@ -66,6 +67,10 @@ Future<T?> showGlassSheet<T>({
       showGrabber: showGrabber,
       isDismissible: isDismissible,
       mode: mode,
+      capturedThemes: InheritedTheme.capture(
+        from: context,
+        to: navigator.context,
+      ),
       barrierLabel: cupertinoL10n(context).modalBarrierDismissLabel,
     ),
   );

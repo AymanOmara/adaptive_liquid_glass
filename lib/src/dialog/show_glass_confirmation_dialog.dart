@@ -56,7 +56,8 @@ Future<GlassDialogAction?> showGlassConfirmationDialog({
       ),
     );
   } else {
-    chosen = await Navigator.of(context).push(
+    final navigator = Navigator.of(context);
+    chosen = await navigator.push(
       GlassDialogRoute(
         title: title,
         actions: [
@@ -65,6 +66,10 @@ Future<GlassDialogAction?> showGlassConfirmationDialog({
         ],
         confirmation: true,
         mode: mode,
+        capturedThemes: InheritedTheme.capture(
+          from: context,
+          to: navigator.context,
+        ),
         barrierLabel: cupertinoL10n(context).modalBarrierDismissLabel,
       ),
     );

@@ -2,6 +2,14 @@
 /// `.alert` and `.confirmationDialog` on iPhone 17 Pro / iOS 26.4
 /// (`tool/reference/controls.json`, "components" → "alert" and "dialog";
 /// tested against it). The presentation spring is not measured yet.
+///
+/// The confirmation dialog with a message (`showGlassActionSheet`) was
+/// measured from SwiftUI iOS 26.4
+/// `.confirmationDialog(titleVisibility: .visible)` with a message on
+/// iPhone 17 Pro: a 240 x 256 pt card centred at y 450, its text laid
+/// out as the alert's (title ink 27.7 pt below the card top, text
+/// 30 pt from the card's sides, message lines 22 pt apart), 48 pt
+/// buttons 8 pt apart, 16 pt below the last; no dim behind it.
 abstract final class DialogMetrics {
   /// The alert's width.
   static const double alertWidth = 320;
@@ -27,6 +35,15 @@ abstract final class DialogMetrics {
 
   /// The space between the text and the buttons.
   static const double buttonsGap = 16;
+
+  /// The space between a message and the buttons: [buttonsGap] plus the
+  /// line spacing UIKit leaves below a message's last line (measured: the
+  /// first button starts 35 pt below the last line's cap top).
+  static const double messageButtonsGap = 20;
+
+  /// The blur radius of the card's shadow (sigma ~60 pt, measured on
+  /// white around the action sheet's card).
+  static const double shadowBlur = 100;
 
   /// A button's height.
   static const double buttonHeight = 48;

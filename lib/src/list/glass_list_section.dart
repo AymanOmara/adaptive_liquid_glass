@@ -3,6 +3,7 @@ import 'package:flutter/material.dart' show Card, Divider, Theme;
 
 import '../core/effective_glass_mode.dart';
 import '../core/glass.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
@@ -88,8 +89,19 @@ class GlassListSection extends StatelessWidget {
     ],
   ];
 
+  /// The separator's start inset: the title's start under a row with a
+  /// leading, else the row's inset.
+  double _separatorStart(Widget row) =>
+      row is GlassListTile && row.leading != null
+      ? ListMetrics.textStart
+      : ListMetrics.horizontalPadding;
+
   Widget _glass(BuildContext context) {
-    final content = ClipRRect(
+    final separatorColor = CupertinoDynamicColor.resolve(
+      GlassColors.listSeparator,
+      context,
+    );
+    final content = ClipRSuperellipse(
       borderRadius: BorderRadius.circular(ListMetrics.cornerRadius),
       child: ListSectionScope(
         mode: mode,
@@ -97,35 +109,38 @@ class GlassListSection extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: _separated(
-            (above) => Padding(
-              padding: EdgeInsetsDirectional.only(
-                start: above is GlassListTile && above.leading != null
-                    ? ListMetrics.textStart
-                    : ListMetrics.horizontalPadding,
-              ),
-              child: SizedBox(
-                height: ListMetrics.separatorThickness,
-                child: ColoredBox(
-                  color: CupertinoDynamicColor.resolve(
-                    CupertinoColors.separator,
-                    context,
-                  ),
-                ),
-              ),
-            ),
-          ),
+          // The hairline overlays each row's bottom edge, adding no
+          // height, and skips the last row.
+          children: [
+            for (var i = 0; i < children.length; i++)
+              i < children.length - 1
+                  ? Stack(
+                      children: [
+                        children[i],
+                        PositionedDirectional(
+                          start: _separatorStart(children[i]),
+                          end: ListMetrics.separatorEnd,
+                          bottom: 0,
+                          height: ListMetrics.separatorThickness,
+                          child: ColoredBox(color: separatorColor),
+                        ),
+                      ],
+                    )
+                  : children[i],
+          ],
         ),
       ),
     );
     final platter = glass == null
         ? DecoratedBox(
-            decoration: BoxDecoration(
+            decoration: ShapeDecoration(
               color: CupertinoDynamicColor.resolve(
                 CupertinoColors.secondarySystemGroupedBackground,
                 context,
               ),
-              borderRadius: BorderRadius.circular(ListMetrics.cornerRadius),
+              shape: RoundedSuperellipseBorder(
+                borderRadius: BorderRadius.circular(ListMetrics.cornerRadius),
+              ),
             ),
             child: content,
           )
@@ -153,7 +168,11 @@ class GlassListSection extends StatelessWidget {
                 bottom: ListMetrics.headerGap,
               ),
               child: DefaultTextStyle.merge(
-                style: IOSText.style(ListMetrics.headerSize, color: caption),
+                style: IOSText.style(
+                  ListMetrics.headerSize,
+                  weight: ListMetrics.headerWeight,
+                  color: caption,
+                ),
                 child: header!,
               ),
             ),
@@ -163,7 +182,7 @@ class GlassListSection extends StatelessWidget {
               padding: const EdgeInsetsDirectional.only(
                 start: ListMetrics.horizontalPadding,
                 end: ListMetrics.horizontalPadding,
-                top: ListMetrics.headerGap,
+                top: ListMetrics.footerGap,
               ),
               child: DefaultTextStyle.merge(
                 style: IOSText.style(ListMetrics.footerSize, color: caption),

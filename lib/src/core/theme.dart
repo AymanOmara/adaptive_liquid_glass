@@ -13,7 +13,10 @@ import 'liquid_glass_theme_data.dart';
 ///   child: MaterialApp(home: const HomePage()),
 /// )
 /// ```
-class LiquidGlassTheme extends InheritedWidget {
+///
+/// An [InheritedTheme], so themes captured around the presenting context
+/// (as overlays do) carry it into the pushed page.
+class LiquidGlassTheme extends InheritedTheme {
   /// Creates a theme scope.
   const LiquidGlassTheme({super.key, required this.data, required super.child});
 
@@ -24,6 +27,10 @@ class LiquidGlassTheme extends InheritedWidget {
   static LiquidGlassThemeData of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<LiquidGlassTheme>()?.data ??
       const LiquidGlassThemeData();
+
+  @override
+  Widget wrap(BuildContext context, Widget child) =>
+      LiquidGlassTheme(data: data, child: child);
 
   @override
   bool updateShouldNotify(LiquidGlassTheme oldWidget) => data != oldWidget.data;
