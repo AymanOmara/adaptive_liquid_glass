@@ -30,20 +30,9 @@ documented there), then score with
 
 ### Install
 
-The package is not on pub.dev yet (coming soon). Depend on it from git:
-
 ```yaml
 dependencies:
-  adaptive_liquid_glass:
-    git:
-      url: https://github.com/aymanomara/adaptive_liquid_glass
-```
-
-After the pub.dev release, this will be:
-
-```yaml
-dependencies:
-  adaptive_liquid_glass: ^0.1.0  # after release
+  adaptive_liquid_glass: ^0.1.0-dev.5
 ```
 
 ```dart
@@ -497,6 +486,141 @@ underneath:
 All of these are in `example/lib/components_demo.dart`
 (`flutter run -t lib/components_demo.dart`).
 
+### Alert and confirmation dialog
+
+```dart
+showGlassAlert(
+  context: context,
+  title: 'Delete photo?',
+  message: 'This photo will be deleted from all your devices.',
+  actions: [
+    const GlassDialogAction(label: 'Cancel', role: GlassButtonRole.cancel),
+    GlassDialogAction(
+      label: 'Delete',
+      role: GlassButtonRole.destructive,
+      onPressed: delete,
+    ),
+  ],
+);
+
+showGlassConfirmationDialog(
+  context: context,
+  title: 'Photo',
+  actions: [
+    GlassDialogAction(label: 'Share', onPressed: share),
+    const GlassDialogAction(label: 'Cancel', role: GlassButtonRole.cancel),
+  ],
+);
+```
+
+The alert is a 320-pt glass card centred in the safe area, with its
+buttons side by side. The confirmation dialog is a 240-pt card with its
+buttons stacked. As in iOS 26, its cancel action isn't drawn: a tap
+outside takes it. On Android they are `AlertDialog`s.
+
+### Sheet detents
+
+```dart
+showGlassSheet<void>(
+  context: context,
+  detents: const [GlassSheetDetent.medium, GlassSheetDetent.large],
+  builder: (_) => details,
+);
+```
+
+The sheet works like SwiftUI's `presentationDetents`:
+- It follows a drag between its detents, and a drag or fling below the
+  lowest one dismisses it.
+- At a partial detent it is floating glass.
+- At `large` it runs edge to edge, opaque, with the screen's own corners.
+
+### Popover, picker, stepper, date picker
+
+```dart
+GlassPopoverAnchor(
+  popoverBuilder: (_) => const Padding(
+    padding: EdgeInsets.all(16),
+    child: Text('Liquid Glass popover'),
+  ),
+  builder: (context, open) => GlassButton.icon(
+    onPressed: open, icon: CupertinoIcons.info, semanticLabel: 'Info'),
+)
+
+GlassPicker<Period>(
+  items: const [
+    GlassPickerItem(value: Period.day, label: 'Day'),
+    GlassPickerItem(value: Period.week, label: 'Week'),
+  ],
+  selected: period,
+  onChanged: (p) => setState(() => period = p),
+)
+
+GlassStepper(value: count, max: 10, onChanged: (v) => setState(() => count = v))
+
+GlassDatePicker(
+  value: date,
+  firstDate: DateTime(2020),
+  lastDate: DateTime(2030),
+  onChanged: (d) => setState(() => date = d),
+)
+```
+
+- **Popover:** the glass bubble opens over its button, and the button steps
+  aside while it's open, as in SwiftUI. `showGlassPopover` anchors one to
+  any widget.
+- **Picker:** SwiftUI's menu style. It opens the glass menu with the
+  current choice checked.
+- **Date picker:** the compact style. It opens a glass calendar.
+
+### Context menu and search tab
+
+```dart
+GlassContextMenu(
+  items: [GlassMenuItem(label: 'Copy', icon: CupertinoIcons.doc_on_doc,
+      onSelected: copy)],
+  child: photo,
+)
+
+GlassTabBar(items: tabs, selectedIndex: tab, onSelected: pick,
+    onSearch: openSearch)
+```
+
+- **Context menu:** a long-press lifts the item over the blurred page and
+  opens the glass menu beside it.
+- **Search tab:** `onSearch` adds iOS 26's search tab, a glass circle
+  beside the bar.
+
+### iOS 26 colours
+
+`GlassSystemColors` holds iOS 26's red, blue, orange and green. Flutter's
+`CupertinoColors` still has the iOS 18 values.
+
+## Component fidelity
+
+Every component is measured against its SwiftUI counterpart on the iOS
+26.4 simulator, using reference scenes in
+`example/ios/Runner/ControlScenes.swift`:
+- `tool/reference/measure_components.py` reads the geometry and colours
+  into `controls.json`, and `test/reference/` pins the Dart constants to
+  it.
+- A Flutter twin of each scene (`-twin <scene>`) is scored per component by
+  `tool/reference/compare_components.py`, using the fidelity harness's
+  measures.
+
+Over 24 component views:
+
+| path | pass | median SSIM | median dE |
+|---|---|---|---|
+| native glass | 9/24 | 0.960 | 1.11 |
+| shader glass | 8/24 | 0.960 | 1.14 |
+
+Passing views: the toggles, slider, toolbar, sheets, stepper and picker
+menu. The remaining gaps:
+- SF Symbols' weights against CupertinoIcons.
+- UIKit's text rendering against Flutter's.
+- The popover and menu glass tone.
+- The calendar's first weekday, which follows the region.
+
 ## Adaptive foreground over busy content
 
 By default the label colour follows the platform brightness. To follow the
@@ -535,11 +659,10 @@ and `.bouncy` morph) and a size-dependent press growth. The harness lives in
 
 ## Known limitations
 
-- **Newer components are approximate:** `GlassScaffold`, `GlassToolbar`,
-  the toggle, slider and segmented control, the sheet, menu, search field
-  and swipe actions were sized from iOS 26.4 screenshots. Unlike the glass,
-  buttons, navigation bar and tab bar, they have not yet been measured
-  against SwiftUI. Their sizes live in each folder's `*_metrics.dart`.
+- **Context menu not measured:** synthetic touches on the simulator do
+  not open SwiftUI's `.contextMenu`, so `GlassContextMenu` follows the
+  system's look but has not been measured. Springs and press animations of
+  the newer components are not measured either.
 - **Native mode, runtime light→dark flip:** on iOS 26, 71 of 72 measured
   brightness flips at runtime match SwiftUI. One does not: a regular glass
   capsule over a photo, flipped from light to dark, keeps part of Apple's
