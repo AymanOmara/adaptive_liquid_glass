@@ -44,6 +44,8 @@ export 'src/scaffold/glass_scaffold.dart';
 export 'src/search/glass_search_field.dart';
 export 'src/sheet/glass_sheet.dart';
 export 'src/sheet/show_glass_sheet.dart';
+export 'src/swipe/glass_swipe_action.dart';
+export 'src/swipe/glass_swipe_actions.dart';
 export 'src/tab_bar/glass_tab_bar.dart';
 export 'src/tab_bar/glass_tab_bar_item.dart';
 export 'src/toolbar/glass_toolbar.dart';

@@ -1,5 +1,5 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
-import 'package:flutter/cupertino.dart' show CupertinoIcons;
+import 'package:flutter/cupertino.dart' show CupertinoColors, CupertinoIcons;
 import 'package:flutter/material.dart';
 
 /// `flutter run -t lib/components_demo.dart`: every component on one
@@ -45,6 +45,7 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
   bool _wifi = true;
   double _volume = 0.6;
   bool _toolbar = false;
+  final _rows = ['Copied Image', 'Meeting notes', 'Shopping list'];
 
   void _snack(String message) => ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
@@ -222,6 +223,46 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                   child: const Text('Show sheet'),
                 ),
               ),
+              const SizedBox(height: 24),
+              for (final name in _rows)
+                GlassSwipeActions(
+                  key: ValueKey(name),
+                  leading: [
+                    GlassSwipeAction(
+                      icon: CupertinoIcons.pin_fill,
+                      label: 'Pin',
+                      color: CupertinoColors.systemOrange,
+                      onPressed: () => _snack('Pinned $name'),
+                    ),
+                  ],
+                  trailing: [
+                    GlassSwipeAction(
+                      icon: CupertinoIcons.trash,
+                      label: 'Delete',
+                      color: CupertinoColors.systemRed,
+                      onPressed: () => setState(() => _rows.remove(name)),
+                    ),
+                    GlassSwipeAction(
+                      icon: CupertinoIcons.share,
+                      label: 'Share',
+                      color: CupertinoColors.systemBlue,
+                      onPressed: () => _snack('Share $name'),
+                    ),
+                  ],
+                  child: Padding(
+                    padding: const EdgeInsetsDirectional.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(CupertinoIcons.doc_text, size: 22),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text(name)),
+                      ],
+                    ),
+                  ),
+                ),
               const SizedBox(height: 400),
             ],
           ),
