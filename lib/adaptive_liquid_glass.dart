@@ -12,6 +12,7 @@
 /// tab bar, built from them.
 library;
 
+export 'src/action_sheet/show_glass_action_sheet.dart';
 export 'src/badge/glass_badge.dart';
 export 'src/button/glass_button.dart';
 export 'src/button/glass_button_role.dart';

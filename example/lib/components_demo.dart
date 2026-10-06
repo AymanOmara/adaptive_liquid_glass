@@ -261,6 +261,27 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                     ),
                     child: const Text('Dialog'),
                   ),
+                  GlassButton(
+                    onPressed: () => showGlassActionSheet(
+                      context: context,
+                      title: 'Photo',
+                      actions: [
+                        GlassDialogAction(
+                          label: 'Share',
+                          onPressed: () => _snack('Share'),
+                        ),
+                        const GlassDialogAction(
+                          label: 'Delete',
+                          role: GlassButtonRole.destructive,
+                        ),
+                      ],
+                      cancel: const GlassDialogAction(
+                        label: 'Cancel',
+                        role: GlassButtonRole.cancel,
+                      ),
+                    ),
+                    child: const Text('Action sheet'),
+                  ),
                   GlassPopoverAnchor(
                     popoverBuilder: (_) => const Padding(
                       padding: EdgeInsets.all(16),
