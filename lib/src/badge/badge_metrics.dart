@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 
-/// iOS 26's badge, ESTIMATED from UIKit and the HIG's defaults (matching
-/// the tab bar's badge in `TabBarMetrics`); the values are not measured.
+/// iOS 26's badge, ESTIMATED from UIKit and the HIG's defaults; the values
+/// are not measured. The tab bar draws its badges with these too.
 abstract final class BadgeMetrics {
   /// A text badge's height (and least width).
   static const double height = 18;
