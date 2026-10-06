@@ -9,9 +9,11 @@
 /// Start with [LiquidGlass] (or the [GlassEffect.glassEffect] shorthand),
 /// group neighbours with [GlassGroup], and pick the material with [Glass]
 /// and the outline with [GlassShape]. [GlassTabBar] is iOS 26's floating
-/// tab bar, built from them.
+/// tab bar, built from them. [AdaptiveLiquidGlass.initialize] optionally
+/// preloads the shaders in `main()`.
 library;
 
+export 'src/adaptive_liquid_glass_setup.dart';
 export 'src/button/glass_button.dart';
 export 'src/button/glass_button_role.dart';
 export 'src/button/glass_button_shape.dart';
