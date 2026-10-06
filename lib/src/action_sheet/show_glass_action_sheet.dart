@@ -7,13 +7,13 @@ import '../core/glass_render_mode.dart';
 import '../core/render_mode_resolver.dart';
 import '../core/theme.dart';
 import '../dialog/glass_dialog_action.dart';
+import '../dialog/glass_dialog_route.dart';
 import '../platform/glass_platform.dart';
-import 'glass_action_sheet_route.dart';
 
-/// Shows an iOS 26 action sheet, like UIKit's `UIAlertController` with
-/// `.actionSheet` on iPhone: a glass card floating at the bottom of the
-/// screen with an optional centred [title] and [message], the [actions]
-/// stacked as capsule buttons, and the [cancel] button set apart below.
+/// Shows an iOS 26 action sheet, as SwiftUI's `.confirmationDialog`
+/// draws it on iPhone with a title and a message: a 240-pt glass card
+/// in the middle of the screen with a leading semibold [title], a
+/// secondary [message] and the [actions] stacked as capsule buttons.
 ///
 /// ```dart
 /// showGlassActionSheet(
@@ -36,10 +36,11 @@ import 'glass_action_sheet_route.dart';
 /// ```
 ///
 /// The sheet closes when a button is tapped, then runs its `onPressed`.
-/// A tap outside takes [cancel]; when [cancel] is null a tap outside just
-/// closes the sheet and the future completes with null. The future
-/// completes with the chosen action. On the Material path it is a
-/// Material 3 modal bottom sheet with a list.
+/// As on iOS 26, [cancel] is not drawn: a tap outside the card takes it
+/// (when it is the only action it is drawn). When [cancel] is null a
+/// tap outside just closes the card and the future completes with null.
+/// The future completes with the chosen action. On the Material path it
+/// is a Material 3 modal bottom sheet with a list, Cancel included.
 Future<GlassDialogAction?> showGlassActionSheet({
   required BuildContext context,
   String? title,
@@ -100,11 +101,11 @@ Future<GlassDialogAction?> showGlassActionSheet({
     );
   } else {
     chosen = await Navigator.of(context).push(
-      GlassActionSheetRoute(
+      GlassDialogRoute(
         title: title,
         message: message,
-        actions: actions,
-        cancel: cancel,
+        actions: actions.isEmpty && cancel != null ? [cancel] : actions,
+        confirmation: true,
         mode: mode,
         barrierLabel: cupertinoL10n(context).modalBarrierDismissLabel,
       ),

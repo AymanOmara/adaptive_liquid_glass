@@ -94,6 +94,10 @@ abstract final class GlassColors {
   /// card's 211 becomes 186).
   static const Color dialogButtonFill = Color(0x1F000000);
 
+  /// The shadow under an alert or confirmation dialog: black at 17%
+  /// (measured on white: 234 at the card's edge, fading over ~120 pt).
+  static const Color dialogShadow = Color(0x2B000000);
+
   /// The stepper's capsule (measured).
   static const CupertinoDynamicColor stepperFill =
       CupertinoDynamicColor.withBrightness(

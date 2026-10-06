@@ -6,8 +6,9 @@ import '../core/ios_page_text.dart';
 import 'glass_dialog_action.dart';
 import 'glass_dialog_card.dart';
 
-/// The modal route of [showGlassAlert] and [showGlassConfirmationDialog]:
-/// the card in the middle of the screen, scaling in.
+/// The modal route of [showGlassAlert] and [showGlassConfirmationDialog]
+/// (and of `showGlassActionSheet`): the card in the middle of the
+/// screen, scaling in.
 class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
   /// Creates the route.
   GlassDialogRoute({
@@ -80,6 +81,10 @@ class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
+    // Reduce Motion: fade without scaling.
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
+      return FadeTransition(opacity: animation, child: child);
+    }
     final curve = CurvedAnimation(parent: animation, curve: Curves.easeOut);
     return FadeTransition(
       opacity: curve,
