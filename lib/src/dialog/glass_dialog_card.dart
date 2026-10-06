@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 
+import '../core/glass_colors.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
 import '../core/ios_text.dart';
@@ -15,7 +16,9 @@ import 'glass_dialog_button.dart';
 /// An alert ([confirmation] false) has a leading semibold title, a
 /// secondary message and, for two actions, the buttons side by side. A
 /// confirmation dialog has a centred secondary title and its buttons
-/// stacked (its title regular, in the label colour, as SwiftUI's).
+/// stacked (its title regular, in the label colour, as SwiftUI's). A
+/// confirmation dialog with a message lays its text out as the alert's
+/// (measured from SwiftUI iOS 26.4).
 class GlassDialogCard extends StatelessWidget {
   /// Creates the card.
   const GlassDialogCard({
@@ -61,22 +64,23 @@ class GlassDialogCard extends StatelessWidget {
         ),
     ];
     final side = !confirmation && buttons.length == 2;
+    final alertText = !confirmation || message != null;
     final text = Padding(
       padding: EdgeInsetsDirectional.symmetric(
-        horizontal: confirmation ? 0 : DialogMetrics.textInset,
+        horizontal: alertText ? DialogMetrics.textInset : 0,
       ),
       child: Column(
-        crossAxisAlignment: confirmation
-            ? CrossAxisAlignment.center
-            : CrossAxisAlignment.start,
+        crossAxisAlignment: alertText
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.center,
         children: [
           if (title != null)
             Text(
               title,
-              textAlign: confirmation ? TextAlign.center : TextAlign.start,
+              textAlign: alertText ? TextAlign.start : TextAlign.center,
               style: IOSText.style(
                 DialogMetrics.titleSize,
-                weight: confirmation ? FontWeight.w400 : FontWeight.w600,
+                weight: alertText ? FontWeight.w600 : FontWeight.w400,
                 color: resolve(CupertinoColors.label),
               ),
             ),
@@ -85,57 +89,85 @@ class GlassDialogCard extends StatelessWidget {
           if (message != null)
             Text(
               message,
-              textAlign: confirmation ? TextAlign.center : TextAlign.start,
+              textAlign: alertText ? TextAlign.start : TextAlign.center,
               style: IOSText.style(
                 DialogMetrics.messageSize,
                 color: secondary,
               ).copyWith(height: 22 / DialogMetrics.messageSize),
+              // UIKit adds line spacing below each line, not above the
+              // first.
+              textHeightBehavior: const TextHeightBehavior(
+                applyHeightToFirstAscent: false,
+              ),
             ),
         ],
+      ),
+    );
+    final card = GlassGroup(
+      mode: mode,
+      child: LiquidGlass(
+        mode: mode,
+        shape: const GlassShape.rect(DialogMetrics.cornerRadius),
+        adaptiveForeground: false,
+        padding: const EdgeInsets.fromLTRB(
+          DialogMetrics.padding,
+          DialogMetrics.titleTop,
+          DialogMetrics.padding,
+          DialogMetrics.padding,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (title != null || message != null) ...[
+              text,
+              SizedBox(
+                height: message != null
+                    ? DialogMetrics.messageButtonsGap
+                    : DialogMetrics.buttonsGap,
+              ),
+            ],
+            if (side)
+              Row(
+                children: [
+                  Expanded(child: buttons[0]),
+                  const SizedBox(width: DialogMetrics.buttonSpacing),
+                  Expanded(child: buttons[1]),
+                ],
+              )
+            else
+              for (var i = 0; i < buttons.length; i++) ...[
+                if (i > 0) const SizedBox(height: DialogMetrics.buttonSpacing),
+                buttons[i],
+              ],
+          ],
+        ),
       ),
     );
     return SizedBox(
       width: confirmation
           ? DialogMetrics.dialogWidth
           : DialogMetrics.alertWidth,
-      child: GlassGroup(
-        mode: mode,
-        child: LiquidGlass(
-          mode: mode,
-          shape: const GlassShape.rect(DialogMetrics.cornerRadius),
-          adaptiveForeground: false,
-          padding: const EdgeInsets.fromLTRB(
-            DialogMetrics.padding,
-            DialogMetrics.titleTop,
-            DialogMetrics.padding,
-            DialogMetrics.padding,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (title != null || message != null) ...[
-                text,
-                const SizedBox(height: DialogMetrics.buttonsGap),
-              ],
-              if (side)
-                Row(
-                  children: [
-                    Expanded(child: buttons[0]),
-                    const SizedBox(width: DialogMetrics.buttonSpacing),
-                    Expanded(child: buttons[1]),
-                  ],
-                )
-              else
-                for (var i = 0; i < buttons.length; i++) ...[
-                  if (i > 0)
-                    const SizedBox(height: DialogMetrics.buttonSpacing),
-                  buttons[i],
+      // A confirmation dialog floats on a wide, soft shadow; an alert's
+      // is lost in its dimmed backdrop.
+      child: confirmation
+          ? DecoratedBox(
+              decoration: const ShapeDecoration(
+                shape: RoundedSuperellipseBorder(
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(DialogMetrics.cornerRadius),
+                  ),
+                ),
+                shadows: [
+                  BoxShadow(
+                    color: GlassColors.dialogShadow,
+                    blurRadius: DialogMetrics.shadowBlur,
+                  ),
                 ],
-            ],
-          ),
-        ),
-      ),
+              ),
+              child: card,
+            )
+          : card,
     );
   }
 }

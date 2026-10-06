@@ -162,9 +162,11 @@ void main() {
     await t.tap(find.text('Open'));
     await t.pumpAndSettle();
     expect(_glassBrightness(t), theme);
-    // The action sheet's title is the secondary label colour.
+    // The action sheet is a confirmation dialog card: title in the label
+    // colour, message in the secondary label colour.
+    expect(_textColour(t, 'Title').toARGB32(), _label(theme).toARGB32());
     expect(
-      _textColour(t, 'Title').toARGB32(),
+      _textColour(t, 'Message').toARGB32(),
       _secondaryLabel(theme).toARGB32(),
     );
   });

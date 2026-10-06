@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Icons, ListTile;
+import 'package:flutter/material.dart'
+    show Icons, ListTile, MaterialBasedCupertinoThemeData, Theme;
 
 import '../core/effective_glass_mode.dart';
 import '../core/glass_colors.dart';
@@ -7,6 +8,7 @@ import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/ios_text.dart';
 import '../interaction/glass_pressable.dart';
+import 'list_chevron.dart';
 import 'list_metrics.dart';
 import 'list_section_scope.dart';
 
@@ -51,12 +53,16 @@ class GlassListTile extends StatefulWidget {
   final Widget? subtitle;
 
   /// The row's start slot: an icon or a coloured rounded-square icon.
+  /// Icons take iOS 26's default list accent (or the [CupertinoTheme]'s
+  /// primary colour when it is not the default blue) at
+  /// [ListMetrics.iconSize]; override by setting the icon's own colour or
+  /// wrapping the leading in an `IconTheme`. A disabled row dims it.
   final Widget? leading;
 
   /// Secondary text before the trailing, like Settings' "Off".
   final String? value;
 
-  /// The row's end control, e.g. a `GlassToggle`.
+  /// The row's end control, e.g. a `GlassToggle`; not icon-tinted.
   final Widget? trailing;
 
   /// Whether a disclosure chevron is drawn at the end.
@@ -124,6 +130,43 @@ class _GlassListTileState extends State<GlassListTile> {
     );
   }
 
+  /// The row's end inset: a trailing control, then a chevron, then text.
+  double get _endInset {
+    if (widget.trailing != null && !widget.chevron) {
+      return ListMetrics.controlEnd;
+    }
+    if (widget.chevron) return ListMetrics.chevronEnd;
+    return ListMetrics.horizontalPadding;
+  }
+
+  /// The leading's tint: iOS 26's list accent, the theme's primary
+  /// colour when customized, or a dim grey while disabled.
+  Color _leadingColor(BuildContext context) {
+    if (!widget.enabled) {
+      return CupertinoDynamicColor.resolve(
+        CupertinoColors.tertiaryLabel,
+        context,
+      );
+    }
+    final theme = CupertinoTheme.of(context);
+    // Under a MaterialApp the Cupertino theme is derived from the Material
+    // colour scheme, whose primary is not an iOS accent choice; only an
+    // explicit cupertinoOverrideTheme colour counts there.
+    final Color? primary = theme is MaterialBasedCupertinoThemeData
+        ? Theme.of(context).cupertinoOverrideTheme?.primaryColor
+        : theme.primaryColor;
+    // CupertinoTheme.of resolves dynamic colours, so compare against the
+    // resolved default blue, not the activeBlue constant itself.
+    final defaultBlue = CupertinoDynamicColor.resolve(
+      CupertinoColors.activeBlue,
+      context,
+    );
+    if (primary == null || primary == defaultBlue) {
+      return CupertinoDynamicColor.resolve(GlassColors.listIcon, context);
+    }
+    return CupertinoDynamicColor.resolve(primary, context);
+  }
+
   Widget _glass(BuildContext context) {
     final title = CupertinoDynamicColor.resolve(
       widget.enabled ? CupertinoColors.label : CupertinoColors.tertiaryLabel,
@@ -135,20 +178,36 @@ class _GlassListTileState extends State<GlassListTile> {
           : CupertinoColors.tertiaryLabel,
       context,
     );
+    final valueColor = CupertinoDynamicColor.resolve(
+      widget.enabled ? GlassColors.listValue : CupertinoColors.tertiaryLabel,
+      context,
+    );
     final row = ConstrainedBox(
       constraints: const BoxConstraints(minHeight: ListMetrics.minRowHeight),
       child: Padding(
-        padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: ListMetrics.horizontalPadding,
-          vertical: ListMetrics.verticalPadding,
+        padding: EdgeInsetsDirectional.only(
+          start: widget.leading != null
+              ? ListMetrics.leadingStart
+              : ListMetrics.horizontalPadding,
+          end: _endInset,
+          top: ListMetrics.verticalPadding,
+          bottom: ListMetrics.verticalPadding,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             if (widget.leading != null) ...[
-              SizedBox.square(
-                dimension: ListMetrics.leadingSize,
-                child: Center(child: widget.leading),
+              SizedBox(
+                width: ListMetrics.leadingWidth,
+                child: Center(
+                  child: IconTheme.merge(
+                    data: IconThemeData(
+                      size: ListMetrics.iconSize,
+                      color: _leadingColor(context),
+                    ),
+                    child: widget.leading!,
+                  ),
+                ),
               ),
               const SizedBox(width: ListMetrics.leadingGap),
             ],
@@ -179,7 +238,7 @@ class _GlassListTileState extends State<GlassListTile> {
               Text(
                 widget.value!,
                 maxLines: 1,
-                style: IOSText.style(ListMetrics.valueSize, color: secondary),
+                style: IOSText.style(ListMetrics.valueSize, color: valueColor),
               ),
             ],
             if (widget.trailing != null) ...[
@@ -188,9 +247,7 @@ class _GlassListTileState extends State<GlassListTile> {
             ],
             if (widget.chevron) ...[
               const SizedBox(width: ListMetrics.trailingGap),
-              Icon(
-                CupertinoIcons.chevron_forward,
-                size: ListMetrics.chevronSize,
+              ListChevron(
                 color: CupertinoDynamicColor.resolve(
                   CupertinoColors.tertiaryLabel,
                   context,

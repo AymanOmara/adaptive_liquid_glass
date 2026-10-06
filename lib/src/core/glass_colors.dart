@@ -94,6 +94,10 @@ abstract final class GlassColors {
   /// card's 211 becomes 186).
   static const Color dialogButtonFill = Color(0x1F000000);
 
+  /// The shadow under an alert or confirmation dialog: black at 17%
+  /// (measured on white: 234 at the card's edge, fading over ~120 pt).
+  static const Color dialogShadow = Color(0x2B000000);
+
   /// The stepper's capsule (measured).
   static const CupertinoDynamicColor stepperFill =
       CupertinoDynamicColor.withBrightness(
@@ -131,5 +135,28 @@ abstract final class GlassColors {
       CupertinoDynamicColor.withBrightness(
         color: Color(0xFFD1D1D6),
         darkColor: Color(0xFF3A3A3C),
+      );
+
+  /// A list row's leading icon: iOS 26's default accent (measured light;
+  /// dark as the slider's measured accent).
+  static const CupertinoDynamicColor listIcon =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFF0088FF),
+        darkColor: Color(0xFF0091FF),
+      );
+
+  /// A list row's value text (measured light: black at 50% on the white
+  /// cell; dark estimated).
+  static const CupertinoDynamicColor listValue =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0x80000000),
+        darkColor: Color(0x80FFFFFF),
+      );
+
+  /// The hairline between list rows (measured light; dark estimated).
+  static const CupertinoDynamicColor listSeparator =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFFE8E8E8),
+        darkColor: Color(0xFF38383A),
       );
 }
