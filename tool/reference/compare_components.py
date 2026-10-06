@@ -34,6 +34,17 @@ CROPS = {
     "search field": ("search", 22, 792, 380, 852),
     "menu": ("menu", 120, 50, 402, 220),
     "swipe actions": ("swipe_trailing", 0, 110, 402, 176),
+    "sheet (large)": ("sheetlarge", 0, 50, 402, 874),
+    "alert": ("alert", 30, 350, 372, 552),
+    "confirmation dialog": ("dialog", 70, 348, 332, 552),
+    "popover": ("popover", 190, 70, 402, 142),
+    "stepper": ("stepper", 140, 76, 262, 124),
+    "stepper (dark)": ("stepper", 140, 176, 262, 224),
+    "picker": ("picker", 150, 284, 252, 316),
+    "picker menu": ("picker_open", 60, 270, 342, 440),
+    "date picker": ("datepicker", 135, 276, 267, 324),
+    "date calendar": ("datepicker_open", 0, 300, 402, 680),
+    "search tab": ("searchtab", 0, 780, 402, 874),
 }
 
 

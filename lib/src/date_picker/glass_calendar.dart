@@ -94,22 +94,27 @@ class _GlassCalendarState extends State<GlassCalendar> {
           children: [
             Row(
               children: [
-                Flexible(
-                  child: Text(
-                    l10n.formatMonthYear(_month),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: IOSText.style(
-                      DatePickerMetrics.headerFontSize,
-                      weight: FontWeight.w600,
-                      color: label,
-                    ),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          l10n.formatMonthYear(_month),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: IOSText.style(
+                            DatePickerMetrics.headerFontSize,
+                            weight: FontWeight.w600,
+                            color: label,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(CupertinoIcons.chevron_right, size: 15, color: blue),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 4),
-                Icon(CupertinoIcons.chevron_right, size: 15, color: blue),
                 const SizedBox(width: 8),
-                const Spacer(),
                 _arrow(
                   CupertinoIcons.chevron_left,
                   -1,

@@ -15,7 +15,7 @@ import 'glass_dialog_button.dart';
 /// An alert ([confirmation] false) has a leading semibold title, a
 /// secondary message and, for two actions, the buttons side by side. A
 /// confirmation dialog has a centred secondary title and its buttons
-/// stacked.
+/// stacked (its title regular, in the label colour, as SwiftUI's).
 class GlassDialogCard extends StatelessWidget {
   /// Creates the card.
   const GlassDialogCard({
@@ -73,9 +73,7 @@ class GlassDialogCard extends StatelessWidget {
               style: IOSText.style(
                 DialogMetrics.titleSize,
                 weight: confirmation ? FontWeight.w400 : FontWeight.w600,
-                color: confirmation
-                    ? secondary
-                    : resolve(CupertinoColors.label),
+                color: resolve(CupertinoColors.label),
               ),
             ),
           if (title != null && message != null)

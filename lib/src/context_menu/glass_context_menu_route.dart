@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 
 import '../core/glass_colors.dart';
 import '../core/glass_render_mode.dart';
+import '../core/ios_page_text.dart';
 import '../menu/glass_menu_item.dart';
 import '../menu/glass_menu_panel.dart';
 import 'context_menu_metrics.dart';
@@ -52,62 +53,65 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
     Animation<double> secondaryAnimation,
   ) {
     final padding = MediaQuery.paddingOf(context);
-    return Stack(
-      children: [
-        // The page behind, blurred and dimmed; a tap closes the menu.
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => Navigator.of(context).pop(),
-            child: AnimatedBuilder(
-              animation: animation,
-              builder: (context, _) {
-                final sigma = ContextMenuMetrics.blur * animation.value;
-                return BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
-                  child: ColoredBox(
-                    color: GlassColors.sheetBarrier.withValues(
-                      alpha: GlassColors.sheetBarrier.a * animation.value,
+    return iosPageText(
+      context,
+      Stack(
+        children: [
+          // The page behind, blurred and dimmed; a tap closes the menu.
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => Navigator.of(context).pop(),
+              child: AnimatedBuilder(
+                animation: animation,
+                builder: (context, _) {
+                  final sigma = ContextMenuMetrics.blur * animation.value;
+                  return BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+                    child: ColoredBox(
+                      color: GlassColors.sheetBarrier.withValues(
+                        alpha: GlassColors.sheetBarrier.a * animation.value,
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-        Positioned.fromRect(
-          rect: previewRect,
-          child: IgnorePointer(
-            child: ScaleTransition(
-              scale: Tween(
-                begin: 1.0,
-                end: ContextMenuMetrics.lift,
-              ).animate(animation),
-              child: preview,
-            ),
-          ),
-        ),
-        CustomSingleChildLayout(
-          delegate: GlassContextMenuLayout(
-            preview: previewRect,
-            padding: padding,
-          ),
-          child: FadeTransition(
-            opacity: animation,
-            child: ScaleTransition(
-              scale: Tween(begin: 0.5, end: 1.0).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
-              ),
-              alignment: Alignment.topCenter,
-              child: GlassMenuPanel(
-                items: items,
-                mode: mode,
-                onChoose: (item) => Navigator.of(context).pop(item),
+                  );
+                },
               ),
             ),
           ),
-        ),
-      ],
+          Positioned.fromRect(
+            rect: previewRect,
+            child: IgnorePointer(
+              child: ScaleTransition(
+                scale: Tween(
+                  begin: 1.0,
+                  end: ContextMenuMetrics.lift,
+                ).animate(animation),
+                child: preview,
+              ),
+            ),
+          ),
+          CustomSingleChildLayout(
+            delegate: GlassContextMenuLayout(
+              preview: previewRect,
+              padding: padding,
+            ),
+            child: FadeTransition(
+              opacity: animation,
+              child: ScaleTransition(
+                scale: Tween(begin: 0.5, end: 1.0).animate(
+                  CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+                ),
+                alignment: Alignment.topCenter,
+                child: GlassMenuPanel(
+                  items: items,
+                  mode: mode,
+                  onChoose: (item) => Navigator.of(context).pop(item),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 
 import '../core/glass_colors.dart';
 import '../core/glass_render_mode.dart';
+import '../core/ios_page_text.dart';
 import 'glass_dialog_action.dart';
 import 'glass_dialog_card.dart';
 
@@ -55,14 +56,17 @@ class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
     BuildContext context,
     Animation<double> animation,
     Animation<double> secondaryAnimation,
-  ) => Center(
-    child: GlassDialogCard(
-      title: title,
-      message: message,
-      actions: actions,
-      confirmation: confirmation,
-      mode: mode,
-      onAction: (a) => Navigator.of(context).pop(a),
+  ) => iosPageText(
+    context,
+    Center(
+      child: GlassDialogCard(
+        title: title,
+        message: message,
+        actions: actions,
+        confirmation: confirmation,
+        mode: mode,
+        onAction: (a) => Navigator.of(context).pop(a),
+      ),
     ),
   );
 

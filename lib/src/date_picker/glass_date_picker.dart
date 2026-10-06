@@ -140,7 +140,7 @@ class _GlassDatePickerState extends State<GlassDatePicker> {
             padding: const EdgeInsets.symmetric(
               horizontal: DatePickerMetrics.padding,
             ),
-            alignment: Alignment.center,
+            // No alignment: the capsule hugs the date.
             decoration: ShapeDecoration(
               shape: const StadiumBorder(),
               color: CupertinoDynamicColor.resolve(
@@ -148,10 +148,13 @@ class _GlassDatePickerState extends State<GlassDatePicker> {
                 context,
               ),
             ),
-            child: Text(
-              _text,
-              maxLines: 1,
-              style: IOSText.style(DatePickerMetrics.fontSize, color: colour),
+            child: Center(
+              widthFactor: 1,
+              child: Text(
+                _text,
+                maxLines: 1,
+                style: IOSText.style(DatePickerMetrics.fontSize, color: colour),
+              ),
             ),
           ),
         ),

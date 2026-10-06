@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import '../core/glass.dart';
 import '../core/glass_colors.dart';
 import '../core/glass_render_mode.dart';
+import '../core/ios_page_text.dart';
 import 'glass_sheet_detent.dart';
 import 'glass_sheet_frame.dart';
 
@@ -63,15 +64,18 @@ class GlassSheetRoute<T> extends PopupRoute<T> {
     BuildContext context,
     Animation<double> animation,
     Animation<double> secondaryAnimation,
-  ) => GlassSheetFrame(
-    detents: detents,
-    initialDetent: initialDetent,
-    showGrabber: showGrabber,
-    isDismissible: isDismissible,
-    glass: glass,
-    mode: mode,
-    onDismiss: () => Navigator.of(context).pop(),
-    child: Builder(builder: builder),
+  ) => iosPageText(
+    context,
+    GlassSheetFrame(
+      detents: detents,
+      initialDetent: initialDetent,
+      showGrabber: showGrabber,
+      isDismissible: isDismissible,
+      glass: glass,
+      mode: mode,
+      onDismiss: () => Navigator.of(context).pop(),
+      child: Builder(builder: builder),
+    ),
   );
 
   @override

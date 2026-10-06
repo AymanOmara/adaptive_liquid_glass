@@ -6,12 +6,12 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../api/hosts.dart';
 
-Widget _app(Alignment at) => MaterialApp(
+Widget _app(Alignment at, {double inset = 60}) => MaterialApp(
   home: Scaffold(
     body: Align(
       alignment: at,
       child: Padding(
-        padding: const EdgeInsets.all(60),
+        padding: EdgeInsets.all(inset),
         child: Builder(
           builder: (context) => TextButton(
             onPressed: () => showGlassPopover<void>(
@@ -61,10 +61,23 @@ void main() {
 
   testWidgets('near the bottom it opens upwards', (t) async {
     shaderEnv();
-    await t.pumpWidget(_app(Alignment.bottomCenter));
+    await t.pumpWidget(_app(Alignment.bottomCenter, inset: 2));
     final anchor = t.getRect(find.byType(TextButton));
     await t.tap(find.text('Anchor'));
     await t.pumpAndSettle();
     expect(_bubble(t).bottom, moreOrLessEquals(anchor.bottom - 21));
+  }, variant: ios);
+
+  testWidgets('plain text in a popover is iOS body text, not the fallback', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(_app(Alignment.topCenter));
+    await t.tap(find.text('Anchor'));
+    await t.pumpAndSettle();
+    final style = DefaultTextStyle.of(t.element(find.text('Popover'))).style;
+    expect(style.fontSize, 17);
+    expect(style.decoration, isNot(TextDecoration.underline));
+    expect(style.letterSpacing, -0.43);
   }, variant: ios);
 }

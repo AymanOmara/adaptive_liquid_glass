@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../core/glass_colors.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
+import '../core/ios_page_text.dart';
 import '../group/glass_group.dart';
 import '../liquid_glass.dart';
 import 'glass_popover_layout.dart';
@@ -46,17 +47,20 @@ class GlassPopoverRoute<T> extends PopupRoute<T> {
     BuildContext context,
     Animation<double> animation,
     Animation<double> secondaryAnimation,
-  ) => CustomSingleChildLayout(
-    delegate: GlassPopoverLayout(
-      anchor: anchor,
-      padding: MediaQuery.paddingOf(context),
-    ),
-    child: GlassGroup(
-      mode: mode,
-      child: LiquidGlass(
+  ) => iosPageText(
+    context,
+    CustomSingleChildLayout(
+      delegate: GlassPopoverLayout(
+        anchor: anchor,
+        padding: MediaQuery.paddingOf(context),
+      ),
+      child: GlassGroup(
         mode: mode,
-        shape: const GlassShape.rect(PopoverMetrics.cornerRadius),
-        child: Builder(builder: builder),
+        child: LiquidGlass(
+          mode: mode,
+          shape: const GlassShape.rect(PopoverMetrics.cornerRadius),
+          child: Builder(builder: builder),
+        ),
       ),
     ),
   );

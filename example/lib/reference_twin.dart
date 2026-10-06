@@ -7,8 +7,9 @@ import 'package:flutter/material.dart';
 /// this package's components laid out exactly as the SwiftUI reference
 /// scenes in `ios/Runner/ControlScenes.swift`, so
 /// `tool/reference/measure_components.py` measures both the same way.
-/// Scenes: controls, toolbar, accessory, sheet, menu, search, swipe,
-/// swipetall.
+/// Scenes: controls, toolbar, accessory, sheet, sheetlarge, menu, search,
+/// swipe, swipetall, alert, dialog, popover, stepper, picker, datepicker,
+/// searchtab.
 void main() => runApp(const ReferenceTwin());
 
 /// The twin app.
@@ -49,6 +50,13 @@ class ReferenceTwin extends StatelessWidget {
         'sheetlarge' => const _Sheet(large: true),
         'menu' => const _Menu(),
         'search' => const _Search(),
+        'alert' => const _Dialog(confirmation: false),
+        'dialog' => const _Dialog(confirmation: true),
+        'popover' => const _Popover(),
+        'stepper' => const _Stepper(),
+        'picker' => const _Picker(),
+        'datepicker' => const _DatePicker(),
+        'searchtab' => const _SearchTab(),
         'swipe' => const _Swipe(tall: false),
         'swipetall' => const _Swipe(tall: true),
         _ => const _Controls(),
@@ -384,4 +392,215 @@ class _Swipe extends StatelessWidget {
       ),
     );
   }
+}
+
+class _Dialog extends StatefulWidget {
+  const _Dialog({required this.confirmation});
+
+  final bool confirmation;
+
+  @override
+  State<_Dialog> createState() => _DialogState();
+}
+
+class _DialogState extends State<_Dialog> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.confirmation) {
+        showGlassConfirmationDialog(
+          context: context,
+          title: 'Photo',
+          actions: const [
+            GlassDialogAction(label: 'Share'),
+            GlassDialogAction(
+              label: 'Delete',
+              role: GlassButtonRole.destructive,
+            ),
+            GlassDialogAction(label: 'Cancel', role: GlassButtonRole.cancel),
+          ],
+        );
+      } else {
+        showGlassAlert(
+          context: context,
+          title: 'Delete photo?',
+          message: 'This photo will be deleted from all your devices.',
+          actions: const [
+            GlassDialogAction(label: 'Cancel', role: GlassButtonRole.cancel),
+            GlassDialogAction(
+              label: 'Delete',
+              role: GlassButtonRole.destructive,
+            ),
+          ],
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      const ColoredBox(color: Color(0xFF808080), child: SizedBox.expand());
+}
+
+class _Popover extends StatelessWidget {
+  const _Popover();
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xFF808080),
+    extendBodyBehindAppBar: true,
+    appBar: GlassNavigationBar(actions: [_PopoverButton()]),
+    body: const SizedBox.expand(),
+  );
+}
+
+class _PopoverButton extends StatefulWidget {
+  @override
+  State<_PopoverButton> createState() => _PopoverButtonState();
+}
+
+class _PopoverButtonState extends State<_PopoverButton> {
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) _open();
+    });
+  }
+
+  void _open() => showGlassPopover<void>(
+    context: context,
+    builder: (_) => const Padding(
+      padding: EdgeInsets.all(16),
+      child: Text('Liquid Glass popover', style: TextStyle(fontSize: 17)),
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) => GlassButton.icon(
+    onPressed: _open,
+    icon: CupertinoIcons.info,
+    semanticLabel: 'Info',
+  );
+}
+
+class _Stepper extends StatefulWidget {
+  const _Stepper();
+
+  @override
+  State<_Stepper> createState() => _StepperState();
+}
+
+class _StepperState extends State<_Stepper> {
+  double _value = 3;
+
+  Widget get _stepper => GlassStepper(
+    value: _value,
+    max: 10,
+    onChanged: (v) => setState(() => _value = v),
+  );
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: Colors.white,
+    child: Stack(
+      children: [
+        const Positioned(
+          left: 0,
+          right: 0,
+          top: 150,
+          height: 100,
+          child: ColoredBox(color: Colors.black),
+        ),
+        _at(201.17, 100, _stepper),
+        _at(201.17, 200, _dark(context, _stepper)),
+      ],
+    ),
+  );
+}
+
+class _Picker extends StatefulWidget {
+  const _Picker();
+
+  @override
+  State<_Picker> createState() => _PickerState();
+}
+
+class _PickerState extends State<_Picker> {
+  int _choice = 1;
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: Colors.white,
+    child: Stack(
+      children: [
+        _at(
+          201,
+          300,
+          GlassPicker<int>(
+            items: const [
+              GlassPickerItem(value: 0, label: 'Day'),
+              GlassPickerItem(value: 1, label: 'Week'),
+              GlassPickerItem(value: 2, label: 'Month'),
+            ],
+            selected: _choice,
+            onChanged: (v) => setState(() => _choice = v),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _DatePicker extends StatefulWidget {
+  const _DatePicker();
+
+  @override
+  State<_DatePicker> createState() => _DatePickerState();
+}
+
+class _DatePickerState extends State<_DatePicker> {
+  DateTime _date = DateTime(2026, 10, 6);
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: Colors.white,
+    child: Stack(
+      children: [
+        _at(
+          201,
+          300,
+          GlassDatePicker(
+            value: _date,
+            firstDate: DateTime(2020),
+            lastDate: DateTime(2030),
+            // SwiftUI's capture shows the simulator's region format.
+            format: (d) => '${d.day} Oct ${d.year}',
+            onChanged: (d) => setState(() => _date = d),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _SearchTab extends StatelessWidget {
+  const _SearchTab();
+
+  @override
+  Widget build(BuildContext context) => GlassScaffold(
+    backgroundColor: Colors.white,
+    tabBar: GlassTabBar(
+      items: const [
+        GlassTabBarItem(icon: CupertinoIcons.house_fill, label: 'Home'),
+        GlassTabBarItem(icon: CupertinoIcons.music_note, label: 'Music'),
+        GlassTabBarItem(icon: CupertinoIcons.gear_solid, label: 'Settings'),
+      ],
+      selectedIndex: 0,
+      onSelected: (_) {},
+      onSearch: () {},
+    ),
+    body: const SizedBox.expand(),
+  );
 }
