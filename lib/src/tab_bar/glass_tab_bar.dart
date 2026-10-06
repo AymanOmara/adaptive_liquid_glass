@@ -20,9 +20,9 @@ import '../core/glass.dart';
 import '../core/glass_colors.dart';
 import '../core/glass_environment.dart';
 import '../core/glass_render_mode.dart';
-import '../core/glass_system_colors.dart';
 import '../core/render_mode_resolver.dart';
 import '../core/theme.dart';
+import '../foreground/glass_foreground.dart';
 import '../group/glass_group.dart';
 import '../liquid_glass.dart';
 import '../platform/glass_platform.dart';
@@ -61,7 +61,8 @@ import 'tab_lens_program.dart';
 /// Float it over the content (for example at the bottom of a `Stack`) and
 /// leave room under the content for it, as iOS does. Tabs are [itemWidth]
 /// wide, narrower when the bar would not fit the width it is given.
-/// Unselected tabs take the readable colour glass gives text and icons.
+/// Unselected tabs take iOS's tab bar label colour, dark or light by what
+/// is behind the glass.
 /// Follows the reading direction; with Reduce Motion the lens and pill move
 /// without animating.
 ///
@@ -96,13 +97,13 @@ class GlassTabBar extends StatefulWidget {
   final ValueChanged<int> onSelected;
 
   /// The selected tab's icon and label, and the tabs under the lens.
-  /// Defaults to iOS 26's blue, as SwiftUI's `TabView` draws it, or Material
-  /// 3's colours on the Material path.
+  /// Defaults to iOS 26's tab bar blue, measured from SwiftUI's `TabView`,
+  /// or Material 3's colours on the Material path.
   final Color? selectedColor;
 
-  /// The pill behind the selected tab at rest. Defaults to the system's
-  /// secondary fill (as iOS 26.4 draws it), or Material 3's indicator on
-  /// the Material path.
+  /// The pill behind the selected tab at rest. Defaults to the fill
+  /// iOS 26.4's tab bar draws (black at 7%, white at 14.5% in dark mode),
+  /// or Material 3's indicator on the Material path.
   final Color? indicatorColor;
 
   /// The bar's glass. Defaults to the theme's default glass.
@@ -560,11 +561,11 @@ class _GlassTabBarState extends State<GlassTabBar>
 
   Widget _glassBar(BuildContext context) {
     final selected = CupertinoDynamicColor.resolve(
-      widget.selectedColor ?? GlassSystemColors.blue,
+      widget.selectedColor ?? GlassColors.tabBarSelected,
       context,
     );
     final indicator = CupertinoDynamicColor.resolve(
-      widget.indicatorColor ?? CupertinoColors.secondarySystemFill,
+      widget.indicatorColor ?? GlassColors.tabBarPill,
       context,
     );
     return Semantics(
@@ -824,7 +825,7 @@ class _GlassTabBarState extends State<GlassTabBar>
     );
   }
 
-  /// The tabs; [colorOf] null leaves a tab to the glass's readable colour.
+  /// The tabs; [colorOf] null leaves a tab to the tab bar's label colour.
   Widget _row(
     Color? Function(int index) colorOf, {
     required bool semantics,
@@ -847,23 +848,24 @@ class _GlassTabBarState extends State<GlassTabBar>
                 height: _contentHeight,
                 child: _scaled(
                   scale,
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _icon(
-                        widget.items[i],
-                        i == widget.selectedIndex,
-                        colorOf(i),
-                      ),
-                      const SizedBox(height: TabBarMetrics.labelGap),
-                      Text(
-                        widget.items[i].label,
-                        maxLines: 1,
-                        overflow: TextOverflow.fade,
-                        softWrap: false,
-                        style: TabBarMetrics.label.copyWith(color: colorOf(i)),
-                      ),
-                    ],
+                  Builder(
+                    builder: (context) {
+                      final c = colorOf(i) ?? _labelColor(context);
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _icon(widget.items[i], i == widget.selectedIndex, c),
+                          const SizedBox(height: TabBarMetrics.labelGap),
+                          Text(
+                            widget.items[i].label,
+                            maxLines: 1,
+                            overflow: TextOverflow.fade,
+                            softWrap: false,
+                            style: TabBarMetrics.label.copyWith(color: c),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ),
@@ -873,6 +875,13 @@ class _GlassTabBarState extends State<GlassTabBar>
     );
     return semantics ? row : ExcludeSemantics(child: row);
   }
+
+  /// Unselected tabs: iOS's tab bar label, dark over light content and
+  /// light over dark (GlassForeground's sampled brightness).
+  static Color _labelColor(BuildContext context) =>
+      GlassForeground.backgroundBrightnessOf(context) == Brightness.light
+      ? GlassColors.tabBarLabel.color
+      : GlassColors.tabBarLabel.darkColor;
 
   /// iOS magnifies each tab under the lens about its own centre, so a tab
   /// at the lens's rim stays in view.

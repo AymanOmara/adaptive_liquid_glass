@@ -71,17 +71,20 @@ abstract final class TabBarMetrics {
     dampingFraction: 0.499,
   );
 
-  /// A tab's icon size.
-  static const double iconSize = 26;
+  /// A tab's icon size: CupertinoIcons drawn at 28 cover the ink of
+  /// SwiftUI's tab symbols (gear 24 pt, house 27 pt wide; measured from
+  /// SwiftUI `TabView`, iOS 26.4).
+  static const double iconSize = 28;
 
   /// The gap between a tab's icon and its label.
   static const double labelGap = 2;
 
-  /// A tab's label.
+  /// A tab's label: 10 pt semibold (measured from SwiftUI `TabView`,
+  /// iOS 26.4: "Settings" 39.7 pt of ink).
   static const TextStyle label = TextStyle(
     fontSize: 10,
-    fontWeight: FontWeight.w500,
-    letterSpacing: 0.1,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0,
   );
 
   /// Pill to lens.

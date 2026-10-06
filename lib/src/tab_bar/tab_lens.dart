@@ -138,9 +138,10 @@ Widget withTabLens(BuildContext context, Widget child) {
 /// glass (no dark-end lift) with an even 1 pt rim.
 const _tabBarOverrides = <String, Object?>{
   'toneLift': 0.0,
-  // UIKit's bar frosts less than SwiftUI's glass: the page behind it shows
-  // as thin, faint strokes.
-  'blurSigma': 4.0,
+  // Measured from SwiftUI `TabView` (iOS 26.4) over white: a wider,
+  // fainter shadow than SwiftUI's small glass.
+  'shadowRadius': 23.0,
+  'shadowOpacity': 0.036,
   'rimIntensity': 0.0,
   'rimMix': 0.144,
   'rimMixWidth': 1.33,
@@ -148,10 +149,21 @@ const _tabBarOverrides = <String, Object?>{
   'rimMixLumaFloor': 1.0,
 };
 
-/// Dark-mode extras on [_tabBarOverrides]: the bar reads #191919 over black.
+/// Light-mode extras on [_tabBarOverrides]: the bar lets less light fill
+/// in than SwiftUI's small glass (over photo.png the page reads about 10
+/// darker through it; measured from SwiftUI `TabView`, iOS 26.4).
+const _tabBarLightOverrides = <String, Object?>{
+  ..._tabBarOverrides,
+  'fillOpacity': 0.6,
+};
+
+/// Dark-mode extras on [_tabBarOverrides]: the bar reads #131313 over
+/// black and lets more of the page through than SwiftUI's small glass
+/// (measured from SwiftUI `TabView`, iOS 26.4).
 const _tabBarDarkOverrides = <String, Object?>{
   ..._tabBarOverrides,
-  'fillColor': '#2B2A2B',
+  'fillColor': '#252525',
+  'fillOpacity': 0.59,
 };
 
 /// The bar's dark glass while a lens is held is more see-through
@@ -197,7 +209,10 @@ Widget withTabBarGlass(BuildContext context, Widget child, {double light = 0}) {
   return LiquidGlassTheme(
     data: theme.copyWith(
       constants: c.copyWith(
-        regular: GlassVariantConstants.fromJson(_tabBarOverrides, c.regular),
+        regular: GlassVariantConstants.fromJson(
+          _tabBarLightOverrides,
+          c.regular,
+        ),
         regularDark: dark,
       ),
     ),

@@ -1,4 +1,5 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
@@ -22,11 +23,17 @@ const _blue = Color(0xFF0000FF);
 
 /// A tab bar that keeps its own selection, and records every pick.
 class _Harness extends StatefulWidget {
-  const _Harness(this.picks, {this.items = _items, this.enableFeedback = true});
+  const _Harness(
+    this.picks, {
+    this.items = _items,
+    this.enableFeedback = true,
+    this.selectedColor = _blue,
+  });
 
   final List<int> picks;
   final List<GlassTabBarItem> items;
   final bool enableFeedback;
+  final Color? selectedColor;
 
   @override
   State<_Harness> createState() => _HarnessState();
@@ -39,7 +46,7 @@ class _HarnessState extends State<_Harness> {
   Widget build(BuildContext context) => GlassTabBar(
     items: widget.items,
     selectedIndex: _selected,
-    selectedColor: _blue,
+    selectedColor: widget.selectedColor,
     enableFeedback: widget.enableFeedback,
     onSelected: (i) {
       widget.picks.add(i);
@@ -313,7 +320,7 @@ void main() {
     expect(picks, [2]);
   }, variant: android);
 
-  testWidgets('the pill defaults to the secondary system fill, as on iOS', (
+  testWidgets('the pill defaults to the tab bar fill measured on iOS', (
     t,
   ) async {
     shaderEnv();
@@ -326,11 +333,39 @@ void main() {
     final ctx = t.element(find.byType(GlassTabBar));
     expect(
       (pill.decoration as ShapeDecoration).color!.toARGB32(),
-      CupertinoDynamicColor.resolve(
-        CupertinoColors.secondarySystemFill,
-        ctx,
-      ).toARGB32(),
+      CupertinoDynamicColor.resolve(GlassColors.tabBarPill, ctx).toARGB32(),
     );
+  }, variant: ios);
+
+  testWidgets('the selected tab defaults to the measured tab bar blue', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks(), selectedColor: null)));
+    final ctx = t.element(find.byType(GlassTabBar));
+    expect(
+      _labelColor(t, 'History')!.toARGB32(),
+      CupertinoDynamicColor.resolve(GlassColors.tabBarSelected, ctx).toARGB32(),
+    );
+  }, variant: ios);
+
+  testWidgets('unselected tabs use the tab bar label colour', (t) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    expect(_labelColor(t, 'Snippets')!.toARGB32(), 0xE6000000);
+    await t.pumpWidget(
+      plainHost(
+        Builder(
+          builder: (context) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(platformBrightness: Brightness.dark),
+            child: _Harness(_picks()),
+          ),
+        ),
+      ),
+    );
+    expect(_labelColor(t, 'Snippets')!.toARGB32(), 0xF2FFFFFF);
   }, variant: ios);
 
   testWidgets('tapping a far tab sends the lens across from the selection', (
