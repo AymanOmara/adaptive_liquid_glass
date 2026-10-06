@@ -51,4 +51,8 @@ abstract final class GlassColors {
   /// The segmented control's thumb at rest in dark mode (iOS's
   /// systemGray, dark).
   static const Color segmentThumbDark = Color(0xFF636366);
+
+  /// The dimming behind a sheet (black at 12%): light, as iOS 26 keeps
+  /// the page visible behind a partial sheet.
+  static const Color sheetBarrier = Color(0x1F000000);
 }
