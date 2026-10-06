@@ -16,10 +16,13 @@ void main() {
     final c = GlassConstants.fromJson({
       'regular': {'blurSigma': 9.0},
       'cornerExponent': 5.0,
+      'cornerZone': 1.4,
     });
     expect(c.regular.blurSigma, 9.0);
     expect(c.regular.lensBand, GlassConstants.standard.regular.lensBand);
     expect(c.cornerExponent, 5.0);
+    expect(c.cornerZone, 1.4);
+    expect(c.mergeFactor, GlassConstants.standard.mergeFactor);
     expect(c.clear, GlassConstants.standard.clear);
   });
 
@@ -72,6 +75,8 @@ void main() {
     expect(c.clear.fillSizeRef, 0);
     expect(c.clearDark.lensSizeRef, 28.7);
     expect(c.cornerExponent, 2.0);
+    // Task A1: continuous corners on the outline (zone 1.2 x radius).
+    expect(c.cornerZone, 1.2);
     expect(c.mergeFactor, 0.8);
     // The lens stays near the Task 15c measurement in every set.
     for (final v in [c.regular, c.regularDark, c.clear, c.clearDark]) {

@@ -389,3 +389,30 @@ def test_blur_aspect_follows_the_strongest_member():
     assert group_blur_aspect(_scene("regular-circle-photo-dark"), c) == 1.0
     c["regularDark"]["blurAspectPower"] = 0.0
     assert group_blur_aspect(cap, c) == 1.0
+
+
+def test_continuous_corner_passes_through_the_arcs_45_degree_point():
+    from glass_model import corner_params, sd_superellipse_box
+    hx, hy, r = 120.0, 70.0, 16.0
+    # Zone 1 keeps the given exponent and the radius (pre-A1 outline).
+    assert corner_params(r, hx, hy, 2.0, 1.0) == (r, 2.0)
+    z, n = corner_params(r, hx, hy, 2.0, 1.528)
+    assert z == pytest.approx(1.528 * r) and n == pytest.approx(3.26, abs=0.02)
+    # The circular arc's 45 degree point lies on the continuous outline.
+    p = r * (1.0 - np.sqrt(0.5))
+    d = sd_superellipse_box(np.array([hx - p]), np.array([hy - p]), hx, hy, z, n)
+    assert abs(d[0]) < 1e-9
+    # The zone clamps to half the shorter side; at the radius it is a circle.
+    assert corner_params(70.0, hx, hy, 2.0, 1.528) == (70.0, 2.0)
+    z, n = corner_params(50.0, hx, hy, 2.0, 1.528)
+    assert z == 70.0 and 2.0 < n < 3.26
+
+
+def test_corner_zone_changes_rects_only():
+    rect = _scene("clear-rect28-photo-light")
+    cap = _scene("clear-capsule-photo-light")
+    for scene, same in ((rect, False), (cap, True)):
+        bg = load(ROOT / f"example/assets/backgrounds/{scene['background']}.png")
+        a = render(bg, scene, {**STANDARD, "cornerZone": 1.0}, scale=3)
+        b = render(bg, scene, {**STANDARD, "cornerZone": 1.5}, scale=3)
+        assert np.array_equal(a, b) == same

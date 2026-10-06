@@ -16,6 +16,7 @@ class GlassConstants {
     required this.regularDark,
     required this.clearDark,
     required this.cornerExponent,
+    this.cornerZone = 1.0,
     this.mergeFactor = 1.0,
     required this.motion,
   });
@@ -31,6 +32,7 @@ class GlassConstants {
       'cornerExponent',
       standard.cornerExponent,
     ),
+    cornerZone: GlassJson.number(j, 'cornerZone', standard.cornerZone),
     mergeFactor: GlassJson.number(j, 'mergeFactor', standard.mergeFactor),
     motion: GlassMotionConstants.fromJson(
       (j['motion'] as Map?)?.cast<String, Object?>() ?? const {},
@@ -181,6 +183,9 @@ class GlassConstants {
       tintStrength: 0.35,
     ),
     cornerExponent: 2,
+    // Task A1 (model sweep 1.0-1.6 against SwiftUI's `.continuous` rects,
+    // then device): outline only; the lens normals keep circular corners.
+    cornerZone: 1.2,
     // Merge scenes (device): median SSIM 0.979, ΔE 2.01.
     mergeFactor: 0.8,
     // Fitted to SwiftUI recordings (Task 16, iOS 26.4 simulator; bounding
@@ -238,6 +243,18 @@ class GlassConstants {
   /// (exponent 2), like SwiftUI's `Capsule()` and `Circle()`.
   final double cornerExponent;
 
+  /// Continuous-corner zone, as a multiple of the corner radius.
+  ///
+  /// Above 1 a rectangle's corner curve starts `cornerZone × radius` from
+  /// the corner (capped at half the shorter side) and is a superellipse
+  /// whose exponent is derived so it passes through the circular arc's 45°
+  /// point, like Apple's continuous corners; it becomes a circular arc when
+  /// the zone clamps to the radius (pills). 1 keeps [cornerExponent] with
+  /// the curve starting at the radius. Applies to the outline only; capsules
+  /// and circles stay exact circles. Fitted, not measured: see
+  /// `docs/superpowers/notes/fidelity-status.md` (Task A1).
+  final double cornerZone;
+
   /// Returns a copy with the given fields replaced.
   GlassConstants copyWith({
     GlassVariantConstants? regular,
@@ -245,6 +262,7 @@ class GlassConstants {
     GlassVariantConstants? regularDark,
     GlassVariantConstants? clearDark,
     double? cornerExponent,
+    double? cornerZone,
     double? mergeFactor,
     GlassMotionConstants? motion,
   }) => GlassConstants(
@@ -253,6 +271,7 @@ class GlassConstants {
     regularDark: regularDark ?? this.regularDark,
     clearDark: clearDark ?? this.clearDark,
     cornerExponent: cornerExponent ?? this.cornerExponent,
+    cornerZone: cornerZone ?? this.cornerZone,
     mergeFactor: mergeFactor ?? this.mergeFactor,
     motion: motion ?? this.motion,
   );
@@ -281,6 +300,7 @@ class GlassConstants {
     'regularDark': regularDark.toJson(),
     'clearDark': clearDark.toJson(),
     'cornerExponent': cornerExponent,
+    'cornerZone': cornerZone,
     'mergeFactor': mergeFactor,
     'motion': motion.toJson(),
   };
@@ -293,6 +313,7 @@ class GlassConstants {
       other.regularDark == regularDark &&
       other.clearDark == clearDark &&
       other.cornerExponent == cornerExponent &&
+      other.cornerZone == cornerZone &&
       other.mergeFactor == mergeFactor &&
       other.motion == motion;
 
@@ -303,6 +324,7 @@ class GlassConstants {
     regularDark,
     clearDark,
     cornerExponent,
+    cornerZone,
     mergeFactor,
     motion,
   );
