@@ -41,6 +41,22 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 
 No setup is needed: no theme, no initialisation call, no platform checks.
 
+### Optional: preload the shaders
+
+Without it, the shaders load on first use: glass draws as a plain blur for a
+frame or two before switching over in place, and the scroll edge and tab lens
+use their fallbacks until ready. `AdaptiveLiquidGlass.initialize()` loads
+them all before the first frame; it is a no-op on Android's Material path and
+safe to call twice.
+
+```dart
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AdaptiveLiquidGlass.initialize();
+  runApp(const MyApp());
+}
+```
+
 ### One line
 
 ```dart
@@ -133,12 +149,13 @@ app-wide.
 
 The shader (older iOS, or `mode: shader`) loads on first use. Until it is
 ready (usually a frame or two), glass draws as a plain blur and then switches
-over in place. To skip that, optionally load it before the first frame:
+over in place. To skip that, optionally load the shaders before the first
+frame:
 
 ```dart
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await LiquidGlass.precache();
+  await AdaptiveLiquidGlass.initialize();
   runApp(const MyApp());
 }
 ```

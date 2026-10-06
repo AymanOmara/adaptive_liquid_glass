@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 
+import '../core/glass_colors.dart';
 import '../core/glass_system_colors.dart';
 import '../core/ios_text.dart';
 import 'glass_menu_item.dart';
@@ -14,6 +15,7 @@ class GlassMenuRow extends StatelessWidget {
     required this.item,
     required this.onTap,
     this.choices = false,
+    this.highlighted = false,
   });
 
   /// The item shown.
@@ -25,6 +27,9 @@ class GlassMenuRow extends StatelessWidget {
   /// Whether the menu is a menu of choices: a checkmark column, the label
   /// after it.
   final bool choices;
+
+  /// Whether a gliding finger is over the row; see [GlassMenuController].
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +52,15 @@ class GlassMenuRow extends StatelessWidget {
           height: MenuMetrics.rowHeight,
           child: Stack(
             children: [
+              if (highlighted)
+                Positioned.fill(
+                  child: ColoredBox(
+                    color: CupertinoDynamicColor.resolve(
+                      GlassColors.menuHighlight,
+                      context,
+                    ),
+                  ),
+                ),
               if (choices && (item.checked ?? false))
                 PositionedDirectional(
                   start: MenuMetrics.checkCentre - MenuMetrics.checkSize / 2,

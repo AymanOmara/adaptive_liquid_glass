@@ -1,8 +1,10 @@
 import 'package:flutter/physics.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter/widgets.dart';
 
 import '../core/glass_colors.dart';
 import '../core/glass_render_mode.dart';
+import 'glass_menu_controller.dart';
 import 'glass_menu_item.dart';
 import 'glass_menu_panel.dart';
 import 'glass_menu_placement.dart';
@@ -22,6 +24,7 @@ class GlassMenuAnchor extends StatefulWidget {
     required this.builder,
     this.placement = GlassMenuPlacement.corner,
     this.mode,
+    this.controller,
   });
 
   /// The menu's rows.
@@ -36,14 +39,28 @@ class GlassMenuAnchor extends StatefulWidget {
   /// The rendering path.
   final GlassRenderMode? mode;
 
+  /// External control; see [GlassMenuController].
+  final GlassMenuController? controller;
+
   @override
   State<GlassMenuAnchor> createState() => _GlassMenuAnchorState();
 }
 
 class _GlassMenuAnchorState extends State<GlassMenuAnchor>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin
+    implements GlassMenuControllerHost {
   final OverlayPortalController _portal = OverlayPortalController();
   final LayerLink _link = LayerLink();
+
+  /// The panel, to hit-test a gliding finger against.
+  final GlobalKey _panel = GlobalKey();
+
+  /// The row a glide highlights, if any.
+  final ValueNotifier<int?> _highlighted = ValueNotifier(null);
+
+  /// Whether a close is animating: gliding stops for it.
+  bool _closing = false;
+
   late final AnimationController _open = AnimationController.unbounded(
     vsync: this,
   );
@@ -58,7 +75,24 @@ class _GlassMenuAnchorState extends State<GlassMenuAnchor>
   Size _openerSize = Size.zero;
 
   @override
+  void initState() {
+    super.initState();
+    widget.controller?.attach(this);
+  }
+
+  @override
+  void didUpdateWidget(covariant GlassMenuAnchor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.controller, widget.controller)) {
+      oldWidget.controller?.detach(this);
+      widget.controller?.attach(this);
+    }
+  }
+
+  @override
   void dispose() {
+    widget.controller?.detach(this);
+    _highlighted.dispose();
     _open.dispose();
     super.dispose();
   }
@@ -80,6 +114,7 @@ class _GlassMenuAnchorState extends State<GlassMenuAnchor>
       // The menu opens over the button, from the button's own corner.
       _target = _follower = Alignment(x, below ? -1 : 1);
     }
+    _highlighted.value = null;
     setState(_portal.show);
     if (_reduceMotion) {
       _open.value = 1;
@@ -91,9 +126,12 @@ class _GlassMenuAnchorState extends State<GlassMenuAnchor>
 
   Future<void> _hide() async {
     if (!_portal.isShowing) return;
+    _closing = true;
+    _highlighted.value = null;
     if (!_reduceMotion) {
       await _open.animateTo(0, duration: MenuMetrics.close);
     }
+    _closing = false;
     if (mounted) setState(_portal.hide);
   }
 
@@ -101,6 +139,54 @@ class _GlassMenuAnchorState extends State<GlassMenuAnchor>
     await _hide();
     item.onSelected?.call();
   }
+
+  @override
+  bool get isOpen => _portal.isShowing && !_closing;
+
+  @override
+  void open() {
+    if (!_portal.isShowing) _show();
+  }
+
+  @override
+  void close() => _hide();
+
+  @override
+  bool glideTo(Offset globalPosition) {
+    if (!_portal.isShowing || _closing) return false;
+    final box = _panel.currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) return false;
+    final local = box.globalToLocal(globalPosition);
+    final inside = (Offset.zero & box.size).contains(local);
+    int? index;
+    if (inside) {
+      final i =
+          ((local.dy - MenuMetrics.verticalPadding) / MenuMetrics.rowHeight)
+              .floor();
+      if (i >= 0 &&
+          i < widget.items.length &&
+          widget.items[i].onSelected != null) {
+        index = i;
+      }
+    }
+    if (index != null && _highlighted.value != index) {
+      HapticFeedback.selectionClick();
+    }
+    _highlighted.value = index;
+    return inside;
+  }
+
+  @override
+  bool endGlide() {
+    final index = _highlighted.value;
+    _highlighted.value = null;
+    if (_closing || index == null) return false;
+    _choose(widget.items[index]);
+    return true;
+  }
+
+  @override
+  void cancelGlide() => _highlighted.value = null;
 
   @override
   Widget build(BuildContext context) => CompositedTransformTarget(
@@ -146,9 +232,11 @@ class _GlassMenuAnchorState extends State<GlassMenuAnchor>
               ),
             ),
             child: GlassMenuPanel(
+              key: _panel,
               items: widget.items,
               mode: widget.mode,
               onChoose: _choose,
+              highlighted: _highlighted,
             ),
           ),
         ),

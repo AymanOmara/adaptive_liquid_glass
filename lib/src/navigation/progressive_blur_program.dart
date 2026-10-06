@@ -2,16 +2,16 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 
-/// Loads `tab_lens_content.frag` once and shares it.
-class TabLensProgram {
-  TabLensProgram._();
+/// Loads `progressive_blur.frag` once and shares it.
+class ProgressiveBlurProgram {
+  ProgressiveBlurProgram._();
 
   /// The shared instance.
-  static final TabLensProgram instance = TabLensProgram._();
+  static final ProgressiveBlurProgram instance = ProgressiveBlurProgram._();
 
   /// Asset key of the shader inside this package.
   static const String assetKey =
-      'packages/adaptive_liquid_glass/shaders/tab_lens_content.frag';
+      'packages/adaptive_liquid_glass/shaders/progressive_blur.frag';
 
   final ValueNotifier<ui.FragmentProgram?> _program = ValueNotifier(null);
   Future<void>? _loading;
@@ -26,8 +26,7 @@ class TabLensProgram {
   int get debugLoadCalls => _debugLoadCalls;
 
   /// Starts loading (idempotent). A failure leaves [program] `null` (the
-  /// tab bar then falls back to refracting its copy with the glass) and
-  /// lets a later call retry.
+  /// scroll edge then keeps its uniform blur) and lets a later call retry.
   Future<void> load() {
     _debugLoadCalls++;
     if (_skipLoad) return Future.value();
@@ -40,7 +39,7 @@ class TabLensProgram {
               exception: e,
               stack: s,
               library: 'adaptive_liquid_glass',
-              context: ErrorDescription('loading tab_lens_content.frag'),
+              context: ErrorDescription('loading progressive_blur.frag'),
             ),
           );
         });

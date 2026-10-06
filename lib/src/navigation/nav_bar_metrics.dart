@@ -44,4 +44,21 @@ abstract final class NavBarMetrics {
 
   /// The inline title's blur-and-fade in (~14 frames on iOS 26.4).
   static const Duration inlineFade = Duration(milliseconds: 230);
+
+  // Scroll edge. Estimated, not measured: iOS 26's soft edge is matched by
+  // eye.
+
+  /// The uniform scroll edge blur's sigma.
+  static const double edgeBlurSigma = 4;
+
+  /// How far down the edge the uniform blur reaches, as a share of the
+  /// edge's height.
+  static const double edgeBlurExtent = 0.8;
+
+  /// The progressive scroll edge blur's sigma at the top of the screen.
+  static const double edgeProgressiveSigma = 8;
+
+  /// The progressive blur's gradient gamma: it eases to sharp at the
+  /// edge's bottom.
+  static const double edgeProgressiveFalloff = 1.2;
 }

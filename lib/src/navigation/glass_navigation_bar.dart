@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/effective_glass_mode.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
+import 'glass_scroll_edge_style.dart';
 import 'nav_bar_content.dart';
 import 'nav_bar_metrics.dart';
 import 'scroll_edge.dart';
@@ -37,6 +38,7 @@ class GlassNavigationBar extends StatefulWidget implements PreferredSizeWidget {
     this.automaticallyImplyLeading = true,
     this.actions = const [],
     this.mode,
+    this.scrollEdgeStyle = GlassScrollEdgeStyle.uniform,
   });
 
   /// The centred title.
@@ -53,6 +55,10 @@ class GlassNavigationBar extends StatefulWidget implements PreferredSizeWidget {
 
   /// Rendering mode; see [GlassRenderMode].
   final GlassRenderMode? mode;
+
+  /// How content scrolled under the bar is blurred; see
+  /// [GlassScrollEdgeStyle].
+  final GlassScrollEdgeStyle scrollEdgeStyle;
 
   @override
   Size get preferredSize => const Size.fromHeight(NavBarMetrics.barHeight);
@@ -108,6 +114,7 @@ class _GlassNavigationBarState extends State<GlassNavigationBar> {
             top: 0,
             child: GlassScrollEdge(
               visible: _scrolledUnder,
+              style: widget.scrollEdgeStyle,
               height: top + NavBarMetrics.barHeight + 16,
             ),
           ),
