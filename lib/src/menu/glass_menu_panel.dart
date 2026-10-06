@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 
 import '../core/glass_render_mode.dart';
@@ -16,6 +17,7 @@ class GlassMenuPanel extends StatelessWidget {
     required this.items,
     required this.onChoose,
     this.mode,
+    this.highlighted,
   });
 
   /// The rows, top to bottom.
@@ -26,6 +28,9 @@ class GlassMenuPanel extends StatelessWidget {
 
   /// The rendering path.
   final GlassRenderMode? mode;
+
+  /// The row a glide highlights, if any; see [GlassMenuController].
+  final ValueListenable<int?>? highlighted;
 
   @override
   Widget build(BuildContext context) {
@@ -45,22 +50,33 @@ class GlassMenuPanel extends StatelessWidget {
             padding: const EdgeInsets.symmetric(
               vertical: MenuMetrics.verticalPadding,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final item in items)
-                  GlassMenuRow(
-                    item: item,
-                    choices: choices,
-                    onTap: item.onSelected == null
-                        ? null
-                        : () => onChoose(item),
-                  ),
-              ],
-            ),
+            child: _rows(choices),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _rows(bool choices) {
+    Widget column(int? highlight) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < items.length; i++)
+          GlassMenuRow(
+            item: items[i],
+            choices: choices,
+            highlighted: highlight == i,
+            onTap: items[i].onSelected == null
+                ? null
+                : () => onChoose(items[i]),
+          ),
+      ],
+    );
+    final listenable = highlighted;
+    if (listenable == null) return column(null);
+    return ValueListenableBuilder<int?>(
+      valueListenable: listenable,
+      builder: (context, value, _) => column(value),
     );
   }
 }

@@ -1,12 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
-    show IconButton, MenuAnchor, MenuItemButton;
+    show IconButton, MenuAnchor, MenuController, MenuItemButton;
 
 import '../button/glass_button.dart';
 import '../core/effective_glass_mode.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import 'glass_menu_anchor.dart';
+import 'glass_menu_controller.dart';
 import 'glass_menu_item.dart';
 
 /// An icon button that opens an iOS 26 pull-down menu: a glass panel that
@@ -36,6 +37,7 @@ class GlassMenuButton extends StatelessWidget {
     required this.icon,
     required this.semanticLabel,
     required this.items,
+    this.controller,
     this.mode,
   });
 
@@ -48,6 +50,10 @@ class GlassMenuButton extends StatelessWidget {
   /// The menu's items, top to bottom.
   final List<GlassMenuItem> items;
 
+  /// External control; see [GlassMenuController]. Gliding is a no-op on
+  /// the Material path.
+  final GlassMenuController? controller;
+
   /// The rendering path; see [GlassRenderMode].
   final GlassRenderMode? mode;
 
@@ -55,10 +61,16 @@ class GlassMenuButton extends StatelessWidget {
   Widget build(BuildContext context) => GlassModeBuilder(
     mode: mode,
     builder: (context, effective) => effective == EffectiveGlassMode.material
-        ? _material()
+        ? _MaterialMenu(
+            icon: icon,
+            semanticLabel: semanticLabel,
+            items: items,
+            controller: controller,
+          )
         : GlassMenuAnchor(
             items: items,
             mode: mode,
+            controller: controller,
             builder: (context, open) => GlassButton.icon(
               onPressed: open,
               icon: icon,
@@ -67,10 +79,76 @@ class GlassMenuButton extends StatelessWidget {
             ),
           ),
   );
+}
 
-  Widget _material() => MenuAnchor(
+/// The Material menu under external control: opening and closing drive
+/// the Material menu; gliding does nothing (a slide needs the rows under
+/// the finger, which Material's panel does not report).
+class _MaterialMenu extends StatefulWidget {
+  const _MaterialMenu({
+    required this.icon,
+    required this.semanticLabel,
+    required this.items,
+    this.controller,
+  });
+
+  final IconData icon;
+  final String semanticLabel;
+  final List<GlassMenuItem> items;
+  final GlassMenuController? controller;
+
+  @override
+  State<_MaterialMenu> createState() => _MaterialMenuState();
+}
+
+class _MaterialMenuState extends State<_MaterialMenu>
+    implements GlassMenuControllerHost {
+  final MenuController _menuController = MenuController();
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller?.attach(this);
+  }
+
+  @override
+  void didUpdateWidget(covariant _MaterialMenu oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.controller, widget.controller)) {
+      oldWidget.controller?.detach(this);
+      widget.controller?.attach(this);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller?.detach(this);
+    super.dispose();
+  }
+
+  @override
+  bool get isOpen => _menuController.isOpen;
+
+  @override
+  void open() => _menuController.open();
+
+  @override
+  void close() => _menuController.close();
+
+  @override
+  bool glideTo(Offset globalPosition) => false;
+
+  @override
+  bool endGlide() => false;
+
+  @override
+  void cancelGlide() {}
+
+  @override
+  Widget build(BuildContext context) => MenuAnchor(
+    controller: _menuController,
     menuChildren: [
-      for (final item in items)
+      for (final item in widget.items)
         MenuItemButton(
           onPressed: item.onSelected,
           leadingIcon: item.icon == null ? null : Icon(item.icon),
@@ -78,8 +156,8 @@ class GlassMenuButton extends StatelessWidget {
         ),
     ],
     builder: (context, controller, _) => IconButton(
-      icon: Icon(icon),
-      tooltip: semanticLabel,
+      icon: Icon(widget.icon),
+      tooltip: widget.semanticLabel,
       onPressed: () =>
           controller.isOpen ? controller.close() : controller.open(),
     ),

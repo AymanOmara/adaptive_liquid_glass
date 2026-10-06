@@ -106,4 +106,14 @@ abstract final class GlassColors {
         color: Color(0xFFB9B9BC),
         darkColor: Color(0xFF535356),
       );
+
+  // Menu
+
+  /// The row under a gliding finger in a glass menu (estimated, not
+  /// measured: iOS's highlight is a translucent label-colour fill).
+  static const CupertinoDynamicColor menuHighlight =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0x1F000000),
+        darkColor: Color(0x29FFFFFF),
+      );
 }

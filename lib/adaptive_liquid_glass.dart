@@ -40,6 +40,7 @@ export 'src/glass_effect.dart';
 export 'src/group/glass_group.dart' show GlassGroup;
 export 'src/liquid_glass.dart' show LiquidGlass;
 export 'src/menu/glass_menu_button.dart';
+export 'src/menu/glass_menu_controller.dart' show GlassMenuController;
 export 'src/menu/glass_menu_item.dart';
 export 'src/navigation/glass_back_button.dart' show GlassBackButton;
 export 'src/navigation/glass_navigation_bar.dart';
