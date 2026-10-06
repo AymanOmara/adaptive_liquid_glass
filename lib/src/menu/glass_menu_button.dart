@@ -74,7 +74,11 @@ class GlassMenuButton extends StatelessWidget {
         MenuItemButton(
           onPressed: item.onSelected,
           leadingIcon: item.icon == null ? null : Icon(item.icon),
-          child: Text(item.label),
+          child: Semantics(
+            label: item.semanticLabel,
+            excludeSemantics: item.semanticLabel != null,
+            child: Text(item.label),
+          ),
         ),
     ],
     builder: (context, controller, _) => IconButton(

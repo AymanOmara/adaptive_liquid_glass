@@ -98,7 +98,8 @@ class GlassButton extends StatelessWidget {
   /// Morph identity inside a `GlassGroup`.
   final Object? glassId;
 
-  /// The accessibility label; give one to icon-only buttons.
+  /// The accessibility label; give one to icon-only buttons. Replaces the
+  /// visible label for assistive tech.
   final String? semanticLabel;
 
   /// The label (default constructor).
@@ -166,7 +167,11 @@ class GlassButton extends StatelessWidget {
           )
         : BoxConstraints(minHeight: height, minWidth: circle ? height : 0);
 
-    Widget content = _content(m);
+    // An explicit label replaces the visible one rather than doubling it.
+    Widget content = ExcludeSemantics(
+      excluding: semanticLabel != null,
+      child: _content(m),
+    );
     if (loading) {
       content = Stack(
         alignment: Alignment.center,

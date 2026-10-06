@@ -11,6 +11,7 @@ class GlassMenuItem {
     this.icon,
     this.destructive = false,
     this.checked,
+    this.semanticLabel,
   });
 
   /// The item's label.
@@ -30,4 +31,7 @@ class GlassMenuItem {
   /// a plain action. A menu with any choice gives every row the
   /// checkmark column, as SwiftUI's picker menu does.
   final bool? checked;
+
+  /// What assistive tech reads instead of [label].
+  final String? semanticLabel;
 }

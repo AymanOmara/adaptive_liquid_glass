@@ -37,10 +37,15 @@ class GlassMenuRow extends StatelessWidget {
       context,
     );
     return Semantics(
+      container: true,
       button: true,
       enabled: item.onSelected != null,
       selected: choices ? (item.checked ?? false) : null,
+      label: item.semanticLabel ?? item.label,
+      onTap: onTap,
+      excludeSemantics: true,
       child: GestureDetector(
+        excludeFromSemantics: true,
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: SizedBox(

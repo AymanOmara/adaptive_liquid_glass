@@ -29,12 +29,14 @@ import 'popover_metrics.dart';
 /// Its top is [overlap] below the anchor's top (SwiftUI's from a toolbar
 /// button). The content sizes the bubble (give it its own padding). Completes with
 /// the value the popover is popped with. On the Material path the bubble
-/// is a Material surface.
+/// is a Material surface. [semanticLabel] names the popover for assistive
+/// tech; a tap outside, or the dismiss action, closes it.
 Future<T?> showGlassPopover<T>({
   required BuildContext context,
   required WidgetBuilder builder,
   double overlap = PopoverMetrics.overlap,
   GlassRenderMode? mode,
+  String? semanticLabel,
 }) {
   final box = context.findRenderObject()! as RenderBox;
   final anchor = box.localToGlobal(Offset.zero) & box.size;
@@ -44,6 +46,7 @@ Future<T?> showGlassPopover<T>({
       builder: builder,
       overlap: overlap,
       mode: mode,
+      semanticLabel: semanticLabel,
       barrierLabel: cupertinoL10n(context).modalBarrierDismissLabel,
     ),
   );

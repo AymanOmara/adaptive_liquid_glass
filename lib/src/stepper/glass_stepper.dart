@@ -125,7 +125,11 @@ class _GlassStepperState extends State<GlassStepper> {
         button: true,
         enabled: enabled,
         label: direction < 0 ? widget.decrementLabel : widget.incrementLabel,
+        // The tap action only while enabled: the detector always has a
+        // cancel handler, which would otherwise advertise an inert tap.
+        onTap: enabled ? () => _change(direction) : null,
         child: GestureDetector(
+          excludeFromSemantics: true,
           behavior: HitTestBehavior.opaque,
           onTapDown: enabled
               ? (_) => setState(() => _pressed = direction)
