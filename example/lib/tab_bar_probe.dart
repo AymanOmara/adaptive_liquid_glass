@@ -79,14 +79,14 @@ class _ProbeState extends State<_Probe> {
           left: 65.3,
           right: 16,
           top: 812.3,
-          child: Container(height: 1, color: const Color(0xFF131313)),
+          child: Container(height: 1, color: const Color(0xFF2C2C2E)),
         ),
         const Positioned(
           left: 73,
-          top: 822,
+          top: 829,
           child: Text(
-            'Standup notes',
-            style: TextStyle(fontSize: 15.3, color: Color(0xFF1A1A1A)),
+            'Dashboard metrics · Q3 review',
+            style: TextStyle(fontSize: 15.3, color: Color(0xFF2A2A2A)),
           ),
         ),
         const Positioned(

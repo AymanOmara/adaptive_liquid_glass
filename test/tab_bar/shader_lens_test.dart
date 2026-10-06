@@ -49,8 +49,8 @@ void main() {
       // iOS squeezes what borders the lens into its rim band: an outward,
       // continuous bend.
       expect(c.lensStrength, greaterThan(0));
-      // Only along the long sides: the round ends stay clear.
-      expect(c.lensVertical, 1);
+      // Mostly along the long sides: the round ends bend less.
+      expect(c.lensVertical, greaterThan(0));
       // Only a light blur, after the bend (it averages the squeezed band).
       expect(c.frostWideSigma, 0);
       expect(c.postBlurShare, greaterThanOrEqualTo(0.9));

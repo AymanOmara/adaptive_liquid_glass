@@ -26,16 +26,19 @@ const tabLensLight = GlassVariantConstants(
   lensStrength: 4,
   lensDecay: 1000,
   lensSizeRef: 0,
-  dispersion: 0.12,
+  dispersion: 0.3,
   normalRadiusScale: 1,
   lensEdge: -6.7,
   lensEdgeDecay: 8,
-  // The bend acts where the lens faces up or down; its round ends stay
-  // clear (Kept).
-  lensVertical: 1,
-  rimRainbow: 0.35,
-  rimMix: 0.55,
-  rimMixWidth: 1.9,
+  // The bend is strongest where the lens faces up or down; its round
+  // ends bend half as much (Kept: clear mid-bar, a rainbow crescent past
+  // the bar's end).
+  lensVertical: 0.5,
+  // Kept's rim: teal-cyan (hue ~180), about 0.2 saturated.
+  rimTint: 0.2,
+  rimHue: 180,
+  rimMix: 0.85,
+  rimMixWidth: 1.4,
   rimMixCut: 3,
   rimMixLumaFloor: 1,
   rimWidth: 1.2,
@@ -64,16 +67,19 @@ const tabLensDark = GlassVariantConstants(
   lensStrength: 4,
   lensDecay: 1000,
   lensSizeRef: 0,
-  dispersion: 0.12,
+  dispersion: 0.3,
   normalRadiusScale: 1,
   lensEdge: -6.7,
   lensEdgeDecay: 8,
-  // The bend acts where the lens faces up or down; its round ends stay
-  // clear (Kept).
-  lensVertical: 1,
-  rimRainbow: 0.35,
-  rimMix: 0.55,
-  rimMixWidth: 1.9,
+  // The bend is strongest where the lens faces up or down; its round
+  // ends bend half as much (Kept: clear mid-bar, a rainbow crescent past
+  // the bar's end).
+  lensVertical: 0.5,
+  // Kept's rim: teal-cyan (hue ~180), about 0.2 saturated.
+  rimTint: 0.2,
+  rimHue: 180,
+  rimMix: 0.85,
+  rimMixWidth: 1.4,
   rimMixCut: 3,
   rimMixLumaFloor: 1,
   rimWidth: 1.2,
@@ -131,6 +137,9 @@ Widget withTabLens(BuildContext context, Widget child) {
 /// glass (no dark-end lift) with an even 1 pt rim.
 const _tabBarOverrides = <String, Object?>{
   'toneLift': 0.0,
+  // UIKit's bar frosts less than SwiftUI's glass: the page behind it shows
+  // as thin, faint strokes.
+  'blurSigma': 4.0,
   'rimIntensity': 0.0,
   'rimMix': 0.144,
   'rimMixWidth': 1.33,
