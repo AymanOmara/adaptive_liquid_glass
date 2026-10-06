@@ -57,6 +57,8 @@ class ReferenceTwin extends StatelessWidget {
 }
 
 /// [child] centred at ([x], [y]) in screen points.
+/// (SwiftUI's label-hidden Toggle draws 1.17 pt right of its position, so
+/// the toggles are placed at 202.17.)
 Widget _at(double x, double y, Widget child) => Positioned(
   left: x - 200,
   top: y - 100,
@@ -120,12 +122,12 @@ class _ControlsState extends State<_Controls> {
           child: ColoredBox(color: Colors.black),
         ),
         _at(
-          201,
+          202.17,
           100,
           GlassToggle(value: _on, onChanged: (v) => setState(() => _on = v)),
         ),
         _at(
-          201,
+          202.17,
           200,
           GlassToggle(value: _off, onChanged: (v) => setState(() => _off = v)),
         ),
@@ -140,10 +142,11 @@ class _ControlsState extends State<_Controls> {
             ),
           ),
         ),
-        _at(201, 400, _picker),
-        _at(201, 500, _dark(context, _picker)),
+        // SwiftUI's picker lands 0.67 pt below its position.
+        _at(201, 400.67, _picker),
+        _at(201, 500.67, _dark(context, _picker)),
         _at(
-          201,
+          202.17,
           640,
           _dark(
             context,
@@ -347,13 +350,13 @@ class _Swipe extends StatelessWidget {
               ],
               trailing: [
                 GlassSwipeAction(
-                  icon: CupertinoIcons.trash,
+                  icon: CupertinoIcons.trash_fill,
                   label: 'Delete',
                   color: GlassSystemColors.red,
                   onPressed: () {},
                 ),
                 GlassSwipeAction(
-                  icon: CupertinoIcons.square_arrow_up,
+                  icon: CupertinoIcons.square_arrow_up_fill,
                   label: 'Share',
                   color: GlassSystemColors.blue,
                   onPressed: () {},

@@ -18,6 +18,7 @@ class GlassThumb extends StatelessWidget {
     required this.color,
     this.mode,
     this.child,
+    this.shadow = false,
   });
 
   /// How far the thumb has turned into a lens.
@@ -31,6 +32,10 @@ class GlassThumb extends StatelessWidget {
 
   /// Drawn on the thumb (a segment's label).
   final Widget? child;
+
+  /// Whether the resting thumb casts a soft shadow. SwiftUI's slider thumb
+  /// does; its toggle and segmented thumbs are flat.
+  final bool shadow;
 
   @override
   Widget build(BuildContext context) {
@@ -50,13 +55,15 @@ class GlassThumb extends StatelessWidget {
                 decoration: ShapeDecoration(
                   shape: const StadiumBorder(),
                   color: color,
-                  shadows: const [
-                    BoxShadow(
-                      color: GlassColors.thumbShadow,
-                      blurRadius: 4,
-                      offset: Offset(0, 1),
-                    ),
-                  ],
+                  shadows: shadow
+                      ? const [
+                          BoxShadow(
+                            color: GlassColors.thumbShadow,
+                            blurRadius: 4,
+                            offset: Offset(0, 1),
+                          ),
+                        ]
+                      : null,
                 ),
               ),
             ),

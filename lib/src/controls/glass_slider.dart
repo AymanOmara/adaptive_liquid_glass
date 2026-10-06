@@ -263,6 +263,7 @@ class _GlassSliderState extends State<GlassSlider>
             pressed: _press.value,
             color: GlassColors.thumb,
             mode: widget.mode,
+            shadow: true,
           ),
         ),
       ],

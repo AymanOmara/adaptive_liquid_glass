@@ -250,10 +250,10 @@ class _GlassSegmentedControlState<T> extends State<GlassSegmentedControl<T>>
               child: DefaultTextStyle(
                 style: IOSText.style(
                   ControlMetrics.segmentedFontSize,
-                  // As SwiftUI: the selected segment semibold.
+                  // As SwiftUI: medium, the selected segment semibold.
                   weight: i == _selectedIndex
                       ? FontWeight.w600
-                      : FontWeight.w400,
+                      : FontWeight.w500,
                   color: color,
                 ),
                 maxLines: 1,

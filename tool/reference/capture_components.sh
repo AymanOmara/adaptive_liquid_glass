@@ -19,11 +19,11 @@ xcrun simctl install "$UDID" "$APP"
 mkdir -p "$OUT/swiftui" "$OUT/native" "$OUT/shader"
 for s in $SCENES; do
   xcrun simctl launch --terminate-running-process "$UDID" "$BID" -controls "$s" >/dev/null
-  sleep 4; xcrun simctl io "$UDID" screenshot "$OUT/swiftui/$s.png" >/dev/null 2>&1
+  sleep 6; xcrun simctl io "$UDID" screenshot "$OUT/swiftui/$s.png" >/dev/null 2>&1
   [ "$s" = tabbar ] && continue  # the twin's accessory scene covers it
   for mode in native shader; do
     xcrun simctl launch --terminate-running-process "$UDID" "$BID" -twin "$s" -mode "$mode" >/dev/null
-    sleep 5; xcrun simctl io "$UDID" screenshot "$OUT/$mode/$s.png" >/dev/null 2>&1
+    sleep 7; xcrun simctl io "$UDID" screenshot "$OUT/$mode/$s.png" >/dev/null 2>&1
   done
 done
 xcrun simctl ui "$UDID" appearance "$before"
