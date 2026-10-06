@@ -110,4 +110,20 @@ void main() {
     await t.pumpAndSettle();
     expect(_value(t), isTrue);
   }, variant: android);
+
+  testWidgets('on a glass card the lens keeps its own group', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      plainHost(
+        const LiquidGlass(padding: EdgeInsets.all(16), child: _Harness()),
+      ),
+    );
+    final g = await t.startGesture(t.getCenter(find.byType(GlassToggle)));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 200));
+    final groups = find.ancestor(of: _lens, matching: find.byType(GlassGroup));
+    expect(groups, findsNWidgets(2));
+    await g.up();
+    await t.pumpAndSettle();
+  }, variant: ios);
 }

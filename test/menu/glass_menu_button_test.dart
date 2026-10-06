@@ -106,4 +106,34 @@ void main() {
     await t.pumpAndSettle();
     expect(picks, ['copy']);
   }, variant: android);
+
+  testWidgets('in a bar the menu does not merge with the buttons', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          appBar: GlassNavigationBar(
+            actions: [
+              GlassMenuButton(
+                icon: CupertinoIcons.ellipsis,
+                semanticLabel: 'More',
+                items: [GlassMenuItem(label: 'Copy', onSelected: () {})],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await t.tap(find.bySemanticsLabel('More'));
+    await t.pumpAndSettle();
+    final menuGroup = find.ancestor(
+      of: find.text('Copy'),
+      matching: find.byType(GlassGroup),
+    );
+    final buttonGroup = find.ancestor(
+      of: find.bySemanticsLabel('More'),
+      matching: find.byType(GlassGroup),
+    );
+    expect(t.element(menuGroup.first), isNot(t.element(buttonGroup.first)));
+  }, variant: ios);
 }

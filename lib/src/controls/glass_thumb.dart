@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../core/glass.dart';
 import '../core/glass_colors.dart';
 import '../core/glass_render_mode.dart';
+import '../group/glass_group.dart';
 import '../liquid_glass.dart';
 import 'control_metrics.dart';
 
@@ -61,12 +62,17 @@ class GlassThumb extends StatelessWidget {
             ),
           // Only a visibly pressed thumb is glass: a hair-thin lens would
           // still refract its surroundings.
+          // Its own group, so a control on a glass card does not blend
+          // its lens into the card.
           if (t > 0.05)
-            LiquidGlass(
-              glass: Glass.clear,
+            GlassGroup(
               mode: mode,
-              adaptiveForeground: false,
-              child: const SizedBox.expand(),
+              child: LiquidGlass(
+                glass: Glass.clear,
+                mode: mode,
+                adaptiveForeground: false,
+                child: const SizedBox.expand(),
+              ),
             ),
           if (child != null) Center(child: child),
         ],

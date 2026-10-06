@@ -9,6 +9,7 @@ import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
+import '../group/glass_group.dart';
 import '../liquid_glass.dart';
 import 'glass_menu_item.dart';
 import 'glass_menu_row.dart';
@@ -187,23 +188,29 @@ class _GlassMenuButtonState extends State<GlassMenuButton>
               child: Semantics(
                 scopesRoute: true,
                 explicitChildNodes: true,
-                child: LiquidGlass(
+                // Its own group: the overlay inherits the button's scopes,
+                // and in a bar's group the menu would merge with the
+                // buttons' capsule.
+                child: GlassGroup(
                   mode: widget.mode,
-                  shape: const GlassShape.rect(MenuMetrics.cornerRadius),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: MenuMetrics.verticalPadding,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      for (final item in widget.items)
-                        GlassMenuRow(
-                          item: item,
-                          onTap: item.onSelected == null
-                              ? null
-                              : () => _choose(item),
-                        ),
-                    ],
+                  child: LiquidGlass(
+                    mode: widget.mode,
+                    shape: const GlassShape.rect(MenuMetrics.cornerRadius),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: MenuMetrics.verticalPadding,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (final item in widget.items)
+                          GlassMenuRow(
+                            item: item,
+                            onTap: item.onSelected == null
+                                ? null
+                                : () => _choose(item),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
