@@ -40,14 +40,15 @@ class GlassConstants {
     ),
   );
 
-  /// The shipped values (certified at the final Task 17d tree): the Task
+  /// The shipped values (certified at the Task A1 tree): the Task
   /// 17c constants (edge lens from Task 15c, size-dependent frost/fill from
   /// 17b, frost wide tail from 17c) plus the 17d additions (tone LUT, small
-  /// dark-shape tone lift, clear lens grid, anisotropic frost), fitted by
+  /// dark-shape tone lift, clear lens grid, anisotropic frost) and the A1
+  /// continuous-corner outline, fitted by
   /// the NumPy model (`tool/fidelity/fit.py`) against SwiftUI screenshots
   /// of `tool/scenes/scenes.json`. Device-certified on the reference
-  /// simulator: 46/75 scenes pass, median SSIM 0.9828 / median ΔE 1.09,
-  /// min SSIM 0.9532, 0 scenes below 0.95 (75 in-set scenes; held-out
+  /// simulator: 46/75 scenes pass, median SSIM 0.9830 / median ΔE 1.09,
+  /// min SSIM 0.9532, 0 scenes below 0.95 (75 in-set scenes; pre-A1 held-out
   /// 48-scene set: 18/48, min 0.9470). Per-set and per-scene numbers, and
   /// the known residuals, live in
   /// `docs/superpowers/notes/fidelity-status.md` — cite that note, not
