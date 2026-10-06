@@ -31,6 +31,12 @@ enum ControlScenes {
     case "searchtab": root = AnyView(SearchTabReference())
     case "swipe": root = AnyView(SwipeReference(tall: false))
     case "swipetall": root = AnyView(SwipeReference(tall: true))
+    case "textfield": root = AnyView(TextFieldReference())
+    case "list": root = AnyView(ListReference())
+    case "progress": root = AnyView(ProgressReference())
+    case "pagecontrol": root = AnyView(PageControlReference())
+    case "actionsheet": root = AnyView(ActionSheetReference())
+    case "badge": root = AnyView(BadgeReference())
     default: return false
     }
     window?.rootViewController = UIHostingController(rootView: root)
@@ -426,5 +432,131 @@ struct SearchTabReference: View {
       }
     }
     .environment(\.colorScheme, .light)
+  }
+}
+
+// MARK: - References for the components borrowed in feat/borrow-lgw.
+// Laid out the same way in lib/reference_twin.dart for side-by-side checks.
+
+/// A text field (centre 201, 120) and a secure field (201, 200) on white,
+/// then the same pair in dark on a black band (y 300-460).
+@available(iOS 26.0, *)
+struct TextFieldReference: View {
+  @State private var text = ""
+  @State private var secret = "secret"
+  var body: some View {
+    ZStack(alignment: .topLeading) {
+      Color.white
+      Color.black.frame(width: 402, height: 160).position(x: 201, y: 380)
+      fields.position(x: 201, y: 160)
+      fields.position(x: 201, y: 380).environment(\.colorScheme, .dark)
+    }
+    .frame(width: 402, height: 874)
+    .ignoresSafeArea()
+    .environment(\.colorScheme, .light)
+    .statusBarHidden(true)
+  }
+
+  var fields: some View {
+    VStack(spacing: 24) {
+      TextField("Name", text: $text).textFieldStyle(.roundedBorder)
+      SecureField("Password", text: $secret).textFieldStyle(.roundedBorder)
+    }
+    .frame(width: 362)
+  }
+}
+
+/// An inset-grouped list: one section with an icon row + chevron, a value
+/// row and a toggle row, with header and footer.
+@available(iOS 26.0, *)
+struct ListReference: View {
+  @State private var on = true
+  var body: some View {
+    List {
+      Section {
+        Label("Wi-Fi", systemImage: "wifi")
+          .badge("Home")
+        NavigationLink(value: 1) { Label("General", systemImage: "gear") }
+        Toggle(isOn: $on) { Label("Airplane Mode", systemImage: "airplane") }
+      } header: { Text("Connections") } footer: { Text("Footer text") }
+    }
+    .listStyle(.insetGrouped)
+    .environment(\.colorScheme, .light)
+    .statusBarHidden(true)
+  }
+}
+
+/// Linear progress at 40% (y 120), an indeterminate spinner (y 200),
+/// then both in dark on a black band (y 300-460).
+@available(iOS 26.0, *)
+struct ProgressReference: View {
+  var body: some View {
+    ZStack(alignment: .topLeading) {
+      Color.white
+      Color.black.frame(width: 402, height: 160).position(x: 201, y: 380)
+      pair.position(x: 201, y: 160)
+      pair.position(x: 201, y: 380).environment(\.colorScheme, .dark)
+    }
+    .frame(width: 402, height: 874)
+    .ignoresSafeArea()
+    .environment(\.colorScheme, .light)
+    .statusBarHidden(true)
+  }
+
+  var pair: some View {
+    VStack(spacing: 40) {
+      ProgressView(value: 0.4).frame(width: 300)
+      ProgressView()
+    }
+  }
+}
+
+/// A paged view of five grey pages, page 2 selected, with the always-on
+/// page indicator background.
+@available(iOS 26.0, *)
+struct PageControlReference: View {
+  @State private var page = 1
+  var body: some View {
+    TabView(selection: $page) {
+      ForEach(0..<5) { i in
+        Color(white: 0.85 - Double(i) * 0.05).tag(i)
+      }
+    }
+    .tabViewStyle(.page(indexDisplayMode: .always))
+    .indexViewStyle(.page(backgroundDisplayMode: .always))
+    .ignoresSafeArea()
+    .statusBarHidden(true)
+  }
+}
+
+/// A confirmation dialog (action sheet) open over a white page.
+@available(iOS 26.0, *)
+struct ActionSheetReference: View {
+  @State private var shown = false
+  var body: some View {
+    Color.white
+      .ignoresSafeArea()
+      .confirmationDialog("Delete photo?", isPresented: $shown, titleVisibility: .visible) {
+        Button("Delete", role: .destructive) {}
+        Button("Duplicate") {}
+        Button("Cancel", role: .cancel) {}
+      } message: {
+        Text("This photo will be removed from all your devices.")
+      }
+      .onAppear { DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { shown = true } }
+      .statusBarHidden(true)
+  }
+}
+
+/// A tab bar whose second tab carries a badge of 3.
+@available(iOS 26.0, *)
+struct BadgeReference: View {
+  var body: some View {
+    TabView {
+      Tab("Home", systemImage: "house") { Color.white }
+      Tab("Inbox", systemImage: "tray") { Color.white }.badge(3)
+      Tab("Settings", systemImage: "gear") { Color.white }
+    }
+    .statusBarHidden(true)
   }
 }
