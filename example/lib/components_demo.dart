@@ -47,6 +47,7 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
   bool _toolbar = false;
   double _count = 3;
   DateTime _date = DateTime(2026, 10, 6);
+  String? _emailError;
   final _rows = ['Copied Image', 'Meeting notes', 'Shopping list'];
 
   void _snack(String message) => ScaffoldMessenger.of(context)
@@ -320,6 +321,26 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                   ],
                 ),
               ),
+              const SizedBox(height: 24),
+              GlassTextField(
+                placeholder: 'Email',
+                prefix: const Icon(CupertinoIcons.mail),
+                clearButton: true,
+                keyboardType: TextInputType.emailAddress,
+                errorText: _emailError,
+                onChanged: (v) => setState(
+                  () => _emailError = v.isEmpty || v.contains('@')
+                      ? null
+                      : 'Enter a valid email',
+                ),
+              ),
+              const SizedBox(height: 12),
+              const GlassTextField.password(
+                placeholder: 'Password',
+                prefix: Icon(CupertinoIcons.lock),
+              ),
+              const SizedBox(height: 12),
+              const GlassTextField(placeholder: 'Notes', maxLines: 4),
               const SizedBox(height: 24),
               Center(
                 child: GlassContextMenu(

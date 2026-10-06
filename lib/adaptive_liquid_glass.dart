@@ -60,5 +60,6 @@ export 'src/swipe/glass_swipe_action.dart';
 export 'src/swipe/glass_swipe_actions.dart';
 export 'src/tab_bar/glass_tab_bar.dart';
 export 'src/tab_bar/glass_tab_bar_item.dart';
+export 'src/text_field/glass_text_field.dart';
 export 'src/toolbar/glass_toolbar.dart';
 export 'src/toolbar/glass_toolbar_spacer.dart';
