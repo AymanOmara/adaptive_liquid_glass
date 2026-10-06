@@ -88,4 +88,8 @@ abstract final class GlassColors {
   /// The dimming behind a sheet: black at 20% (measured: a mid-grey page
   /// goes from 128 to 102).
   static const Color sheetBarrier = Color(0x33000000);
+
+  /// A dialog button's capsule on the glass: black at 12% (measured: the
+  /// card's 211 becomes 186).
+  static const Color dialogButtonFill = Color(0x1F000000);
 }
