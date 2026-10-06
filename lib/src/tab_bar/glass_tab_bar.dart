@@ -11,6 +11,7 @@ import 'package:flutter/material.dart'
         WidgetStateProperty;
 import 'package:flutter/physics.dart';
 import 'package:flutter/scheduler.dart' show Ticker;
+import 'package:flutter/services.dart' show HapticFeedback;
 
 import '../core/glass.dart';
 import '../core/glass_environment.dart';
@@ -92,6 +93,7 @@ class GlassTabBar extends StatefulWidget {
     this.mode,
     this.itemWidth = 86.15,
     this.height = 62,
+    this.enableFeedback = true,
   }) : assert(items.length >= 2, 'A tab bar needs at least two tabs.');
 
   /// The tabs, in reading order.
@@ -127,6 +129,10 @@ class GlassTabBar extends StatefulWidget {
 
   /// The bar's height.
   final double height;
+
+  /// Whether dragging the lens onto another tab plays a selection haptic,
+  /// as iOS does. The Material path follows Material's own feedback.
+  final bool enableFeedback;
 
   @override
   State<GlassTabBar> createState() => _GlassTabBarState();
@@ -307,6 +313,11 @@ class _GlassTabBarState extends State<GlassTabBar>
   /// Where the finger is, in visual slots.
   double _finger = 0;
 
+  /// The tab under the finger as last announced by a haptic.
+  int _fingerSlot = 0;
+
+  int get _nearestSlot => _finger.round().clamp(0, _count - 1);
+
   /// The spacing of the tabs as last laid out.
   late double _itemWidth = widget.itemWidth;
 
@@ -481,6 +492,7 @@ class _GlassTabBarState extends State<GlassTabBar>
   void _down(DragDownDetails details) {
     _held = true;
     _finger = _toSlots(details.localPosition.dx);
+    _fingerSlot = _nearestSlot;
     _cancelPendingRelease();
     _springPress(_Metrics.press, 1);
     _dragging = false;
@@ -494,6 +506,11 @@ class _GlassTabBarState extends State<GlassTabBar>
   void _drag(DragUpdateDetails details) {
     _finger = _toSlots(details.localPosition.dx);
     _follow(_lensTarget(_finger));
+    final slot = _nearestSlot;
+    if (slot != _fingerSlot) {
+      _fingerSlot = slot;
+      if (widget.enableFeedback) HapticFeedback.selectionClick();
+    }
     if (!_dragging) {
       _dragging = true;
       _springLight(_Metrics.light, 2);
@@ -503,7 +520,7 @@ class _GlassTabBarState extends State<GlassTabBar>
   void _release(double velocity) {
     _held = false;
     _springLight(_Metrics.lightOff, 0);
-    final slot = _finger.round().clamp(0, _count - 1);
+    final slot = _nearestSlot;
     final index = _rtl ? _count - 1 - slot : slot;
     final travelling = (_x.value - slot).abs() > 0.15;
     _springX(travelling ? _Metrics.travel : _Metrics.slide, slot.toDouble());

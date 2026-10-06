@@ -4,6 +4,7 @@ import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Badge, NavigationBar;
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../api/hosts.dart';
@@ -18,10 +19,11 @@ const _blue = Color(0xFF0000FF);
 
 /// A tab bar that keeps its own selection, and records every pick.
 class _Harness extends StatefulWidget {
-  const _Harness(this.picks, {this.items = _items});
+  const _Harness(this.picks, {this.items = _items, this.enableFeedback = true});
 
   final List<int> picks;
   final List<GlassTabBarItem> items;
+  final bool enableFeedback;
 
   @override
   State<_Harness> createState() => _HarnessState();
@@ -35,6 +37,7 @@ class _HarnessState extends State<_Harness> {
     items: widget.items,
     selectedIndex: _selected,
     selectedColor: _blue,
+    enableFeedback: widget.enableFeedback,
     onSelected: (i) {
       widget.picks.add(i);
       setState(() => _selected = i);
@@ -501,5 +504,59 @@ void main() {
     final first = tinted.indexOf(true);
     expect(first, isNonNegative);
     expect(tinted.sublist(first), everyElement(isTrue));
+  }, variant: ios);
+
+  /// Records the selection haptics the platform is asked for.
+  List<String> recordHaptics(WidgetTester t) {
+    final calls = <String>[];
+    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'HapticFeedback.vibrate') {
+          calls.add(call.arguments as String);
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    return calls;
+  }
+
+  Future<void> dragAcross(WidgetTester t) async {
+    final from = t.getCenter(find.text('History'));
+    final to = t.getCenter(find.text('Settings'));
+    final g = await t.startGesture(from);
+    await t.pump(const Duration(milliseconds: 100));
+    for (var i = 1; i <= 20; i++) {
+      await g.moveTo(Offset.lerp(from, to, i / 20)!);
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    await g.up();
+    await t.pumpAndSettle();
+  }
+
+  testWidgets('dragging the lens over each tab ticks once per tab', (t) async {
+    shaderEnv();
+    final haptics = recordHaptics(t);
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    await dragAcross(t);
+    // History to Settings crosses Snippets, then lands on Settings.
+    expect(haptics, [
+      'HapticFeedbackType.selectionClick',
+      'HapticFeedbackType.selectionClick',
+    ]);
+  }, variant: ios);
+
+  testWidgets('enableFeedback: false keeps the drag silent', (t) async {
+    shaderEnv();
+    final haptics = recordHaptics(t);
+    await t.pumpWidget(plainHost(_Harness(_picks(), enableFeedback: false)));
+    await dragAcross(t);
+    expect(haptics, isEmpty);
   }, variant: ios);
 }
