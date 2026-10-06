@@ -14,12 +14,15 @@
 library;
 
 export 'src/adaptive_liquid_glass_setup.dart';
+export 'src/action_sheet/show_glass_action_sheet.dart';
+export 'src/badge/glass_badge.dart';
 export 'src/button/glass_button.dart';
 export 'src/button/glass_button_role.dart';
 export 'src/button/glass_button_shape.dart';
 export 'src/button/glass_button_style.dart';
 export 'src/button/glass_control_size.dart';
 export 'src/button/glass_control_size_scope.dart';
+export 'src/chip/glass_chip.dart';
 export 'src/context_menu/glass_context_menu.dart';
 export 'src/controls/glass_segment.dart';
 export 'src/controls/glass_segmented_control.dart';
@@ -41,6 +44,8 @@ export 'src/foreground/glass_foreground.dart';
 export 'src/glass_effect.dart';
 export 'src/group/glass_group.dart' show GlassGroup;
 export 'src/liquid_glass.dart' show LiquidGlass;
+export 'src/list/glass_list_section.dart';
+export 'src/list/glass_list_tile.dart';
 export 'src/menu/glass_menu_button.dart';
 export 'src/menu/glass_menu_controller.dart' show GlassMenuController;
 export 'src/menu/glass_menu_item.dart';
@@ -49,10 +54,13 @@ export 'src/navigation/glass_navigation_bar.dart';
 export 'src/navigation/glass_scroll_edge_style.dart';
 export 'src/navigation/sliver_glass_navigation_bar.dart'
     show SliverGlassNavigationBar;
+export 'src/page_control/glass_page_control.dart';
 export 'src/picker/glass_picker.dart';
 export 'src/picker/glass_picker_item.dart';
 export 'src/popover/glass_popover_anchor.dart';
 export 'src/popover/show_glass_popover.dart';
+export 'src/progress/glass_progress_indicator.dart';
+export 'src/progress/glass_progress_style.dart';
 export 'src/scaffold/glass_bottom_accessory.dart';
 export 'src/scaffold/glass_scaffold.dart';
 export 'src/search/glass_search_field.dart';

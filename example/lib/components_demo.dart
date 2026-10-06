@@ -49,6 +49,8 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
   DateTime _date = DateTime(2026, 10, 6);
   String? _emailError;
   final _rows = ['Copied Image', 'Meeting notes', 'Shopping list'];
+  int _page = 0;
+  final _tags = {'Travel': true, 'Food': false, 'Music': false};
 
   void _snack(String message) => ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
@@ -272,6 +274,27 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                     ),
                     child: const Text('Toast'),
                   ),
+                  GlassButton(
+                    onPressed: () => showGlassActionSheet(
+                      context: context,
+                      title: 'Photo',
+                      actions: [
+                        GlassDialogAction(
+                          label: 'Share',
+                          onPressed: () => _snack('Share'),
+                        ),
+                        const GlassDialogAction(
+                          label: 'Delete',
+                          role: GlassButtonRole.destructive,
+                        ),
+                      ],
+                      cancel: const GlassDialogAction(
+                        label: 'Cancel',
+                        role: GlassButtonRole.cancel,
+                      ),
+                    ),
+                    child: const Text('Action sheet'),
+                  ),
                   GlassPopoverAnchor(
                     popoverBuilder: (_) => const Padding(
                       padding: EdgeInsets.all(16),
@@ -375,6 +398,83 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                     child: Text('Long-press me'),
                   ),
                 ),
+              ),
+              const SizedBox(height: 24),
+              GlassListSection(
+                glass: Glass.regular,
+                margin: EdgeInsets.zero,
+                header: const Text('Settings'),
+                footer: const Text(
+                  'A glass platter; omit glass for iOS cells.',
+                ),
+                children: [
+                  GlassListTile(
+                    leading: const Icon(CupertinoIcons.wifi),
+                    title: const Text('Wi-Fi'),
+                    trailing: GlassToggle(
+                      value: _wifi,
+                      onChanged: (v) => setState(() => _wifi = v),
+                    ),
+                  ),
+                  GlassListTile(
+                    leading: const Icon(CupertinoIcons.bluetooth),
+                    title: const Text('Bluetooth'),
+                    value: 'On',
+                    chevron: true,
+                    onTap: () => _snack('Bluetooth'),
+                  ),
+                  GlassListTile(
+                    title: const Text('General'),
+                    subtitle: const Text('About, storage, updates'),
+                    chevron: true,
+                    onTap: () => _snack('General'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final tag in _tags.keys)
+                    GlassChip(
+                      label: tag,
+                      icon: CupertinoIcons.tag,
+                      selected: _tags[tag]!,
+                      onSelected: (v) => setState(() => _tags[tag] = v),
+                      onDeleted: () => setState(() => _tags.remove(tag)),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Center(
+                child: GlassPageControl(
+                  count: 4,
+                  currentPage: _page,
+                  onPageChanged: (p) => setState(() => _page = p),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(child: GlassProgressIndicator(value: _volume)),
+                  const SizedBox(width: 16),
+                  GlassProgressIndicator.circular(value: _volume),
+                  const SizedBox(width: 16),
+                  const GlassProgressIndicator.circular(),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GlassBadge(
+                    label: '3',
+                    child: Icon(CupertinoIcons.mail, size: 28),
+                  ),
+                  SizedBox(width: 32),
+                  GlassBadge(child: Icon(CupertinoIcons.bell, size: 28)),
+                ],
               ),
               const SizedBox(height: 24),
               for (final name in _rows)

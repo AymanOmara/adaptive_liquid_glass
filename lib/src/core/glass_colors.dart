@@ -123,4 +123,13 @@ abstract final class GlassColors {
   /// The keyboard focus ring around focused glass controls: the system
   /// accent (iOS's default blue).
   static const CupertinoDynamicColor focusRing = CupertinoColors.activeBlue;
+
+  // List
+
+  /// A list row while pressed (estimated: iOS's systemGray4).
+  static const CupertinoDynamicColor listRowPressed =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFFD1D1D6),
+        darkColor: Color(0xFF3A3A3C),
+      );
 }

@@ -13,6 +13,7 @@ import 'package:flutter/physics.dart';
 import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter/services.dart' show HapticFeedback;
 
+import '../badge/glass_badge.dart';
 import '../core/cupertino_l10n.dart';
 import '../core/effective_glass_mode.dart';
 import '../core/glass.dart';
@@ -896,34 +897,8 @@ class _GlassTabBarState extends State<GlassTabBar>
         PositionedDirectional(
           start: TabBarMetrics.iconSize * (dot ? 0.7 : 0.55),
           top: dot ? -1 : -6,
-          child: Container(
-            height: dot ? TabBarMetrics.badgeDot : TabBarMetrics.badgeHeight,
-            constraints: BoxConstraints(
-              minWidth: dot
-                  ? TabBarMetrics.badgeDot
-                  : TabBarMetrics.badgeHeight,
-            ),
-            padding: dot
-                ? null
-                : const EdgeInsetsDirectional.symmetric(horizontal: 5),
-            alignment: Alignment.center,
-            decoration: ShapeDecoration(
-              shape: const StadiumBorder(),
-              color: CupertinoDynamicColor.resolve(
-                GlassSystemColors.red,
-                context,
-              ),
-            ),
-            child: dot
-                ? null
-                : Text(
-                    badge,
-                    maxLines: 1,
-                    style: TabBarMetrics.badge.copyWith(
-                      color: GlassColors.white,
-                    ),
-                  ),
-          ),
+          // Any glass mode draws the iOS badge; this bar is never Material.
+          child: GlassBadge(label: badge, mode: GlassRenderMode.shader),
         ),
       ],
     );
