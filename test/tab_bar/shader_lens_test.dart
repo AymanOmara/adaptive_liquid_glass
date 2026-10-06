@@ -47,9 +47,10 @@ void main() {
   test('the lens glass bends the backdrop outward, unfrosted', () {
     for (final c in [tabLensLight, tabLensDark]) {
       // iOS squeezes what borders the lens into its rim band: an outward,
-      // continuous bend (no ring, whose ends break the image).
+      // continuous bend.
       expect(c.lensStrength, greaterThan(0));
-      expect(c.lensRingEnd, lessThanOrEqualTo(c.lensRingStart));
+      // Only along the long sides: the round ends stay clear.
+      expect(c.lensVertical, 1);
       // Only a light blur, after the bend (it averages the squeezed band).
       expect(c.frostWideSigma, 0);
       expect(c.postBlurShare, greaterThanOrEqualTo(0.9));

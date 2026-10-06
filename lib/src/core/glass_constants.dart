@@ -95,9 +95,7 @@ class GlassVariantConstants {
     this.toneLift = 0,
     this.blurAspectPower = 0,
     this.rimBack = 0.35,
-    this.lensRingStart = 0,
-    this.lensRingEnd = 0,
-    this.lensRingReach = 0,
+    this.lensVertical = 0,
     this.toneLiftKnee = 0.5,
     this.toneLiftSizeRef = 0,
     required this.lensBand,
@@ -143,9 +141,7 @@ class GlassVariantConstants {
     toneLift: _d(j, 'toneLift', base.toneLift),
     blurAspectPower: _d(j, 'blurAspectPower', base.blurAspectPower),
     rimBack: _d(j, 'rimBack', base.rimBack),
-    lensRingStart: _d(j, 'lensRingStart', base.lensRingStart),
-    lensRingEnd: _d(j, 'lensRingEnd', base.lensRingEnd),
-    lensRingReach: _d(j, 'lensRingReach', base.lensRingReach),
+    lensVertical: _d(j, 'lensVertical', base.lensVertical),
     toneLiftKnee: _d(j, 'toneLiftKnee', base.toneLiftKnee),
     toneLiftSizeRef: _d(j, 'toneLiftSizeRef', base.toneLiftSizeRef),
     lensBand: _d(j, 'lensBand', base.lensBand),
@@ -321,19 +317,11 @@ class GlassVariantConstants {
   /// far/near ratio.
   final double rimBack;
 
-  /// Refraction ring (iOS 26's tab lens, fitted to Kept): between depths
-  /// [lensRingStart] and [lensRingEnd] (logical px) the lens samples
-  /// outside its edge, from just outside at the start to [lensRingReach]
-  /// px outside at the end, so the ring shows a mirrored, compressed image
-  /// of what borders the glass. The main lens applies elsewhere. Off when
-  /// [lensRingEnd] ≤ [lensRingStart] (the default).
-  final double lensRingStart;
-
-  /// See [lensRingStart].
-  final double lensRingEnd;
-
-  /// See [lensRingStart].
-  final double lensRingReach;
+  /// How much the lens (main and edge terms) is limited to where the
+  /// outline faces up or down: 0 bends all round (the default); 1 leaves
+  /// the sideways-facing outline unbent, so a horizontal capsule's round
+  /// ends stay clear (iOS 26's tab lens, fitted to Kept).
+  final double lensVertical;
 
   /// Colour the content behind the glass is washed toward (opaque; JSON
   /// `"#RRGGBB"` or an int ARGB).
@@ -393,9 +381,7 @@ class GlassVariantConstants {
     'toneLift': toneLift,
     'blurAspectPower': blurAspectPower,
     'rimBack': rimBack,
-    'lensRingStart': lensRingStart,
-    'lensRingEnd': lensRingEnd,
-    'lensRingReach': lensRingReach,
+    'lensVertical': lensVertical,
     'toneLiftKnee': toneLiftKnee,
     'toneLiftSizeRef': toneLiftSizeRef,
     'lensBand': lensBand,

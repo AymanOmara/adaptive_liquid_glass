@@ -212,11 +212,11 @@ void main() {
     same(GlassConstants.standard.toJson(), file, 'standard');
   });
 
-  test('the lens ring round-trips through JSON', () {
+  test('lensVertical round-trips through JSON', () {
     final c = GlassConstants.fromJson({
-      'clear': {'lensRingStart': 1.0, 'lensRingEnd': 7.5, 'lensRingReach': 5.0},
+      'clear': {'lensVertical': 1.0},
     });
-    expect(c.clear.lensRingEnd, 7.5);
+    expect(c.clear.lensVertical, 1.0);
     expect(GlassConstants.fromJson(c.toJson()), c);
   });
 }

@@ -21,6 +21,7 @@ import '../core/theme.dart';
 import '../group/glass_group.dart';
 import '../liquid_glass.dart';
 import '../platform/glass_platform.dart';
+import 'bar_glow.dart';
 import 'tab_lens.dart';
 import 'tab_lens_content.dart';
 import 'tab_lens_program.dart';
@@ -159,6 +160,22 @@ abstract final class _Metrics {
   static const double magnifyX = 1.21;
   static const double magnifyY = 1.19;
 
+  /// Peak white of the light a held lens casts on the bar (see BarGlow).
+  static const double glow = 0.095;
+
+  /// The bar's light coming on (press, drag) and fading after release
+  /// (Kept: about a third left 16 frames after letting go).
+  static final SpringDescription light = swiftUISpring(
+    response: 0.3,
+    dampingFraction: 1,
+  );
+
+  /// See [light].
+  static final SpringDescription lightOff = swiftUISpring(
+    response: 0.45,
+    dampingFraction: 1,
+  );
+
   /// The band at the lens's edge where content is refracted, not sharp.
   static const double lensRim = 9;
 
@@ -243,6 +260,25 @@ class _GlassTabBarState extends State<GlassTabBar>
       : (_x.isAnimating ? _x.velocity : 0.0);
 
   bool get _xMoving => _followTicker.isActive || _x.isAnimating;
+
+  /// The light on the bar: 0 at rest, 1 while the lens is held (lit around
+  /// it, see BarGlow), 2 while it is dragged (evenly lit), as on iOS.
+  late final AnimationController _light = AnimationController.unbounded(
+    vsync: this,
+  );
+
+  /// Whether the held lens has been dragged since it was pressed.
+  bool _dragging = false;
+
+  void _springLight(SpringDescription spring, double target) {
+    if (_reduceMotion) {
+      _light.value = target;
+    } else {
+      _light.animateWith(
+        SpringSimulation(spring, _light.value, target, _light.velocity),
+      );
+    }
+  }
 
   /// Extra lens overhang per side from the sideways wobble, in points.
   final ValueNotifier<double> _wobble = ValueNotifier(0);
@@ -434,6 +470,7 @@ class _GlassTabBarState extends State<GlassTabBar>
   @override
   void dispose() {
     _followTicker.dispose();
+    _light.dispose();
     _wobbleTicker.dispose();
     _wobble.dispose();
     _x.dispose();
@@ -446,6 +483,8 @@ class _GlassTabBarState extends State<GlassTabBar>
     _finger = _toSlots(details.localPosition.dx);
     _cancelPendingRelease();
     _springPress(_Metrics.press, 1);
+    _dragging = false;
+    _springLight(_Metrics.light, 1);
     // The lens grows at the current selection and travels to the finger,
     // as iOS does (a tap on a far tab sends it across the bar).
     _springX(_Metrics.travel, _lensTarget(_finger));
@@ -455,10 +494,15 @@ class _GlassTabBarState extends State<GlassTabBar>
   void _drag(DragUpdateDetails details) {
     _finger = _toSlots(details.localPosition.dx);
     _follow(_lensTarget(_finger));
+    if (!_dragging) {
+      _dragging = true;
+      _springLight(_Metrics.light, 2);
+    }
   }
 
   void _release(double velocity) {
     _held = false;
+    _springLight(_Metrics.lightOff, 0);
     final slot = _finger.round().clamp(0, _count - 1);
     final index = _rtl ? _count - 1 - slot : slot;
     final travelling = (_x.value - slot).abs() > 0.15;
@@ -581,7 +625,7 @@ class _GlassTabBarState extends State<GlassTabBar>
         onPanEnd: (d) => _release(d.velocity.pixelsPerSecond.dx),
         onPanCancel: () => _release(0),
         child: AnimatedBuilder(
-          animation: Listenable.merge([_x, _press, _wobble]),
+          animation: Listenable.merge([_x, _press, _wobble, _light]),
           builder: (context, _) => _bar(_press.value, selected, indicator),
         ),
       ),
@@ -611,6 +655,12 @@ class _GlassTabBarState extends State<GlassTabBar>
     final lean = _Metrics.growLean * (x - _rowWidth / 2) * t;
     final growX = _Metrics.growX * t;
     final growY = _Metrics.growY * t;
+    // The bar's glass reaches past the row by the inset plus its growth.
+    final glowInsetX = _Metrics.inset + growX;
+    final glowInsetY = _Metrics.inset + growY;
+    // The glow belongs to a held lens; dragging lights the bar evenly.
+    final light = _light.value;
+    final glow = light.clamp(0.0, 1.0) * (2 - light).clamp(0.0, 1.0);
     final baseRow = ClipPath(
       clipper: _Hole(lensShown ? lens : null),
       child: _row(
@@ -637,7 +687,7 @@ class _GlassTabBarState extends State<GlassTabBar>
             bottom: -growY,
             child: withTabBarGlass(
               context,
-              pressed: t,
+              light: _light.value,
               GlassGroup(
                 mode: _barMode,
                 child: LiquidGlass(
@@ -648,7 +698,29 @@ class _GlassTabBarState extends State<GlassTabBar>
                       width: _rowWidth,
                       height: _contentHeight,
                       child: Stack(
+                        clipBehavior: Clip.none,
                         children: [
+                          if (_shaderLens && glow > 0)
+                            Positioned(
+                              left: -glowInsetX,
+                              top: -glowInsetY,
+                              width: _rowWidth + glowInsetX * 2,
+                              height: _contentHeight + glowInsetY * 2,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(
+                                  _contentHeight / 2 + glowInsetY,
+                                ),
+                                child: CustomPaint(
+                                  painter: BarGlow(
+                                    centre: Offset(
+                                      x + glowInsetX,
+                                      _contentHeight / 2 + glowInsetY,
+                                    ),
+                                    opacity: _Metrics.glow * glow,
+                                  ),
+                                ),
+                              ),
+                            ),
                           Positioned.fromRect(
                             rect: p < 0
                                 ? lens

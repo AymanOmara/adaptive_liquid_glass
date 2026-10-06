@@ -179,7 +179,7 @@ const int kGlassUniformFloats = 304;
 /// J = (rim mix, rim mix width px, rim mix cut px, rim mix luma floor),
 /// K = (tone lift knee, tone lift size ref px, post-lens sigma px =
 /// blurSigma·√postBlurShare, blur size ref px),
-/// L = (rim back strength, -, -, -).
+/// L = (rim back strength, lens vertical-only weight, -, -).
 List<double> packGlassUniforms(GlassFrameUniforms u) {
   final dpr = u.devicePixelRatio;
   final shapes = u.shapes.where(_drawable).take(_maxShapes).toList();
@@ -296,12 +296,7 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
           dpr,
       v.blurSizeRef * dpr,
     ]);
-    f.setAll(k + 44, [
-      v.rimBack,
-      v.lensRingStart * dpr,
-      v.lensRingEnd * dpr,
-      v.lensRingReach * dpr,
-    ]);
+    f.setAll(k + 44, [v.rimBack, v.lensVertical, 0, 0]);
     k += 48;
   }
   return f;

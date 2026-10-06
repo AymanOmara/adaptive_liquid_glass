@@ -26,13 +26,13 @@ const tabLensLight = GlassVariantConstants(
   lensStrength: 4,
   lensDecay: 1000,
   lensSizeRef: 0,
-  dispersion: -0.05,
+  dispersion: 0.12,
   normalRadiusScale: 1,
   lensEdge: -6.7,
   lensEdgeDecay: 8,
-  lensRingStart: 0,
-  lensRingEnd: 0,
-  lensRingReach: 0,
+  // The bend acts where the lens faces up or down; its round ends stay
+  // clear (Kept).
+  lensVertical: 1,
   rimMix: 0.55,
   rimMixWidth: 1.9,
   rimMixCut: 3,
@@ -63,13 +63,13 @@ const tabLensDark = GlassVariantConstants(
   lensStrength: 4,
   lensDecay: 1000,
   lensSizeRef: 0,
-  dispersion: -0.05,
+  dispersion: 0.12,
   normalRadiusScale: 1,
   lensEdge: -6.7,
   lensEdgeDecay: 8,
-  lensRingStart: 0,
-  lensRingEnd: 0,
-  lensRingReach: 0,
+  // The bend acts where the lens faces up or down; its round ends stay
+  // clear (Kept).
+  lensVertical: 1,
   rimMix: 0.55,
   rimMixWidth: 1.9,
   rimMixCut: 3,
@@ -77,10 +77,10 @@ const tabLensDark = GlassVariantConstants(
   rimWidth: 1.2,
   rimIntensity: 0,
   fillColor: Color(0xFFFFFFFF),
-  // Kept over black: the bar's 25 reads 53 under the lens and black stays
-  // near black (a gain, not a wash); the tinted tabs above keep their
-  // colour (TabLensContent).
-  toneKnots: [0.031, 0.257, 0.40, 0.52, 0.63, 0.73, 0.82, 0.91, 1.0],
+  // Kept over black: the lit bar (about 48 by the lens) reads 53 under the
+  // lens and black stays near black (a gain, not a wash); the tinted tabs
+  // above keep their colour (TabLensContent).
+  toneKnots: [0.031, 0.135, 0.255, 0.38, 0.5, 0.625, 0.75, 0.875, 1.0],
   fillOpacity: 0,
   saturation: 1,
   dim: 0,
@@ -143,21 +143,22 @@ const _tabBarDarkOverrides = <String, Object?>{
 };
 
 /// The bar's dark glass while a lens is held (Kept over black): more
-/// see-through and brightened like the lens backdrop. The bar reads about
-/// 42 instead of 25, and the page behind it gains contrast (31 -> 65).
-const _barPressedFill = Color(0xFF747474);
+/// see-through and brightened like the lens backdrop. Away from the lens
+/// the bar reads about 34 instead of 25 (BarGlow lights it near the lens),
+/// and the page behind it gains contrast.
+const _barPressedFill = Color(0xFF5C5C5C);
 const _barPressedFillOpacity = 0.35;
 
-/// [child] with regular glass drawn as the tab bar; [pressed] (0-1, the
-/// lens's press progress) blends the dark bar towards its held look.
-Widget withTabBarGlass(
-  BuildContext context,
-  Widget child, {
-  double pressed = 0,
-}) {
+/// The dark bar while the lens is dragged: evenly lit, about 45 over black.
+const _barDraggedFill = Color(0xFF7A7A7A);
+
+/// [child] with regular glass drawn as the tab bar. [light] blends the dark
+/// bar from rest (0) to its held look (1) and its dragged look (2).
+Widget withTabBarGlass(BuildContext context, Widget child, {double light = 0}) {
   final theme = LiquidGlassTheme.of(context);
   final c = theme.constants;
-  final p = pressed.clamp(0.0, 1.0);
+  final p = light.clamp(0.0, 1.0);
+  final m = (light - 1).clamp(0.0, 1.0);
   final rest = GlassVariantConstants.fromJson(
     _tabBarDarkOverrides,
     c.regularDark,
@@ -166,7 +167,13 @@ Widget withTabBarGlass(
       ? rest
       : GlassVariantConstants.fromJson({
           ..._tabBarDarkOverrides,
-          'fillColor': _hex(Color.lerp(rest.fillColor, _barPressedFill, p)!),
+          'fillColor': _hex(
+            Color.lerp(
+              rest.fillColor,
+              Color.lerp(_barPressedFill, _barDraggedFill, m),
+              p,
+            )!,
+          ),
           'fillOpacity': lerpDouble(
             rest.fillOpacity,
             _barPressedFillOpacity,

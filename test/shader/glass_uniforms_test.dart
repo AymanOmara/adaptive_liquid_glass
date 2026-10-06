@@ -416,16 +416,16 @@ void main() {
     expect(out.single.cornerExponent, 2);
   });
 
-  test('the lens ring packs into L.yzw (off by default)', () {
+  test('lensVertical packs into L.y (off by default)', () {
     final d = packGlassUniforms(frame(const []));
     expect(d.sublist(253, 256), [0, 0, 0]);
     expect(d.sublist(301, 304), [0, 0, 0]);
     final c = GlassConstants.fromJson({
-      'clear': {'lensRingStart': 1.0, 'lensRingEnd': 7.5, 'lensRingReach': 5.0},
+      'clear': {'lensVertical': 1.0},
     });
     final f = packGlassUniforms(frame(const [], constants: c));
-    // Logical px × dpr 3, clear variant's L at 300.
-    expect(f.sublist(301, 304), [3.0, 22.5, 15.0]);
+    // A weight, not a length: no dpr scaling. Clear variant's L at 300.
+    expect(f.sublist(301, 304), [1.0, 0, 0]);
     expect(f.sublist(253, 256), [0, 0, 0]);
   });
 }

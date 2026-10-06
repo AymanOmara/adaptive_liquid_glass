@@ -20,7 +20,7 @@ uniform vec4 uVar[24];     // per variant (regular A-L, then clear A-L):
                            //   I.yzw(lens edge px, lens edge decay px, tone lift)
                            //   J(rim mix, rim mix width px, rim mix cut px, rim mix luma floor)
                            //   K(tone lift knee, tone lift size ref px, post-lens sigma px, blur size ref px)
-                           //   L(rim back strength, lens ring start px, ring end px, ring reach px)
+                           //   L(rim back strength, lens vertical-only weight, -, -)
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -188,22 +188,13 @@ void main() {
   float le = I.y * exp(-max(depth, 0.0) / max(I.z, 1e-3));
   lensAmt -= le;
   dLens += le / max(I.z, 1e-3);
-  // Refraction ring (iOS 26's tab lens): between depths L.y and L.z the
-  // lens samples outside its edge, from just outside at the start to L.w
-  // outside at the end: a mirrored, compressed image of what borders the
-  // glass. Off when L.z <= L.y.
-  // Its ends blend back into the plain glass (1 px in at the start, 1.5 px
-  // at the end, scaled with L.y/L.z), so the sample sweeps across what
-  // borders the glass: a soft edge that dispersion turns into a fringe.
-  float ringW = 0.0;
-  if (L4.z > L4.y && depth >= L4.y - 1.0 && depth <= L4.z) {
-    float tr = clamp((depth - L4.y + 1.0) / (L4.z - L4.y + 1.0), 0.0, 1.0);
-    float sDepth = -L4.w * tr;  // sampled depth (negative = outside)
-    float inW = smoothstep(L4.y - 1.0, L4.y, depth);
-    float outW = 1.0 - smoothstep(L4.z - 1.5 * uGlobal.y, L4.z, depth);
-    ringW = inW * outW;
-    lensAmt = mix(lensAmt, depth - sDepth, ringW);
-    dLens = mix(dLens, 1.0 + L4.w / (L4.z - L4.y + 1.0), ringW);
+  // Vertical-only lens (iOS 26's tab lens): with L.y > 0 the lens bends
+  // less where the outline faces sideways, so a capsule's round ends stay
+  // clear (weight 1 - L.y x smoothstep(0, 0.7, |nrm.x|)).
+  if (L4.y > 0.0) {
+    float wv = 1.0 - L4.y * smoothstep(0.0, 0.7, abs(nrm.x));
+    lensAmt *= wv;
+    dLens *= wv;
   }
   vec2 sp = px + nrm * lensAmt;
 
@@ -272,8 +263,7 @@ void main() {
   if (A.w != 0.0) {
     vec3 coreOff = col - base;
     vec2 disp = nrm * lensAmt * abs(A.w);
-    // The ring splits colour across its whole width, like iOS's tab lens.
-    float dw = max(v, ringW > 0.0 ? 1.0 : 0.0);
+    float dw = v;
     col.r = mix(col.r, tex(sp + disp).r + coreOff.r, dw);
     // Negative dispersion (iOS's tab lens) moves green with blue, so a
     // blue tint fringes in shades of blue instead of green.
