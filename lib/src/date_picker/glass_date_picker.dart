@@ -12,6 +12,7 @@ import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_system_colors.dart';
 import '../core/ios_text.dart';
+import '../popover/popover_metrics.dart';
 import '../popover/show_glass_popover.dart';
 import 'date_picker_metrics.dart';
 import 'glass_calendar.dart';
@@ -83,6 +84,7 @@ class _GlassDatePickerState extends State<GlassDatePicker> {
     setState(() => _open = true);
     final picked = await showGlassPopover<DateTime>(
       context: anchor,
+      overlap: PopoverMetrics.calendarOverlap,
       mode: widget.mode,
       builder: (context) => GlassCalendar(
         selected: widget.value,

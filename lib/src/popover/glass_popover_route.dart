@@ -16,9 +16,13 @@ class GlassPopoverRoute<T> extends PopupRoute<T> {
   GlassPopoverRoute({
     required this.anchor,
     required this.builder,
+    this.overlap = PopoverMetrics.overlap,
     this.mode,
     this.barrierLabel,
   });
+
+  /// How far below the anchor's top the bubble starts.
+  final double overlap;
 
   /// The anchor's rectangle in global coordinates.
   final Rect anchor;
@@ -53,6 +57,7 @@ class GlassPopoverRoute<T> extends PopupRoute<T> {
       delegate: GlassPopoverLayout(
         anchor: anchor,
         padding: MediaQuery.paddingOf(context),
+        overlap: overlap,
       ),
       child: GlassGroup(
         mode: mode,

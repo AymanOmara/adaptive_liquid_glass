@@ -58,14 +58,17 @@ class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
     Animation<double> secondaryAnimation,
   ) => iosPageText(
     context,
-    Center(
-      child: GlassDialogCard(
-        title: title,
-        message: message,
-        actions: actions,
-        confirmation: confirmation,
-        mode: mode,
-        onAction: (a) => Navigator.of(context).pop(a),
+    // Centred in the safe area, as SwiftUI's (y 451 on iPhone 17 Pro).
+    SafeArea(
+      child: Center(
+        child: GlassDialogCard(
+          title: title,
+          message: message,
+          actions: actions,
+          confirmation: confirmation,
+          mode: mode,
+          onAction: (a) => Navigator.of(context).pop(a),
+        ),
       ),
     ),
   );

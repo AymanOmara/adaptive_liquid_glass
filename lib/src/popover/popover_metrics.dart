@@ -9,7 +9,11 @@ abstract final class PopoverMetrics {
   /// The closest the bubble comes to the screen's edges.
   static const double margin = 10;
 
-  /// The bubble's top below its anchor's top (18 from a toolbar button,
-  /// 24 from the date picker).
-  static const double overlap = 21;
+  /// The bubble's top below its anchor's top (measured from a toolbar
+  /// button).
+  static const double overlap = 10;
+
+  /// The date picker's calendar: its top below the capsule's top
+  /// (measured).
+  static const double calendarOverlap = 24;
 }

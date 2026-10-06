@@ -37,14 +37,14 @@ void main() {
   setUp(() => GlassProgram.instance.debugReset(skipLoad: true));
   tearDown(() => GlassPlatform.instance.debugReset());
 
-  testWidgets('opens over its anchor, centred, 21 below its top', (t) async {
+  testWidgets('opens over its anchor, centred, 10 below its top', (t) async {
     shaderEnv();
     await t.pumpWidget(_app(Alignment.topCenter));
     final anchor = t.getRect(find.byType(TextButton));
     await t.tap(find.text('Anchor'));
     await t.pumpAndSettle();
     final bubble = _bubble(t);
-    expect(bubble.top, moreOrLessEquals(anchor.top + 21));
+    expect(bubble.top, moreOrLessEquals(anchor.top + 10));
     expect(bubble.center.dx, moreOrLessEquals(anchor.center.dx));
     await t.tapAt(const Offset(5, 590));
     await t.pumpAndSettle();
@@ -65,7 +65,7 @@ void main() {
     final anchor = t.getRect(find.byType(TextButton));
     await t.tap(find.text('Anchor'));
     await t.pumpAndSettle();
-    expect(_bubble(t).bottom, moreOrLessEquals(anchor.bottom - 21));
+    expect(_bubble(t).bottom, moreOrLessEquals(anchor.bottom - 10));
   }, variant: ios);
 
   testWidgets('plain text in a popover is iOS body text, not the fallback', (

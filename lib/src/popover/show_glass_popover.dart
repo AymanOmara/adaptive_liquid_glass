@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import '../core/cupertino_l10n.dart';
 import '../core/glass_render_mode.dart';
 import 'glass_popover_route.dart';
+import 'popover_metrics.dart';
 
 /// Shows an iOS 26 popover from the widget at [context], like SwiftUI's
 /// `.popover` on iPhone with `.presentationCompactAdaptation(.popover)`:
@@ -25,12 +26,14 @@ import 'glass_popover_route.dart';
 /// )
 /// ```
 ///
-/// The content sizes the bubble (give it its own padding). Completes with
+/// Its top is [overlap] below the anchor's top (SwiftUI's from a toolbar
+/// button). The content sizes the bubble (give it its own padding). Completes with
 /// the value the popover is popped with. On the Material path the bubble
 /// is a Material surface.
 Future<T?> showGlassPopover<T>({
   required BuildContext context,
   required WidgetBuilder builder,
+  double overlap = PopoverMetrics.overlap,
   GlassRenderMode? mode,
 }) {
   final box = context.findRenderObject()! as RenderBox;
@@ -39,6 +42,7 @@ Future<T?> showGlassPopover<T>({
     GlassPopoverRoute<T>(
       anchor: anchor,
       builder: builder,
+      overlap: overlap,
       mode: mode,
       barrierLabel: cupertinoL10n(context).modalBarrierDismissLabel,
     ),
