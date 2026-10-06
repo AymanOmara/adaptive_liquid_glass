@@ -229,6 +229,21 @@ class _GlassTabBarState extends State<GlassTabBar>
     vsync: this,
   );
 
+  /// Drives [_x] towards the finger with a spring integrated every frame.
+  /// Restarting a spring simulation on each touch (every ~4 frames) left
+  /// the lens still for the restart frame: a visible stutter.
+  late final Ticker _followTicker = createTicker(_stepFollow);
+  double _followTarget = 0;
+  double _followVelocity = 0;
+  Duration _followLast = Duration.zero;
+
+  /// The lens's velocity in slots per second, whatever drives it.
+  double get _xVelocity => _followTicker.isActive
+      ? _followVelocity
+      : (_x.isAnimating ? _x.velocity : 0.0);
+
+  bool get _xMoving => _followTicker.isActive || _x.isAnimating;
+
   /// Extra lens overhang per side from the sideways wobble, in points.
   final ValueNotifier<double> _wobble = ValueNotifier(0);
   late final Ticker _wobbleTicker = createTicker(_stepWobble);
@@ -292,11 +307,52 @@ class _GlassTabBarState extends State<GlassTabBar>
       MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
   void _springX(SpringDescription spring, double target) {
+    final velocity = _xVelocity;
+    _stopFollow();
     if (_reduceMotion) {
       _x.value = target;
     } else {
-      _x.animateWith(SpringSimulation(spring, _x.value, target, _x.velocity));
+      _x.animateWith(SpringSimulation(spring, _x.value, target, velocity));
     }
+  }
+
+  /// Moves the follow spring's target; starts it, carrying the lens's
+  /// current velocity, when it is not running.
+  void _follow(double target) {
+    _followTarget = target;
+    if (_reduceMotion) {
+      _x.value = target;
+      return;
+    }
+    if (_followTicker.isActive) return;
+    _followVelocity = _xVelocity;
+    _x.stop();
+    _followLast = Duration.zero;
+    _followTicker.start();
+  }
+
+  void _stopFollow() {
+    if (_followTicker.isActive) _followTicker.stop();
+  }
+
+  void _stepFollow(Duration elapsed) {
+    // The first tick has no elapsed time; step a frame so the lens never
+    // stands still.
+    final dt = elapsed == Duration.zero
+        ? 1 / 60
+        : ((elapsed - _followLast).inMicroseconds / 1e6).clamp(0.0, 0.05);
+    _followLast = elapsed;
+    final spring = _Metrics.follow;
+    final k = spring.stiffness / spring.mass;
+    final c = spring.damping / spring.mass;
+    const steps = 4;
+    final h = dt / steps;
+    var x = _x.value;
+    for (var i = 0; i < steps; i++) {
+      _followVelocity += (-k * (x - _followTarget) - c * _followVelocity) * h;
+      x += _followVelocity * h;
+    }
+    _x.value = x;
   }
 
   void _springPress(SpringDescription spring, double target) {
@@ -321,10 +377,10 @@ class _GlassTabBarState extends State<GlassTabBar>
     final dt = (elapsed - _lastTick).inMicroseconds / 1e6;
     _lastTick = elapsed;
     if (dt <= 0 || dt > 0.1) {
-      _lastVelocity = _x.velocity;
+      _lastVelocity = _xVelocity;
       return;
     }
-    final velocity = _x.isAnimating ? _x.velocity : 0.0;
+    final velocity = _xVelocity;
     final acceleration = (velocity - _lastVelocity) / dt * _itemWidth;
     _lastVelocity = velocity;
     final spring = _Metrics.wobble;
@@ -341,10 +397,7 @@ class _GlassTabBarState extends State<GlassTabBar>
       y += _wobbleVelocity * h;
     }
     _wobble.value = y;
-    if (!_held &&
-        !_x.isAnimating &&
-        y.abs() < 0.01 &&
-        _wobbleVelocity.abs() < 0.01) {
+    if (!_held && !_xMoving && y.abs() < 0.01 && _wobbleVelocity.abs() < 0.01) {
       _wobble.value = 0;
       _wobbleVelocity = 0;
       _wobbleTicker.stop();
@@ -354,7 +407,7 @@ class _GlassTabBarState extends State<GlassTabBar>
   void _startWobble() {
     if (_reduceMotion || _wobbleTicker.isActive) return;
     _lastTick = Duration.zero;
-    _lastVelocity = _x.velocity;
+    _lastVelocity = _xVelocity;
     _wobbleTicker.start();
   }
 
@@ -380,6 +433,7 @@ class _GlassTabBarState extends State<GlassTabBar>
 
   @override
   void dispose() {
+    _followTicker.dispose();
     _wobbleTicker.dispose();
     _wobble.dispose();
     _x.dispose();
@@ -400,7 +454,7 @@ class _GlassTabBarState extends State<GlassTabBar>
 
   void _drag(DragUpdateDetails details) {
     _finger = _toSlots(details.localPosition.dx);
-    _springX(_Metrics.follow, _lensTarget(_finger));
+    _follow(_lensTarget(_finger));
   }
 
   void _release(double velocity) {
@@ -583,6 +637,7 @@ class _GlassTabBarState extends State<GlassTabBar>
             bottom: -growY,
             child: withTabBarGlass(
               context,
+              pressed: t,
               GlassGroup(
                 mode: _barMode,
                 child: LiquidGlass(

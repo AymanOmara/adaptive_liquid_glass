@@ -1,3 +1,5 @@
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/widgets.dart';
 
 import '../core/glass_constants.dart';
@@ -140,20 +142,51 @@ const _tabBarDarkOverrides = <String, Object?>{
   'fillColor': '#2B2A2B',
 };
 
-/// [child] with regular glass drawn as the tab bar.
-Widget withTabBarGlass(BuildContext context, Widget child) {
+/// The bar's dark glass while a lens is held (Kept over black): more
+/// see-through and brightened like the lens backdrop. The bar reads about
+/// 42 instead of 25, and the page behind it gains contrast (31 -> 65).
+const _barPressedFill = Color(0xFF747474);
+const _barPressedFillOpacity = 0.35;
+
+/// [child] with regular glass drawn as the tab bar; [pressed] (0-1, the
+/// lens's press progress) blends the dark bar towards its held look.
+Widget withTabBarGlass(
+  BuildContext context,
+  Widget child, {
+  double pressed = 0,
+}) {
   final theme = LiquidGlassTheme.of(context);
   final c = theme.constants;
+  final p = pressed.clamp(0.0, 1.0);
+  final rest = GlassVariantConstants.fromJson(
+    _tabBarDarkOverrides,
+    c.regularDark,
+  );
+  final dark = p == 0
+      ? rest
+      : GlassVariantConstants.fromJson({
+          ..._tabBarDarkOverrides,
+          'fillColor': _hex(Color.lerp(rest.fillColor, _barPressedFill, p)!),
+          'fillOpacity': lerpDouble(
+            rest.fillOpacity,
+            _barPressedFillOpacity,
+            p,
+          ),
+          'toneKnots': [
+            for (var i = 0; i < 9; i++)
+              lerpDouble(rest.toneKnots[i], tabLensDark.toneKnots[i], p),
+          ],
+        }, c.regularDark);
   return LiquidGlassTheme(
     data: theme.copyWith(
       constants: c.copyWith(
         regular: GlassVariantConstants.fromJson(_tabBarOverrides, c.regular),
-        regularDark: GlassVariantConstants.fromJson(
-          _tabBarDarkOverrides,
-          c.regularDark,
-        ),
+        regularDark: dark,
       ),
     ),
     child: child,
   );
 }
+
+String _hex(Color c) =>
+    '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';

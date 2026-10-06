@@ -127,6 +127,30 @@ void main() {
     await t.pumpAndSettle();
   }, variant: ios);
 
+  testWidgets('the lens moves on every frame of a drag, between touches', (
+    t,
+  ) async {
+    // Touches arrive every ~4 frames; restarting the follow spring on each
+    // left the lens standing still for a frame (a visible stutter).
+    env(ios: 26);
+    await t.pumpWidget(bar());
+    final g = await hold(t);
+    double lensX() => t.getCenter(lens).dx;
+    final xs = <double>[];
+    for (var move = 0; move < 4; move++) {
+      await g.moveBy(const Offset(12, 0));
+      for (var f = 0; f < 4; f++) {
+        await t.pump(const Duration(milliseconds: 16));
+        xs.add(lensX());
+      }
+    }
+    for (var i = 1; i < xs.length; i++) {
+      expect(xs[i], greaterThan(xs[i - 1] + 0.05), reason: 'frame $i of $xs');
+    }
+    await g.up();
+    await t.pumpAndSettle();
+  }, variant: ios);
+
   testWidgets('an explicit mode wins for the bar', (t) async {
     env(ios: 26);
     await t.pumpWidget(
