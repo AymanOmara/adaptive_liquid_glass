@@ -1,14 +1,22 @@
 ## 0.1.0-dev.4
 
-* `GlassTabBar`: the lens is shader glass fitted to iOS 26.4's tab lens
-  (unfrosted, a smooth magnifying edge that bends the tabs into the rim,
-  blue-preserving colour fringes), and the bar is shader glass too so the
-  lens can refract it, fitted to UIKit's bar (flat fill, even 1 pt rim);
-  an explicit `mode:` wins. Each tab under the lens is magnified about its
-  own centre, and the lens trails the finger as iOS's does.
-  The selected tint no longer flickers as the release settles. Tapping a
-  far tab sends the lens across from the selection and settles it on
-  arrival (~180 ms, as iOS 26.4), instead of snapping.
+* `GlassTabBar`, matched frame by frame to iOS 26.4's tab bar (Kept):
+  - The lens is shader glass. It bends the page and bar behind it outward
+    into its rim (a dark, colour-split band along its long sides), and
+    draws the tinted tabs over that in their own pass
+    (`tab_lens_content.frag`): pulled inward towards the lens's round
+    ends, softly blurred, keeping their colour. Teal-cyan rim, no white
+    wash; tabs under it are magnified about their own centres.
+  - The bar is shader glass fitted to UIKit's bar (flat fill, even 1 pt
+    rim, lighter frost). It lights up around a held lens and evenly while
+    the lens is dragged, fading after release.
+  - The lens follows the finger with a continuous spring (no stutter) and
+    trails it as iOS's does; tapping a far tab sends it across and
+    settles it on arrival. The selected tint no longer flickers.
+  - An explicit `mode:` still wins.
+* `GlassVariantConstants`: `lensVertical` (bend mostly where the outline
+  faces up or down), `rimTint` and `rimHue` (a tinted rim). All default to
+  off.
 * `GlassButton` / `GlassButton.icon`: SwiftUI's glass and prominent button
   styles, destructive and cancel roles, control sizes, border shapes,
   disabled and loading states; Material 3 buttons on Android. Sizes
