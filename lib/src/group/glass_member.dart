@@ -260,12 +260,15 @@ class GlassMemberState extends State<GlassMember>
         pressable: true,
         child: widget.child,
       ),
-      GlassMemberRendering.degraded => DegradedGlass(
-        glass: widget.glass,
-        shape: widget.shape,
-        constants: scope.constants,
-        opaqueColor: scope.opaqueColor,
-        child: _labelled(context),
+      // The button wraps the clipped surface so its focus ring shows.
+      GlassMemberRendering.degraded => _pressable(
+        DegradedGlass(
+          glass: widget.glass,
+          shape: widget.shape,
+          constants: scope.constants,
+          opaqueColor: scope.opaqueColor,
+          child: _styled(context),
+        ),
       ),
       GlassMemberRendering.backdrop ||
       GlassMemberRendering.native => ConcentricScope(
@@ -310,18 +313,23 @@ class GlassMemberState extends State<GlassMember>
 
   /// The child with vibrant label colours (when
   /// [GlassMember.adaptiveForeground]), as a button when pressable.
-  Widget _labelled(BuildContext context) => _pressable(
-    widget.adaptiveForeground
-        ? GlassLabelStyle(
-            color: GlassForeground.labelColorOf(context),
-            child: widget.child,
-          )
-        : widget.child,
-  );
+  Widget _labelled(BuildContext context) => _pressable(_styled(context));
+
+  /// The child with vibrant label colours when
+  /// [GlassMember.adaptiveForeground].
+  Widget _styled(BuildContext context) => widget.adaptiveForeground
+      ? GlassLabelStyle(
+          color: GlassForeground.labelColorOf(context),
+          child: widget.child,
+        )
+      : widget.child;
 
   /// Always present, so toggling `onPressed` keeps the child mounted.
-  Widget _pressable(Widget child) =>
-      GlassPressable(onPressed: widget.onPressed, child: child);
+  Widget _pressable(Widget child) => GlassPressable(
+    onPressed: widget.onPressed,
+    shape: widget.shape,
+    child: child,
+  );
 
   /// [content] as drawn on the glass: faded during `glassId` morphs and
   /// wrapped in the press transform (identity unless interactive).
