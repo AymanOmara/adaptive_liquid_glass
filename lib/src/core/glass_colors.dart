@@ -41,4 +41,14 @@ abstract final class GlassColors {
   /// The dark tab bar's fill while the lens is dragged: evenly lit, about
   /// 45 over black (Kept).
   static const Color tabBarDraggedFill = Color(0xFF7A7A7A);
+
+  /// A control thumb's shadow at rest (black at 12%).
+  static const Color thumbShadow = Color(0x1F000000);
+
+  /// A control thumb at rest.
+  static const Color thumb = white;
+
+  /// The segmented control's thumb at rest in dark mode (iOS's
+  /// systemGray, dark).
+  static const Color segmentThumbDark = Color(0xFF636366);
 }
