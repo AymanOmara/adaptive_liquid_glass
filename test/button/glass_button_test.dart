@@ -151,11 +151,11 @@ void main() {
         ),
       ),
     );
-    expect(styleOf(t, 'Delete').color, CupertinoColors.systemRed.color);
+    expect(styleOf(t, 'Delete').color, GlassSystemColors.red.color);
     final glasses = t
         .widgetList<LiquidGlass>(find.byType(LiquidGlass))
         .toList();
-    expect(glasses[1].glass!.tintColor, CupertinoColors.systemRed.color);
+    expect(glasses[1].glass!.tintColor, GlassSystemColors.red.color);
   }, variant: ios);
 
   testWidgets('cancel is semibold', (t) async {

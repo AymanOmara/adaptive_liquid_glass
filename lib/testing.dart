@@ -6,3 +6,5 @@
 library;
 
 export 'src/core/glass_constants.dart';
+export 'src/core/glass_motion_constants.dart';
+export 'src/core/glass_variant_constants.dart';

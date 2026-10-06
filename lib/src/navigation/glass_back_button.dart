@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show BackButton, MaterialLocalizations;
 
 import '../button/glass_button.dart';
+import '../button/glass_button_shape.dart';
+import '../core/effective_glass_mode.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 

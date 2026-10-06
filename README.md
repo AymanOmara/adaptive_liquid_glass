@@ -30,20 +30,9 @@ documented there), then score with
 
 ### Install
 
-The package is not on pub.dev yet (coming soon). Depend on it from git:
-
 ```yaml
 dependencies:
-  adaptive_liquid_glass:
-    git:
-      url: https://github.com/aymanomara/adaptive_liquid_glass
-```
-
-After the pub.dev release, this will be:
-
-```yaml
-dependencies:
-  adaptive_liquid_glass: ^0.1.0  # after release
+  adaptive_liquid_glass: ^0.1.0-dev.5
 ```
 
 ```dart
@@ -387,6 +376,251 @@ the inline title fades in once it has gone, and pulling down stretches the
 large title. Metrics are measured from SwiftUI's `NavigationStack`
 (`tool/reference/`). On Android these are `AppBar` and `SliverAppBar.large`.
 
+### Screen layout
+
+```dart
+GlassScaffold(
+  navigationBar: const GlassNavigationBar(title: Text('Inbox')),
+  tabBar: GlassTabBar(items: tabs, selectedIndex: tab, onSelected: pick),
+  bottomAccessory: GlassBottomAccessory(child: nowPlaying), // optional
+  body: ListView(children: rows),
+)
+```
+
+One widget lays out an iOS 26 screen. The body runs under the bars. The
+tab bar floats 21 pt above the home indicator, and an optional accessory
+floats above it, like Music's mini-player. The body's `MediaQuery`
+padding grows by the bars, so scroll views keep their content clear of
+them. Read that padding inside the body, not with a context from above
+the scaffold. The body is a `GlassBackdropSource` unless
+`sampleBackdrop: false`.
+
+### Toolbar
+
+```dart
+GlassScaffold(
+  toolbar: GlassToolbar(children: [
+    GlassButton.icon(onPressed: reply, icon: CupertinoIcons.reply,
+        semanticLabel: 'Reply'),
+    const GlassToolbarSpacer(),
+    GlassButton.icon(onPressed: compose, icon: CupertinoIcons.pencil,
+        semanticLabel: 'Compose'),
+  ]),
+  body: ...,
+)
+```
+
+Neighbouring items merge into one glass capsule. A `GlassToolbarSpacer`
+starts a new capsule and pushes the groups apart, like SwiftUI's
+`ToolbarSpacer`.
+
+### Toggle, slider, segmented control
+
+```dart
+GlassToggle(value: wifi, onChanged: (v) => setState(() => wifi = v))
+GlassSlider(value: volume, onChanged: (v) => setState(() => volume = v))
+GlassSegmentedControl<Period>(
+  segments: const [
+    GlassSegment(value: Period.day, label: Text('Day')),
+    GlassSegment(value: Period.week, label: Text('Week')),
+  ],
+  selected: period,
+  onChanged: (p) => setState(() => period = p),
+)
+```
+
+As in iOS 26, each thumb turns into a clear glass lens while it is
+pressed or dragged. The segmented control's lens slides between segments
+with a haptic on each one. All three follow the reading direction and
+Reduce Motion. On Android they are `Switch`, `Slider` and
+`SegmentedButton`.
+
+### Sheet, menu, search
+
+```dart
+showGlassSheet<void>(context: context, builder: (_) => details);
+
+GlassMenuButton(
+  icon: CupertinoIcons.ellipsis,
+  semanticLabel: 'More',
+  items: [
+    GlassMenuItem(label: 'Copy', icon: CupertinoIcons.doc_on_doc,
+        onSelected: copy),
+    GlassMenuItem(label: 'Delete', icon: CupertinoIcons.trash,
+        destructive: true, onSelected: delete),
+  ],
+)
+
+GlassSearchField(onChanged: (q) => setState(() => query = q))
+```
+
+- **Sheet:** floats in from the screen's edges with continuous corners.
+- **Menu:** a glass panel that springs out of its button.
+- **Search field:** a glass capsule with a localized placeholder and a
+  clear button.
+
+On Android they become a modal bottom sheet, a `MenuAnchor` and a
+`SearchBar`.
+
+### Swipe actions
+
+```dart
+GlassSwipeActions(
+  key: ValueKey(item.id),
+  leading: [GlassSwipeAction(icon: CupertinoIcons.pin_fill, label: 'Pin',
+      color: CupertinoColors.systemOrange, onPressed: () => pin(item))],
+  trailing: [GlassSwipeAction(icon: CupertinoIcons.trash, label: 'Delete',
+      color: CupertinoColors.systemRed, onPressed: () => delete(item))],
+  child: ItemRow(item),
+)
+```
+
+Swiping a row aside reveals tinted glass capsules with their labels
+underneath:
+- The row rubber-bands past its actions and springs open or shut.
+- A full swipe runs the outermost action, with a haptic as it passes the
+  threshold.
+- Only one row is open at a time. A scroll or a tap closes it.
+- VoiceOver and TalkBack get the actions as custom actions.
+
+All of these are in `example/lib/components_demo.dart`
+(`flutter run -t lib/components_demo.dart`).
+
+### Alert and confirmation dialog
+
+```dart
+showGlassAlert(
+  context: context,
+  title: 'Delete photo?',
+  message: 'This photo will be deleted from all your devices.',
+  actions: [
+    const GlassDialogAction(label: 'Cancel', role: GlassButtonRole.cancel),
+    GlassDialogAction(
+      label: 'Delete',
+      role: GlassButtonRole.destructive,
+      onPressed: delete,
+    ),
+  ],
+);
+
+showGlassConfirmationDialog(
+  context: context,
+  title: 'Photo',
+  actions: [
+    GlassDialogAction(label: 'Share', onPressed: share),
+    const GlassDialogAction(label: 'Cancel', role: GlassButtonRole.cancel),
+  ],
+);
+```
+
+The alert is a 320-pt glass card centred in the safe area, with its
+buttons side by side. The confirmation dialog is a 240-pt card with its
+buttons stacked. As in iOS 26, its cancel action isn't drawn: a tap
+outside takes it. On Android they are `AlertDialog`s.
+
+### Sheet detents
+
+```dart
+showGlassSheet<void>(
+  context: context,
+  detents: const [GlassSheetDetent.medium, GlassSheetDetent.large],
+  builder: (_) => details,
+);
+```
+
+The sheet works like SwiftUI's `presentationDetents`:
+- It follows a drag between its detents, and a drag or fling below the
+  lowest one dismisses it.
+- At a partial detent it is floating glass.
+- At `large` it runs edge to edge, opaque, with the screen's own corners.
+
+### Popover, picker, stepper, date picker
+
+```dart
+GlassPopoverAnchor(
+  popoverBuilder: (_) => const Padding(
+    padding: EdgeInsets.all(16),
+    child: Text('Liquid Glass popover'),
+  ),
+  builder: (context, open) => GlassButton.icon(
+    onPressed: open, icon: CupertinoIcons.info, semanticLabel: 'Info'),
+)
+
+GlassPicker<Period>(
+  items: const [
+    GlassPickerItem(value: Period.day, label: 'Day'),
+    GlassPickerItem(value: Period.week, label: 'Week'),
+  ],
+  selected: period,
+  onChanged: (p) => setState(() => period = p),
+)
+
+GlassStepper(value: count, max: 10, onChanged: (v) => setState(() => count = v))
+
+GlassDatePicker(
+  value: date,
+  firstDate: DateTime(2020),
+  lastDate: DateTime(2030),
+  onChanged: (d) => setState(() => date = d),
+)
+```
+
+- **Popover:** the glass bubble opens over its button, and the button steps
+  aside while it's open, as in SwiftUI. `showGlassPopover` anchors one to
+  any widget.
+- **Picker:** SwiftUI's menu style. It opens the glass menu with the
+  current choice checked.
+- **Date picker:** the compact style. It opens a glass calendar.
+
+### Context menu and search tab
+
+```dart
+GlassContextMenu(
+  items: [GlassMenuItem(label: 'Copy', icon: CupertinoIcons.doc_on_doc,
+      onSelected: copy)],
+  child: photo,
+)
+
+GlassTabBar(items: tabs, selectedIndex: tab, onSelected: pick,
+    onSearch: openSearch)
+```
+
+- **Context menu:** a long-press lifts the item over the blurred page and
+  opens the glass menu beside it.
+- **Search tab:** `onSearch` adds iOS 26's search tab, a glass circle
+  beside the bar.
+
+### iOS 26 colours
+
+`GlassSystemColors` holds iOS 26's red, blue, orange and green. Flutter's
+`CupertinoColors` still has the iOS 18 values.
+
+## Component fidelity
+
+Every component is measured against its SwiftUI counterpart on the iOS
+26.4 simulator, using reference scenes in
+`example/ios/Runner/ControlScenes.swift`:
+- `tool/reference/measure_components.py` reads the geometry and colours
+  into `controls.json`, and `test/reference/` pins the Dart constants to
+  it.
+- A Flutter twin of each scene (`-twin <scene>`) is scored per component by
+  `tool/reference/compare_components.py`, using the fidelity harness's
+  measures.
+
+Over 24 component views:
+
+| path | pass | median SSIM | median dE |
+|---|---|---|---|
+| native glass | 9/24 | 0.960 | 1.11 |
+| shader glass | 8/24 | 0.960 | 1.14 |
+
+Passing views: the toggles, slider, toolbar, sheets, stepper and picker
+menu. The remaining gaps:
+- SF Symbols' weights against CupertinoIcons.
+- UIKit's text rendering against Flutter's.
+- The popover and menu glass tone.
+- The calendar's first weekday, which follows the region.
+
 ## Adaptive foreground over busy content
 
 By default the label colour follows the platform brightness. To follow the
@@ -425,6 +659,10 @@ and `.bouncy` morph) and a size-dependent press growth. The harness lives in
 
 ## Known limitations
 
+- **Context menu not measured:** synthetic touches on the simulator do
+  not open SwiftUI's `.contextMenu`, so `GlassContextMenu` follows the
+  system's look but has not been measured. Springs and press animations of
+  the newer components are not measured either.
 - **Native mode, runtime light→dark flip:** on iOS 26, 71 of 72 measured
   brightness flips at runtime match SwiftUI. One does not: a regular glass
   capsule over a photo, flipped from light to dark, keeps part of Apple's

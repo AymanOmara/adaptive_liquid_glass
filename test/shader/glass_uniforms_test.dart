@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/shader/glass_shape_uniform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_uniforms.dart';
 import 'package:adaptive_liquid_glass/testing.dart';
 import 'package:flutter/material.dart';

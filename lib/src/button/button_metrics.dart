@@ -1,4 +1,4 @@
-import 'glass_button.dart' show GlassControlSize;
+import 'glass_control_size.dart';
 
 /// Layout of a glass button at one control size, measured from SwiftUI's
 /// `.buttonStyle(.glass)` on iOS 26.4 (`tool/reference/controls.json`).

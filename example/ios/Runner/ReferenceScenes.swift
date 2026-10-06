@@ -168,7 +168,7 @@ enum LaunchArgs {
 
   static var all: [String: String?] {
     ["scene": arg("scene"), "renderer": arg("renderer"),
-     "constants": arg("constants"), "motion": arg("motion"),
+     "twin": arg("twin"), "constants": arg("constants"), "motion": arg("motion"),
      "sceneFile": arg("sceneFile")]
   }
 

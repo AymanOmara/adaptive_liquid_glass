@@ -1,3 +1,59 @@
+## 0.1.0-dev.5
+
+* New components, each measured against SwiftUI on iOS 26.4:
+  - `showGlassAlert` and `showGlassConfirmationDialog`, with
+    `GlassDialogAction`.
+  - `showGlassPopover` and `GlassPopoverAnchor`.
+  - `GlassPicker` (menu style).
+  - `GlassStepper`.
+  - `GlassDatePicker`, the compact style with a glass calendar.
+  - `GlassContextMenu`.
+  - `GlassTabBar.onSearch`, iOS 26's search tab.
+* `showGlassSheet` takes `detents` (`GlassSheetDetent.medium`, `.large`,
+  `.fraction`, `.height`):
+  - It drags between detents and dismisses on a drag or fling down.
+  - At `large` it is edge to edge and opaque, with the screen's corners.
+  - It is its own route now, so it needs no Material ancestor.
+  - Breaking: `isScrollControlled` is removed; use `detents`.
+* The earlier components were re-measured against SwiftUI:
+  - The segmented control is 32 pt and the slider thumb 37 pt.
+  - The toolbar is 48 pt, 28 pt from the screen's edges.
+  - The menu opens over its button, with icons at the start.
+  - Swipe actions use SwiftUI's compact and stacked layouts.
+  - Toggle, slider, segmented control and stepper colours are measured, in
+    light and dark.
+* `GlassSystemColors`: iOS 26's red, blue, orange and green.
+* Fixes:
+  - Glass labels on a light page inside `GlassScaffold` were white.
+  - A grey band appeared on the tab bar next to an accessory.
+  - The menu button's glass drew over its open menu.
+  - Material's letter spacing leaked into glass text; iOS tracking is now
+    applied.
+  - Text in glass routes fell back to Flutter's debug style (underlines).
+  - Components threw without Cupertino localizations.
+  - With an accessory, the tab bar widens to the accessory's width, as on
+    iOS.
+* Tooling: `tool/reference/capture_components.sh`,
+  `measure_components.py` and `compare_components.py` score every
+  component against SwiftUI per path.
+
+* `GlassScaffold`: an iOS 26 screen in one widget. The navigation bar sits
+  on top, the tab bar or toolbar floats at the bottom with an optional
+  `GlassBottomAccessory`, and the body runs under the bars, padded clear
+  of them.
+* `GlassToolbar` and `GlassToolbarSpacer`: the floating bottom toolbar.
+* `GlassToggle`, `GlassSlider` and `GlassSegmentedControl`: their thumbs
+  turn into clear glass lenses while pressed.
+* `showGlassSheet` and `GlassSheet`: a floating glass sheet.
+* `GlassMenuButton` and `GlassMenuItem`: a glass pull-down menu.
+* `GlassSearchField`: a glass search capsule.
+* `GlassSwipeActions` and `GlassSwipeAction`: list swipe actions with
+  tinted glass capsules, a full swipe and a haptic.
+* `GlassTabBar`: a selection haptic as the dragged lens reaches each tab
+  (`enableFeedback`).
+* Internal: one class per file, and fixed colours moved to `GlassColors`.
+  The public API is unchanged.
+
 ## 0.1.0-dev.4
 
 * `GlassTabBar`, matched frame by frame to iOS 26.4's tab bar (Kept):

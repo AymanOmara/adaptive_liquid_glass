@@ -1,111 +1,21 @@
 import 'package:flutter/cupertino.dart';
 
+import '../core/effective_glass_mode.dart';
 import '../core/glass.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
+import '../core/glass_system_colors.dart';
 import '../liquid_glass.dart';
 import 'button_metrics.dart';
+import 'glass_button_metrics_scope.dart';
+import 'glass_button_role.dart';
+import 'glass_button_shape.dart';
+import 'glass_button_style.dart';
+import 'glass_control_size.dart';
+import 'glass_control_size_scope.dart';
 import 'material_glass_button.dart';
-
-/// SwiftUI's glass button styles.
-enum GlassButtonStyle {
-  /// `.glass`: plain interactive glass with a readable label.
-  glass,
-
-  /// `.glassProminent`: glass tinted with the accent, white label.
-  glassProminent,
-}
-
-/// SwiftUI's button roles.
-enum GlassButtonRole {
-  /// No role.
-  none,
-
-  /// Destroys data: red label, or red tint when prominent.
-  destructive,
-
-  /// Cancels: semibold label.
-  cancel,
-}
-
-/// SwiftUI's `ControlSize`. On iOS 26 glass buttons, mini is drawn as
-/// small and extraLarge as large.
-enum GlassControlSize {
-  /// `.mini`.
-  mini,
-
-  /// `.small`.
-  small,
-
-  /// `.regular`, the default.
-  regular,
-
-  /// `.large`.
-  large,
-
-  /// `.extraLarge`.
-  extraLarge,
-}
-
-/// SwiftUI's `ButtonBorderShape` for glass buttons.
-enum GlassButtonShape {
-  /// A capsule (icon-only buttons too, as on iOS 26).
-  automatic,
-
-  /// A capsule.
-  capsule,
-
-  /// A circle (square layout).
-  circle,
-
-  /// A rounded rectangle with the size's corner radius.
-  roundedRect,
-}
-
-/// The default [GlassControlSize] for glass buttons below it, like
-/// SwiftUI's `.controlSize(_:)`.
-class GlassControlSizeScope extends InheritedWidget {
-  /// Creates the scope.
-  const GlassControlSizeScope({
-    super.key,
-    required this.size,
-    required super.child,
-  });
-
-  /// The size buttons below use unless they set one.
-  final GlassControlSize size;
-
-  /// The nearest scope's size, if any.
-  static GlassControlSize? maybeOf(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<GlassControlSizeScope>()?.size;
-
-  @override
-  bool updateShouldNotify(GlassControlSizeScope old) => old.size != size;
-}
-
-/// Exact metrics for glass buttons below, overriding their control size.
-/// Internal: bars use it for their item metrics.
-class GlassButtonMetricsScope extends InheritedWidget {
-  /// Creates the scope.
-  const GlassButtonMetricsScope({
-    super.key,
-    required this.metrics,
-    required super.child,
-  });
-
-  /// The metrics buttons below use.
-  final GlassButtonMetrics metrics;
-
-  /// The nearest scope's metrics, if any.
-  static GlassButtonMetrics? maybeOf(BuildContext context) => context
-      .dependOnInheritedWidgetOfExactType<GlassButtonMetricsScope>()
-      ?.metrics;
-
-  @override
-  bool updateShouldNotify(GlassButtonMetricsScope old) =>
-      old.metrics != metrics;
-}
 
 /// A SwiftUI glass button: `.buttonStyle(.glass)` or `.glassProminent`.
 ///
@@ -226,13 +136,13 @@ class GlassButton extends StatelessWidget {
     // Plain colours (not CupertinoDynamicColor) for the glass and label.
     Color resolve(Color c) =>
         Color(CupertinoDynamicColor.resolve(c, context).toARGB32());
-    final red = resolve(CupertinoColors.systemRed);
+    final red = resolve(GlassSystemColors.red);
     final prominent = style == GlassButtonStyle.glassProminent;
     final accent = role == GlassButtonRole.destructive
         ? red
         : resolve(tint ?? CupertinoTheme.of(context).primaryColor);
     final Color? labelColor = prominent
-        ? const Color(0xFFFFFFFF)
+        ? GlassColors.white
         : role == GlassButtonRole.destructive
         ? red
         : null;

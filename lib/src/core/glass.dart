@@ -1,17 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
-
-/// The material variants of Liquid Glass, mirroring SwiftUI's `Glass`.
-enum GlassVariant {
-  /// Standard glass: frosted, adapts to the content behind it.
-  regular,
-
-  /// Highly transparent glass for rich media backgrounds.
-  clear,
-
-  /// No glass effect; the child is shown as is.
-  identity,
-}
+import 'glass_variant.dart';
 
 /// An immutable description of a Liquid Glass material.
 ///

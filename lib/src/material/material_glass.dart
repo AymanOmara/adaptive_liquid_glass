@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/glass.dart';
 import '../core/glass_shape.dart';
+import '../core/glass_variant.dart';
 import '../core/shape_border.dart';
 import '../foreground/glass_label_style.dart';
 import '../interaction/glass_pressable.dart';

@@ -13,6 +13,7 @@ class LaunchArgs {
     this.sceneFile,
     this.mode,
     this.flip,
+    this.twin,
   ]);
 
   /// Static scene id, or null for the demo.
@@ -38,6 +39,10 @@ class LaunchArgs {
   /// check), or null.
   final double? flip;
 
+  /// A reference-twin scene (`-twin <name>`, see `reference_twin.dart`),
+  /// or null.
+  final String? twin;
+
   /// Reads the arguments; all null where the channel is not registered.
   static Future<LaunchArgs> read() async {
     try {
@@ -51,6 +56,7 @@ class LaunchArgs {
         m?['sceneFile'] as String?,
         m?['mode'] as String?,
         double.tryParse(m?['flip'] as String? ?? ''),
+        m?['twin'] as String?,
       );
     } on MissingPluginException {
       return LaunchArgs(null, null, null, null);

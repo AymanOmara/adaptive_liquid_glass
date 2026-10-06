@@ -6,6 +6,8 @@ import 'package:adaptive_liquid_glass/src/core/shape_border.dart';
 import 'package:adaptive_liquid_glass/src/degraded/degraded_glass.dart';
 import 'package:adaptive_liquid_glass/src/material/material_glass.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
+import 'package:adaptive_liquid_glass/src/shader/glass_backdrop.dart';
+import 'package:adaptive_liquid_glass/src/shader/glass_backdrop_debug_frame.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_uniforms.dart';
 import 'package:adaptive_liquid_glass/src/shader/render_glass_backdrop.dart';

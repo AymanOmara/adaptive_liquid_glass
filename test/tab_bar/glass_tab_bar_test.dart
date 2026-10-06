@@ -2,8 +2,12 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
+import 'package:adaptive_liquid_glass/src/tab_bar/glass_search_tab_button.dart';
+import 'package:adaptive_liquid_glass/src/tab_bar/lens_ends_clipper.dart';
+import 'package:adaptive_liquid_glass/src/tab_bar/tab_bar_fill_scope.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Badge, NavigationBar;
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../api/hosts.dart';
@@ -18,10 +22,11 @@ const _blue = Color(0xFF0000FF);
 
 /// A tab bar that keeps its own selection, and records every pick.
 class _Harness extends StatefulWidget {
-  const _Harness(this.picks, {this.items = _items});
+  const _Harness(this.picks, {this.items = _items, this.enableFeedback = true});
 
   final List<int> picks;
   final List<GlassTabBarItem> items;
+  final bool enableFeedback;
 
   @override
   State<_Harness> createState() => _HarnessState();
@@ -35,6 +40,7 @@ class _HarnessState extends State<_Harness> {
     items: widget.items,
     selectedIndex: _selected,
     selectedColor: _blue,
+    enableFeedback: widget.enableFeedback,
     onSelected: (i) {
       widget.picks.add(i);
       setState(() => _selected = i);
@@ -420,8 +426,7 @@ void main() {
     final clip = t
         .widgetList<ClipPath>(find.byType(ClipPath))
         .map((c) => c.clipper)
-        .whereType<CustomClipper<Path>>()
-        .where((c) => c.runtimeType.toString() == '_LensEnds')
+        .whereType<LensEndsClipper>()
         .single;
     final lensBox = t.getRect(_lens);
     final path = clip.getClip(const Size(400, 54));
@@ -501,5 +506,89 @@ void main() {
     final first = tinted.indexOf(true);
     expect(first, isNonNegative);
     expect(tinted.sublist(first), everyElement(isTrue));
+  }, variant: ios);
+
+  /// Records the selection haptics the platform is asked for.
+  List<String> recordHaptics(WidgetTester t) {
+    final calls = <String>[];
+    t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'HapticFeedback.vibrate') {
+          calls.add(call.arguments as String);
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    return calls;
+  }
+
+  Future<void> dragAcross(WidgetTester t) async {
+    final from = t.getCenter(find.text('History'));
+    final to = t.getCenter(find.text('Settings'));
+    final g = await t.startGesture(from);
+    await t.pump(const Duration(milliseconds: 100));
+    for (var i = 1; i <= 20; i++) {
+      await g.moveTo(Offset.lerp(from, to, i / 20)!);
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    await g.up();
+    await t.pumpAndSettle();
+  }
+
+  testWidgets('dragging the lens over each tab ticks once per tab', (t) async {
+    shaderEnv();
+    final haptics = recordHaptics(t);
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    await dragAcross(t);
+    // History to Settings crosses Snippets, then lands on Settings.
+    expect(haptics, [
+      'HapticFeedbackType.selectionClick',
+      'HapticFeedbackType.selectionClick',
+    ]);
+  }, variant: ios);
+
+  testWidgets('enableFeedback: false keeps the drag silent', (t) async {
+    shaderEnv();
+    final haptics = recordHaptics(t);
+    await t.pumpWidget(plainHost(_Harness(_picks(), enableFeedback: false)));
+    await dragAcross(t);
+    expect(haptics, isEmpty);
+  }, variant: ios);
+
+  testWidgets('a search tab: the bar fills beside a 62 circle', (t) async {
+    shaderEnv();
+    var searched = 0;
+    await t.pumpWidget(
+      plainHost(
+        SizedBox(
+          width: 360,
+          child: GlassTabBar(
+            items: _items,
+            selectedIndex: 0,
+            onSelected: (_) {},
+            onSearch: () => searched++,
+          ),
+        ),
+      ),
+    );
+    final circle = t.getRect(find.byType(GlassSearchTabButton));
+    expect(circle.size, const Size(62, 62));
+    final bar = t.getRect(
+      find.descendant(
+        of: find.byType(GlassTabBar),
+        matching: find.byType(TabBarFillScope),
+      ),
+    );
+    expect(circle.left - bar.right, moreOrLessEquals(10));
+    expect(circle.right - bar.left, moreOrLessEquals(360));
+    await t.tap(find.byType(GlassSearchTabButton));
+    expect(searched, 1);
   }, variant: ios);
 }

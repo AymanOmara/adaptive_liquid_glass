@@ -1,5 +1,6 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/group/glass_entry.dart';
+import 'package:adaptive_liquid_glass/src/group/glass_press_geometry.dart';
 import 'package:adaptive_liquid_glass/src/group/glass_registry.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';

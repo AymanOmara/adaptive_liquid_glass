@@ -72,7 +72,11 @@ class _ProbeState extends State<_Probe> {
           top: 777,
           child: Text(
             '40 chars · 40 min ago · Notes',
-            style: TextStyle(fontSize: 12.4, letterSpacing: 0.1, color: Color(0xFF8A8A8E)),
+            style: TextStyle(
+              fontSize: 12.4,
+              letterSpacing: 0.1,
+              color: Color(0xFF8A8A8E),
+            ),
           ),
         ),
         Positioned(
