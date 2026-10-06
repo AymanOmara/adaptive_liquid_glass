@@ -9,6 +9,7 @@ import '../core/glass_render_mode.dart';
 import '../core/render_mode_resolver.dart';
 import '../core/shape_border.dart';
 import '../core/theme.dart';
+import '../foreground/foreground_brightness.dart';
 import '../foreground/glass_backdrop_source.dart';
 import '../foreground/glass_backdrop_sources.dart';
 import '../foreground/glass_foreground.dart';
@@ -84,6 +85,7 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
 
   Timer? _sampler;
   Brightness? _sampled;
+  Brightness? _pending;
   bool _sampling = false;
 
   late final GlassMorphController _morph = GlassMorphController(
@@ -158,6 +160,7 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
       _sampler?.cancel();
       _sampler = null;
       _sampled = null;
+      _pending = null;
     }
   }
 
@@ -174,8 +177,18 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
       for (final b in GlassBackdropSources.instance.boundaries) {
         final l = await sampleLuminance(b, region);
         if (l == null) continue;
-        final next = l >= 0.5 ? Brightness.light : Brightness.dark;
-        if (mounted && next != _sampled) setState(() => _sampled = next);
+        final next = foregroundBrightnessFor(l, current: _sampled);
+        // A flip needs two samples in a row: content scrolling past would
+        // otherwise flip the labels back and forth.
+        if (next == _sampled) {
+          _pending = null;
+        } else if (_pending != next) {
+          _pending = _sampled == null ? null : next;
+          if (_sampled == null && mounted) setState(() => _sampled = next);
+        } else if (mounted) {
+          _pending = null;
+          setState(() => _sampled = next);
+        }
         break;
       }
     } finally {
