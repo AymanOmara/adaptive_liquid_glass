@@ -1,9 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart'
+    show GlassSheetDetent, GlassStepper;
 import 'package:adaptive_liquid_glass/src/controls/control_metrics.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
+import 'package:adaptive_liquid_glass/src/date_picker/date_picker_metrics.dart';
+import 'package:adaptive_liquid_glass/src/dialog/dialog_metrics.dart';
 import 'package:adaptive_liquid_glass/src/menu/menu_metrics.dart';
+import 'package:adaptive_liquid_glass/src/popover/popover_metrics.dart';
 import 'package:adaptive_liquid_glass/src/scaffold/scaffold_metrics.dart';
 import 'package:adaptive_liquid_glass/src/search/search_metrics.dart';
 import 'package:adaptive_liquid_glass/src/sheet/sheet_metrics.dart';
@@ -351,6 +356,99 @@ void main() {
     expect(
       SwipeMetrics.stackedRowHeight,
       lessThanOrEqualTo(n(stacked, 'row_height')),
+    );
+  });
+
+  test('large sheet', () {
+    final s = m('sheet_large');
+    expect(n(s, 'inset'), 0);
+    expect(
+      SheetMetrics.largeTopRadius,
+      moreOrLessEquals(n(s, 'top_radius_circle'), epsilon: 1),
+    );
+    // The large sheet starts at the safe area's top (62 on iPhone 17 Pro).
+    expect(
+      GlassSheetDetent.large.resolve(const Size(402, 874), 62),
+      moreOrLessEquals(874 - n(s, 'top'), epsilon: pt),
+    );
+  });
+
+  test('alert and confirmation dialog', () {
+    final a = m('alert');
+    final d = m('dialog');
+    expect(
+      DialogMetrics.alertWidth,
+      moreOrLessEquals(n(a, 'width'), epsilon: pt),
+    );
+    expect(
+      DialogMetrics.dialogWidth,
+      moreOrLessEquals(n(d, 'width'), epsilon: pt),
+    );
+    expect(
+      DialogMetrics.cornerRadius,
+      moreOrLessEquals(n(a, 'radius_circle'), epsilon: 1.5),
+    );
+    expect(
+      DialogMetrics.cornerRadius,
+      moreOrLessEquals(n(d, 'radius_circle'), epsilon: 1.5),
+    );
+    expect(
+      DialogMetrics.buttonHeight,
+      moreOrLessEquals(n(a, 'button_height'), epsilon: pt),
+    );
+    expect(
+      DialogMetrics.padding,
+      moreOrLessEquals(n(a, 'button_inset'), epsilon: pt),
+    );
+    expect(
+      (DialogMetrics.alertWidth -
+              DialogMetrics.padding * 2 -
+              DialogMetrics.buttonSpacing) /
+          2,
+      moreOrLessEquals(n(a, 'button_width'), epsilon: pt),
+    );
+    // Centred in the safe area: (62 + 874 - 34) / 2.
+    expect(n(a, 'centre_y'), moreOrLessEquals(451, epsilon: 1));
+  });
+
+  test('popover', () {
+    final p = m('popover');
+    expect(
+      PopoverMetrics.margin,
+      moreOrLessEquals(n(p, 'right_inset'), epsilon: pt),
+    );
+    // A one-line popover: 17-pt SF text (a 20.3-pt line), 16 padding, the
+    // inset.
+    expect(
+      20.3 + 16 * 2 + PopoverMetrics.verticalInset * 2,
+      moreOrLessEquals(n(p, 'height'), epsilon: 1),
+    );
+  });
+
+  test('stepper and date picker', () {
+    final s = m('stepper');
+    expect(
+      GlassStepper.size.width,
+      moreOrLessEquals(n(s, 'width'), epsilon: pt),
+    );
+    expect(
+      GlassStepper.size.height,
+      moreOrLessEquals(n(s, 'height'), epsilon: pt),
+    );
+    expect(GlassColors.stepperFill.color, sameColour(hex(s, 'fill')));
+    expect(GlassColors.stepperFill.darkColor, sameColour(hex(s, 'dark_fill')));
+    final dp = m('date_picker');
+    expect(
+      DatePickerMetrics.height,
+      moreOrLessEquals(n(dp, 'height'), epsilon: pt),
+    );
+    expect(GlassColors.stepperFill.color, sameColour(hex(dp, 'fill')));
+  });
+
+  test('search tab', () {
+    expect(
+      ScaffoldMetrics.accessoryInset,
+      moreOrLessEquals(n(m('search_tab'), 'circle_right_inset'), epsilon: pt),
     );
   });
 }

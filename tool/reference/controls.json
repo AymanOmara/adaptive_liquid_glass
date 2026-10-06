@@ -240,6 +240,47 @@
         "label_colour": "#8A8A8E",
         "platter_corner_radius_circle": 26.52
       }
+    },
+    "sheet_large": {
+      "top": 62.0,
+      "inset": 0.0,
+      "top_corner_inset_at_1": 32.67,
+      "top_radius_circle": 41.75
+    },
+    "alert": {
+      "width": 320.0,
+      "height": 178.0,
+      "centre_y": 451.0,
+      "corner_inset_at_1": 26.67,
+      "radius_circle": 34.97,
+      "button_height": 48.0,
+      "button_width": 140.0,
+      "button_inset": 16.0
+    },
+    "dialog": {
+      "width": 240.0,
+      "height": 181.67,
+      "centre_y": 450.17,
+      "corner_inset_at_1": 25.67,
+      "radius_circle": 33.83
+    },
+    "popover": {
+      "top": 72.0,
+      "height": 68.0,
+      "right_inset": 9.67
+    },
+    "stepper": {
+      "width": 93.0,
+      "height": 31.33,
+      "fill": "#EEEEEF",
+      "dark_fill": "#121213"
+    },
+    "date_picker": {
+      "height": 36.33,
+      "fill": "#EFEFF0"
+    },
+    "search_tab": {
+      "circle_right_inset": 21.0
     }
   }
 }

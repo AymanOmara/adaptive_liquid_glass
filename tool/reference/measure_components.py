@@ -327,6 +327,69 @@ def swipe(d):
     return out
 
 
+def new_components(d):
+    """The components added after the first round (alert, dialog,
+    popover, stepper, date picker, search tab, large sheet), from the
+    captures in d (see capture_components.sh: swiftui/<scene>.png)."""
+    out = {}
+    grey_page = lambda c: np.abs(np.asarray(c) - 102).max(axis=-1) <= 3
+
+    # Large sheet: top edge, side inset, corner insets one point in.
+    a = load(d, "sheetlarge.png")
+    top = run(a, "y", 201, 10, 1, lambda c: np.asarray(c).min(axis=-1) < 250)
+    out["sheet_large"] = {
+        "top": r(top),
+        "inset": r(run(a, "x", 400, 1, -1, lambda c: np.asarray(c).min(axis=-1) >= 250)),
+        "top_corner_inset_at_1": r(run(a, "x", top + 1, 100, -1, lambda c: np.asarray(c).min(axis=-1) >= 240)),
+        "top_radius_circle": r(circle_radius(1, run(a, "x", top + 1, 100, -1, lambda c: np.asarray(c).min(axis=-1) >= 240))),
+    }
+
+    # Alert and dialog: the card's rectangle (it is lighter than the page).
+    for name, scene in (("alert", "alert.png"), ("dialog", "dialog.png")):
+        a = load(d, scene)
+        page = at(a, 201, 120)
+        card = lambda c, p=page: np.abs(np.asarray(c) - p).max(axis=-1) > 30
+        x0, x1 = span(a, "x", 450, 0, W, card)
+        y0, y1 = span(a, "y", 120, 250, 650, card)
+        out[name] = {"width": r(x1 - x0), "height": r(y1 - y0),
+                     "centre_y": r((y0 + y1) / 2),
+                     "corner_inset_at_1": r(run(a, "x", y0 + 1, 201, -1, card) - x0),
+                     "radius_circle": r(circle_radius(1, run(a, "x", y0 + 1, 201, -1, card) - x0))}
+    # Alert buttons: their fill is darker than the card.
+    a = load(d, "alert.png")
+    btn = lambda c: (np.asarray(c).max(axis=-1) < 200) & (np.asarray(c).max(axis=-1) > 170)
+    bx0, bx1 = span(a, "x", 500, 41, 201, btn)
+    by0, by1 = span(a, "y", 100, 440, 540, btn)
+    out["alert"].update({"button_height": r(by1 - by0), "button_width": r(bx1 - bx0),
+                         "button_inset": r(bx0 - 41)})
+
+    # Popover: the bubble by the toolbar button.
+    a = load(d, "popover.png")
+    page = at(a, 100, 300)
+    bub = lambda c, p=page: np.abs(np.asarray(c) - p).max(axis=-1) > 30
+    px0, px1 = span(a, "x", 105, 150, W, bub)
+    py0, py1 = span(a, "y", 300, 40, 200, bub)
+    out["popover"] = {"top": r(py0), "height": r(py1 - py0), "right_inset": r(W - px1)}
+
+    # Stepper and date picker capsules.
+    a = load(d, "stepper.png")
+    sx0, sx1 = span(a, "x", 100, 100, 300, lambda c: np.asarray(c).max(axis=-1) < 245)
+    sy0, sy1 = span(a, "y", 170, 70, 130, lambda c: np.asarray(c).max(axis=-1) < 245)
+    out["stepper"] = {"width": r(sx1 - sx0), "height": r(sy1 - sy0),
+                      "fill": hexc(at(a, 165, 100)), "dark_fill": hexc(at(a, 165, 200))}
+    a = load(d, "datepicker.png")
+    dy0, dy1 = span(a, "y", 201, 270, 330, lambda c: np.asarray(c).max(axis=-1) < 245)
+    out["date_picker"] = {"height": r(dy1 - dy0), "fill": hexc(at(a, 150, 300))}
+
+    # Search tab: the circle at the bar's right.
+    a = load(d, "searchtab.png")
+    edge = lambda c: np.asarray(c).min(axis=-1) == 255
+    cx1 = run(a, "x", 822, 395, -1, lambda c: not edge(c))
+    cx0 = run(a, "x", 822, 352, -1, lambda c: not edge(c))
+    out["search_tab"] = {"circle_right_inset": r(W - cx1)}
+    return out
+
+
 def main():
     d = pathlib.Path(sys.argv[1])
     comp = {
@@ -338,6 +401,8 @@ def main():
         "search": search(d),
         "swipe": swipe(d),
     }
+    if (d / "alert.png").exists():
+        comp.update(new_components(d))
     print(json.dumps(comp, indent=1))
     if "--dry" in sys.argv:
         return
