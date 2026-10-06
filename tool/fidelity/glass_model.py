@@ -73,6 +73,8 @@ def resolve_constants(constants):
                 out[k] = {**VARIANT_DEFAULTS, **out[k]}
         else:
             out[k] = v if given is None else given
+    # Model-only experiment keys (`_name`) pass through; Dart has no such keys.
+    out.update({k: v for k, v in constants.items() if k.startswith("_")})
     return out
 
 
@@ -121,6 +123,27 @@ def sd_superellipse_box(px, py, hx, hy, r, n):
     return corner + np.minimum(np.maximum(qx, qy), 0.0) - r
 
 
+# Continuous corners (A1, after liquid_glass_widgets' sdfSquircle and Apple's
+# continuous corners): the corner curve starts `cornerZone` x r from the
+# corner (capped at half the shorter side) and is a Lame curve whose exponent
+# makes it pass through the circular arc's 45 degree point, so it turns into
+# the circle (n = 2) when the zone clamps to r (pills). cornerZone <= 1 keeps
+# the fixed cornerExponent with zone = r (the pre-A1 outline).
+CORNER_45 = 1.0 - np.sqrt(0.5)  # 0.29289322: the arc's 45 degree inset / r
+
+
+def corner_params(r, hx, hy, n, zone):
+    """(zone radius, exponent) for sd_superellipse_box, as the shader's
+    shapeOf computes them."""
+    r = min(r, hx, hy)
+    if zone <= 1.0 or r <= 0.0:
+        return r, n
+    z = min(zone * r, hx, hy)
+    if z <= r:
+        return r, 2.0
+    return z, -1.0 / np.log2(np.clip(1.0 - CORNER_45 * r / z, 0.5, 0.9999))
+
+
 def smin(a, b, k):
     if k <= 0:
         return np.minimum(a, b)
@@ -133,8 +156,8 @@ def shape_dists(shapes, x, y):
     for s in shapes:
         rx, ry, rw, rh = s["rect"]
         hx, hy = rw * 0.5, rh * 0.5
-        out.append(sd_superellipse_box(x - (rx + hx), y - (ry + hy), hx, hy,
-                                       s["radius"], s["n"]))
+        r, n = corner_params(s["radius"], hx, hy, s["n"], s.get("zone", 1.0))
+        out.append(sd_superellipse_box(x - (rx + hx), y - (ry + hy), hx, hy, r, n))
     return out
 
 
@@ -324,6 +347,9 @@ def scene_shapes(scene, constants, scale):
             "rect": (s["x"] * scale, s["y"] * scale, s["w"] * scale, s["h"] * scale),
             "radius": shape_radius(s) * scale,
             "n": 2.0 if circular else float(constants["cornerExponent"]),
+            # A per-shape exponent (circular shapes) disables the zone.
+            "zone": 1.0 if circular else float(constants.get("cornerZone", 1.0)),
+            "circular": circular,
             "clear": 1.0 if s["variant"] == "clear" else 0.0,
             "tint": parse_tint(s.get("tint")),
         })
@@ -385,12 +411,16 @@ def _work_box(scene, scale, W, H, pad):
 
 @functools.lru_cache(maxsize=256)
 def _geometry(scene_json, corner_exponent, merge_factor, scale, W, H, pad,
-              nrs_regular=1.0, nrs_clear=1.0):
+              nrs_regular=1.0, nrs_clear=1.0, corner_zone=1.0, lens_zone=None):
     """Everything that depends only on the shapes, cornerExponent,
-    mergeFactor and the per-variant normalRadiusScale: field, lens normals,
-    lens-field curvature, attribute weights."""
+    cornerZone, mergeFactor and the per-variant normalRadiusScale: field,
+    lens normals, lens-field curvature, attribute weights. The lens field keeps
+    circular corners like the shader (Task A1: a zone on it scored worse);
+    `lens_zone` (experiments only, `_lensZone` in the constants) gives it a
+    zone factor."""
     scene = json.loads(scene_json)
-    shapes = scene_shapes(scene, {"cornerExponent": corner_exponent}, scale)
+    shapes = scene_shapes(scene, {"cornerExponent": corner_exponent,
+                                  "cornerZone": corner_zone}, scale)
     spacing = scene.get("spacing")
     k = (merge_factor * spacing * scale) if spacing else 0.0
     bx0, by0, bx1, by1 = _work_box(scene, scale, W, H, pad)
@@ -416,9 +446,11 @@ def _geometry(scene_json, corner_exponent, merge_factor, scale, W, H, pad,
     # Lens normals (Task 17d, measured: SwiftUI displaces along the normals
     # of a rounder rect): +-1 px central differences of the lens field, the
     # smooth union of each shape with its radius x normalRadiusScale (capped
-    # at half the shorter side). Scale 1 is the outline's own field.
+    # at half the shorter side), with circular corners. Scale 1 with
+    # cornerZone 1 is the outline's own field.
     lens = [{**s_, "radius": min(s_["radius"] * (nrs_clear if s_["clear"] else nrs_regular),
-                                 0.5 * min(s_["rect"][2], s_["rect"][3]))}
+                                 0.5 * min(s_["rect"][2], s_["rect"][3])),
+             "zone": 1.0 if lens_zone is None or s_["circular"] else float(lens_zone)}
             for s_ in shapes]
     fxp, fxm = field(lens, px + 1, py, k), field(lens, px - 1, py, k)
     fyp, fym = field(lens, px, py + 1, k), field(lens, px, py - 1, k)
@@ -452,7 +484,8 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     g = _geometry(json.dumps(scene, sort_keys=True), float(constants["cornerExponent"]),
                   merge_factor, float(scale), W, H, float(pad_pt),
                   float(constants["regular" + br_]["normalRadiusScale"]),
-                  float(constants["clear" + br_]["normalRadiusScale"]))
+                  float(constants["clear" + br_]["normalRadiusScale"]),
+                  float(constants["cornerZone"]), constants.get("_lensZone"))
     bx0, by0, bx1, by1 = g["box"]
     shapes, weights = g["shapes"], g["weights"]
 

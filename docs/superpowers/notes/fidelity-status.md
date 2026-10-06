@@ -222,6 +222,65 @@ known regular-dark small-shape family. Do not cite "hard target met" as
 generalising off-grid; a future round should fit a regular-dark size term
 against the holdout set.
 
+## Task A1: continuous-corner outline (shipped)
+
+Run: `build/fidelity/a1-device2` (reference simulator, Flutter recaptured at
+the A1 tree, SwiftUI images copied from `build/fidelity/final`).
+**46/75 pass (unchanged), median SSIM 0.9830 / ΔE 1.09, mean 0.9798 / 1.324,
+min SSIM 0.9532, 0 below 0.95.** Before (`final`, 17d round 4): 46/75,
+0.9828 / 1.09, mean 0.9790 / 1.335. No scene changed pass/fail; the largest
+SSIM drop anywhere is −0.00006 (regular-rect16-gradient-dark); capsules,
+circles and merges are unchanged. Model↔Flutter parity on the new captures:
+75/75, min SSIM 0.9960, max ΔE 0.34 (`a1-device2/parity.txt`).
+
+What changed: rect outlines use a continuous corner after liquid_glass_widgets'
+`sdfSquircle` — the corner starts `cornerZone × r` from the corner (capped at
+half the shorter side) and is a superellipse with
+`n = −1 / log2(1 − 0.29289·r / zone)`, so it passes through the circular arc's
+45° point and becomes the circle (n = 2) when the zone clamps to r. New
+constant `GlassConstants.cornerZone` (1 = old outline), packed in
+`uGlobal2.w`. Shapes with a per-shape exponent (capsules, circles; uInfo.z > 0)
+keep exact arcs; the packer now writes uInfo.z = 0 for global-corner shapes
+(it used to write the global exponent, which hid rects from circles in the
+shader). The lens-normal field keeps circular corners.
+
+Clear rect scenes, device SSIM/ΔE (`final` → `a1-device2`):
+
+| scene | before | after | band SSIM |
+|---|---|---|---|
+| clear-rect16-photo-light | 0.9659 / 2.12 | 0.9676 / 2.07 | 0.935 → 0.940 |
+| clear-rect16-photo-dark | 0.9656 / 1.91 | 0.9678 / 1.84 | 0.934 → 0.941 |
+| clear-rect28-photo-light | 0.9619 / 2.23 | 0.9654 / 2.10 | 0.921 → 0.931 |
+| clear-rect28-photo-dark | 0.9616 / 2.03 | 0.9659 / 1.88 | 0.920 → 0.932 |
+| clear-rect16-text-light | 0.9632 / 0.69 | 0.9656 / 0.68 | 0.925 → 0.932 |
+| clear-rect16-text-dark | 0.9655 / 0.67 | 0.9685 / 0.65 | 0.931 → 0.941 |
+| clear-rect28-text-light | 0.9558 / 0.74 | 0.9611 / 0.70 | 0.899 → 0.916 |
+| clear-rect28-text-dark | 0.9583 / 0.71 | 0.9644 / 0.67 | 0.906 → 0.926 |
+
+All rect families gain a little (regular/tinted rect28 +0.001–0.002); none
+crossed the 0.97 bar, so the clear-rect band residual is only partly the
+corner shape.
+
+Model sweep (model vs SwiftUI via `glass_model.render` with `cornerZone` and the model-only `_lensZone` key, 36 rect scenes):
+
+- Outline zone (lens circular): 1.0 → mean SSIM 0.9803; 1.1 0.9815; 1.15
+  0.9818; **1.2 0.9819**; 1.25 0.9819; 1.3 0.9818; 1.4 0.9813; 1.528 0.9805.
+  rect16 prefers ~1.3, rect28 ~1.15–1.2. The model's 1.25 pass gain (48/75)
+  rests on clear-rect16-text-dark at 0.9702, which the device runs ~0.002
+  below, so 1.2 shipped. Model at 1.2: 47/75 (clear-rect16-photo-dark 0.9710
+  model vs 0.9678 device — the extra pass did not transfer).
+- Zone on the lens-normal field too: worse for clear (1.528: mean 0.9792,
+  clear-rect28-text-light 0.9456); lens-only zone is worse still (1.528:
+  0.9787). The circular lens field with `normalRadiusScale` 1.55 already
+  stands in for SwiftUI's rounder lens normals.
+- Re-gridding clear `normalRadiusScale` with the new outline (1.35, 1.5, 1.6,
+  1.75) and zone on both fields with lower scales (1.2, 1.3): all worse;
+  1.55 stays optimal.
+
+Note: `build/fidelity/final` still holds the pre-A1 Flutter captures, so the
+75 parity cases in `test_glass_model.py` must be pointed at (or refreshed
+from) `a1-device2` once this lands.
+
 ## Tone LUT (Task 17d)
 
 Deviation from the plan, kept deliberately: the shipped tone LUT is the

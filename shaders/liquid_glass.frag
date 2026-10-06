@@ -5,7 +5,7 @@ precision highp float;
 // Float layout must match lib/src/shader/glass_uniforms.dart.
 uniform vec2 uSize;        // engine: texture size
 uniform vec4 uGlobal;      // count, dpr, lightAngle, opaque
-uniform vec4 uGlobal2;     // smoothing px, cornerExponent, highContrast, -
+uniform vec4 uGlobal2;     // smoothing px, cornerExponent, highContrast, cornerZone
 uniform vec4 uOpaque;      // rgb
 uniform vec4 uTouch;       // x, y, glow, glowRadius px
 uniform vec4 uRects[16];   // x, y, w, h px
@@ -49,10 +49,28 @@ float sdSuperellipseBox(vec2 p, vec2 halfSize, float r, float n) {
 // constant-bounded loops, whose induction variable SkSL accepts as a
 // constant index expression (a function parameter is not one). `rs` scales
 // the corner radius (lens normals; 1 = the outline).
-float shapeOf(vec2 p, vec4 rc, vec4 info, float rs) {
+//
+// Continuous corners (Task A1, after liquid_glass_widgets' sdfSquircle):
+// with a zone factor `zf` > 1 the corner curve starts zf x r from the corner
+// (capped at half the shorter side), with the superellipse exponent that
+// puts it through the circular arc's 45 degree point, so it becomes the
+// circle (n = 2) when the zone clamps to r (pills). A per-shape exponent
+// (info.z > 0: capsules, circles) keeps the plain arc.
+float shapeOf(vec2 p, vec4 rc, vec4 info, float rs, float zf) {
   vec2 hs = rc.zw * 0.5;
+  float hm = min(hs.x, hs.y);
+  float r = min(info.x * rs, hm);
   float n = info.z > 0.0 ? info.z : uGlobal2.y;
-  return sdSuperellipseBox(p - (rc.xy + hs), hs, info.x * rs, n);
+  if (info.z <= 0.0 && zf > 1.0 && r > 0.0) {
+    float zone = min(zf * r, hm);
+    if (zone > r) {
+      n = -1.0 / log2(clamp(1.0 - 0.29289322 * r / zone, 0.5, 0.9999));
+      r = zone;
+    } else {
+      n = 2.0;
+    }
+  }
+  return sdSuperellipseBox(p - (rc.xy + hs), hs, r, n);
 }
 
 float smin(float a, float b, float k) {
@@ -64,14 +82,16 @@ float smin(float a, float b, float k) {
 // Lens field (Task 17d, measured: SwiftUI displaces along the normals of a
 // rounder rect): the smooth union of the shapes with each corner radius x
 // its variant's normal radius scale (capped at half the shorter side by
-// sdSuperellipseBox). Its gradient gives the lens normals.
+// sdSuperellipseBox), with circular corners (no continuous-corner zone:
+// Task A1 measured the zone on the lens field as worse). Its gradient gives
+// the lens normals.
 float lensField(vec2 p) {
   float d = 1e6;
   for (int i = 0; i < 16; i++) {
     if (i >= int(uGlobal.x)) break;
     vec4 info = uInfo[i];
     float rs = mix(uVar[5].w, uVar[17].w, info.y);
-    d = smin(d, shapeOf(p, uRects[i], info, rs), uGlobal2.x);
+    d = smin(d, shapeOf(p, uRects[i], info, rs, 1.0), uGlobal2.x);
   }
   return d;
 }
@@ -98,7 +118,7 @@ void main() {
   for (int i = 0; i < 16; i++) {
     if (i >= count) break;
     vec4 info = uInfo[i];
-    float di = shapeOf(px, uRects[i], info, 1.0);
+    float di = shapeOf(px, uRects[i], info, 1.0, uGlobal2.w);
     d = smin(d, di, uGlobal2.x);
     float e = max(di, 0.0);
     if (e < dmin) {
@@ -219,8 +239,10 @@ void main() {
   vec3 col = base;
   float sPost = K.z * (K.w > 0.0 ? min(1.0, halfMin / K.w) : 1.0);
   if (sPost >= 0.25) {
-    // The lens field equals the outline's field when no variant rounds it.
-    float fc = (uVar[5].w == 1.0 && uVar[17].w == 1.0) ? d : lensField(px);
+    // The lens field equals the outline's field when no variant rounds it
+    // and the outline has no continuous-corner zone.
+    float fc = (uVar[5].w == 1.0 && uVar[17].w == 1.0 && uGlobal2.w <= 1.0)
+        ? d : lensField(px);
     float lap = fxp + fxm + fyp + fym - 4.0 * fc;
     float kappa = lap / max(0.5 * gradLen, 1e-3);
     float ja = clamp(1.0 - dLens, -4.0, 4.0) * sPost;

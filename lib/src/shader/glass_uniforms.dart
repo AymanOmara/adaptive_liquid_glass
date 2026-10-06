@@ -127,7 +127,7 @@ const int kGlassUniformFloats = 304;
 /// | floats  | uniform        | contents                                  |
 /// |---------|----------------|-------------------------------------------|
 /// | 0–3     | uGlobal        | count, dpr, lightAngle, opaque            |
-/// | 4–7     | uGlobal2       | smoothing px, cornerExponent, highContrast |
+/// | 4–7     | uGlobal2       | smoothing px, cornerExponent, highContrast, cornerZone |
 /// | 8–11    | uOpaque        | rgb                                       |
 /// | 12–15   | uTouch         | x, y, glow, glowRadius px                 |
 /// | 16–79   | uRects[16]     | x, y, w, h px                             |
@@ -161,6 +161,7 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
   f[4] = u.smoothing;
   f[5] = u.constants.cornerExponent;
   f[6] = u.highContrast ? 1 : 0;
+  f[7] = u.constants.cornerZone;
 
   final o = u.opaqueColor;
   if (o != null) {
@@ -194,7 +195,8 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
     f.setAll(80 + i * 4, [
       s.radius,
       s.variant == GlassVariant.clear ? 1 : 0,
-      s.cornerExponent ?? u.constants.cornerExponent,
+      // 0: the global exponent and continuous-corner zone (uGlobal2.yw).
+      s.cornerExponent ?? 0,
       fillScale,
     ]);
     final tint = s.tint;

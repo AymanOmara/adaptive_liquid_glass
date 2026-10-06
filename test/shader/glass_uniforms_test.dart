@@ -52,12 +52,17 @@ void main() {
     );
     expect(f.length, 304);
     expect(f.sublist(0, 4), [1, 3, -2, 0]);
-    expect(f.sublist(4, 8), [60, GlassConstants.standard.cornerExponent, 0, 0]);
+    expect(f.sublist(4, 8), [
+      60,
+      GlassConstants.standard.cornerExponent,
+      0,
+      GlassConstants.standard.cornerZone,
+    ]);
     expect(f.sublist(16, 20), [1, 2, 30, 40]);
     expect(f.sublist(80, 84), [
       10,
       0,
-      GlassConstants.standard.cornerExponent,
+      0, // global exponent (uGlobal2.y) + continuous-corner zone
       1, // fill scale: fillSizeRef 0 disables size scaling
     ]);
   });
@@ -90,7 +95,7 @@ void main() {
       ]),
     );
     expect(f[82], 2);
-    expect(f[86], GlassConstants.standard.cornerExponent);
+    expect(f[86], 0); // global exponent + continuous-corner zone
   });
 
   test('variant constants are scaled to physical px', () {
@@ -203,7 +208,7 @@ void main() {
     expect(d.sublist(241, 244), [0, closeTo(0.6 * 3, 1e-12), 0]);
     expect(d.sublist(248, 251), [0.5, 0, 0]); // K.w = blurSizeRef·dpr
     expect(d.sublist(244, 248), [0, 1.5 * 3, 1 * 3, 1]);
-    expect(d[7], 0);
+    expect(d[7], GlassConstants.standard.cornerZone); // uGlobal2.w (Task A1)
     expect([d[252], d[300]], [0.35, 0.35]); // L.x rimBack
 
     final c = GlassConstants.fromJson({
@@ -228,7 +233,7 @@ void main() {
         constants: c,
       ),
     );
-    expect(f[7], 0);
+    expect(f[7], c.cornerZone);
     // K.zw: post-lens sigma = blurSigma·√0.9·dpr, blur size ref·dpr.
     expect(f[298], closeTo(c.clear.blurSigma * math.sqrt(0.9) * 3, 1e-12));
     expect(f[299], c.clear.blurSizeRef * 3);
