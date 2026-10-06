@@ -1,4 +1,5 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/group/glass_member.dart';
 import 'package:adaptive_liquid_glass/src/navigation/nav_bar_metrics.dart';
 import 'package:adaptive_liquid_glass/src/navigation/scroll_edge.dart';
@@ -165,4 +166,23 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('Detail'), findsNothing);
   }, variant: ios);
+
+  for (final (major, blurred) in [(26, false), (18, true)]) {
+    testWidgets('scroll edge blur on iOS $major: $blurred', (t) async {
+      GlassPlatform.instance.debugEnvironment = GlassEnvironment(
+        platform: TargetPlatform.iOS,
+        iosMajorVersion: major,
+        reduceTransparency: false,
+        shaderSupported: true,
+      );
+      // Native glass under the bar cannot be blurred in place by Flutter.
+      await t.pumpWidget(
+        plainHost(const GlassScrollEdge(visible: true, height: 100)),
+      );
+      expect(
+        find.byType(BackdropFilter),
+        blurred ? findsOneWidget : findsNothing,
+      );
+    }, variant: ios);
+  }
 }

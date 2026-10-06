@@ -2,6 +2,9 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/cupertino.dart';
 
+import '../core/effective_glass_mode.dart';
+import '../core/glass_mode_builder.dart';
+
 /// iOS 26's scroll edge effect: content under the bar is blurred and the
 /// page background fades out below the top edge, shown while content is
 /// under the bar.
@@ -22,10 +25,22 @@ class GlassScrollEdge extends StatelessWidget {
 
   /// Whether content under the bar is blurred as well as faded. iOS blurs
   /// once a large title has collapsed into the bar.
+  ///
+  /// Never on the native path: the page's glass there is UIKit views, which
+  /// Flutter cannot blur in place. It either lays a light blur view over
+  /// them or moves the blur into an overlay with nothing behind it, and
+  /// which it does changes from frame to frame as they scroll, so the
+  /// content under the bar flickers between blurred, sharp and dimmed.
   final bool blurred;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => GlassModeBuilder(
+    // The page's glass follows the theme's default.
+    builder: (context, mode) =>
+        _edge(context, blur: blurred && mode != EffectiveGlassMode.native),
+  );
+
+  Widget _edge(BuildContext context, {required bool blur}) {
     final bg = CupertinoDynamicColor.resolve(
       CupertinoTheme.of(context).scaffoldBackgroundColor,
       context,
@@ -40,7 +55,7 @@ class GlassScrollEdge extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               // Blur under the bar itself; the fade below hides its edge.
-              if (blurred)
+              if (blur)
                 Align(
                   alignment: Alignment.topCenter,
                   child: ClipRect(
