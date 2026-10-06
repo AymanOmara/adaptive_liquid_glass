@@ -18,6 +18,7 @@ class GlassPopoverRoute<T> extends PopupRoute<T> {
     required this.builder,
     this.overlap = PopoverMetrics.overlap,
     this.mode,
+    this.capturedThemes,
     this.barrierLabel,
     this.semanticLabel,
   });
@@ -33,6 +34,10 @@ class GlassPopoverRoute<T> extends PopupRoute<T> {
 
   /// The rendering path.
   final GlassRenderMode? mode;
+
+  /// Themes captured from the presenting context, wrapped around the page
+  /// so it draws in the caller's appearance; null uses the navigator's.
+  final CapturedThemes? capturedThemes;
 
   @override
   final String? barrierLabel;
@@ -55,36 +60,38 @@ class GlassPopoverRoute<T> extends PopupRoute<T> {
     BuildContext context,
     Animation<double> animation,
     Animation<double> secondaryAnimation,
-  ) => iosPageText(
-    context,
-    CustomSingleChildLayout(
-      delegate: GlassPopoverLayout(
-        anchor: anchor,
-        padding: MediaQuery.paddingOf(context),
-        overlap: overlap,
-      ),
-      // Its own route scope, so screen readers start inside it.
-      child: Semantics(
-        scopesRoute: true,
-        explicitChildNodes: true,
-        namesRoute: semanticLabel != null ? true : null,
-        label: semanticLabel,
-        child: GlassGroup(
-          mode: mode,
-          child: LiquidGlass(
+  ) {
+    final page = iosPageText(
+      CustomSingleChildLayout(
+        delegate: GlassPopoverLayout(
+          anchor: anchor,
+          padding: MediaQuery.paddingOf(context),
+          overlap: overlap,
+        ),
+        // Its own route scope, so screen readers start inside it.
+        child: Semantics(
+          scopesRoute: true,
+          explicitChildNodes: true,
+          namesRoute: semanticLabel != null ? true : null,
+          label: semanticLabel,
+          child: GlassGroup(
             mode: mode,
-            shape: const GlassShape.rect(PopoverMetrics.cornerRadius),
-            // SwiftUI's popover text is the plain label colour.
-            adaptiveForeground: false,
-            padding: const EdgeInsets.symmetric(
-              vertical: PopoverMetrics.verticalInset,
+            child: LiquidGlass(
+              mode: mode,
+              shape: const GlassShape.rect(PopoverMetrics.cornerRadius),
+              // SwiftUI's popover text is the plain label colour.
+              adaptiveForeground: false,
+              padding: const EdgeInsets.symmetric(
+                vertical: PopoverMetrics.verticalInset,
+              ),
+              child: Builder(builder: builder),
             ),
-            child: Builder(builder: builder),
           ),
         ),
       ),
-    ),
-  );
+    );
+    return capturedThemes?.wrap(page) ?? page;
+  }
 
   @override
   Widget buildTransitions(

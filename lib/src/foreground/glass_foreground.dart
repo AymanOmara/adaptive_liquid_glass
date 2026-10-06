@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import '../core/glass_brightness.dart';
 import '../core/glass_colors.dart';
 
 /// Brightness of the content behind the nearest glass group.
@@ -13,11 +14,13 @@ class GlassForeground extends InheritedWidget {
   /// Sampled brightness of what is behind the glass.
   final Brightness backgroundBrightness;
 
-  /// Sampled brightness, else the platform brightness.
+  /// Sampled brightness, else the glass brightness (the theme's, else the
+  /// platform's; see `glassBrightnessOf`).
   static Brightness backgroundBrightnessOf(BuildContext context) =>
       context
           .dependOnInheritedWidgetOfExactType<GlassForeground>()
           ?.backgroundBrightness ??
+      glassBrightnessOf(context) ??
       MediaQuery.platformBrightnessOf(context);
 
   /// A label colour readable on the glass.

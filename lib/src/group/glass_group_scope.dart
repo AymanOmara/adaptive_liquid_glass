@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../core/glass_brightness.dart';
 import '../core/glass_constants.dart';
 import '../core/glass_render_mode.dart';
 import 'glass_member_rendering.dart';
@@ -61,8 +62,10 @@ class GlassGroupScope extends InheritedWidget {
   /// `MediaQuery` in scope.
   ///
   /// Inside a group this is resolved once per build by `GlassGroup.build`
-  /// from the platform brightness, so the shader, degraded, loading and
-  /// native paths all agree; outside one, the ambient `MediaQuery`.
+  /// with `glassBrightnessOf` (the theme's brightness, else the platform's),
+  /// so the shader, degraded, loading and native paths all agree with each
+  /// other and with the Cupertino colours of the content; outside one, the
+  /// same rule from the ambient theme and `MediaQuery`.
   ///
   /// Without any brightness at all the surfaces differ on purpose: the
   /// degraded and loading surfaces throw (see [brightnessOf], like the
@@ -71,8 +74,7 @@ class GlassGroupScope extends InheritedWidget {
   /// to its platform view, and drawing light was its behaviour before this
   /// scope existed.
   static Brightness? maybeBrightnessOf(BuildContext context) =>
-      maybeOf(context)?.brightness ??
-      MediaQuery.maybePlatformBrightnessOf(context);
+      maybeOf(context)?.brightness ?? glassBrightnessOf(context);
 
   /// [maybeBrightnessOf] for surfaces that draw a brightness-dependent look
   /// and require one.

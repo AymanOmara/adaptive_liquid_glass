@@ -19,6 +19,7 @@ class GlassSheetRoute<T> extends PopupRoute<T> {
     required this.isDismissible,
     this.glass,
     this.mode,
+    this.capturedThemes,
     this.barrierLabel,
     super.settings,
   });
@@ -44,6 +45,10 @@ class GlassSheetRoute<T> extends PopupRoute<T> {
   /// The rendering path.
   final GlassRenderMode? mode;
 
+  /// Themes captured from the presenting context, wrapped around the page
+  /// so it draws in the caller's appearance; null uses the navigator's.
+  final CapturedThemes? capturedThemes;
+
   @override
   final String? barrierLabel;
 
@@ -64,19 +69,21 @@ class GlassSheetRoute<T> extends PopupRoute<T> {
     BuildContext context,
     Animation<double> animation,
     Animation<double> secondaryAnimation,
-  ) => iosPageText(
-    context,
-    GlassSheetFrame(
-      detents: detents,
-      initialDetent: initialDetent,
-      showGrabber: showGrabber,
-      isDismissible: isDismissible,
-      glass: glass,
-      mode: mode,
-      onDismiss: () => Navigator.of(context).pop(),
-      child: Builder(builder: builder),
-    ),
-  );
+  ) {
+    final page = iosPageText(
+      GlassSheetFrame(
+        detents: detents,
+        initialDetent: initialDetent,
+        showGrabber: showGrabber,
+        isDismissible: isDismissible,
+        glass: glass,
+        mode: mode,
+        onDismiss: () => Navigator.of(context).pop(),
+        child: Builder(builder: builder),
+      ),
+    );
+    return capturedThemes?.wrap(page) ?? page;
+  }
 
   @override
   Widget buildTransitions(

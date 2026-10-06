@@ -99,13 +99,18 @@ Future<GlassDialogAction?> showGlassActionSheet({
       ),
     );
   } else {
-    chosen = await Navigator.of(context).push(
+    final navigator = Navigator.of(context);
+    chosen = await navigator.push(
       GlassActionSheetRoute(
         title: title,
         message: message,
         actions: actions,
         cancel: cancel,
         mode: mode,
+        capturedThemes: InheritedTheme.capture(
+          from: context,
+          to: navigator.context,
+        ),
         barrierLabel: cupertinoL10n(context).modalBarrierDismissLabel,
       ),
     );

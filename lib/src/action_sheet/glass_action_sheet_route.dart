@@ -17,6 +17,7 @@ class GlassActionSheetRoute extends PopupRoute<GlassDialogAction> {
     this.message,
     this.cancel,
     this.mode,
+    this.capturedThemes,
     this.barrierLabel,
   });
 
@@ -35,6 +36,10 @@ class GlassActionSheetRoute extends PopupRoute<GlassDialogAction> {
   /// The rendering path.
   final GlassRenderMode? mode;
 
+  /// Themes captured from the presenting context, wrapped around the page
+  /// so it draws in the caller's appearance; null uses the navigator's.
+  final CapturedThemes? capturedThemes;
+
   @override
   final String? barrierLabel;
 
@@ -52,28 +57,30 @@ class GlassActionSheetRoute extends PopupRoute<GlassDialogAction> {
     BuildContext context,
     Animation<double> animation,
     Animation<double> secondaryAnimation,
-  ) => iosPageText(
-    context,
-    SafeArea(
-      minimum: const EdgeInsets.all(ActionSheetMetrics.margin),
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxWidth: ActionSheetMetrics.maxWidth,
-          ),
-          child: GlassActionSheetCard(
-            title: title,
-            message: message,
-            actions: actions,
-            cancel: cancel,
-            mode: mode,
-            onAction: (a) => Navigator.of(context).pop(a),
+  ) {
+    final page = iosPageText(
+      SafeArea(
+        minimum: const EdgeInsets.all(ActionSheetMetrics.margin),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: ActionSheetMetrics.maxWidth,
+            ),
+            child: GlassActionSheetCard(
+              title: title,
+              message: message,
+              actions: actions,
+              cancel: cancel,
+              mode: mode,
+              onAction: (a) => Navigator.of(context).pop(a),
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
+    return capturedThemes?.wrap(page) ?? page;
+  }
 
   @override
   Widget buildTransitions(

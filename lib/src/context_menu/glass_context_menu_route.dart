@@ -19,6 +19,7 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
     required this.previewRect,
     required this.items,
     this.mode,
+    this.capturedThemes,
     this.barrierLabel,
   });
 
@@ -33,6 +34,10 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
 
   /// The rendering path.
   final GlassRenderMode? mode;
+
+  /// Themes captured from the presenting context, wrapped around the page
+  /// so it draws in the caller's appearance; null uses the navigator's.
+  final CapturedThemes? capturedThemes;
 
   @override
   final String? barrierLabel;
@@ -53,8 +58,7 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
     Animation<double> secondaryAnimation,
   ) {
     final padding = MediaQuery.paddingOf(context);
-    return iosPageText(
-      context,
+    final page = iosPageText(
       Stack(
         children: [
           // The page behind, blurred and dimmed; a tap closes the menu.
@@ -113,5 +117,6 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
         ],
       ),
     );
+    return capturedThemes?.wrap(page) ?? page;
   }
 }

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/testing.dart';
+import 'package:flutter/cupertino.dart' show CupertinoTheme, CupertinoThemeData;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -142,38 +143,43 @@ class _MotionViewState extends State<MotionView> {
     return MediaQuery(
       data: MediaQuery.of(context)
           .copyWith(platformBrightness: spec.brightness),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTapUp: spec.kind == 'morph'
-                  ? (_) => setState(() => _toggled = !_toggled)
-                  : null,
-              child: Image.asset(
-                'assets/backgrounds/${spec.background}.png',
-                fit: BoxFit.fill,
-                filterQuality: FilterQuality.none,
-              ),
-            ),
-          ),
-          const Positioned(left: 0, top: 0, child: _Heartbeat()),
-          if (spec.shape != null)
+      // Glass takes its appearance from the theme; follow the scene's.
+      child: CupertinoTheme(
+        data: CupertinoThemeData(brightness: spec.brightness),
+        child: Stack(
+          children: [
             Positioned.fill(
-              child: Stack(children: [glass(spec.shape!, interactive: true)]),
-            )
-          else
-            Positioned.fill(
-              child: GlassGroup(
-                spacing: spec.spacing,
-                child: Stack(
-                  children: [
-                    for (final e in members.entries) glass(e.value, id: e.key),
-                  ],
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTapUp: spec.kind == 'morph'
+                    ? (_) => setState(() => _toggled = !_toggled)
+                    : null,
+                child: Image.asset(
+                  'assets/backgrounds/${spec.background}.png',
+                  fit: BoxFit.fill,
+                  filterQuality: FilterQuality.none,
                 ),
               ),
             ),
-        ],
+            const Positioned(left: 0, top: 0, child: _Heartbeat()),
+            if (spec.shape != null)
+              Positioned.fill(
+                child: Stack(children: [glass(spec.shape!, interactive: true)]),
+              )
+            else
+              Positioned.fill(
+                child: GlassGroup(
+                  spacing: spec.spacing,
+                  child: Stack(
+                    children: [
+                      for (final e in members.entries)
+                        glass(e.value, id: e.key),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

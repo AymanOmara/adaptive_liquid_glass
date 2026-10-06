@@ -40,12 +40,17 @@ Future<T?> showGlassPopover<T>({
 }) {
   final box = context.findRenderObject()! as RenderBox;
   final anchor = box.localToGlobal(Offset.zero) & box.size;
-  return Navigator.of(context).push(
+  final navigator = Navigator.of(context);
+  return navigator.push(
     GlassPopoverRoute<T>(
       anchor: anchor,
       builder: builder,
       overlap: overlap,
       mode: mode,
+      capturedThemes: InheritedTheme.capture(
+        from: context,
+        to: navigator.context,
+      ),
       semanticLabel: semanticLabel,
       barrierLabel: cupertinoL10n(context).modalBarrierDismissLabel,
     ),

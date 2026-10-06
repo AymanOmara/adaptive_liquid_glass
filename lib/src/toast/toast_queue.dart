@@ -19,6 +19,7 @@ class ToastRequest implements GlassToastHandle {
     required this.glass,
     required this.mode,
     required this.material,
+    this.capturedThemes,
   });
 
   /// What the toast says.
@@ -41,6 +42,10 @@ class ToastRequest implements GlassToastHandle {
 
   /// Whether the Material path is used.
   final bool material;
+
+  /// Themes captured from the presenting context, wrapped around the toast
+  /// so it draws in the caller's appearance; null uses the overlay's.
+  final CapturedThemes? capturedThemes;
 
   final Completer<void> _done = Completer<void>();
 
@@ -112,12 +117,13 @@ class ToastQueue {
   void _show(ToastRequest request) {
     request._queue = null;
     _current = request;
+    final view = GlassToastView(
+      request: request,
+      material: request.material,
+      onClosed: () => _closed(request),
+    );
     final entry = OverlayEntry(
-      builder: (_) => GlassToastView(
-        request: request,
-        material: request.material,
-        onClosed: () => _closed(request),
-      ),
+      builder: (_) => request.capturedThemes?.wrap(view) ?? view,
     );
     _entry = entry;
     _overlay.insert(entry);

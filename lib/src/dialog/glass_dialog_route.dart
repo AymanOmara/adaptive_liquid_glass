@@ -16,6 +16,7 @@ class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
     this.title,
     this.message,
     this.mode,
+    this.capturedThemes,
     this.barrierLabel,
   });
 
@@ -33,6 +34,10 @@ class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
 
   /// The rendering path.
   final GlassRenderMode? mode;
+
+  /// Themes captured from the presenting context, wrapped around the page
+  /// so it draws in the caller's appearance; null uses the navigator's.
+  final CapturedThemes? capturedThemes;
 
   @override
   final String? barrierLabel;
@@ -56,22 +61,24 @@ class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
     BuildContext context,
     Animation<double> animation,
     Animation<double> secondaryAnimation,
-  ) => iosPageText(
-    context,
-    // Centred in the safe area, as SwiftUI's (y 451 on iPhone 17 Pro).
-    SafeArea(
-      child: Center(
-        child: GlassDialogCard(
-          title: title,
-          message: message,
-          actions: actions,
-          confirmation: confirmation,
-          mode: mode,
-          onAction: (a) => Navigator.of(context).pop(a),
+  ) {
+    final page = iosPageText(
+      // Centred in the safe area, as SwiftUI's (y 451 on iPhone 17 Pro).
+      SafeArea(
+        child: Center(
+          child: GlassDialogCard(
+            title: title,
+            message: message,
+            actions: actions,
+            confirmation: confirmation,
+            mode: mode,
+            onAction: (a) => Navigator.of(context).pop(a),
+          ),
         ),
       ),
-    ),
-  );
+    );
+    return capturedThemes?.wrap(page) ?? page;
+  }
 
   @override
   Widget buildTransitions(

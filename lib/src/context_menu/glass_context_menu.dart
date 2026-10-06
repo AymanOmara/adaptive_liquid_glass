@@ -80,12 +80,17 @@ class GlassContextMenu extends StatelessWidget {
         ],
       );
     } else {
-      chosen = await Navigator.of(context).push(
+      final navigator = Navigator.of(context);
+      chosen = await navigator.push(
         GlassContextMenuRoute(
           preview: child,
           previewRect: rect,
           items: items,
           mode: mode,
+          capturedThemes: InheritedTheme.capture(
+            from: context,
+            to: navigator.context,
+          ),
           barrierLabel: cupertinoL10n(context).modalBarrierDismissLabel,
         ),
       );
