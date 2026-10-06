@@ -126,4 +126,69 @@ void main() {
     await g.up();
     await t.pumpAndSettle();
   }, variant: ios);
+
+  testWidgets('a rejected tap springs the thumb back', (t) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(GlassToggle(value: false, onChanged: (_) {})));
+    final start = t.getCenter(find.byType(GlassThumb)).dx;
+    await t.tap(find.byType(GlassToggle));
+    await t.pumpAndSettle();
+    expect(t.getCenter(find.byType(GlassThumb)).dx, closeTo(start, 0.5));
+  }, variant: ios);
+
+  testWidgets('a rejected drag springs the thumb back', (t) async {
+    shaderEnv();
+    final calls = <bool>[];
+    await t.pumpWidget(
+      plainHost(GlassToggle(value: false, onChanged: calls.add)),
+    );
+    final start = t.getCenter(find.byType(GlassThumb)).dx;
+    await t.drag(find.byType(GlassToggle), const Offset(60, 0));
+    await t.pumpAndSettle();
+    expect(t.getCenter(find.byType(GlassThumb)).dx, closeTo(start, 0.5));
+    expect(calls, [true]);
+  }, variant: ios);
+
+  testWidgets('an external change mid-drag wins', (t) async {
+    shaderEnv();
+    final notifier = ValueNotifier<bool>(false);
+    addTearDown(notifier.dispose);
+    final calls = <bool>[];
+    await t.pumpWidget(
+      plainHost(
+        ValueListenableBuilder<bool>(
+          valueListenable: notifier,
+          builder: (context, value, _) =>
+              GlassToggle(value: value, onChanged: calls.add),
+        ),
+      ),
+    );
+    final start = t.getCenter(find.byType(GlassThumb)).dx;
+    final g = await t.startGesture(t.getCenter(find.byType(GlassToggle)));
+    await t.pump();
+    for (var i = 0; i < 3; i++) {
+      await g.moveBy(const Offset(10, 0));
+      await t.pump();
+    }
+    notifier.value = true;
+    await t.pump();
+    for (var i = 0; i < 4; i++) {
+      await g.moveBy(const Offset(-10, 0));
+      await t.pump();
+    }
+    await g.up();
+    await t.pumpAndSettle();
+    expect(t.getCenter(find.byType(GlassThumb)).dx, greaterThan(start + 15));
+    expect(calls, isNot(contains(false)));
+  }, variant: ios);
+
+  testWidgets('an accepted drag lands on the new value', (t) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(const _Harness()));
+    final start = t.getCenter(find.byType(GlassThumb)).dx;
+    await t.drag(find.byType(GlassToggle), const Offset(60, 0));
+    await t.pumpAndSettle();
+    expect(_value(t), isTrue);
+    expect(t.getCenter(find.byType(GlassThumb)).dx, greaterThan(start + 15));
+  }, variant: ios);
 }
