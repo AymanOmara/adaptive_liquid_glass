@@ -217,8 +217,16 @@ class _Toolbar extends StatelessWidget {
   );
 }
 
-class _Accessory extends StatelessWidget {
+class _Accessory extends StatefulWidget {
   const _Accessory();
+
+  @override
+  State<_Accessory> createState() => _AccessoryState();
+}
+
+/// Keeps the selection, as SwiftUI's `TabView` does.
+class _AccessoryState extends State<_Accessory> {
+  int _tab = 0;
 
   @override
   Widget build(BuildContext context) => GlassScaffold(
@@ -229,8 +237,8 @@ class _Accessory extends StatelessWidget {
         GlassTabBarItem(icon: CupertinoIcons.music_note, label: 'Music'),
         GlassTabBarItem(icon: CupertinoIcons.gear_solid, label: 'Settings'),
       ],
-      selectedIndex: 0,
-      onSelected: (_) {},
+      selectedIndex: _tab,
+      onSelected: (i) => setState(() => _tab = i),
       mode: twinBarMode(context),
     ),
     bottomAccessory: const GlassBottomAccessory(
@@ -592,8 +600,16 @@ class _DatePickerState extends State<_DatePicker> {
   );
 }
 
-class _SearchTab extends StatelessWidget {
+class _SearchTab extends StatefulWidget {
   const _SearchTab();
+
+  @override
+  State<_SearchTab> createState() => _SearchTabState();
+}
+
+/// Keeps the selection, as SwiftUI's `TabView` does.
+class _SearchTabState extends State<_SearchTab> {
+  int _tab = 0;
 
   @override
   Widget build(BuildContext context) => GlassScaffold(
@@ -604,8 +620,8 @@ class _SearchTab extends StatelessWidget {
         GlassTabBarItem(icon: CupertinoIcons.music_note, label: 'Music'),
         GlassTabBarItem(icon: CupertinoIcons.gear_solid, label: 'Settings'),
       ],
-      selectedIndex: 0,
-      onSelected: (_) {},
+      selectedIndex: _tab,
+      onSelected: (i) => setState(() => _tab = i),
       mode: twinBarMode(context),
       onSearch: () {},
     ),

@@ -230,8 +230,16 @@ class _ActionSheetState extends State<_ActionSheet> {
       const ColoredBox(color: Colors.white, child: SizedBox.expand());
 }
 
-class _Badge extends StatelessWidget {
+class _Badge extends StatefulWidget {
   const _Badge();
+
+  @override
+  State<_Badge> createState() => _BadgeState();
+}
+
+/// Keeps the selection, as SwiftUI's `TabView` does.
+class _BadgeState extends State<_Badge> {
+  int _tab = 0;
 
   @override
   Widget build(BuildContext context) => GlassScaffold(
@@ -239,11 +247,15 @@ class _Badge extends StatelessWidget {
     tabBar: GlassTabBar(
       items: const [
         GlassTabBarItem(icon: CupertinoIcons.house_fill, label: 'Home'),
-        GlassTabBarItem(icon: CupertinoIcons.tray, label: 'Inbox', badge: '3'),
-        GlassTabBarItem(icon: CupertinoIcons.gear_solid, label: 'Settings'),
+        GlassTabBarItem(
+          icon: CupertinoIcons.tray_fill,
+          label: 'Inbox',
+          badge: '3',
+        ),
+        GlassTabBarItem(icon: CupertinoIcons.gear, label: 'Settings'),
       ],
-      selectedIndex: 0,
-      onSelected: (_) {},
+      selectedIndex: _tab,
+      onSelected: (i) => setState(() => _tab = i),
       mode: twinBarMode(context),
     ),
     body: const SizedBox.expand(),
@@ -253,27 +265,36 @@ class _Badge extends StatelessWidget {
 /// `-controls tabbar` / `tabbarphoto` / `tabbardark` / `tabbarphotodark`:
 /// Home, Music, Settings with Home selected, over a white (or, dark, black)
 /// page or the full-screen `photo.png`.
-class _TabBar extends StatelessWidget {
+class _TabBar extends StatefulWidget {
   const _TabBar({required this.photo, required this.dark});
 
   final bool photo;
   final bool dark;
 
   @override
+  State<_TabBar> createState() => _TabBarState();
+}
+
+/// Keeps the selection, as SwiftUI's `TabView` does, so a recorded drag
+/// ends on the same tab in both.
+class _TabBarState extends State<_TabBar> {
+  int _tab = 0;
+
+  @override
   Widget build(BuildContext context) {
     final scaffold = GlassScaffold(
-      backgroundColor: dark ? Colors.black : Colors.white,
+      backgroundColor: widget.dark ? Colors.black : Colors.white,
       tabBar: GlassTabBar(
         items: const [
           GlassTabBarItem(icon: CupertinoIcons.house_fill, label: 'Home'),
           GlassTabBarItem(icon: CupertinoIcons.music_note, label: 'Music'),
           GlassTabBarItem(icon: CupertinoIcons.gear_solid, label: 'Settings'),
         ],
-        selectedIndex: 0,
-        onSelected: (_) {},
+        selectedIndex: _tab,
+        onSelected: (i) => setState(() => _tab = i),
         mode: twinBarMode(context),
       ),
-      body: photo
+      body: widget.photo
           ? Image.asset(
               'assets/backgrounds/photo.png',
               fit: BoxFit.fill,
@@ -281,6 +302,6 @@ class _TabBar extends StatelessWidget {
             )
           : const SizedBox.expand(),
     );
-    return dark ? _dark(context, scaffold) : scaffold;
+    return widget.dark ? _dark(context, scaffold) : scaffold;
   }
 }
