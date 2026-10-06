@@ -2,6 +2,7 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:adaptive_liquid_glass/src/swipe/swipe_action_button.dart';
+import 'package:adaptive_liquid_glass/src/swipe/swipe_metrics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -56,6 +57,21 @@ Widget _list(
 
 Finder _rowOf(String name) => find.byKey(ValueKey(name));
 
+/// A compact action's width when [widest] is the side's widest label (the
+/// test font draws each character 13 wide at 13 pt).
+double _width(String widest) =>
+    SwipeMetrics.compactIconSize +
+    SwipeMetrics.compactIconGap +
+    13.0 * widest.length +
+    SwipeMetrics.compactPadding * 2;
+
+/// How far a row moves to open [n] actions of [width].
+double _open(int n, double width) => n * width + (n + 1) * SwipeMetrics.gap;
+
+/// Trailing: Delete and Flag; leading: Pin.
+final _trailing = _open(2, _width('Delete'));
+final _leading = _open(1, _width('Pin'));
+
 double _shift(WidgetTester t, String name) =>
     t.getRect(find.text(name)).center.dx - 400;
 
@@ -69,12 +85,11 @@ void main() {
     await t.pumpWidget(_list(log));
     await t.timedDrag(
       _rowOf('A'),
-      const Offset(-120, 0),
+      const Offset(-200, 0),
       const Duration(milliseconds: 400),
     );
     await t.pumpAndSettle();
-    // Two actions: 2 x 74 + 8.
-    expect(_shift(t, 'A'), moreOrLessEquals(-156));
+    expect(_shift(t, 'A'), moreOrLessEquals(-_trailing));
     expect(find.text('Delete'), findsOneWidget);
     // The first action is outermost.
     expect(
@@ -136,12 +151,12 @@ void main() {
     await g.moveBy(const Offset(-20, 0));
     await g.moveBy(const Offset(-400, 0));
     await t.pump();
-    // Past 156 the row moves at 0.3 of the finger.
-    expect(_shift(t, 'A'), greaterThan(-156 - 0.3 * 300));
+    // Past the actions the row moves at 0.3 of the finger.
+    expect(_shift(t, 'A'), greaterThan(-_trailing - 0.3 * 420));
     await g.up();
     await t.pumpAndSettle();
     expect(log, isEmpty);
-    expect(_shift(t, 'A'), moreOrLessEquals(-156));
+    expect(_shift(t, 'A'), moreOrLessEquals(-_trailing));
   }, variant: ios);
 
   testWidgets('a swipe right opens the leading actions', (t) async {
@@ -149,13 +164,13 @@ void main() {
     await t.pumpWidget(_list([]));
     await t.timedDrag(
       _rowOf('A'),
-      const Offset(100, 0),
+      const Offset(90, 0),
       const Duration(milliseconds: 400),
     );
     await t.pumpAndSettle();
-    expect(_shift(t, 'A'), moreOrLessEquals(82));
+    expect(_shift(t, 'A'), moreOrLessEquals(_leading));
     expect(find.text('Pin'), findsOneWidget);
-    expect(t.getCenter(find.text('Pin')).dx, lessThan(82));
+    expect(t.getCenter(find.text('Pin')).dx, lessThan(_leading));
   }, variant: ios);
 
   testWidgets('right to left: trailing actions are on the left', (t) async {
@@ -163,11 +178,11 @@ void main() {
     await t.pumpWidget(_list([], dir: TextDirection.rtl));
     await t.timedDrag(
       _rowOf('A'),
-      const Offset(120, 0),
+      const Offset(200, 0),
       const Duration(milliseconds: 400),
     );
     await t.pumpAndSettle();
-    expect(_shift(t, 'A'), moreOrLessEquals(156));
+    expect(_shift(t, 'A'), moreOrLessEquals(_trailing));
     expect(
       t.getCenter(find.text('Delete')).dx,
       lessThan(t.getCenter(find.text('Flag')).dx),
@@ -179,7 +194,7 @@ void main() {
     await t.pumpWidget(_list([]));
     await t.timedDrag(
       _rowOf('A'),
-      const Offset(-120, 0),
+      const Offset(-200, 0),
       const Duration(milliseconds: 400),
     );
     await t.pumpAndSettle();
@@ -188,18 +203,18 @@ void main() {
     expect(_shift(t, 'A'), 0);
     await t.timedDrag(
       _rowOf('A'),
-      const Offset(-120, 0),
+      const Offset(-200, 0),
       const Duration(milliseconds: 400),
     );
     await t.pumpAndSettle();
     await t.timedDrag(
       _rowOf('B'),
-      const Offset(-120, 0),
+      const Offset(-200, 0),
       const Duration(milliseconds: 400),
     );
     await t.pumpAndSettle();
     expect(_shift(t, 'A'), 0);
-    expect(_shift(t, 'B'), moreOrLessEquals(-156));
+    expect(_shift(t, 'B'), moreOrLessEquals(-_trailing));
   }, variant: ios);
 
   testWidgets('scrolling closes an open row', (t) async {
@@ -207,7 +222,7 @@ void main() {
     await t.pumpWidget(_list([]));
     await t.timedDrag(
       _rowOf('A'),
-      const Offset(-120, 0),
+      const Offset(-200, 0),
       const Duration(milliseconds: 400),
     );
     await t.pumpAndSettle();
@@ -230,35 +245,68 @@ void main() {
     s.dispose();
   }, variant: ios);
 
-  testWidgets('a short row scales its actions down to fit', (t) async {
-    shaderEnv();
-    await t.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: ListView(
-            children: [
-              GlassSwipeActions(
-                trailing: [
-                  GlassSwipeAction(
-                    icon: CupertinoIcons.trash,
-                    label: 'Delete',
-                    onPressed: () {},
-                  ),
-                ],
-                child: const SizedBox(height: 44, child: Text('Short')),
+  Widget single(double height) => MaterialApp(
+    home: Scaffold(
+      body: ListView(
+        children: [
+          GlassSwipeActions(
+            trailing: [
+              GlassSwipeAction(
+                icon: CupertinoIcons.trash,
+                label: 'Delete',
+                onPressed: () {},
               ),
             ],
+            child: SizedBox(height: height, child: const Text('Row')),
           ),
-        ),
+        ],
       ),
-    );
+    ),
+  );
+
+  Rect capsuleOf(WidgetTester t) => t.getRect(
+    find.descendant(
+      of: find.byType(SwipeActionButton),
+      matching: find.byType(DecoratedBox),
+    ),
+  );
+
+  testWidgets('a short row: icon and label inside a capsule 8 shorter', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(single(54));
     await t.timedDrag(
-      find.text('Short'),
-      const Offset(-120, 0),
+      find.text('Row'),
+      const Offset(-200, 0),
       const Duration(milliseconds: 400),
     );
     await t.pumpAndSettle();
-    expect(t.takeException(), isNull);
-    expect(t.getRect(find.text('Delete')).bottom, lessThanOrEqualTo(44));
+    final capsule = capsuleOf(t);
+    final row = t.getRect(find.byType(GlassSwipeActions));
+    expect(capsule.height, moreOrLessEquals(54 - 8));
+    expect(capsule.top - row.top, moreOrLessEquals(4));
+    expect(capsule.width, moreOrLessEquals(_width('Delete')));
+    expect(800 - capsule.right, moreOrLessEquals(SwipeMetrics.gap));
+    // The label is inside the capsule.
+    expect(capsule.contains(t.getCenter(find.text('Delete'))), isTrue);
+  }, variant: ios);
+
+  testWidgets('a tall row: a 60 x 40 capsule with the label below', (t) async {
+    shaderEnv();
+    await t.pumpWidget(single(72));
+    await t.timedDrag(
+      find.text('Row'),
+      const Offset(-150, 0),
+      const Duration(milliseconds: 400),
+    );
+    await t.pumpAndSettle();
+    final capsule = capsuleOf(t);
+    final row = t.getRect(find.byType(GlassSwipeActions));
+    expect(capsule.size, const Size(60, 40));
+    expect(capsule.top - row.top, moreOrLessEquals(4.33));
+    final label = t.getRect(find.text('Delete'));
+    expect(label.top - capsule.bottom, moreOrLessEquals(8));
+    expect(label.center.dx, moreOrLessEquals(capsule.center.dx));
   }, variant: ios);
 }

@@ -864,7 +864,7 @@ class _GlassTabBarState extends State<GlassTabBar>
             decoration: ShapeDecoration(
               shape: const StadiumBorder(),
               color: CupertinoDynamicColor.resolve(
-                CupertinoColors.systemRed,
+                GlassColors.systemRed,
                 context,
               ),
             ),

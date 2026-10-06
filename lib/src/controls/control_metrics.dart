@@ -2,9 +2,10 @@ import 'package:flutter/physics.dart';
 
 import '../core/swiftui_spring.dart';
 
-/// iOS 26's toggle, slider and segmented control. Approximate: read from
-/// iOS 26.4 screenshots, not yet fitted against SwiftUI scenes the way the
-/// glass and tab bar are.
+/// iOS 26's toggle, slider and segmented control, measured from SwiftUI on
+/// iPhone 17 Pro / iOS 26.4 (`tool/reference/controls.json`, "components";
+/// tested against it). The pressed lens's growth and the springs are not
+/// measured yet.
 abstract final class ControlMetrics {
   /// The toggle's track.
   static const double toggleWidth = 63;
@@ -23,7 +24,7 @@ abstract final class ControlMetrics {
   static const double sliderTrack = 6;
 
   /// The slider's thumb at rest, a capsule.
-  static const double sliderThumbWidth = 38;
+  static const double sliderThumbWidth = 37;
 
   /// See [sliderThumbWidth].
   static const double sliderThumbHeight = 24;
@@ -32,10 +33,10 @@ abstract final class ControlMetrics {
   static const double sliderHeight = 44;
 
   /// The segmented control's height.
-  static const double segmentedHeight = 36;
+  static const double segmentedHeight = 32;
 
   /// The segmented control's label size.
-  static const double segmentedFontSize = 14;
+  static const double segmentedFontSize = 13;
 
   /// How much a pressed thumb grows into its lens, across and down.
   static const double lensScaleX = 1.35;

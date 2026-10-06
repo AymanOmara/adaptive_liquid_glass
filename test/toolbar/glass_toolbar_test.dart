@@ -69,7 +69,7 @@ void main() {
     expect(taps, ['B']);
   }, variant: ios);
 
-  testWidgets('GlassScaffold floats a toolbar like a tab bar', (t) async {
+  testWidgets('GlassScaffold floats a toolbar 28 above the bottom', (t) async {
     shaderEnv();
     t.view.physicalSize = const Size(402, 874);
     t.view.devicePixelRatio = 1;
@@ -85,11 +85,11 @@ void main() {
     );
     expect(
       t.getRect(find.byType(GlassToolbar)).bottom,
-      moreOrLessEquals(874 - 21),
+      moreOrLessEquals(874 - 28),
     );
     final padding = MediaQuery.paddingOf(
       t.element(find.byKey(const Key('body'))),
     );
-    expect(padding.bottom, moreOrLessEquals(21 + 46.33));
+    expect(padding.bottom, moreOrLessEquals(28 + 48));
   }, variant: ios);
 }

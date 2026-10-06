@@ -4,13 +4,14 @@ import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter/services.dart' show HapticFeedback;
 
 import '../core/glass_colors.dart';
-import '../core/glass_render_mode.dart';
 import 'glass_swipe_action.dart';
 import 'swipe_action_button.dart';
 import 'swipe_metrics.dart';
 
-/// iOS 26's list swipe actions: swipe a row aside to reveal tinted glass
-/// capsules at its [leading] or [trailing] edge.
+/// iOS 26's list swipe actions: swipe a row aside to reveal tinted
+/// capsules at its [leading] or [trailing] edge, laid out as SwiftUI's
+/// `.swipeActions` (`SwipeMetrics`): icon and label inside the capsule in
+/// a short row, the label under an icon-only capsule in a tall one.
 ///
 /// ```dart
 /// GlassSwipeActions(
@@ -19,7 +20,7 @@ import 'swipe_metrics.dart';
 ///     GlassSwipeAction(
 ///       icon: CupertinoIcons.trash,
 ///       label: 'Delete',
-///       color: CupertinoColors.systemRed,
+///       color: GlassColors.systemRed,
 ///       onPressed: () => delete(item),
 ///     ),
 ///   ],
@@ -43,7 +44,6 @@ class GlassSwipeActions extends StatefulWidget {
     this.leading = const [],
     this.trailing = const [],
     this.allowsFullSwipe = true,
-    this.mode,
   });
 
   /// The row.
@@ -59,9 +59,6 @@ class GlassSwipeActions extends StatefulWidget {
 
   /// Whether a long swipe runs the first action of that side.
   final bool allowsFullSwipe;
-
-  /// The rendering path for the action capsules; see [GlassRenderMode].
-  final GlassRenderMode? mode;
 
   @override
   State<GlassSwipeActions> createState() => _GlassSwipeActionsState();
@@ -89,8 +86,39 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
   bool get _reduceMotion =>
       MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
+  /// The row's height, read when a drag starts (size is not readable
+  /// during build).
+  double _rowHeight = 0;
+
+  /// Whether the row is tall enough for SwiftUI's stacked actions.
+  bool get _stacked => _rowHeight >= SwipeMetrics.stackedRowHeight;
+
+  /// Each action's width on one side: SwiftUI gives them all the width of
+  /// the widest.
+  double _actionWidth(List<GlassSwipeAction> actions) {
+    if (_stacked) return SwipeMetrics.stackedWidth;
+    var widest = 0.0;
+    for (final action in actions) {
+      final painter = TextPainter(
+        text: TextSpan(text: action.label, style: SwipeMetrics.label),
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+        maxLines: 1,
+      )..layout();
+      if (painter.width > widest) widest = painter.width;
+      painter.dispose();
+    }
+    return SwipeMetrics.compactIconSize +
+        SwipeMetrics.compactIconGap +
+        widest +
+        SwipeMetrics.compactPadding * 2;
+  }
+
+  /// How far the row moves to open [actions]: the actions, and a gap
+  /// before, between and after them.
   double _extent(List<GlassSwipeAction> actions) =>
-      actions.length * SwipeMetrics.actionExtent + SwipeMetrics.gap;
+      actions.length * _actionWidth(actions) +
+      (actions.length + 1) * SwipeMetrics.gap;
 
   List<GlassSwipeAction> get _shown =>
       _offset.value < 0 ? widget.trailing : widget.leading;
@@ -176,6 +204,7 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
   }
 
   void _start(DragStartDetails _) {
+    _rowHeight = context.size?.height ?? 0;
     _offset.stop();
     _drag = _offset.value;
     _active.value = this;
@@ -245,9 +274,10 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
     final offset = _offset.value;
     final reveal = offset.abs();
     final open = reveal > 0.5;
-    final progress = (reveal / SwipeMetrics.actionExtent).clamp(0.0, 1.0);
+    final progress = (reveal / (SwipeMetrics.gap * 4)).clamp(0.0, 1.0);
+    // SwiftUI: #E5E5EA in light mode, the system's grey 5.
     final platter = CupertinoDynamicColor.resolve(
-      CupertinoColors.secondarySystemGroupedBackground,
+      CupertinoColors.systemGrey5,
       context,
     );
     final row = DecoratedBox(
@@ -282,8 +312,11 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
   /// The actions in the space the row has uncovered.
   Widget _actions(double offset) {
     final actions = _shown;
-    final width = offset.abs() - SwipeMetrics.gap;
+    // Uncovered space, less the gaps by the row and by the screen's edge.
+    final width = offset.abs() - SwipeMetrics.gap * 2;
     final full = _fullSwipe;
+    final stacked = _stacked;
+    final rowHeight = _rowHeight;
     // From the row towards the edge: the first action is outermost.
     final ordered = actions.reversed.toList();
     final items = <Widget>[
@@ -294,7 +327,8 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
           flex: full ? (i == ordered.length - 1 ? 1000 : 1) : 1,
           child: SwipeActionButton(
             action: ordered[i],
-            mode: widget.mode,
+            stacked: stacked,
+            rowHeight: rowHeight,
             onPressed: () => _run(ordered[i]),
           ),
         ),
@@ -303,26 +337,30 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
     // Narrower than the actions need, they keep their size and are
     // uncovered from the edge in.
     final natural =
-        actions.length * SwipeMetrics.actionExtent - SwipeMetrics.gap;
+        actions.length * _actionWidth(actions) +
+        (actions.length - 1) * SwipeMetrics.gap;
     final shown = width < 0 ? 0.0 : width;
     final edge = offset < 0
         ? AlignmentDirectional.centerEnd
         : AlignmentDirectional.centerStart;
     return Positioned.fill(
-      child: Align(
-        alignment: edge,
-        child: ClipRect(
-          child: SizedBox(
-            width: shown,
-            child: OverflowBox(
-              alignment: edge,
-              minWidth: shown < natural ? natural : shown,
-              maxWidth: shown < natural ? natural : shown,
-              child: Row(
-                textDirection: offset < 0
-                    ? Directionality.of(context)
-                    : (_rtl ? TextDirection.ltr : TextDirection.rtl),
-                children: items,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: SwipeMetrics.gap),
+        child: Align(
+          alignment: edge,
+          child: ClipRect(
+            child: SizedBox(
+              width: shown,
+              child: OverflowBox(
+                alignment: edge,
+                minWidth: shown < natural ? natural : shown,
+                maxWidth: shown < natural ? natural : shown,
+                child: Row(
+                  textDirection: offset < 0
+                      ? Directionality.of(context)
+                      : (_rtl ? TextDirection.ltr : TextDirection.rtl),
+                  children: items,
+                ),
               ),
             ),
           ),

@@ -31,8 +31,9 @@ import 'menu_metrics.dart';
 /// )
 /// ```
 ///
-/// The menu opens below the button (above it near the bottom of the
-/// screen), aligned to the button's nearer side. Tap outside or choose an
+/// The menu opens over the button, from its top corner (its bottom corner
+/// near the bottom of the screen) on the button's nearer side, as SwiftUI's
+/// `Menu` does. Measured from SwiftUI (`MenuMetrics`). Tap outside or choose an
 /// item to close it. On the Material path it is a Material 3 [MenuAnchor].
 class GlassMenuButton extends StatefulWidget {
   /// Creates a menu button.
@@ -69,7 +70,6 @@ class _GlassMenuButtonState extends State<GlassMenuButton>
   );
 
   /// Where the menu hangs from the button.
-  Alignment _buttonAnchor = Alignment.bottomRight;
   Alignment _menuAnchor = Alignment.topRight;
 
   @override
@@ -88,7 +88,7 @@ class _GlassMenuButtonState extends State<GlassMenuButton>
     final below = centre.dy < screen.height * 0.6;
     final right = centre.dx > screen.width / 2;
     final x = right ? 1.0 : -1.0;
-    _buttonAnchor = Alignment(x, below ? 1 : -1);
+    // The menu opens over the button, from the button's own corner.
     _menuAnchor = Alignment(x, below ? -1 : 1);
     _portal.show();
     if (_reduceMotion) {
@@ -167,12 +167,8 @@ class _GlassMenuButtonState extends State<GlassMenuButton>
         top: 0,
         child: CompositedTransformFollower(
           link: _link,
-          targetAnchor: _buttonAnchor,
+          targetAnchor: _menuAnchor,
           followerAnchor: _menuAnchor,
-          offset: Offset(
-            0,
-            _menuAnchor.y < 0 ? MenuMetrics.gap : -MenuMetrics.gap,
-          ),
           child: AnimatedBuilder(
             animation: _open,
             builder: (context, child) => Opacity(

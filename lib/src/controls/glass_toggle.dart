@@ -127,13 +127,10 @@ class _GlassToggleState extends State<GlassToggle>
 
   Widget _glass(BuildContext context) {
     final on = CupertinoDynamicColor.resolve(
-      widget.activeColor ?? CupertinoColors.systemGreen,
+      widget.activeColor ?? GlassColors.systemGreen,
       context,
     );
-    final off = CupertinoDynamicColor.resolve(
-      CupertinoColors.secondarySystemFill,
-      context,
-    );
+    final off = CupertinoDynamicColor.resolve(GlassColors.toggleOff, context);
     return Semantics(
       toggled: widget.value,
       enabled: _enabled,

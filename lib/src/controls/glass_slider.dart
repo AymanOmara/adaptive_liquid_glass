@@ -59,8 +59,8 @@ class GlassSlider extends StatefulWidget {
   /// Called when a drag ends, with the final value.
   final ValueChanged<double>? onChangeEnd;
 
-  /// The filled part of the track. Defaults to `CupertinoTheme`'s primary
-  /// colour, or Material 3's on the Material path.
+  /// The filled part of the track. Defaults to iOS 26's accent blue, as
+  /// SwiftUI draws it, or Material 3's colour on the Material path.
   final Color? activeColor;
 
   /// The value as assistive tech reads it; defaults to a percentage.
@@ -161,11 +161,11 @@ class _GlassSliderState extends State<GlassSlider>
 
   Widget _glass(BuildContext context) {
     final active = CupertinoDynamicColor.resolve(
-      widget.activeColor ?? CupertinoTheme.of(context).primaryColor,
+      widget.activeColor ?? GlassColors.sliderFill,
       context,
     );
     final inactive = CupertinoDynamicColor.resolve(
-      CupertinoColors.systemFill,
+      GlassColors.sliderRest,
       context,
     );
     final up = _valueAt(_fraction + _step);

@@ -1,21 +1,20 @@
 import 'package:flutter/cupertino.dart';
 
-import '../core/glass.dart';
 import '../core/glass_colors.dart';
-import '../core/glass_render_mode.dart';
-import '../liquid_glass.dart';
 import 'glass_swipe_action.dart';
 import 'swipe_metrics.dart';
 
-/// A revealed swipe action: its tinted capsule, filling the width it is
-/// given, with the label under it.
+/// A revealed swipe action, as SwiftUI lays it out: a compact capsule
+/// with its icon and label inside, or (in a tall row) an icon-only capsule
+/// with the label under it. It fills the width it is given.
 class SwipeActionButton extends StatelessWidget {
   /// Creates the button for [action].
   const SwipeActionButton({
     super.key,
     required this.action,
     required this.onPressed,
-    this.mode,
+    required this.stacked,
+    required this.rowHeight,
   });
 
   /// The action shown.
@@ -24,72 +23,85 @@ class SwipeActionButton extends StatelessWidget {
   /// Runs the action.
   final VoidCallback onPressed;
 
-  /// The capsule's rendering path.
-  final GlassRenderMode? mode;
+  /// Whether the label goes under the capsule (a tall row).
+  final bool stacked;
+
+  /// The row's height, which a compact capsule follows.
+  final double rowHeight;
 
   @override
   Widget build(BuildContext context) {
+    // SwiftUI draws the capsules in their tint, opaque.
     final tint = CupertinoDynamicColor.resolve(
       action.color ?? CupertinoColors.systemGrey,
       context,
     );
-    final column = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          height: SwipeMetrics.capsuleHeight,
-          width: double.infinity,
-          child: LiquidGlass(
-            glass: Glass.regular.tint(tint),
-            mode: mode,
-            onPressed: onPressed,
-            child: Center(
-              child: Icon(
+    final capsule = DecoratedBox(
+      decoration: ShapeDecoration(shape: const StadiumBorder(), color: tint),
+      child: Center(
+        child: stacked
+            ? Icon(
                 action.icon,
-                size: SwipeMetrics.iconSize,
+                size: SwipeMetrics.stackedIconSize,
                 color: GlassColors.white,
+              )
+            : FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      action.icon,
+                      size: SwipeMetrics.compactIconSize,
+                      color: GlassColors.white,
+                    ),
+                    const SizedBox(width: SwipeMetrics.compactIconGap),
+                    Text(
+                      action.label,
+                      maxLines: 1,
+                      style: SwipeMetrics.label.copyWith(
+                        color: GlassColors.white,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
-        ),
-        const SizedBox(height: SwipeMetrics.labelGap),
-        Text(
-          action.label,
-          maxLines: 1,
-          overflow: TextOverflow.clip,
-          softWrap: false,
-          style: TextStyle(
-            fontSize: SwipeMetrics.labelSize,
-            color: CupertinoDynamicColor.resolve(
-              CupertinoColors.secondaryLabel,
-              context,
-            ),
-          ),
-        ),
-      ],
+      ),
     );
     // The row exposes its actions as custom semantics actions.
     return ExcludeSemantics(
-      // The label is part of the target too; the capsule's own press wins
-      // over it, so a tap runs the action once.
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onPressed,
-        child: LayoutBuilder(
-          builder: (context, box) {
-            // A row shorter than capsule and label scales the action down,
-            // keeping it as wide as its slot.
-            final scale = box.maxHeight < SwipeMetrics.actionHeight
-                ? box.maxHeight / SwipeMetrics.actionHeight
-                : 1.0;
-            return Center(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: SizedBox(width: box.maxWidth / scale, child: column),
+        child: stacked
+            ? Column(
+                children: [
+                  const SizedBox(height: SwipeMetrics.stackedInset),
+                  SizedBox(height: SwipeMetrics.stackedHeight, child: capsule),
+                  const SizedBox(height: SwipeMetrics.stackedLabelGap),
+                  Text(
+                    action.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.clip,
+                    softWrap: false,
+                    style: SwipeMetrics.label.copyWith(
+                      color: CupertinoDynamicColor.resolve(
+                        CupertinoColors.secondaryLabel,
+                        context,
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: SwipeMetrics.compactInset,
+                ),
+                child: SizedBox(
+                  height: rowHeight - SwipeMetrics.compactInset * 2,
+                  child: capsule,
+                ),
               ),
-            );
-          },
-        ),
       ),
     );
   }

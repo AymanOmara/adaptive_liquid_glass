@@ -118,5 +118,128 @@
         1.0
       ]
     ]
+  },
+  "components": {
+    "toggle": {
+      "width": 63.0,
+      "height": 28.0,
+      "thumb_width": 37.0,
+      "thumb_height": 24.0,
+      "thumb_inset": 2.0,
+      "thumb_off_start": 2.0,
+      "on_colour": "#34C759",
+      "off_colour": "#C5C5C7",
+      "dark_off_colour": "#464649"
+    },
+    "slider": {
+      "track_height": 5.67,
+      "track_x0": 51.0,
+      "track_x1": 351.0,
+      "thumb_width": 37.0,
+      "thumb_height": 24.0,
+      "fill_colour": "#0088FF",
+      "rest_colour": "#E6E6E6",
+      "dark_fill_colour": "#0091FF",
+      "dark_rest_colour": "#191919"
+    },
+    "segmented": {
+      "height": 32.0,
+      "thumb_inset": 2.17,
+      "thumb_height": 28.0,
+      "track_colour": "#EEEEEF",
+      "thumb_colour": "#FFFFFF",
+      "dark_track_colour": "#1C1C1F",
+      "dark_thumb_colour": "#5A5A5F",
+      "week_ink": 9.67,
+      "day_ink": 11.33
+    },
+    "toolbar": {
+      "height": 48.0,
+      "bottom_gap": 28.0,
+      "edge_inset": 28.0,
+      "edge_inset_trailing": 28.0,
+      "single_width": 48.0,
+      "pair_width": 107.67
+    },
+    "accessory": {
+      "height": 48.0,
+      "inset": 21.0,
+      "gap": 8.0,
+      "tab_bar_height": 62.0,
+      "tab_bar_bottom_gap": 21.0,
+      "tab_bar_inset": 21.0
+    },
+    "sheet": {
+      "inset": 8.0,
+      "bottom_gap": 8.0,
+      "grabber_width": 34.67,
+      "grabber_height": 5.0,
+      "grabber_top": 4.67,
+      "corner_inset_at_1": 29.33,
+      "corner_radius_circle": 37.99,
+      "barrier_alpha": 0.2,
+      "colour": "#CDCDCD"
+    },
+    "menu": {
+      "width": 252.0,
+      "height": 146.33,
+      "right_inset": 15.67,
+      "top": 61.33,
+      "row_pitch": 42.0,
+      "padding": 10.17,
+      "label_start": 66.0,
+      "label_ink": 12.67,
+      "icon_centre": 41.0,
+      "corner_inset_at_1": 24.0,
+      "corner_radius_circle": 31.93,
+      "colour": "#DADADA"
+    },
+    "search": {
+      "height": 48.0,
+      "inset": 28.0,
+      "bottom_gap": 28.0,
+      "icon_start": 20.0,
+      "icon_height": 16.33,
+      "placeholder_start": 47.33,
+      "placeholder_ink": 13.0
+    },
+    "swipe": {
+      "compact": {
+        "row_height": 54.0,
+        "capsule_height": 46.0,
+        "capsule_inset_y": 4.0,
+        "share_width": 86.33,
+        "delete_width": 87.0,
+        "gap_row": 10.67,
+        "gap_between": 10.33,
+        "gap_edge": 10.33,
+        "row_offset": 204.67,
+        "delete_content": 55.67,
+        "icon_label_gap": 6.67,
+        "label_ink": 9.33,
+        "icon_height": 14.0,
+        "platter_colour": "#E5E5EA",
+        "platter_corner_radius_circle": 26.01
+      },
+      "compact_leading": {
+        "pin_width": 67.0,
+        "gap_edge": 10.0,
+        "gap_row": 10.33,
+        "pin_padding": 16.33
+      },
+      "stacked": {
+        "row_height": 70.67,
+        "capsule_width": 60.0,
+        "capsule_height": 40.0,
+        "capsule_inset_y": 4.33,
+        "gap_row": 10.0,
+        "gap_between": 10.0,
+        "gap_edge": 10.0,
+        "label_gap": 8.0,
+        "label_ink": 9.67,
+        "label_colour": "#8A8A8E",
+        "platter_corner_radius_circle": 26.52
+      }
+    }
   }
 }

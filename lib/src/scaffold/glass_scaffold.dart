@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../foreground/glass_backdrop_source.dart';
 import '../tab_bar/glass_tab_bar.dart';
+import '../toolbar/toolbar_metrics.dart';
 import 'scaffold_metrics.dart';
 
 /// An iOS 26 screen in one widget: content running under a
@@ -72,9 +73,11 @@ class GlassScaffold extends StatelessWidget {
     final tabBar = this.tabBar;
     final toolbar = this.toolbar;
     final accessory = bottomAccessory;
-    final gap = safeBottom > 0
-        ? ScaffoldMetrics.tabBarBottom
-        : ScaffoldMetrics.tabBarBottomFlat;
+    final gap = safeBottom <= 0
+        ? ScaffoldMetrics.tabBarBottomFlat
+        : toolbar != null
+        ? ToolbarMetrics.bottom
+        : ScaffoldMetrics.tabBarBottom;
     var bars = 0.0;
     final bottomBar = tabBar != null || toolbar != null;
     if (tabBar != null) bars += tabBar.height;

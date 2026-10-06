@@ -135,7 +135,7 @@ class GlassButton extends StatelessWidget {
     // Plain colours (not CupertinoDynamicColor) for the glass and label.
     Color resolve(Color c) =>
         Color(CupertinoDynamicColor.resolve(c, context).toARGB32());
-    final red = resolve(CupertinoColors.systemRed);
+    final red = resolve(GlassColors.systemRed);
     final prominent = style == GlassButtonStyle.glassProminent;
     final accent = role == GlassButtonRole.destructive
         ? red

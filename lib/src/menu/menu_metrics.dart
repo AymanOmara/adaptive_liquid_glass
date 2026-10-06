@@ -2,17 +2,21 @@ import 'package:flutter/physics.dart';
 
 import '../core/swiftui_spring.dart';
 
-/// iOS 26's pull-down menu. Approximate: read from iOS 26.4 screenshots,
-/// not yet fitted against SwiftUI scenes.
+/// iOS 26's pull-down menu, measured from SwiftUI's `Menu` on iPhone 17
+/// Pro / iOS 26.4 (`tool/reference/controls.json`, "components" → "menu";
+/// tested against it). It opens over its button: the menu's top and
+/// trailing edges line up with the button's. The opening spring is not
+/// measured yet.
 abstract final class MenuMetrics {
   /// The menu's width.
-  static const double width = 250;
+  static const double width = 252;
 
-  /// The menu's corner radius.
-  static const double cornerRadius = 26;
+  /// The menu's corner radius (continuous corners; a circular fit of the
+  /// measured corner gives 32).
+  static const double cornerRadius = 32;
 
-  /// A row's height.
-  static const double rowHeight = 44;
+  /// The distance between rows.
+  static const double rowHeight = 42;
 
   /// A row's label size.
   static const double fontSize = 17;
@@ -20,14 +24,17 @@ abstract final class MenuMetrics {
   /// A row's icon size.
   static const double iconSize = 20;
 
-  /// The menu's horizontal padding inside each row.
-  static const double rowPadding = 16;
+  /// The icon's centre from the menu's leading edge.
+  static const double iconCentre = 41;
 
-  /// The menu's gap from its button.
-  static const double gap = 8;
+  /// The label's start from the menu's leading edge.
+  static const double labelStart = 66;
 
-  /// The menu's vertical padding around its rows.
-  static const double verticalPadding = 6;
+  /// The space between the label and the menu's trailing edge.
+  static const double trailingPadding = 16;
+
+  /// The menu's padding above its first row and below its last.
+  static const double verticalPadding = 10.17;
 
   /// The menu springing out of its button.
   static final SpringDescription open = swiftUISpring(

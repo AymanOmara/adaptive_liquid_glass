@@ -1,4 +1,6 @@
-/// Where iOS 26 floats its bottom bars (iPhone 17 Pro, iOS 26.4).
+/// Where iOS 26 floats its tab bar and its bottom accessory, measured from
+/// SwiftUI on iPhone 17 Pro / iOS 26.4 (`tool/reference/controls.json`,
+/// "components" → "accessory"; tested against it).
 abstract final class ScaffoldMetrics {
   /// The tab bar's bottom edge above the screen's on a phone with a home
   /// indicator (Kept: 21 over a 34 safe area).

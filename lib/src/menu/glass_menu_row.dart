@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
 
+import '../core/glass_colors.dart';
 import 'glass_menu_item.dart';
 import 'menu_metrics.dart';
 
-/// A row of a glass menu: the label at the start, the icon at the end.
+/// A row of a glass menu: the icon at the start, then the label, as iOS
+/// 26 lays them out.
 class GlassMenuRow extends StatelessWidget {
   /// Creates a row for [item]; [onTap] chooses it.
   const GlassMenuRow({super.key, required this.item, required this.onTap});
@@ -20,7 +22,7 @@ class GlassMenuRow extends StatelessWidget {
       item.onSelected == null
           ? CupertinoColors.tertiaryLabel
           : item.destructive
-          ? CupertinoColors.systemRed
+          ? GlassColors.systemRed
           : CupertinoColors.label,
       context,
     );
@@ -32,13 +34,26 @@ class GlassMenuRow extends StatelessWidget {
         onTap: onTap,
         child: SizedBox(
           height: MenuMetrics.rowHeight,
-          child: Padding(
-            padding: const EdgeInsetsDirectional.symmetric(
-              horizontal: MenuMetrics.rowPadding,
-            ),
-            child: Row(
-              children: [
-                Expanded(
+          child: Stack(
+            children: [
+              if (item.icon != null)
+                PositionedDirectional(
+                  start: MenuMetrics.iconCentre - MenuMetrics.iconSize / 2,
+                  top: 0,
+                  bottom: 0,
+                  child: Icon(
+                    item.icon,
+                    size: MenuMetrics.iconSize,
+                    color: color,
+                  ),
+                ),
+              PositionedDirectional(
+                start: MenuMetrics.labelStart,
+                end: MenuMetrics.trailingPadding,
+                top: 0,
+                bottom: 0,
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
                   child: Text(
                     item.label,
                     maxLines: 1,
@@ -49,10 +64,8 @@ class GlassMenuRow extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (item.icon != null)
-                  Icon(item.icon, size: MenuMetrics.iconSize, color: color),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

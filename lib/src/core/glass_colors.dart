@@ -1,4 +1,4 @@
-import 'dart:ui' show Color;
+import 'package:flutter/cupertino.dart' show Color, CupertinoDynamicColor;
 
 /// The package's fixed colours. Fitted glass colours live in
 /// `GlassConstants`; system colours that adapt to the theme come from
@@ -48,11 +48,73 @@ abstract final class GlassColors {
   /// A control thumb at rest.
   static const Color thumb = white;
 
-  /// The segmented control's thumb at rest in dark mode (iOS's
-  /// systemGray, dark).
-  static const Color segmentThumbDark = Color(0xFF636366);
+  // Measured from SwiftUI, iOS 26.4 (tool/reference/controls.json).
 
-  /// The dimming behind a sheet (black at 12%): light, as iOS 26 keeps
-  /// the page visible behind a partial sheet.
-  static const Color sheetBarrier = Color(0x1F000000);
+  /// The toggle's track while off.
+  static const CupertinoDynamicColor toggleOff =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFFC5C5C7),
+        darkColor: Color(0xFF464649),
+      );
+
+  /// The slider's filled track: iOS 26's default accent.
+  static const CupertinoDynamicColor sliderFill =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFF0088FF),
+        darkColor: Color(0xFF0091FF),
+      );
+
+  /// The slider's unfilled track.
+  static const CupertinoDynamicColor sliderRest =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFFE6E6E6),
+        darkColor: Color(0xFF191919),
+      );
+
+  /// The segmented control's track.
+  static const CupertinoDynamicColor segmentTrack =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFFEEEEEF),
+        darkColor: Color(0xFF1C1C1F),
+      );
+
+  /// The segmented control's thumb at rest.
+  static const CupertinoDynamicColor segmentThumb =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFFFFFFFF),
+        darkColor: Color(0xFF5A5A5F),
+      );
+
+  /// The dimming behind a sheet: black at 20% (measured: a mid-grey page
+  /// goes from 128 to 102).
+  static const Color sheetBarrier = Color(0x33000000);
+
+  // iOS 26's system palette. Flutter's `CupertinoColors` still has the
+  // iOS 18 values (red #FF3B30, blue #007AFF, orange #FF9500). Light values
+  // measured from SwiftUI on iOS 26.4; dark values from Apple's iOS 26
+  // palette (the measured dark blue agrees).
+
+  /// iOS 26's red: destructive actions, badges.
+  static const CupertinoDynamicColor systemRed =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFFFF383C),
+        darkColor: Color(0xFFFF4245),
+      );
+
+  /// iOS 26's blue: the default accent.
+  static const CupertinoDynamicColor systemBlue = sliderFill;
+
+  /// iOS 26's orange.
+  static const CupertinoDynamicColor systemOrange =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFFFF8D28),
+        darkColor: Color(0xFFFF9230),
+      );
+
+  /// iOS 26's green: a toggle that is on.
+  static const CupertinoDynamicColor systemGreen =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFF34C759),
+        darkColor: Color(0xFF30D158),
+      );
 }

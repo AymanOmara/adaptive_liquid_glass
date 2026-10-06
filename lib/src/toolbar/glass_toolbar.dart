@@ -4,8 +4,8 @@ import '../button/glass_button_metrics_scope.dart';
 import '../core/glass_render_mode.dart';
 import '../group/glass_group.dart';
 import '../group/glass_union_scope.dart';
-import '../navigation/nav_bar_metrics.dart';
 import 'glass_toolbar_spacer.dart';
+import 'toolbar_metrics.dart';
 
 /// iOS 26's bottom toolbar: bar items floating in glass capsules, with no
 /// bar background.
@@ -26,7 +26,8 @@ import 'glass_toolbar_spacer.dart';
 /// )
 /// ```
 ///
-/// Give it to [GlassScaffold.toolbar], which floats it like a tab bar.
+/// Give it to [GlassScaffold.toolbar], which floats it 28 pt above the
+/// bottom. Measured from SwiftUI (`ToolbarMetrics`).
 /// On the Material path its buttons are Material buttons.
 class GlassToolbar extends StatelessWidget implements PreferredSizeWidget {
   /// Creates a toolbar.
@@ -40,7 +41,7 @@ class GlassToolbar extends StatelessWidget implements PreferredSizeWidget {
   final GlassRenderMode? mode;
 
   @override
-  Size get preferredSize => const Size.fromHeight(NavBarMetrics.barHeight);
+  Size get preferredSize => const Size.fromHeight(ToolbarMetrics.height);
 
   @override
   Widget build(BuildContext context) {
@@ -57,28 +58,31 @@ class GlassToolbar extends StatelessWidget implements PreferredSizeWidget {
       if (i > 0) row.add(const Spacer());
       if (groups[i].isEmpty) continue;
       row.add(
-        GlassUnionScope(
-          id: (GlassToolbar, i),
-          child: Row(mainAxisSize: MainAxisSize.min, children: groups[i]),
+        GlassButtonMetricsScope(
+          // A lone item is a circle; grouped items are a little wider.
+          metrics: groups[i].length == 1
+              ? ToolbarMetrics.single
+              : ToolbarMetrics.grouped,
+          child: GlassUnionScope(
+            id: (GlassToolbar, i),
+            child: Row(mainAxisSize: MainAxisSize.min, children: groups[i]),
+          ),
         ),
       );
     }
-    return GlassButtonMetricsScope(
-      metrics: NavBarMetrics.item,
-      // Bar items keep their size at any text size, as on iOS.
-      child: MediaQuery.withNoTextScaling(
-        child: SizedBox(
-          height: NavBarMetrics.barHeight,
-          child: Padding(
-            padding: const EdgeInsetsDirectional.symmetric(
-              horizontal: NavBarMetrics.edgeInset,
-            ),
-            child: GlassGroup(
-              mode: mode,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: row,
-              ),
+    // Bar items keep their size at any text size, as on iOS.
+    return MediaQuery.withNoTextScaling(
+      child: SizedBox(
+        height: ToolbarMetrics.height,
+        child: Padding(
+          padding: const EdgeInsetsDirectional.symmetric(
+            horizontal: ToolbarMetrics.edgeInset,
+          ),
+          child: GlassGroup(
+            mode: mode,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: row,
             ),
           ),
         ),

@@ -171,14 +171,11 @@ class _GlassSegmentedControlState<T> extends State<GlassSegmentedControl<T>>
 
   Widget _glass(BuildContext context) {
     final track = CupertinoDynamicColor.resolve(
-      CupertinoColors.tertiarySystemFill,
+      GlassColors.segmentTrack,
       context,
     );
     final thumb = CupertinoDynamicColor.resolve(
-      const CupertinoDynamicColor.withBrightness(
-        color: GlassColors.thumb,
-        darkColor: GlassColors.segmentThumbDark,
-      ),
+      GlassColors.segmentThumb,
       context,
     );
     final label = CupertinoDynamicColor.resolve(CupertinoColors.label, context);
@@ -252,7 +249,10 @@ class _GlassSegmentedControlState<T> extends State<GlassSegmentedControl<T>>
               child: DefaultTextStyle(
                 style: TextStyle(
                   fontSize: ControlMetrics.segmentedFontSize,
-                  fontWeight: FontWeight.w500,
+                  // As SwiftUI: the selected segment semibold.
+                  fontWeight: i == _selectedIndex
+                      ? FontWeight.w600
+                      : FontWeight.w400,
                   color: color,
                 ),
                 maxLines: 1,

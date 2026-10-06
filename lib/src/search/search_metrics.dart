@@ -1,11 +1,13 @@
-/// iOS 26's search field. Approximate: read from iOS 26.4 screenshots,
-/// not yet fitted against SwiftUI scenes.
+/// iOS 26's search field, measured from SwiftUI's bottom `.searchable`
+/// field on iPhone 17 Pro / iOS 26.4 (`tool/reference/controls.json`,
+/// "components" → "search"; tested against it). SwiftUI floats it 28 pt
+/// from the screen's sides and bottom, like the toolbar.
 abstract final class SearchMetrics {
   /// The field's height.
   static const double height = 48;
 
   /// The magnifying glass's inset from the start.
-  static const double startInset = 14;
+  static const double startInset = 20;
 
   /// The clear button's inset from the end.
   static const double endInset = 8;
@@ -14,7 +16,7 @@ abstract final class SearchMetrics {
   static const double iconSize = 20;
 
   /// The gap between the magnifying glass and the text.
-  static const double iconGap = 6;
+  static const double iconGap = 7.33;
 
   /// The text size.
   static const double fontSize = 17;
