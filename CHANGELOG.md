@@ -1,3 +1,12 @@
+## 0.1.0-dev.6
+
+* Fix: on iOS 26 (native glass), content no longer flickers as it scrolls
+  under the navigation bar. The scroll edge keeps its fade but drops its
+  blur there, since Flutter cannot blur UIKit views in place.
+* Fix: labels on glass no longer flip between light and dark while content
+  scrolls past. A flip now needs the backdrop to move clearly past middle
+  grey, on two samples in a row.
+
 ## 0.1.0-dev.5
 
 * New components, each measured against SwiftUI on iOS 26.4:
