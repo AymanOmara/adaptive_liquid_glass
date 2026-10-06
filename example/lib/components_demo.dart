@@ -260,6 +260,18 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                     ),
                     child: const Text('Dialog'),
                   ),
+                  GlassButton(
+                    onPressed: () => showGlassToast(
+                      context,
+                      message: 'Photo saved',
+                      icon: CupertinoIcons.checkmark_circle_fill,
+                      action: GlassToastAction(
+                        label: 'Undo',
+                        onPressed: () => _snack('Undone'),
+                      ),
+                    ),
+                    child: const Text('Toast'),
+                  ),
                   GlassPopoverAnchor(
                     popoverBuilder: (_) => const Padding(
                       padding: EdgeInsets.all(16),

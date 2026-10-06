@@ -61,5 +61,8 @@ export 'src/swipe/glass_swipe_actions.dart';
 export 'src/tab_bar/glass_tab_bar.dart';
 export 'src/tab_bar/glass_tab_bar_item.dart';
 export 'src/text_field/glass_text_field.dart';
+export 'src/toast/glass_toast_action.dart';
+export 'src/toast/glass_toast_handle.dart';
+export 'src/toast/show_glass_toast.dart';
 export 'src/toolbar/glass_toolbar.dart';
 export 'src/toolbar/glass_toolbar_spacer.dart';
