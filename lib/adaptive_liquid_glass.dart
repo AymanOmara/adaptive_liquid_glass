@@ -41,6 +41,7 @@ export 'src/navigation/sliver_glass_navigation_bar.dart'
     show SliverGlassNavigationBar;
 export 'src/scaffold/glass_bottom_accessory.dart';
 export 'src/scaffold/glass_scaffold.dart';
+export 'src/search/glass_search_field.dart';
 export 'src/sheet/glass_sheet.dart';
 export 'src/sheet/show_glass_sheet.dart';
 export 'src/tab_bar/glass_tab_bar.dart';
