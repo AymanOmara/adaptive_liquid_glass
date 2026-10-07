@@ -497,6 +497,20 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                 ],
               ),
               const SizedBox(height: 24),
+              Row(
+                children: [
+                  GlassLink(
+                    destination: Uri.parse('https://flutter.dev'),
+                    label: 'flutter.dev',
+                    onOpen: (_) {},
+                  ),
+                  const SizedBox(width: 12),
+                  GlassShareLink(onShare: () {}),
+                  const SizedBox(width: 12),
+                  GlassShareLink(label: 'Share', onShare: () {}),
+                ],
+              ),
+              const SizedBox(height: 24),
               Center(
                 child: GlassPageControl(
                   count: 4,

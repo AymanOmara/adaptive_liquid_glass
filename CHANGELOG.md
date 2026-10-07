@@ -1,3 +1,9 @@
+## Unreleased
+
+* `GlassLink` and `GlassShareLink`: glass triggers for SwiftUI's `Link` and
+  `ShareLink`. Callbacks only (`onOpen(Uri)`, `onShare`); the app wires its
+  URL launcher or share plugin.
+
 ## 0.1.0-dev.7
 
 * New components (Material 3 counterparts on Android):
