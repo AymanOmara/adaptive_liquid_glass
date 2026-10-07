@@ -24,6 +24,7 @@ export 'src/button/glass_button_style.dart';
 export 'src/button/glass_control_size.dart';
 export 'src/button/glass_control_size_scope.dart';
 export 'src/chip/glass_chip.dart';
+export 'src/color_picker/glass_color_picker.dart';
 export 'src/context_menu/glass_context_menu.dart';
 export 'src/controls/glass_segment.dart';
 export 'src/controls/glass_segmented_control.dart';
