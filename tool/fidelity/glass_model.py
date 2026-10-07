@@ -172,6 +172,19 @@ def field(shapes, x, y, k):
     return d
 
 
+def field_blend(shapes, x, y, k):
+    """(field, blend): the smooth union and the largest smin weight
+    h = max(k - |a - b|, 0) / k met while folding it (0 where no shape's
+    union is smoothed, i.e. outside every merge neck)."""
+    d = np.full(np.shape(x), 1e6)
+    hmax = np.zeros(np.shape(x))
+    for di in shape_dists(shapes, x, y):
+        if k > 0:
+            hmax = np.maximum(hmax, np.maximum(k - np.abs(d - di), 0.0) / k)
+        d = smin(d, di, k)
+    return d, hmax
+
+
 # --- lens v3 (measured, Task 15c) ---------------------------------------------
 
 
@@ -469,11 +482,12 @@ def _geometry(scene_json, corner_exponent, merge_factor, scale, W, H, pad,
     ny = fyp - fym + 1e-6
     nl = np.sqrt(nx * nx + ny * ny)
     # Curvature of the lens field's level set: Laplacian / |grad| (px^-1).
-    lap = fxp + fxm + fyp + fym - 4.0 * field(lens, px, py, k)
+    fc, blend = field_blend(lens, px, py, k)
+    lap = fxp + fxm + fyp + fym - 4.0 * fc
     kappa = lap / np.maximum(0.5 * nl, 1e-3)
     return {"box": (bx0, by0, bx1, by1), "px": px, "py": py, "d": d,
             "nx": nx / nl, "ny": ny / nl, "kappa": kappa, "weights": weights,
-            "shapes": shapes, "half_min": half_min}
+            "shapes": shapes, "half_min": half_min, "glen": 0.5 * nl, "blend": blend}
 
 
 def _smoothstep(e0, e1, x):
@@ -533,23 +547,34 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
 
     # Lens v3 (shader: "Lens v3"); lens_v3 returns strength x band x s x v.
     depth = -d
+    # Merge necks (fidelity group 2, measured on the g2-* scenes): where the
+    # lens field's smooth union is active (smin weight > 0) the lens treats
+    # the blob as one surface, after liquid_glass_widgets' blended geometry:
+    # depth is the field over its gradient length (a true distance) and the
+    # displacement is scaled by that length, so it fades to 0 at the neck's
+    # saddle instead of flipping sides (the crease a unit normal draws).
+    # Outside merge necks neck = 1 and the lens is unchanged.
+    neck = np.where(g["blend"] > 0, np.clip(g["glen"], 0.05, 1.0), 1.0)
+    ldepth = depth / neck
     band = np.maximum(A[..., 1], 1.0)
     decay = np.maximum(A[..., 0], 1e-3)
     size_ref = C[..., 3]
     sc = np.where(size_ref > 0, np.minimum(1.0, g["half_min"] / np.maximum(size_ref, 1e-6)), 1.0)
     cut = np.exp(-band / decay)
-    t = np.maximum(np.exp(-np.maximum(depth, 0.0) / np.maximum(decay * sc, 1e-3)) - cut,
+    t = np.maximum(np.exp(-np.maximum(ldepth, 0.0) / np.maximum(decay * sc, 1e-3)) - cut,
                    0.0) / np.maximum(1.0 - cut, 1e-6)  # profile weight v (also weights dispersion)
     lens_amt = A[..., 2] * band * sc * t  # == lens_v3(depth, half_min, -strength*band, ...)
     # d(lens_amt)/d(depth), for the post-lens blur's Jacobian.
     dlens = np.where(t > 0, -A[..., 2] * band * sc * np.exp(
-        -np.maximum(depth, 0.0) / np.maximum(decay * sc, 1e-3)) / np.maximum(
+        -np.maximum(ldepth, 0.0) / np.maximum(decay * sc, 1e-3)) / np.maximum(
         decay * sc, 1e-3) / np.maximum(1.0 - cut, 1e-6), 0.0)
     # Lens edge term (Task 17d, measured: SwiftUI's lens is steeper in the
     # outer 1-2 pt): an extra inward offset lensEdge x exp(-depth / decay).
-    le = I[..., 1] * np.exp(-np.maximum(depth, 0.0) / np.maximum(I[..., 2], 1e-3))
+    le = I[..., 1] * np.exp(-np.maximum(ldepth, 0.0) / np.maximum(I[..., 2], 1e-3))
     lens_amt = lens_amt - le
     dlens = dlens + le / np.maximum(I[..., 2], 1e-3)
+    # d/ddepth of neck x f(depth / neck) is f'(depth / neck): dlens stays.
+    lens_amt = lens_amt * neck
     spx = px + nx * lens_amt
     spy = py + ny * lens_amt
     dxp = nx * lens_amt * A[..., 3]

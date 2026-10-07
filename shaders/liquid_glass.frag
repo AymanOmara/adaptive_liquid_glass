@@ -118,6 +118,24 @@ vec3 toneLut(vec3 c, vec4 a, vec4 b, float k8) {
       + (vec3(k8) - vec3(b.w)) * clamp(c8 - 7.0, 0.0, 1.0);
 }
 
+// The largest smin weight h = max(k - |a - b|, 0) / k met while folding the
+// lens field at p (glass_model.field_blend): 0 where no shape's union is
+// smoothed, i.e. outside every merge neck (the fold starts at 1e6, so a
+// single shape always has blend 0). Index-free like lensField.
+float lensBlend(vec2 p) {
+  float d = 1e6;
+  float hmax = 0.0;
+  for (int i = 0; i < 16; i++) {
+    if (i >= int(uGlobal.x)) break;
+    vec4 info = uInfo[i];
+    float rs = mix(uVar[5].w, uVar[17].w, info.y);
+    float di = shapeOf(p, uRects[i], info, rs, 1.0);
+    if (uGlobal2.x > 0.0) hmax = max(hmax, max(uGlobal2.x - abs(d - di), 0.0) / uGlobal2.x);
+    d = smin(d, di, uGlobal2.x);
+  }
+  return hmax;
+}
+
 void main() {
   // Output is premultiplied colour composited srcOver onto the sharp
   // backdrop: transparent outside the shape except for the shadow.
@@ -210,6 +228,16 @@ void main() {
   float gradLen = length(grad);
   vec2 nrm = grad / gradLen;
 
+  // Merge necks (fidelity group 2, measured on the g2-* scenes): where the
+  // lens field's smooth union is active (smin weight > 0) the lens treats
+  // the blob as one surface, after liquid_glass_widgets' blended geometry:
+  // depth is the field over its gradient length (a true distance) and the
+  // displacement is scaled by that length, so it fades to 0 at the neck's
+  // saddle instead of flipping sides (the crease a unit normal draws).
+  // Outside merge necks neck = 1 and the lens is unchanged.
+  float neck = 1.0;
+  if (count > 1 && uGlobal2.x > 0.0 && lensBlend(px) > 0.0) neck = clamp(0.5 * gradLen, 0.05, 1.0);
+
   // Lens v3, measured from SwiftUI (Task 15c, tool/fidelity/measure_lens.py):
   // the displacement along the normal falls off exponentially with depth
   // (length `decay`) and is cut to 0 at `band`. At the edge it is
@@ -217,12 +245,13 @@ void main() {
   // the band shows a mirrored, compressed copy of the interior). Shapes with
   // a half shorter side below the size ref get a uniformly scaled-down lens.
   float depth = -d;
+  float ldepth = depth / neck;
   float band = max(A.y, 1.0);
   float decay = max(A.x, 1e-3);
   float sc = C.w > 0.0 ? min(1.0, halfMin / C.w) : 1.0;
   float cut = exp(-band / decay);
   float ls = max(decay * sc, 1e-3);
-  float ex = exp(-max(depth, 0.0) / ls);
+  float ex = exp(-max(ldepth, 0.0) / ls);
   float v = max(ex - cut, 0.0) / max(1.0 - cut, 1e-6);
   float lensK = A.z * (1.0 - 0.5 * hc) * band * sc;
   float lensAmt = lensK * v;
@@ -230,9 +259,11 @@ void main() {
   float dLens = v > 0.0 ? -lensK * ex / ls / max(1.0 - cut, 1e-6) : 0.0;
   // Lens edge term (Task 17d, measured: SwiftUI's lens is steeper in the
   // outer 1-2 pt): an extra inward offset I.y x exp(-depth / I.z).
-  float le = I.y * exp(-max(depth, 0.0) / max(I.z, 1e-3));
+  float le = I.y * exp(-max(ldepth, 0.0) / max(I.z, 1e-3));
   lensAmt -= le;
   dLens += le / max(I.z, 1e-3);
+  // d/ddepth of neck x f(depth / neck) is f'(depth / neck): dLens stays.
+  lensAmt *= neck;
   // Vertical-only lens (iOS 26's tab lens): with L.y > 0 the lens bends
   // less where the outline faces sideways, so a capsule's round ends stay
   // clear (weight 1 - L.y x smoothstep(0, 0.7, |nrm.x|)).
