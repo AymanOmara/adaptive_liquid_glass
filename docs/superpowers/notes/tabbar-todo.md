@@ -44,5 +44,5 @@ Bar-region mean |diff| after round 2 (`build/side-by-side-tabbar2-*-after`):
 ## Hard
 
 - [ ] Selected tint vibrancy: iOS's selected blue shifts with the backdrop (0,80,237 over the photo); ours is flat.
-- [ ] Shader mode over the photo (5.44): bar glass blur/refraction/tone vs UIKit's bar material; needs a tab-bar-specific fit like `tool/fidelity` does for shapes.
-- [ ] Dark photo, shader mode (4.50): same fit, dark variant.
+- [ ] Shader mode over the photo (5.14): bar glass blur/refraction/tone vs UIKit's bar material; needs a tab-bar-specific fit like `tool/fidelity` does for shapes.
+- [ ] Dark photo, shader mode (3.95): same fit, dark variant.
