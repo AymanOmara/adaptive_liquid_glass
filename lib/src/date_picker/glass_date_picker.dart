@@ -123,10 +123,10 @@ class _GlassDatePickerState extends State<GlassDatePicker> {
     final enabled = widget.onChanged != null;
     final colour = CupertinoDynamicColor.resolve(
       !enabled
-          ? CupertinoColors.tertiaryLabel
+          ? GlassColors.tertiaryLabel
           : _open
           ? GlassSystemColors.blue
-          : CupertinoColors.label,
+          : GlassColors.label,
       context,
     );
     return Builder(

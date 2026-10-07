@@ -3,12 +3,15 @@ import 'package:flutter/material.dart'
     show CircularProgressIndicator, LinearProgressIndicator, Theme;
 
 import '../core/effective_glass_mode.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_system_colors.dart';
 import '../core/ios_text.dart';
+import 'gauge_arc_painter.dart';
+import 'gauge_linear_painter.dart';
 import 'gauge_metrics.dart';
-import 'gauge_painter.dart';
+import 'gauge_ring_painter.dart';
 import 'glass_gauge_style.dart';
 
 /// iOS 26's gauge, like SwiftUI's `Gauge`: a capsule track filled to
@@ -109,7 +112,7 @@ class GlassGauge extends StatelessWidget {
     tint ??
         (style == GlassGaugeStyle.linearCapacity
             ? GlassSystemColors.blue
-            : CupertinoColors.label),
+            : GlassColors.label),
     context,
   );
 
@@ -128,7 +131,7 @@ class GlassGauge extends StatelessWidget {
 
   /// The label colour, as SwiftUI draws every gauge text.
   Color _labelColor(BuildContext context) =>
-      CupertinoDynamicColor.resolve(CupertinoColors.label, context);
+      CupertinoDynamicColor.resolve(GlassColors.label, context);
 
   Widget _linear(BuildContext context) {
     final title = label;
@@ -161,7 +164,7 @@ class GlassGauge extends StatelessWidget {
                       fraction: fraction,
                       color: _tint(context),
                       track: CupertinoDynamicColor.resolve(
-                        CupertinoColors.tertiarySystemFill,
+                        GlassColors.gaugeTrack,
                         context,
                       ),
                       rtl: Directionality.of(context) == TextDirection.rtl,

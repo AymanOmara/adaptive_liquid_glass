@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 
+import '../core/glass_colors.dart';
 import '../core/ios_page_text.dart';
 import 'full_screen_cover_metrics.dart';
 
@@ -61,7 +62,7 @@ class GlassFullScreenCoverRoute<T> extends PageRoute<T> {
     Animation<double> secondaryAnimation,
   ) {
     final background = CupertinoDynamicColor.resolve(
-      backgroundColor ?? CupertinoColors.systemBackground,
+      backgroundColor ?? GlassColors.fullScreenCoverBackground,
       context,
     );
     final page = Semantics(

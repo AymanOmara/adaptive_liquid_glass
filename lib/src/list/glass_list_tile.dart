@@ -143,10 +143,7 @@ class _GlassListTileState extends State<GlassListTile> {
   /// colour when customized, or a dim grey while disabled.
   Color _leadingColor(BuildContext context) {
     if (!widget.enabled) {
-      return CupertinoDynamicColor.resolve(
-        CupertinoColors.tertiaryLabel,
-        context,
-      );
+      return CupertinoDynamicColor.resolve(GlassColors.tertiaryLabel, context);
     }
     final theme = CupertinoTheme.of(context);
     // Under a MaterialApp the Cupertino theme is derived from the Material
@@ -158,7 +155,7 @@ class _GlassListTileState extends State<GlassListTile> {
     // CupertinoTheme.of resolves dynamic colours, so compare against the
     // resolved default blue, not the activeBlue constant itself.
     final defaultBlue = CupertinoDynamicColor.resolve(
-      CupertinoColors.activeBlue,
+      GlassColors.listDefaultAccent,
       context,
     );
     if (primary == null || primary == defaultBlue) {
@@ -169,17 +166,15 @@ class _GlassListTileState extends State<GlassListTile> {
 
   Widget _glass(BuildContext context) {
     final title = CupertinoDynamicColor.resolve(
-      widget.enabled ? CupertinoColors.label : CupertinoColors.tertiaryLabel,
+      widget.enabled ? GlassColors.label : GlassColors.tertiaryLabel,
       context,
     );
     final secondary = CupertinoDynamicColor.resolve(
-      widget.enabled
-          ? CupertinoColors.secondaryLabel
-          : CupertinoColors.tertiaryLabel,
+      widget.enabled ? GlassColors.secondaryLabel : GlassColors.tertiaryLabel,
       context,
     );
     final valueColor = CupertinoDynamicColor.resolve(
-      widget.enabled ? GlassColors.listValue : CupertinoColors.tertiaryLabel,
+      widget.enabled ? GlassColors.listValue : GlassColors.tertiaryLabel,
       context,
     );
     final row = ConstrainedBox(
@@ -249,7 +244,7 @@ class _GlassListTileState extends State<GlassListTile> {
               const SizedBox(width: ListMetrics.trailingGap),
               ListChevron(
                 color: CupertinoDynamicColor.resolve(
-                  CupertinoColors.tertiaryLabel,
+                  GlassColors.tertiaryLabel,
                   context,
                 ),
               ),

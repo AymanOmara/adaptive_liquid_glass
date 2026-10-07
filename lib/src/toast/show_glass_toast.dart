@@ -18,6 +18,7 @@ import 'glass_toast_action.dart';
 import 'glass_toast_handle.dart';
 import 'toast_metrics.dart';
 import 'toast_queue.dart';
+import 'toast_request.dart';
 
 /// Shows a toast: an iOS glass capsule sliding in from the top with a
 /// spring.

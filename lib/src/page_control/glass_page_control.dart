@@ -4,6 +4,7 @@ import 'package:flutter/services.dart' show HapticFeedback;
 
 import '../core/effective_glass_mode.dart';
 import '../core/glass.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../liquid_glass.dart';
@@ -211,7 +212,7 @@ class _GlassPageControlState extends State<GlassPageControl> {
             builder: (context) {
               final colour =
                   IconTheme.of(context).color ??
-                  CupertinoDynamicColor.resolve(CupertinoColors.label, context);
+                  CupertinoDynamicColor.resolve(GlassColors.label, context);
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
