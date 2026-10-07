@@ -218,6 +218,7 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `GlassSearchField` | Search capsule with magnifier and clear button | `SearchBar` |
 | `GlassListSection`, `GlassListTile` | Inset-grouped list, like Settings; rows with leading/title/value/trailing | `Card` of `ListTile`s |
 | `GlassDisclosureGroup` | SwiftUI's DisclosureGroup: a list row with a rotating chevron that expands its rows | `ExpansionTile` |
+| `GlassEmptyState` (`+ .search`) | ContentUnavailableView: icon, title, description, actions | plain centred column |
 | `GlassChip` | Capsule chip with selected state and delete button | `FilterChip` / `InputChip` |
 | `GlassBadge` | Red count capsule (dot when empty) on a child's top trailing corner | `Badge` |
 | `GlassPageControl` | Page dots on a glass capsule; tap and scrub | row of Material dots |
@@ -621,6 +622,27 @@ while indeterminate); the fill defaults to system blue. Geometry
 estimated, not yet measured. On Android: a row of Material dots, and
 Material 3 progress indicators.
 
+### Empty state
+
+```dart
+GlassEmptyState(
+  icon: const Icon(CupertinoIcons.tray),
+  title: const Text('No Mail'),
+  description: const Text('New messages you receive will appear here.'),
+  actions: [GlassButton(onPressed: refresh, child: const Text('Refresh'))],
+)
+
+GlassEmptyState.search(query: 'kiwi')
+```
+
+SwiftUI's `ContentUnavailableView`: a centred icon, title, description and
+stacked actions where a list or a search has nothing to show. `.search`
+draws the magnifying glass, "No Results for “kiwi”" and a hint, so an
+empty search is one line (`searchTitle` and `searchDescription` are exposed
+to localise them). Actions are small buttons unless a
+`GlassControlSizeScope` above says otherwise. It draws no platter of its
+own and nothing animates. Geometry measured against SwiftUI on iOS 26.4.
+On Android the same column takes Material 3 typography.
 
 
 ### Sheet

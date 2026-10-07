@@ -32,3 +32,29 @@ struct DisclosureReference: View {
     .statusBarHidden(true)
   }
 }
+
+/// Top half: the "No Mail" empty state (tray icon, description, glass
+/// Refresh button) in a 437 pt band; bottom half: the search empty state
+/// for "kiwi" in another 437 pt band. White 402 x 874 page.
+@available(iOS 26.0, *)
+struct EmptyStateReference: View {
+  var body: some View {
+    VStack(spacing: 0) {
+      ContentUnavailableView {
+        Label("No Mail", systemImage: "tray")
+      } description: {
+        Text("New messages you receive will appear here.")
+      } actions: {
+        Button("Refresh") {}.buttonStyle(.glass)
+      }
+      .frame(height: 437)
+      ContentUnavailableView.search(text: "kiwi")
+        .frame(height: 437)
+    }
+    .frame(width: 402, height: 874)
+    .background(Color.white)
+    .ignoresSafeArea()
+    .environment(\.colorScheme, .light)
+    .statusBarHidden(true)
+  }
+}

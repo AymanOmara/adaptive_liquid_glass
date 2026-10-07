@@ -41,6 +41,7 @@ enum ControlScenes {
     case "actionsheet": root = AnyView(ActionSheetReference())
     case "badge": root = AnyView(BadgeReference())
     case "disclosure": root = AnyView(DisclosureReference())
+    case "emptystate": root = AnyView(EmptyStateReference())
     default: return false
     }
     window?.rootViewController = UIHostingController(rootView: root)

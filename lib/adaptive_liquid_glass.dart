@@ -40,6 +40,7 @@ export 'src/dialog/glass_dialog_action.dart';
 export 'src/dialog/show_glass_alert.dart';
 export 'src/dialog/show_glass_confirmation_dialog.dart';
 export 'src/disclosure/glass_disclosure_group.dart';
+export 'src/empty_state/glass_empty_state.dart';
 export 'src/foreground/glass_backdrop_source.dart' show GlassBackdropSource;
 export 'src/foreground/glass_foreground.dart';
 export 'src/glass_effect.dart';

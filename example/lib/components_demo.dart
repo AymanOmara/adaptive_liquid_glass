@@ -494,6 +494,20 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                 ],
               ),
               const SizedBox(height: 24),
+              GlassEmptyState(
+                icon: const Icon(CupertinoIcons.tray),
+                title: const Text('No Mail'),
+                description: const Text(
+                  'New messages you receive will appear here.',
+                ),
+                actions: [
+                  GlassButton(
+                    onPressed: () => _snack('Refresh'),
+                    child: const Text('Refresh'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
               for (final name in _rows)
                 GlassSwipeActions(
                   key: ValueKey(name),
