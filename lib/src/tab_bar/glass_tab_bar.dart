@@ -28,6 +28,7 @@ import '../group/glass_group.dart';
 import '../liquid_glass.dart';
 import '../platform/glass_platform.dart';
 import 'bar_glow.dart';
+import 'bar_shadow.dart';
 import 'capsule_clipper.dart';
 import 'glass_search_tab_button.dart';
 import 'glass_tab_bar_item.dart';
@@ -196,6 +197,10 @@ class _GlassTabBarState extends State<GlassTabBar>
   /// tab lens); without shader support, or when [GlassTabBar.mode] asks for
   /// another path, it is the requested glass.
   bool _shaderLens = false;
+
+  /// Whether the bar's glass is drawn by the shader, which then needs the
+  /// bar's own shadow (BarShadow); UIKit draws native glass's.
+  bool _shaderBar = false;
 
   /// The bar's path: with the shader lens the bar is shader glass too, so
   /// the lens can refract it (native glass is invisible to the shader). An
@@ -527,6 +532,12 @@ class _GlassTabBarState extends State<GlassTabBar>
               environment.shaderSupported &&
               (widget.mode == null || mode == EffectiveGlassMode.shader);
           if (_shaderLens) TabLensProgram.instance.load();
+          _shaderBar =
+              resolveGlassMode(
+                requested: _barMode ?? LiquidGlassTheme.of(context).defaultMode,
+                environment: environment,
+              ) ==
+              EffectiveGlassMode.shader;
           return mode == EffectiveGlassMode.material
               ? _materialBar(context)
               : _glassBar(context);
@@ -664,79 +675,82 @@ class _GlassTabBarState extends State<GlassTabBar>
             right: -growX - lean,
             top: -growY,
             bottom: -growY,
-            child: withTabBarGlass(
-              context,
-              light: _light.value,
-              GlassGroup(
-                mode: _barMode,
-                child: LiquidGlass(
-                  glass: widget.glass,
+            child: CustomPaint(
+              painter: _shaderBar ? const BarShadow() : null,
+              child: withTabBarGlass(
+                context,
+                light: _light.value,
+                GlassGroup(
                   mode: _barMode,
-                  child: Center(
-                    child: SizedBox(
-                      width: _rowWidth,
-                      height: _contentHeight,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          if (_shaderLens && glow > 0)
-                            Positioned(
-                              left: -glowInsetX,
-                              top: -glowInsetY,
-                              width: _rowWidth + glowInsetX * 2,
-                              height: _contentHeight + glowInsetY * 2,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(
-                                  _contentHeight / 2 + glowInsetY,
-                                ),
-                                child: CustomPaint(
-                                  painter: BarGlow(
-                                    centre: Offset(
-                                      x + glowInsetX,
-                                      _contentHeight / 2 + glowInsetY,
+                  child: LiquidGlass(
+                    glass: widget.glass,
+                    mode: _barMode,
+                    child: Center(
+                      child: SizedBox(
+                        width: _rowWidth,
+                        height: _contentHeight,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            if (_shaderLens && glow > 0)
+                              Positioned(
+                                left: -glowInsetX,
+                                top: -glowInsetY,
+                                width: _rowWidth + glowInsetX * 2,
+                                height: _contentHeight + glowInsetY * 2,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(
+                                    _contentHeight / 2 + glowInsetY,
+                                  ),
+                                  child: CustomPaint(
+                                    painter: BarGlow(
+                                      centre: Offset(
+                                        x + glowInsetX,
+                                        _contentHeight / 2 + glowInsetY,
+                                      ),
+                                      opacity: TabBarMetrics.glow * glow,
                                     ),
-                                    opacity: TabBarMetrics.glow * glow,
+                                  ),
+                                ),
+                              ),
+                            Positioned.fromRect(
+                              rect: p < 0
+                                  ? lens
+                                  : Rect.fromCenter(
+                                      center: lens.center,
+                                      width: _pillWidth,
+                                      height: _contentHeight,
+                                    ),
+                              child: Opacity(
+                                opacity: 1 - t,
+                                child: DecoratedBox(
+                                  decoration: ShapeDecoration(
+                                    shape: const StadiumBorder(),
+                                    color: indicator,
                                   ),
                                 ),
                               ),
                             ),
-                          Positioned.fromRect(
-                            rect: p < 0
-                                ? lens
-                                : Rect.fromCenter(
-                                    center: lens.center,
-                                    width: _pillWidth,
-                                    height: _contentHeight,
-                                  ),
-                            child: Opacity(
-                              opacity: 1 - t,
-                              child: DecoratedBox(
-                                decoration: ShapeDecoration(
-                                  shape: const StadiumBorder(),
-                                  color: indicator,
+                            // Under a held lens the row has a hole filled by a
+                            // magnified, tinted copy. Without the content
+                            // shader both lie beneath the lens, so its glass
+                            // refracts them (bending them at its rim).
+                            if (!lensContent) baseRow,
+                            if (lensShown && !lensContent)
+                              ClipPath(
+                                // The shader lens bends the whole copy; native
+                                // glass only gets the ends (see LensEndsClipper).
+                                clipper: _shaderLens
+                                    ? CapsuleClipper(lens)
+                                    : LensEndsClipper(lens),
+                                child: _row(
+                                  (_) => selected,
+                                  semantics: false,
+                                  scale: magnify,
                                 ),
                               ),
-                            ),
-                          ),
-                          // Under a held lens the row has a hole filled by a
-                          // magnified, tinted copy. Without the content
-                          // shader both lie beneath the lens, so its glass
-                          // refracts them (bending them at its rim).
-                          if (!lensContent) baseRow,
-                          if (lensShown && !lensContent)
-                            ClipPath(
-                              // The shader lens bends the whole copy; native
-                              // glass only gets the ends (see LensEndsClipper).
-                              clipper: _shaderLens
-                                  ? CapsuleClipper(lens)
-                                  : LensEndsClipper(lens),
-                              child: _row(
-                                (_) => selected,
-                                semantics: false,
-                                scale: magnify,
-                              ),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),

@@ -152,4 +152,15 @@ abstract final class TabBarMetrics {
   /// The handle's width, with round ends (measured: about 1.45 times the
   /// ring's stroke).
   static const double searchHandle = 3.0;
+
+  /// The bar's shadow in shader mode (measured from SwiftUI `TabView`,
+  /// iOS 26.4, over white: a blurred edge 8 pt below the glass, sigma
+  /// 16.9 pt, about 7 % black). See BarShadow.
+  static const Offset shadowOffset = Offset(0, 8);
+
+  /// See [shadowOffset].
+  static const double shadowSigma = 16.9;
+
+  /// See [shadowOffset].
+  static const double shadowOpacity = 0.07;
 }

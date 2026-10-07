@@ -185,4 +185,8 @@ abstract final class GlassColors {
         color: Color(0x12000000),
         darkColor: Color(0x25FFFFFF),
       );
+
+  /// The tab bar's shadow in shader mode, at full strength (BarShadow
+  /// scales it by TabBarMetrics.shadowOpacity).
+  static const Color tabBarShadow = Color(0xFF000000);
 }

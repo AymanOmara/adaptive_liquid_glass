@@ -137,10 +137,9 @@ Widget withTabLens(BuildContext context, Widget child) {
 /// tab bar (Kept, and SwiftUI's `TabView`): UIKit's bar is flatter than
 /// SwiftUI's small glass (no dark-end lift) with an even 1 pt rim.
 const _tabBarOverrides = <String, Object?>{
-  // Measured from SwiftUI `TabView` (iOS 26.4) over white: a wider,
-  // fainter shadow than SwiftUI's small glass.
-  'shadowRadius': 23.0,
-  'shadowOpacity': 0.036,
+  // The shader's shadow is centred on the glass; iOS's tab bar shadow
+  // sits lower, so the bar paints its own (BarShadow) instead.
+  'shadowOpacity': 0.0,
   'rimIntensity': 0.0,
   'rimMix': 0.144,
   'rimMixWidth': 1.33,

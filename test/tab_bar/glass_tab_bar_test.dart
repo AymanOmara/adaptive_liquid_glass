@@ -4,6 +4,7 @@ import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
+import 'package:adaptive_liquid_glass/src/tab_bar/bar_shadow.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/glass_search_tab_button.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/lens_ends_clipper.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/search_glyph.dart';
@@ -175,6 +176,38 @@ void main() {
       expect(_labelColor(t, 'History'), isNot(_blue));
     }, variant: ios);
   }
+
+  testWidgets('shader mode: the bar paints its own lowered shadow', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      plainHost(_Harness(_picks(), mode: GlassRenderMode.shader)),
+    );
+    final painted = find.byWidgetPredicate(
+      (w) => w is CustomPaint && w.painter is BarShadow,
+    );
+    expect(painted, findsOneWidget);
+    final painter = t.widget<CustomPaint>(painted).painter as BarShadow;
+    expect(painter.offset, TabBarMetrics.shadowOffset);
+    expect(painter.offset.dy, greaterThan(0));
+  }, variant: ios);
+
+  testWidgets('native mode: no painted shadow (UIKit draws it)', (t) async {
+    // Native glass needs iOS 26; shaderEnv() is iOS 18, where native
+    // falls back to the shader.
+    GlassPlatform.instance.debugEnvironment = const GlassEnvironment(
+      platform: TargetPlatform.iOS,
+      iosMajorVersion: 26,
+      reduceTransparency: false,
+      shaderSupported: true,
+    );
+    await t.pumpWidget(
+      plainHost(_Harness(_picks(), mode: GlassRenderMode.native)),
+    );
+    expect(
+      find.byWidgetPredicate((w) => w is CustomPaint && w.painter is BarShadow),
+      findsNothing,
+    );
+  }, variant: ios);
 
   testWidgets('holding shows the lens; dragging picks on release', (t) async {
     shaderEnv();
