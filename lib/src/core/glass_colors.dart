@@ -247,4 +247,9 @@ abstract final class GlassColors {
   /// A full-screen cover's default page colour (iOS's systemBackground).
   static const CupertinoDynamicColor fullScreenCoverBackground =
       CupertinoColors.systemBackground;
+
+  // Text field
+
+  /// A text field's error message (iOS's systemRed).
+  static const CupertinoDynamicColor textFieldError = CupertinoColors.systemRed;
 }

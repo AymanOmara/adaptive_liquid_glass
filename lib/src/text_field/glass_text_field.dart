@@ -6,6 +6,7 @@ import 'package:flutter/services.dart' show TextInputFormatter;
 import '../core/cupertino_l10n.dart';
 import '../core/effective_glass_mode.dart';
 import '../core/glass.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
@@ -244,7 +245,7 @@ class _GlassTextFieldState extends State<GlassTextField> {
               style: IOSText.style(
                 TextFieldMetrics.errorFontSize,
                 color: CupertinoDynamicColor.resolve(
-                  CupertinoColors.systemRed,
+                  GlassColors.textFieldError,
                   context,
                 ),
               ),
@@ -257,7 +258,7 @@ class _GlassTextFieldState extends State<GlassTextField> {
 
   Widget _fieldGlass() {
     final secondary = CupertinoDynamicColor.resolve(
-      CupertinoColors.secondaryLabel,
+      GlassColors.secondaryLabel,
       context,
     );
     final glass = LiquidGlass(
@@ -322,7 +323,7 @@ class _GlassTextFieldState extends State<GlassTextField> {
       ),
       style: IOSText.style(
         TextFieldMetrics.fontSize,
-        color: CupertinoDynamicColor.resolve(CupertinoColors.label, context),
+        color: CupertinoDynamicColor.resolve(GlassColors.label, context),
       ),
       padding: EdgeInsets.zero,
       enabled: widget.enabled,
@@ -387,7 +388,7 @@ class _GlassTextFieldState extends State<GlassTextField> {
                       CupertinoIcons.xmark_circle_fill,
                       size: TextFieldMetrics.clearSize,
                       color: CupertinoDynamicColor.resolve(
-                        CupertinoColors.tertiaryLabel,
+                        GlassColors.tertiaryLabel,
                         context,
                       ),
                     ),
