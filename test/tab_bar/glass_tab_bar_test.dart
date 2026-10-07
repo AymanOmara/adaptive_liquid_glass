@@ -6,6 +6,7 @@ import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/glass_search_tab_button.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/lens_ends_clipper.dart';
+import 'package:adaptive_liquid_glass/src/tab_bar/search_glyph.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/tab_bar_fill_scope.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/tab_bar_metrics.dart';
 import 'package:flutter/cupertino.dart';
@@ -777,4 +778,37 @@ void main() {
     await t.tap(find.byType(GlassSearchTabButton));
     expect(searched, 1);
   }, variant: ios);
+
+  testWidgets(
+    "the search tab paints iOS's magnifier: 22.6 square, tab label colour",
+    (t) async {
+      shaderEnv();
+      await t.pumpWidget(
+        plainHost(
+          SizedBox(
+            width: 360,
+            child: GlassTabBar(
+              items: _items,
+              selectedIndex: 0,
+              onSelected: (_) {},
+              onSearch: () {},
+            ),
+          ),
+        ),
+      );
+      expect(find.byIcon(CupertinoIcons.search), findsNothing);
+      final painted = find.byWidgetPredicate(
+        (w) => w is CustomPaint && w.painter is SearchGlyph,
+      );
+      expect(painted, findsOneWidget);
+      expect(t.getSize(painted), const Size.square(TabBarMetrics.searchGlyph));
+      final circle = t.getCenter(find.byType(GlassSearchTabButton));
+      final glyph = t.getCenter(painted);
+      expect(glyph.dx, closeTo(circle.dx, 0.01));
+      expect(glyph.dy, closeTo(circle.dy, 0.01));
+      final painter = t.widget<CustomPaint>(painted).painter as SearchGlyph;
+      expect(painter.color, GlassColors.tabBarLabel.color);
+    },
+    variant: ios,
+  );
 }

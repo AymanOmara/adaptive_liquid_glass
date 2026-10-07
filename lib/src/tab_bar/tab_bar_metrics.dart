@@ -135,4 +135,21 @@ abstract final class TabBarMetrics {
     response: 0.3,
     dampingFraction: 0.78,
   );
+
+  /// The search tab's magnifying glass, as SwiftUI's `Tab(role: .search)`
+  /// draws it (measured, iOS 26.4): a square of this side, centred in the
+  /// circle, holding the ring at its top leading corner and the handle's
+  /// round end at its bottom trailing corner.
+  static const double searchGlyph = 22.6;
+
+  /// The ring's outer radius (measured; see [searchGlyph]).
+  static const double searchRing = 9.33;
+
+  /// The ring's stroke (measured: 2.08 pt, against 1.65 pt for
+  /// CupertinoIcons.search at 26).
+  static const double searchStroke = 2.08;
+
+  /// The handle's width, with round ends (measured: about 1.45 times the
+  /// ring's stroke).
+  static const double searchHandle = 3.0;
 }

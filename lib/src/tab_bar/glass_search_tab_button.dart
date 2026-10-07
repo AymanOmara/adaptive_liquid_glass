@@ -1,9 +1,13 @@
 import 'package:flutter/cupertino.dart';
 
 import '../core/glass.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
+import '../foreground/glass_foreground.dart';
 import '../liquid_glass.dart';
+import 'search_glyph.dart';
+import 'tab_bar_metrics.dart';
 
 /// The search tab beside iOS 26's tab bar (SwiftUI's
 /// `Tab(role: .search)`): a 62-pt glass circle with a magnifying glass.
@@ -36,6 +40,13 @@ class GlassSearchTabButton extends StatelessWidget {
   /// `TabView` with `Tab(role: .search)`, iOS 26.4).
   static const double gap = 8;
 
+  /// iOS's tab bar label colour, dark over light content and light over
+  /// dark (GlassForeground's sampled brightness), as the tabs.
+  static Color _color(BuildContext context) =>
+      GlassForeground.backgroundBrightnessOf(context) == Brightness.light
+      ? GlassColors.tabBarLabel.color
+      : GlassColors.tabBarLabel.darkColor;
+
   @override
   Widget build(BuildContext context) => MergeSemantics(
     // One node: the label merges into the glass's button node, which
@@ -49,7 +60,16 @@ class GlassSearchTabButton extends StatelessWidget {
           mode: mode,
           shape: const GlassShape.circle(),
           onPressed: onPressed,
-          child: const Center(child: Icon(CupertinoIcons.search, size: 26)),
+          child: Center(
+            // Painted: CupertinoIcons.search is smaller and lighter than
+            // iOS's magnifier.
+            child: Builder(
+              builder: (context) => CustomPaint(
+                size: const Size.square(TabBarMetrics.searchGlyph),
+                painter: SearchGlyph(color: _color(context)),
+              ),
+            ),
+          ),
         ),
       ),
     ),
