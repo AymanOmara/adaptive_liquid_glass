@@ -145,6 +145,12 @@ const _tabBarOverrides = <String, Object?>{
   'rimMixWidth': 1.33,
   'rimMixCut': 1.0,
   'rimMixLumaFloor': 1.0,
+  // The bar keeps the tone response it was fitted with: the g13 refit's
+  // tone LUTs (and its small-shape curve, which a 62-pt bar falls under)
+  // were fitted to SwiftUI's small glass and grey the bar (white page
+  // 243 vs UIKit's 252; bar-region mean |diff| 1.35 -> 4.32).
+  'toneKnots': GlassVariantConstants.identityToneKnots,
+  'smallToneKnots': GlassVariantConstants.identityToneKnots,
 };
 
 /// Light-mode extras on [_tabBarOverrides], fitted to SwiftUI's `TabView`
@@ -157,6 +163,9 @@ const _tabBarLightOverrides = <String, Object?>{
   'fillOpacity': 0.62,
   'saturation': 1.45,
   'blurSigma': 7.0,
+  // The values the bar was fitted with (before the g13 refit).
+  'fillSizeDrop': 0.1268,
+  'tintStrength': 1.0219,
 };
 
 /// Dark-mode extras on [_tabBarOverrides], fitted to SwiftUI's `TabView`
@@ -170,6 +179,9 @@ const _tabBarDarkOverrides = <String, Object?>{
   'fillOpacity': 0.55,
   'saturation': 1.5,
   'blurSigma': 14.0,
+  // The values the bar was fitted with (before the g13 refit).
+  'fillSizeDrop': 0.798,
+  'tintStrength': 1.0084,
 };
 
 /// The bar's dark glass while a lens is held is more see-through

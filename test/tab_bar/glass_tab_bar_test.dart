@@ -967,4 +967,33 @@ void main() {
     },
     variant: ios,
   );
+
+  testWidgets('shader mode: the search circle has the bar\'s shadow too', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(
+      plainHost(
+        SizedBox(
+          width: 360,
+          child: GlassTabBar(
+            items: _items,
+            selectedIndex: 0,
+            onSelected: (_) {},
+            onSearch: () {},
+            mode: GlassRenderMode.shader,
+          ),
+        ),
+      ),
+    );
+    final shadows = find.byWidgetPredicate(
+      (w) => w is CustomPaint && w.painter is BarShadow,
+    );
+    expect(shadows, findsNWidgets(2));
+    final circle = t.getRect(find.byType(GlassSearchTabButton));
+    expect(
+      shadows.evaluate().map((e) => t.getRect(find.byWidget(e.widget))),
+      contains(circle),
+    );
+  }, variant: ios);
 }

@@ -523,17 +523,43 @@ class _GlassTabBarState extends State<GlassTabBar>
             child: TabBarFillScope(child: _sizedBar()),
           ),
           const SizedBox(width: GlassSearchTabButton.gap),
-          GlassSearchTabButton(
-            onPressed: onSearch,
-            semanticLabel:
-                widget.searchLabel ??
-                cupertinoL10n(context).searchTextFieldPlaceholderLabel,
-            glass: widget.glass,
-            mode: _barMode,
+          // The circle is the bar's material (UIKit draws both), with the
+          // bar's shadow in shader mode.
+          CustomPaint(
+            painter: _searchShader(context) ? const BarShadow() : null,
+            child: withTabBarGlass(
+              context,
+              GlassSearchTabButton(
+                onPressed: onSearch,
+                semanticLabel:
+                    widget.searchLabel ??
+                    cupertinoL10n(context).searchTextFieldPlaceholderLabel,
+                glass: widget.glass,
+                mode: _barMode,
+              ),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  /// Whether the search circle is drawn by the shader (and so needs the
+  /// bar's shadow). Resolved here: the bar's own flags are set while it
+  /// lays out, after this circle is built.
+  bool _searchShader(BuildContext context) {
+    final environment = GlassPlatform.instance.environment.value;
+    final requested = widget.mode ?? LiquidGlassTheme.of(context).defaultMode;
+    final lens =
+        environment.shaderSupported &&
+        (widget.mode == null ||
+            resolveGlassMode(requested: requested, environment: environment) ==
+                EffectiveGlassMode.shader);
+    return resolveGlassMode(
+          requested: widget.mode ?? (lens ? GlassRenderMode.shader : requested),
+          environment: environment,
+        ) ==
+        EffectiveGlassMode.shader;
   }
 
   Widget _sizedBar() => LayoutBuilder(
