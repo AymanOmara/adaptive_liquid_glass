@@ -30,8 +30,11 @@
   showGlassFullScreenCover + GlassFullScreenCoverHandle, GlassGauge
   Follow-ups:
   - [done] empty state placement (title/description within 0.33 pt)
-  - full-screen cover: transition timing estimated; drag-to-dismiss and
-    glass close button not built
+  - [done] full-screen cover: timing measured (440/406 ms, fitted curves
+    within 0.6% RMS of two recordings); dragToDismiss and
+    showsCloseButton built with Material path, Reduce Motion, semantics,
+    RTL (close button placement and drag thresholds follow the sheet /
+    toolbar, estimated: SwiftUI's cover has neither)
   - [done] GlassButton label black like SwiftUI (was 85% black)
   Next (medium): pull to refresh (refreshable), searchable presentation,
   GlassWheelPicker, date picker upgrades (graphical, time, wheel)

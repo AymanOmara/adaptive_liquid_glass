@@ -116,6 +116,27 @@ struct FullScreenCoverReference: View {
   }
 }
 
+/// The full-screen cover's motion, for recording: a white page presents a
+/// solid blue cover 1 s after launch and dismisses it 2.5 s later
+/// (`tool/reference` timing capture tracks the cover's top edge).
+@available(iOS 26.0, *)
+struct CoverTimingReference: View {
+  @State private var shown = false
+  var body: some View {
+    Color.white
+      .ignoresSafeArea()
+      .fullScreenCover(isPresented: $shown) {
+        Color.blue.ignoresSafeArea().statusBarHidden(true)
+      }
+      .onAppear {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { shown = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { shown = false }
+      }
+      .statusBarHidden(true)
+      .environment(\.colorScheme, .light)
+  }
+}
+
 /// A linear capacity battery gauge (62%, 0/100 labels, 300 wide) above a
 /// pair of circular gauges — an orange accessoryCircular temp gauge (21 of
 /// 0…40, 0/40 labels) and an accessoryCircularCapacity battery gauge (62)

@@ -10,6 +10,7 @@ Widget? newComponentTwin(String scene) => switch (scene) {
   'emptystate' => const _EmptyState(),
   'emptystate2' => const _EmptyStateSwap(),
   'fullscreencover' => const _FullScreenCover(),
+  'covertiming' => const _CoverTiming(),
   'gauge' => const _Gauge(),
   _ => null,
 };
@@ -161,6 +162,35 @@ class _FullScreenCoverState extends State<_FullScreenCover> {
     color: Colors.white,
     child: SizedBox.expand(child: Center(child: Text('Home'))),
   );
+}
+
+/// A white page presenting a solid blue cover 1 s after launch and
+/// dismissing it 2.5 s later, for recording the motion.
+class _CoverTiming extends StatefulWidget {
+  const _CoverTiming();
+
+  @override
+  State<_CoverTiming> createState() => _CoverTimingState();
+}
+
+class _CoverTimingState extends State<_CoverTiming> {
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(const Duration(seconds: 1), () {
+      if (!mounted) return;
+      final cover = showGlassFullScreenCover<void>(
+        context: context,
+        backgroundColor: CupertinoColors.systemBlue,
+        builder: (context) => const SizedBox.expand(),
+      );
+      Future<void>.delayed(const Duration(milliseconds: 2500), cover.dismiss);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      const ColoredBox(color: Colors.white, child: SizedBox.expand());
 }
 
 /// The linear battery gauge above the temp and battery rings, the column

@@ -44,6 +44,7 @@ enum ControlScenes {
     case "disclosure": root = AnyView(DisclosureReference())
     case "emptystate": root = AnyView(EmptyStateReference())
     case "emptystate2": root = AnyView(EmptyStateSwapReference())
+    case "covertiming": root = AnyView(CoverTimingReference())
     case "fullscreencover": root = AnyView(FullScreenCoverReference())
     case "gauge": root = AnyView(GaugeReference())
     default: return false

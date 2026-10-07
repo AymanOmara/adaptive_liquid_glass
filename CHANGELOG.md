@@ -5,6 +5,16 @@
   icon gap for `.search`.
 - `GlassButton`'s glass label is opaque black over light content, as
   SwiftUI's `.glass` button draws it (measured; it read 38,38,38).
+- `showGlassFullScreenCover`:
+  - The slide's timing and curves are fitted from a screen recording of
+    SwiftUI's `.fullScreenCover` (440 ms in, 406 ms out, within 0.6% of
+    the screen's height RMS; were estimated).
+  - `dragToDismiss`: drag the cover down to close it, like a sheet (a
+    quarter of its height or a 700 pt/s fling; springs back otherwise;
+    a semantics dismiss action; `PopScope` respected). Off by default,
+    as SwiftUI's cover has none.
+  - `showsCloseButton` (+ `closeButtonSemanticLabel`): a glass xmark
+    circle top-trailing; a Material close icon on Android.
 
 ## 0.1.0-dev.8
 
