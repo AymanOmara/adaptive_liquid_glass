@@ -40,6 +40,7 @@ enum ControlScenes {
     case "pagecontrol": root = AnyView(PageControlReference())
     case "actionsheet": root = AnyView(ActionSheetReference())
     case "badge": root = AnyView(BadgeReference())
+    case "disclosure": root = AnyView(DisclosureReference())
     default: return false
     }
     window?.rootViewController = UIHostingController(rootView: root)

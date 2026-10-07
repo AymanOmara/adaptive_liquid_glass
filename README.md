@@ -217,6 +217,7 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `GlassTextField` (`+ .password`) | Text field in a glass capsule; password with an eye button | `TextField` |
 | `GlassSearchField` | Search capsule with magnifier and clear button | `SearchBar` |
 | `GlassListSection`, `GlassListTile` | Inset-grouped list, like Settings; rows with leading/title/value/trailing | `Card` of `ListTile`s |
+| `GlassDisclosureGroup` | SwiftUI's DisclosureGroup: a list row with a rotating chevron that expands its rows | `ExpansionTile` |
 | `GlassChip` | Capsule chip with selected state and delete button | `FilterChip` / `InputChip` |
 | `GlassBadge` | Red count capsule (dot when empty) on a child's top trailing corner | `Badge` |
 | `GlassPageControl` | Page dots on a glass capsule; tap and scrub | row of Material dots |
@@ -552,6 +553,33 @@ The platter is opaque by default, as iOS 26 Settings; pass
 row highlights while pressed. On Android it is a Material 3 filled `Card`
 of `ListTile`s.
 
+### Disclosure group
+
+```dart
+GlassListSection(
+  header: const Text('Settings'),
+  children: [
+    GlassDisclosureGroup(
+      leading: const Icon(CupertinoIcons.gear),
+      label: const Text('Advanced'),
+      initiallyExpanded: true,
+      children: const [
+        GlassListTile(title: Text('Proxy'), value: 'Off'),
+        GlassListTile(title: Text('DNS'), value: 'Automatic'),
+      ],
+    ),
+  ],
+)
+```
+
+A list row that expands to reveal more rows beneath it, like SwiftUI's
+`DisclosureGroup`: the label row lays out as a list row whose chevron
+rotates to point down while the children, indented, spring open, and it
+keeps the list's press highlight. Leave the state internal with
+`initiallyExpanded`, or drive it with `isExpanded` and
+`onExpansionChanged`. Geometry measured against SwiftUI on iOS 26.4. On
+Android it is a Material 3 `ExpansionTile`.
+
 ### Chip and badge
 
 ```dart
@@ -593,6 +621,8 @@ while indeterminate); the fill defaults to system blue. Geometry
 estimated, not yet measured. On Android: a row of Material dots, and
 Material 3 progress indicators.
 
+
+
 ### Sheet
 
 ```dart
@@ -609,6 +639,7 @@ The sheet works like SwiftUI's `presentationDetents`:
 - At a partial detent it is floating glass.
 - At `large` it runs edge to edge, opaque, with the screen's own corners.
 - `GlassSheetDetent.fraction(0.6)` and `.height(400)` make custom detents.
+
 
 ### Menu button and controller
 

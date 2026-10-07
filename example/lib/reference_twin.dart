@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'borrowed_twins.dart';
+import 'new_component_twins.dart';
 
 /// `flutter run -t lib/reference_twin.dart --dart-define=SCENE=<name>`, or
 /// the example app launched with `-twin <name>`:
@@ -11,8 +12,9 @@ import 'borrowed_twins.dart';
 /// `tool/reference/measure_components.py` measures both the same way.
 /// Scenes: controls, toolbar, accessory, sheet, sheetlarge, menu, search,
 /// swipe, swipetall, alert, dialog, popover, stepper, picker, datepicker,
-/// searchtab; and borrowedTwin's (tabbar, tabbarphoto, tabbardark,
-/// tabbarphotodark, badge…).
+/// searchtab, disclosure, emptystate, fullscreencover, gauge; and
+/// borrowedTwin's (tabbar, tabbarphoto, tabbardark, tabbarphotodark,
+/// badge…).
 void main() => runApp(const ReferenceTwin());
 
 /// The twin app.
@@ -62,7 +64,8 @@ class ReferenceTwin extends StatelessWidget {
         'searchtab' => const _SearchTab(),
         'swipe' => const _Swipe(tall: false),
         'swipetall' => const _Swipe(tall: true),
-        _ => borrowedTwin(scene) ?? const _Controls(),
+        _ =>
+          borrowedTwin(scene) ?? newComponentTwin(scene) ?? const _Controls(),
       },
     ),
   );

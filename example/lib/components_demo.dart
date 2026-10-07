@@ -45,6 +45,7 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
   bool _wifi = true;
   double _volume = 0.6;
   bool _toolbar = false;
+  bool _advanced = false;
   double _count = 3;
   DateTime _date = DateTime(2026, 10, 6);
   String? _emailError;
@@ -428,6 +429,22 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                     subtitle: const Text('About, storage, updates'),
                     chevron: true,
                     onTap: () => _snack('General'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              GlassListSection(
+                header: const Text('Advanced'),
+                children: [
+                  GlassDisclosureGroup(
+                    leading: const Icon(CupertinoIcons.gear),
+                    label: const Text('Advanced'),
+                    isExpanded: _advanced,
+                    onExpansionChanged: (v) => setState(() => _advanced = v),
+                    children: const [
+                      GlassListTile(title: Text('Proxy'), value: 'Off'),
+                      GlassListTile(title: Text('DNS'), value: 'Automatic'),
+                    ],
                   ),
                 ],
               ),

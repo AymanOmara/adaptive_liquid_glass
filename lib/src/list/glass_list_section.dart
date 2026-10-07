@@ -8,6 +8,8 @@ import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
 import '../core/ios_text.dart';
+import '../disclosure/disclosure_separator_scope.dart';
+import '../disclosure/glass_disclosure_group.dart';
 import '../liquid_glass.dart';
 import 'glass_list_tile.dart';
 import 'list_metrics.dart';
@@ -113,7 +115,11 @@ class GlassListSection extends StatelessWidget {
           // height, and skips the last row.
           children: [
             for (var i = 0; i < children.length; i++)
-              i < children.length - 1
+              i < children.length - 1 && children[i] is GlassDisclosureGroup
+                  // The group's last visible row varies, so it draws its
+                  // own hairline below.
+                  ? DisclosureSeparatorScope(child: children[i])
+                  : i < children.length - 1
                   ? Stack(
                       children: [
                         children[i],
