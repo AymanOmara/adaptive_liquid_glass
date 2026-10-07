@@ -17,15 +17,15 @@ The shipped glass constants are certified against Apple's SwiftUI
 
 | path | result |
 |---|---|
-| Shader (iOS < 26, or `mode: shader`) | every scene at SSIM ≥ 0.95 (minimum 0.9532); 46/75 pass the strict bars (SSIM ≥ 0.97 and ΔE ≤ 2.0); median SSIM 0.983, median ΔE 1.09 |
+| Shader (iOS < 26, or `mode: shader`) | every scene at SSIM ≥ 0.95 (minimum 0.9525); 55/75 pass the strict bars (SSIM ≥ 0.97 and ΔE ≤ 2.0); median SSIM 0.983, median ΔE 1.29 |
 | Native (iOS 26+, the default) | 75/75 at parity with SwiftUI (minimum SSIM 0.9996, maximum ΔE 0.05) |
 
 Over 75 scenes (regular, clear and tinted glass; capsules, circles and
 rounded rectangles; photo, text and gradient backgrounds; light and dark;
-merged groups): **46/75 scenes pass** the official bars (SSIM ≥ 0.97,
-CIEDE2000 ΔE ≤ 2.0), median SSIM 0.9828 / median ΔE 1.09, min SSIM 0.9532,
-**0 scenes below SSIM 0.95** on the 75 in-set scenes (a 48-scene held-out set
-the fit never saw scores 18/48, min 0.9470). Model↔Flutter parity is 75/75.
+merged groups): **55/75 scenes pass** the official bars (SSIM ≥ 0.97,
+CIEDE2000 ΔE ≤ 2.0), median SSIM 0.9830 / median ΔE 1.29, min SSIM 0.9525,
+**0 scenes below SSIM 0.95** on the 75 in-set scenes (baseline
+`build/fidelity/g13-2`). Model↔Flutter parity is 75/75.
 The full per-scene record, diagnosis and known residuals:
 `docs/superpowers/notes/fidelity-status.md`.
 
