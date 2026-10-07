@@ -596,6 +596,9 @@ void main() {
       await t.pump(const Duration(milliseconds: 16));
     }
     await g.up();
+    // A quick tap holds the lens for tapHold from touch-down before it
+    // settles.
+    await t.pump(TabBarMetrics.tapHold);
     for (var i = 0; i < 22; i++) {
       await t.pump(const Duration(milliseconds: 16));
     }
@@ -699,6 +702,72 @@ void main() {
     for (var i = 0; i < 8; i++) {
       await t.pump(const Duration(milliseconds: 16));
     }
+    expect(_lens, findsNothing);
+    await t.pumpAndSettle();
+  }, variant: ios);
+
+  testWidgets('a quick tap keeps the lens up for tapHold, then settles', (
+    t,
+  ) async {
+    shaderEnv();
+    expect(TabBarMetrics.tapHold, const Duration(milliseconds: 200));
+    final picks = <int>[];
+    await t.pumpWidget(plainHost(_Harness(picks)));
+    // A tap on the selected tab: the lens has nowhere to travel, so
+    // without the hold it would shrink at once.
+    final g = await t.startGesture(t.getCenter(find.text('History')));
+    await t.pump(const Duration(milliseconds: 16));
+    await g.up();
+    // 192 ms after touch-down, still inside tapHold: the lens stays up.
+    for (var i = 0; i < 11; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    expect(_lens, findsOneWidget);
+    // iOS has settled it into the pill by ~330 ms; so do we.
+    for (var i = 0; i < 9; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    expect(_lens, findsNothing);
+    expect(picks, isEmpty);
+    expect(
+      pillX(t),
+      moreOrLessEquals(t.getCenter(find.text('History')).dx, epsilon: 1),
+    );
+    await t.pumpAndSettle();
+  }, variant: ios);
+
+  testWidgets('a press held past tapHold releases at once', (t) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    final g = await t.startGesture(t.getCenter(find.text('History')));
+    // 304 ms, past tapHold: the release is not deferred.
+    for (var i = 0; i < 19; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    await g.up();
+    for (var i = 0; i < 8; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    expect(_lens, findsNothing);
+    await t.pumpAndSettle();
+  }, variant: ios);
+
+  testWidgets('Reduce Motion: a quick tap does not hold the lens', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      plainHost(
+        Builder(
+          builder: (context) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: _Harness(_picks()),
+          ),
+        ),
+      ),
+    );
+    final g = await t.startGesture(t.getCenter(find.text('Settings')));
+    await t.pump(const Duration(milliseconds: 16));
+    await g.up();
+    await t.pump();
     expect(_lens, findsNothing);
     await t.pumpAndSettle();
   }, variant: ios);

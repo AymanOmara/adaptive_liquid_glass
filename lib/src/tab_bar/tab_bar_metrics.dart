@@ -163,4 +163,11 @@ abstract final class TabBarMetrics {
 
   /// See [shadowOffset].
   static const double shadowOpacity = 0.07;
+
+  /// After a quick tap the lens stays up at least this long from
+  /// touch-down before it shrinks into the pill (measured from SwiftUI
+  /// `TabView`, iOS 26.4: a ~0 ms tap keeps the lens ~230 ms, settled by
+  /// ~330 ms). With our release spring, 200 ms puts the lens away at
+  /// ~320 ms. A longer press releases at once; Reduce Motion skips it.
+  static const Duration tapHold = Duration(milliseconds: 200);
 }

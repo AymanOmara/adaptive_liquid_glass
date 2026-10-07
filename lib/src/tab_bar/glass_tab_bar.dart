@@ -1,3 +1,4 @@
+import 'dart:async' show Timer;
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/cupertino.dart';
@@ -391,6 +392,7 @@ class _GlassTabBarState extends State<GlassTabBar>
 
   @override
   void dispose() {
+    _holdTimer?.cancel();
     _followTicker.dispose();
     _light.dispose();
     _wobbleTicker.dispose();
@@ -405,6 +407,13 @@ class _GlassTabBarState extends State<GlassTabBar>
     _finger = _toSlots(details.localPosition.dx);
     _fingerSlot = _nearestSlot;
     _cancelPendingRelease();
+    _holdTimer?.cancel();
+    _holdTimer = Timer(TabBarMetrics.tapHold, () {
+      _holdTimer = null;
+      final settle = _pendingSettle;
+      _pendingSettle = null;
+      if (mounted && !_held) settle?.call();
+    });
     _springPress(TabBarMetrics.press, 1);
     _dragging = false;
     _springLight(TabBarMetrics.light, 1);
@@ -443,7 +452,7 @@ class _GlassTabBarState extends State<GlassTabBar>
       _arrival = slot.toDouble();
       _x.addListener(_settleOnArrival);
     } else {
-      _springPress(TabBarMetrics.release, 0);
+      _shrink(() => _springPress(TabBarMetrics.release, 0));
     }
     if (index != widget.selectedIndex) {
       widget.onSelected(index);
@@ -463,19 +472,38 @@ class _GlassTabBarState extends State<GlassTabBar>
     _springX(TabBarMetrics.slide, _slot(widget.selectedIndex).toDouble());
   }
 
+  /// Runs out TabBarMetrics.tapHold after the last touch-down; null once
+  /// the lens has been up that long.
+  Timer? _holdTimer;
+
+  /// A quick tap's settle, waiting for [_holdTimer].
+  VoidCallback? _pendingSettle;
+
   /// Where a released lens is travelling to; null when not waiting.
   double? _arrival;
 
   void _settleOnArrival() {
     final target = _arrival;
     if (target == null || (_x.value - target).abs() > 0.15) return;
-    _cancelPendingRelease();
-    _springPress(TabBarMetrics.release, 0);
+    _arrival = null;
+    _x.removeListener(_settleOnArrival);
+    _shrink(() => _springPress(TabBarMetrics.release, 0));
   }
 
   void _cancelPendingRelease() {
     _arrival = null;
     _x.removeListener(_settleOnArrival);
+    _pendingSettle = null;
+  }
+
+  /// Runs [settle] (the lens shrinking into the pill) now, or once the
+  /// lens has been up for TabBarMetrics.tapHold.
+  void _shrink(VoidCallback settle) {
+    if (_reduceMotion || _holdTimer == null) {
+      settle();
+    } else {
+      _pendingSettle = settle;
+    }
   }
 
   @override
