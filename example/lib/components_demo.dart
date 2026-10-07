@@ -606,6 +606,38 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                 ],
               ),
               const SizedBox(height: 24),
+              Wrap(
+                spacing: 16,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  GlassLabel.text(
+                    text: 'Favourites',
+                    icon: CupertinoIcons.heart,
+                  ).glassEffect(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                  ),
+                  GlassLabel.text(
+                    text: 'Share',
+                    icon: CupertinoIcons.share,
+                    layout: GlassLabelLayout.iconOnly,
+                  ).glassEffect(padding: const EdgeInsets.all(10)),
+                  GlassLabel.text(
+                    text: 'Title only',
+                    icon: CupertinoIcons.textformat,
+                    layout: GlassLabelLayout.titleOnly,
+                  ).glassEffect(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
               GlassEmptyState(
                 icon: const Icon(CupertinoIcons.tray),
                 title: const Text('No Mail'),
