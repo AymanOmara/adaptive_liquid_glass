@@ -265,6 +265,81 @@ def test_tone_lut_blends_across_variants_like_other_blocks():
     assert not np.array_equal(a, plain)
 
 
+# --- Task g13: small-shape tone curve ----------------------------------------
+
+def _small_scene(w, h, shape="capsule", variant="clear"):
+    return {"id": "small-tone-test", "background": "flat-v128", "brightness": "light",
+            "shapes": [{"x": 30, "y": 30, "w": w, "h": h, "shape": shape,
+                        "radius": 8, "variant": variant, "tint": None}]}
+
+
+SMALL_KNOTS = [0.0, 0.02, 0.07, 0.15, 0.27, 0.43, 0.62, 0.82, 1.0]
+
+
+def _with_small(**over):
+    c = json.loads(json.dumps(STANDARD))
+    for n in ("regular", "clear", "regularDark", "clearDark"):
+        c[n].update(over)
+    return c
+
+
+def test_small_tone_curve_is_off_by_default():
+    """Defaults leave render_window bit-identical: identity knots are a
+    no-op even with the size window open, and smallSizeHi <= 0 guards the
+    stage off entirely."""
+    bg = np.random.default_rng(7).random((400, 400, 3))
+    sc = _small_scene(200, 56)  # half shorter side 28 pt
+    a, _ = render_window(bg, sc, STANDARD)
+    b, _ = render_window(bg, sc, _with_small(smallToneKnots=list(IDENTITY),
+                                             smallSizeLo=30.0, smallSizeHi=34.0))
+    assert np.array_equal(a, b)
+    c, _ = render_window(bg, sc, _with_small(smallToneKnots=list(SMALL_KNOTS),
+                                             smallSizeLo=30.0, smallSizeHi=0.0))
+    assert np.array_equal(a, c)
+
+
+def test_small_tone_curve_hits_small_shapes_only():
+    """smallSizeLo 30 / smallSizeHi 34: a capsule with half shorter side
+    28 pt (w = 1) changes by the LUT exactly; a rect with half shorter side
+    70 pt (w = 0) is bit-identical."""
+    from glass_model import tone_apply
+    bg = _tone_bg()  # flat 0.5 grey: the deep interior carries no rim/tint
+    off = _with_small(smallToneKnots=list(IDENTITY), smallSizeLo=30.0, smallSizeHi=34.0)
+    on = _with_small(smallToneKnots=list(SMALL_KNOTS), smallSizeLo=30.0, smallSizeHi=34.0)
+    cap_off, box = render_window(bg, _small_scene(200, 56), off)
+    cap_on, _ = render_window(bg, _small_scene(200, 56), on)
+    x0, y0, x1, y1 = box
+    cy, cx = (y0 + y1) // 2, (x0 + x1) // 2
+    inner = (slice(cy - 10, cy + 10), slice(cx - 30, cx + 30))
+    src = cap_off[inner].reshape(-1, 3).T
+    expect = tone_apply(src, np.asarray(SMALL_KNOTS)[:, None]).T.reshape(cap_off[inner].shape)
+    assert not np.array_equal(cap_on[inner], cap_off[inner])
+    assert np.abs(cap_on[inner] - expect).max() <= 2 / 255 + 1e-9
+    rect_off, _ = render_window(bg, _small_scene(140, 140, shape="rect"), off)
+    rect_on, _ = render_window(bg, _small_scene(140, 140, shape="rect"), on)
+    assert np.array_equal(rect_off, rect_on)  # halfMin 70 pt > hi: w = 0
+
+
+def test_small_tone_curve_weight_is_linear_between_lo_and_hi():
+    """halfMin 32 pt sits midway between lo 30 and hi 34: w = 0.5, so the
+    interior is the plain mix of the identity and LUT values."""
+    from glass_model import tone_apply
+    bg = _tone_bg()
+    off = _with_small(smallToneKnots=list(IDENTITY), smallSizeLo=30.0, smallSizeHi=34.0)
+    on = _with_small(smallToneKnots=list(SMALL_KNOTS), smallSizeLo=30.0, smallSizeHi=34.0)
+    sc = _small_scene(64, 64, shape="rect")  # half shorter side 32 pt
+    a, box = render_window(bg, sc, off)
+    b, _ = render_window(bg, sc, on)
+    x0, y0, x1, y1 = box
+    cy, cx = (y0 + y1) // 2, (x0 + x1) // 2
+    inner = (slice(cy - 10, cy + 10), slice(cx - 10, cx + 10))
+    src = a[inner].reshape(-1, 3).T
+    expect = 0.5 * src + 0.5 * tone_apply(src, np.asarray(SMALL_KNOTS)[:, None])
+    assert np.abs(b[inner] - expect.T.reshape(a[inner].shape)).max() <= 2 / 255 + 1e-9
+    # and it differs from both endpoints
+    assert not np.array_equal(b[inner], a[inner])
+
+
 # --- Task 17d: clear-analysis features (defaults reproduce the 17c model) ----
 
 def _feat(sid, **over):

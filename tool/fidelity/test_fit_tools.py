@@ -131,6 +131,24 @@ def test_missing_flutter_capture_is_skipped(tmp_path, monkeypatch, capsys):
     assert "device: pass 1/1" in out
 
 
+# --- fit.get/put: the g13 small-shape tone keys -------------------------------
+
+def test_fit_get_put_supports_g13_small_tone_keys():
+    c = fit.resolve_constants(json.loads(CONSTANTS.read_text()))
+    assert fit.get(c, "regular", "stone4") == pytest.approx(0.5)  # identity
+    assert fit.get(c, "regular", "smallSizeLo") == 0.0
+    assert fit.get(c, "regular", "smallSizeHi") == 0.0
+    fit.put(c, "regular", "stone4", 0.61)
+    fit.put(c, "regular", "smallSizeHi", 34.0)
+    assert fit.get(c, "regular", "stone4") == pytest.approx(0.61)
+    assert c["regular"]["smallToneKnots"][4] == pytest.approx(0.61)
+    assert fit.get(c, "regular", "smallSizeHi") == pytest.approx(34.0)
+    for k in ("stone0", "stone8", "smallSizeLo", "smallSizeHi"):
+        assert k in fit.KEYS
+    assert fit.BOUNDS["stone0"] == (0, 1)
+    assert fit.BOUNDS["smallSizeLo"] == (0, 60)
+
+
 # --- probe.py: one key scan, and unknown keys error clearly -------------------
 
 def _fake_score_one(sid, constants):

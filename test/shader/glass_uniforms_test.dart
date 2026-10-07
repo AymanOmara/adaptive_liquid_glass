@@ -50,7 +50,7 @@ void main() {
         }),
       ),
     );
-    expect(f.length, 304);
+    expect(f.length, 328);
     expect(f.sublist(0, 4), [1, 3, -2, 0]);
     expect(f.sublist(4, 8), [
       60,
@@ -420,6 +420,42 @@ void main() {
       s(const Rect.fromLTWH(100, 0, 40, 40), union: 'a'),
     ]);
     expect(out.single.cornerExponent, 2);
+  });
+
+  test('small-shape tone curve packs into M, N and O (off by default)', () {
+    final d = packGlassUniforms(frame(const []));
+    // Identity knots and a closed size window on both variants.
+    expect(
+      d.sublist(304, 308),
+      GlassVariantConstants.identityToneKnots.sublist(0, 4),
+    );
+    expect(
+      d.sublist(308, 312),
+      GlassVariantConstants.identityToneKnots.sublist(4, 8),
+    );
+    expect(d.sublist(312, 316), [1.0, 0, 0, 0]);
+    expect(
+      d.sublist(316, 320),
+      GlassVariantConstants.identityToneKnots.sublist(0, 4),
+    );
+    expect(d.sublist(324, 328), [1.0, 0, 0, 0]);
+
+    final c = GlassConstants.fromJson({
+      'regular': {
+        'smallToneKnots': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
+        'smallSizeLo': 30.0,
+        'smallSizeHi': 34.0,
+      },
+    });
+    final f = packGlassUniforms(frame(const [], constants: c));
+    expect(f.sublist(304, 308), [0.0, 0.1, 0.2, 0.3]);
+    expect(f.sublist(308, 312), [0.4, 0.5, 0.6, 0.7]);
+    // O = (knot 8, smallSizeLo px, smallSizeHi px, 0).
+    expect(f.sublist(312, 316), [0.8, 30 * 3, 34 * 3, 0]);
+    // The clear set keeps the identity defaults (N.x = knot 4).
+    expect(f[320], 0.5);
+    expect(f[324], 1.0);
+    expect(f.sublist(325, 328), [0, 0, 0]);
   });
 
   test('lensVertical and the rim tint pack into L.yzw (off by default)', () {

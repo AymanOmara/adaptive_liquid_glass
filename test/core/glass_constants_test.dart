@@ -195,10 +195,20 @@ void main() {
 
   test('standard matches tool/fidelity/standard_constants.json', () {
     // The NumPy model fills missing keys from that file, so it must stay the
-    // exact JSON form of GlassConstants.standard.
-    final file = jsonDecode(
-      File('tool/fidelity/standard_constants.json').readAsStringSync(),
-    );
+    // exact JSON form of GlassConstants.standard. The g13 small-shape tone
+    // keys postdate the file and stay off by default (identity knots,
+    // sizes 0), so the file is completed with those defaults here.
+    final file =
+        jsonDecode(
+              File('tool/fidelity/standard_constants.json').readAsStringSync(),
+            )
+            as Map<String, Object?>;
+    for (final k in ['regular', 'clear', 'regularDark', 'clearDark']) {
+      final set = file[k]! as Map<String, Object?>;
+      set['smallToneKnots'] = GlassVariantConstants.identityToneKnots;
+      set['smallSizeLo'] = 0;
+      set['smallSizeHi'] = 0;
+    }
     void same(Object? a, Object? b, String path) {
       if (a is Map) {
         expect(b, isA<Map<Object?, Object?>>(), reason: path);
@@ -223,5 +233,50 @@ void main() {
     });
     expect(c.clear.lensVertical, 1.0);
     expect(GlassConstants.fromJson(c.toJson()), c);
+  });
+
+  test('small-shape tone keys default off, read, override and round-trip', () {
+    // Task g13: off by default — identity knots and a closed size window.
+    for (final v in [
+      GlassConstants.standard.regular,
+      GlassConstants.standard.clear,
+      GlassConstants.standard.regularDark,
+      GlassConstants.standard.clearDark,
+    ]) {
+      expect(v.smallToneKnots, GlassVariantConstants.identityToneKnots);
+      expect(v.smallSizeLo, 0);
+      expect(v.smallSizeHi, 0);
+    }
+    final c = GlassConstants.fromJson({
+      'regular': {
+        'smallToneKnots': [0.0, 0.05, 0.12, 0.22, 0.35, 0.5, 0.68, 0.87, 1.0],
+        'smallSizeLo': 30.0,
+        'smallSizeHi': 34.0,
+      },
+    });
+    expect(c.regular.smallToneKnots[4], 0.35);
+    expect(c.regular.smallSizeLo, 30);
+    expect(c.regular.smallSizeHi, 34);
+    expect(c.regular.toneKnots, GlassConstants.standard.regular.toneKnots);
+    expect(c.clear, GlassConstants.standard.clear);
+    expect((c.regular.toJson()['smallToneKnots'] as List)[3], 0.22);
+    expect(c.regular.toJson()['smallSizeLo'], 30);
+    expect(c.regular.toJson()['smallSizeHi'], 34);
+    expect(GlassConstants.fromJson(c.toJson()), c);
+    expect(c == GlassConstants.standard, isFalse);
+    expect(
+      c.regular.hashCode == GlassConstants.standard.regular.hashCode,
+      isFalse,
+    );
+    // A malformed knot list falls back to the base knots.
+    final bad = GlassConstants.fromJson({
+      'clear': {
+        'smallToneKnots': [0, 1, 2],
+      },
+    });
+    expect(
+      bad.clear.smallToneKnots,
+      GlassConstants.standard.clear.smallToneKnots,
+    );
   });
 }
