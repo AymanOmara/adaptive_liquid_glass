@@ -343,3 +343,77 @@ Measurement (new `g2-*` scenes in `tool/scenes/measure.json`, `gen_measure.py`: 
 - **The neck was a lens crease.** With a unit normal from the smooth-union field, the normal flips sides at the neck's saddle, so the lens drew a hard vertical seam through the bridge; SwiftUI refracts the bridge smoothly as one surface. Neck SSIM (|x − mid| < 15 pt) on merge-gap4 was 0.918 vs 0.980 elsewhere.
 
 What changed: inside merge necks (where the lens field's smin weight h > 0, new `lensBlend` in the shader, `field_blend` in the model) the lens uses the field over its gradient length as depth and scales the displacement by the gradient length (clamped 0.05-1), after liquid_glass_widgets' blended geometry (which builds normals from the unnormalised SDF gradient). Outside necks the factor is exactly 1, so single shapes and separated groups are bit-identical. No constants changed. Model sweep (model vs SwiftUI, 3 merge scenes + 11 g2 photo layouts, mean SSIM): off 0.9637; displacement scale only 0.9699; depth only 0.9682; both 0.9705 (shipped); both with h-weighted gate 0.9701; exponent 2 on either term worse.
+
+## Fidelity groups 1 and 3: colour refit (g13, shipped)
+
+Run: `build/fidelity/g13-2` (Flutter on the reference simulator E7A8B4A,
+iPhone 17 Pro, iOS 26.4, constants passed at launch via `CONSTANTS`;
+SwiftUI refs from `build/fidelity/final`; seven mid-transition screenshots
+from the first pass — regular-circle-photo-dark, clear-rect16-photo-light,
+clear-rect16-photo-dark, tinted-capsule-photo-light,
+tinted-rect16-photo-light, regular-capsule-text-dark,
+clear-rect28-text-dark — were recaptured individually).
+**55/75 pass (was 47 in `g13-base`), median SSIM 0.9830 / ΔE 1.29, mean
+0.9803 / 1.270, min SSIM 0.9525, 0 below 0.95, no scene lost.** Eight
+gains, zero losses; the median ΔE rises 1.09 → 1.29 (the fit trades ΔE on
+already-passing gradient scenes for SSIM on the small-shape fails). Model
+score predicted 48 → 56; the device lands at 55.
+
+Target scenes, device SSIM/ΔE (`g13-base` → `g13-2`, \* = pass):
+
+| scene | before | after |
+|---|---|---|
+| regular-rect16-gradient-light | 0.9953 / 2.11 | 0.9955 / 1.84 \* |
+| regular-rect28-gradient-light | 0.9944 / 2.10 | 0.9946 / 1.83 \* |
+| regular-capsule-gradient-light | 0.9897 / 2.15 | 0.9893 / 1.88 \* |
+| regular-rect16-text-dark | 0.9893 / 2.17 | 0.9903 / 1.41 \* |
+| regular-rect28-text-dark | 0.9888 / 2.15 | 0.9897 / 1.41 \* |
+| regular-rect16-photo-light | 0.9769 / 2.64 | 0.9768 / 2.65 |
+| regular-rect28-photo-light | 0.9775 / 2.56 | 0.9775 / 2.56 |
+| tinted-capsule-gradient-light | 0.9807 / 2.31 | 0.9806 / 2.14 |
+| merge-gap16-photo-light | 0.9798 / 2.03 | 0.9820 / 1.67 \* |
+| regular-capsule-photo-dark | 0.9540 / 2.29 | 0.9525 / 1.98 |
+| regular-rect16-photo-dark | 0.9636 / 3.66 | 0.9693 / 3.48 |
+| regular-rect28-photo-dark | 0.9645 / 3.55 | 0.9702 / 3.38 |
+| tinted-capsule-photo-dark | 0.9630 / 1.65 | 0.9624 / 1.50 |
+| regular-capsule-text-dark | 0.9666 / 1.80 | 0.9763 / 1.29 \* |
+| regular-capsule-gradient-dark | 0.9744 / 2.16 | 0.9753 / 1.69 \* |
+| regular-circle-photo-dark | 0.9712 / 1.61 \* | 0.9713 / 1.70 \* |
+
+Measured basis (`build/g13/flat_response.txt`, flat-grey captures at
+halfMin 28-70 pt): **SwiftUI's small shapes switch to a steeper tone
+response class between 32 and 34 pt half shorter side.** At v128 dark the
+small class (≤ 32 pt) reads 88 and the large class (≥ 34 pt) 59-60
+(model: 72 / 68); light reads 204 vs 213 (model: 209 / 210). Light small
+shapes also clip a step (34 → 170 between backdrop levels 47 and 51)
+where the model's fill-only response stays gradual, and dark small shapes
+jump early (226 → 247 at the top while the model gives 116). A size
+window on the fill alone cannot make both sides of that switch.
+
+What changed (constants only, no shader/model code): `regular` and
+`regularDark` get fitted `toneKnots` plus a `smallToneKnots` LUT with
+`smallSizeLo` 32 / `smallSizeHi` 34 (full weight at ≤ 32 pt half shorter
+side, linear to off at 34 pt); regularDark also refits `toneLift` 0.7827 →
+0.7708, `rimIntensity` 0.3493 → 0.3293, `fillColor` #1B1817 → #191818;
+both sets refit `fillOpacity` (0.6804 → 0.6839, 0.665 → 0.6672),
+`saturation` (1.7415 → 1.7401, 1.8791 → 1.967), `tintStrength`
+(1.0219 → 1.024, 1.0084 → 1.0054) and take `fillSizeDrop` to 0 (the
+small-shape response moved into the small tone LUT). Clear sets are
+untouched.
+
+The fits: `build/g13/L2.log` frees the regular light keys (pass 17 → 21,
+loss 2.48 → 1.43 on the light family), `build/g13/D1.log` the regularDark
+keys (pass 14 → 20, loss 3.82 → 1.77). The first combination (`combo1`)
+reached 54/75 on device (`g13-1`) but regular-circle-photo-dark failed by
+0.0003 SSIM; a margin search (`build/g13b/cd.py` coordinate descent on the
+weakest passing regularDark scene, then `pt.py` probe points A-D, combo3)
+traded a little of that loss back for circle-photo-dark margin — device
+margin 0.0013 SSIM / 0.30 ΔE (the same scene the earlier run missed by
+0.0003).
+
+Known residuals after g13: regular rect photo-dark ΔE is still > 3
+(rect16 3.48, rect28 3.38 — SSIM now 0.97), rect photo-light sits at ΔE
+~2.6 with SSIM ~0.977, regular-capsule-photo-dark/light and
+tinted-capsule-photo/gradient stay below the bars, and the clear-family
+residuals are unchanged (group 4 material). Parity: model vs the g13-2
+Flutter captures 75/75 (`test_glass_model.py` now points there).

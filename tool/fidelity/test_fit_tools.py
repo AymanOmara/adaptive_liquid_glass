@@ -135,9 +135,12 @@ def test_missing_flutter_capture_is_skipped(tmp_path, monkeypatch, capsys):
 
 def test_fit_get_put_supports_g13_small_tone_keys():
     c = fit.resolve_constants(json.loads(CONSTANTS.read_text()))
-    assert fit.get(c, "regular", "stone4") == pytest.approx(0.5)  # identity
-    assert fit.get(c, "regular", "smallSizeLo") == 0.0
-    assert fit.get(c, "regular", "smallSizeHi") == 0.0
+    # clear still ships the keys off (absent from the file -> defaults);
+    # regular ships the g13 curve, so its defaults are checked after an
+    # explicit reset rather than against the identity.
+    assert fit.get(c, "clear", "stone4") == pytest.approx(0.5)  # identity
+    assert fit.get(c, "clear", "smallSizeLo") == 0.0
+    assert fit.get(c, "clear", "smallSizeHi") == 0.0
     fit.put(c, "regular", "stone4", 0.61)
     fit.put(c, "regular", "smallSizeHi", 34.0)
     assert fit.get(c, "regular", "stone4") == pytest.approx(0.61)

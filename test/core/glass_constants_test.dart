@@ -52,24 +52,41 @@ void main() {
     expect(GlassConstants.fromJson(c.toJson()), c);
   });
 
-  test('standard v6: Task 17d round-4 (blur aspect + clear lens grid)', () {
+  test('standard v7: g13 colour refit (small-shape tone curve)', () {
     const c = GlassConstants.standard;
-    // Round 4 (build/fidelity/fit17d, grid.py over r4-start.json): the
-    // round-2 fit plus the dark-regular blur aspect and a max-min lens grid
-    // on the clear sets.
+    // Task g13 (build/g13 fits L2/D1, margin search cd/pt): regular and
+    // regularDark get fitted tone LUTs plus a small-shape tone curve
+    // (smallToneKnots, full weight at half shorter side <= 32 pt, off
+    // above 34 pt), and a fill/saturation/tint refit; fillSizeDrop goes
+    // to 0 (the small-shape response moved into the small tone LUT).
     expect(c.regular.blurSigma, 5.9236);
-    expect(c.regular.blurSizeRef, 59.9762);
-    expect(c.regular.fillOpacity, 0.6804);
+    expect(c.regular.toneKnots[4], 0.4853);
+    expect(c.regular.toneKnots[8], 0.9919);
+    expect(c.regular.smallToneKnots[4], 0.5);
+    expect(c.regular.smallToneKnots[8], 0.962);
+    expect(c.regular.smallSizeLo, 32);
+    expect(c.regular.smallSizeHi, 34);
+    expect(c.regular.fillOpacity, 0.6839);
     expect(c.regular.fillSizeRef, 43.9952);
-    expect(c.regular.fillSizeDrop, 0.1268);
-    expect(c.regular.tintStrength, 1.0219);
+    expect(c.regular.fillSizeDrop, 0);
+    expect(c.regular.saturation, 1.7401);
+    expect(c.regular.tintStrength, 1.024);
     expect(c.regularDark.blurSigma, 8.2468);
-    expect(c.regularDark.toneLift, 0.7827);
+    expect(c.regularDark.toneKnots[1], 0.1917);
+    expect(c.regularDark.toneKnots[5], 0.6408);
+    expect(c.regularDark.smallToneKnots[4], 0.8295);
+    expect(c.regularDark.smallSizeLo, 32);
+    expect(c.regularDark.smallSizeHi, 34);
+    expect(c.regularDark.toneLift, 0.7708);
     expect(c.regularDark.blurAspectPower, 0.28);
+    expect(c.regularDark.rimIntensity, 0.3293);
+    expect(c.regularDark.fillColor, const Color(0xFF191818));
+    expect(c.regularDark.fillOpacity, 0.6672);
+    expect(c.regularDark.fillSizeDrop, 0);
+    expect(c.regularDark.saturation, 1.967);
+    expect(c.regularDark.tintStrength, 1.0054);
     expect(c.clear.postBlurShare, 0.45);
     expect(c.clear.lensStrength, -2.54);
-    expect(c.regularDark.fillSizeDrop, 0.798);
-    expect(c.regularDark.fillColor, const Color(0xFF1B1817));
     expect(c.clear.blurSigma, 1.2);
     expect(c.clear.blurSizeRef, 0);
     expect(c.clear.fillSizeRef, 0);
@@ -196,14 +213,15 @@ void main() {
   test('standard matches tool/fidelity/standard_constants.json', () {
     // The NumPy model fills missing keys from that file, so it must stay the
     // exact JSON form of GlassConstants.standard. The g13 small-shape tone
-    // keys postdate the file and stay off by default (identity knots,
-    // sizes 0), so the file is completed with those defaults here.
+    // keys ship for regular/regularDark only; clear/clearDark stay off
+    // (identity knots, sizes 0), so the file is completed with those
+    // defaults here.
     final file =
         jsonDecode(
               File('tool/fidelity/standard_constants.json').readAsStringSync(),
             )
             as Map<String, Object?>;
-    for (final k in ['regular', 'clear', 'regularDark', 'clearDark']) {
+    for (final k in ['clear', 'clearDark']) {
       final set = file[k]! as Map<String, Object?>;
       set['smallToneKnots'] = GlassVariantConstants.identityToneKnots;
       set['smallSizeLo'] = 0;
@@ -235,12 +253,24 @@ void main() {
     expect(GlassConstants.fromJson(c.toJson()), c);
   });
 
-  test('small-shape tone keys default off, read, override and round-trip', () {
-    // Task g13: off by default — identity knots and a closed size window.
+  test('small-shape tone keys: on for regular sets, off for clear', () {
+    // Task g13: regular/regularDark ship the small-shape tone curve (full
+    // weight at half shorter side <= 32 pt, off above 34 pt); clear and
+    // clearDark keep it off — identity knots and a closed size window.
+    expect(
+      GlassConstants.standard.regular.smallToneKnots,
+      isNot(GlassVariantConstants.identityToneKnots),
+    );
+    expect(GlassConstants.standard.regular.smallSizeLo, 32);
+    expect(GlassConstants.standard.regular.smallSizeHi, 34);
+    expect(
+      GlassConstants.standard.regularDark.smallToneKnots,
+      isNot(GlassVariantConstants.identityToneKnots),
+    );
+    expect(GlassConstants.standard.regularDark.smallSizeLo, 32);
+    expect(GlassConstants.standard.regularDark.smallSizeHi, 34);
     for (final v in [
-      GlassConstants.standard.regular,
       GlassConstants.standard.clear,
-      GlassConstants.standard.regularDark,
       GlassConstants.standard.clearDark,
     ]) {
       expect(v.smallToneKnots, GlassVariantConstants.identityToneKnots);

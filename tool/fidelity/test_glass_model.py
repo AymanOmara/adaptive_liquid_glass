@@ -9,8 +9,9 @@ from compare import load, region_for, score
 from glass_model import render, render_window, resolve_constants
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-# Flutter captures of the shipped build with no -constants (Task 17b final run).
-BASE = ROOT / "build/fidelity/final"
+# Flutter captures of the shipped g13 standard (Task g13 colour refit,
+# passed at launch via CONSTANTS; SwiftUI refs copied from build/fidelity/final).
+BASE = ROOT / "build/fidelity/g13-2"
 SPEC = json.loads((ROOT / "tool/scenes/scenes.json").read_text())
 STANDARD = json.loads((ROOT / "tool/fidelity/standard_constants.json").read_text())
 
@@ -18,11 +19,11 @@ PARITY_SCENES = [s["id"] for s in SPEC["scenes"]]  # all 75
 
 
 # Skips (all 75 cases, visibly in `pytest -rs`) when the captures are absent;
-# they are not committed. Recreate them with:
-#   RENDERERS=flutter tool/fidelity/capture.sh build/fidelity/final
+# they are not committed. Recreate them with the shipped standard:
+#   RENDERERS=flutter tool/fidelity/capture.sh build/fidelity/g13-2
 PARITY_SKIP = ("75-scene parity needs Flutter captures of the shipped build in "
-               "build/fidelity/final; run `RENDERERS=flutter tool/fidelity/capture.sh "
-               "build/fidelity/final` (see tool/fidelity/README.md)")
+               "build/fidelity/g13-2; run `RENDERERS=flutter tool/fidelity/capture.sh "
+               "build/fidelity/g13-2` (see tool/fidelity/README.md)")
 
 
 @pytest.mark.skipif(not BASE.exists(), reason=PARITY_SKIP)
@@ -283,19 +284,25 @@ def _with_small(**over):
     return c
 
 
-def test_small_tone_curve_is_off_by_default():
-    """Defaults leave render_window bit-identical: identity knots are a
-    no-op even with the size window open, and smallSizeHi <= 0 guards the
-    stage off entirely."""
+def test_small_tone_curve_neutral_forms_are_no_ops():
+    """The neutral forms leave render_window bit-identical: identity knots
+    are a no-op even with the size window open, and smallSizeHi <= 0 guards
+    the stage off entirely. Since the g13 refit the curve ships ON for
+    regular/regularDark (clear/clearDark stay off), the reference here is
+    STANDARD with the keys explicitly reset to the defaults."""
     bg = np.random.default_rng(7).random((400, 400, 3))
-    sc = _small_scene(200, 56)  # half shorter side 28 pt
-    a, _ = render_window(bg, sc, STANDARD)
+    sc = _small_scene(200, 56, variant="regular")  # half shorter side 28 pt
+    neutral = _with_small(smallToneKnots=list(IDENTITY), smallSizeLo=0.0, smallSizeHi=0.0)
+    a, _ = render_window(bg, sc, neutral)
     b, _ = render_window(bg, sc, _with_small(smallToneKnots=list(IDENTITY),
                                              smallSizeLo=30.0, smallSizeHi=34.0))
     assert np.array_equal(a, b)
     c, _ = render_window(bg, sc, _with_small(smallToneKnots=list(SMALL_KNOTS),
                                              smallSizeLo=30.0, smallSizeHi=0.0))
     assert np.array_equal(a, c)
+    # And the shipped curve really is on for the regular sets (g13).
+    d, _ = render_window(bg, sc, STANDARD)
+    assert not np.array_equal(a, d)
 
 
 def test_small_tone_curve_hits_small_shapes_only():
