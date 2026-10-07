@@ -317,11 +317,14 @@ void main() {
     await t.pumpWidget(plainHost(_Harness(picks, items: five)));
     expect(t.takeException(), isNull);
     expect(t.getSize(find.byType(GlassTabBar)).width, lessThanOrEqualTo(402));
-    // (402 - 2 × 4 inset - 7.55 pill) / 5 tabs, not the 86.15 that would
+    // (402 - 2 × 4 inset - 7.98 pill) / 5 tabs, not the 86.0 that would
     // overflow.
     expect(
       t.getCenter(find.text('E')).dx - t.getCenter(find.text('D')).dx,
-      moreOrLessEquals(77.29, epsilon: 0.01),
+      moreOrLessEquals(
+        (402 - 2 * TabBarMetrics.inset - TabBarMetrics.pillExtra) / 5,
+        epsilon: 0.01,
+      ),
     );
     await t.tap(find.text('E'));
     await t.pumpAndSettle();
@@ -334,7 +337,58 @@ void main() {
     await t.pumpWidget(plainHost(_Harness(_picks())));
     expect(
       t.getSize(find.byType(GlassTabBar)).width,
-      moreOrLessEquals(3 * 86.15 + 7.55 + 8, epsilon: 0.01),
+      moreOrLessEquals(
+        3 * 86.0 + TabBarMetrics.pillExtra + 2 * TabBarMetrics.inset,
+        epsilon: 0.01,
+      ),
+    );
+  }, variant: ios);
+
+  testWidgets('a tab label box is a whole number of points wide', (t) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    for (final label in ['History', 'Snippets', 'Settings']) {
+      final box = find
+          .ancestor(
+            of: find.text(label).first,
+            matching: find.byType(IntrinsicWidth),
+          )
+          .first;
+      final width = t.getSize(box).width;
+      expect(width, width.roundToDouble());
+      expect(
+        width,
+        greaterThanOrEqualTo(t.getSize(find.text(label).first).width),
+      );
+    }
+  }, variant: ios);
+
+  testWidgets('a tab icon sits iconDrop below the top of its slot', (t) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    // The OverflowBox's rect is its parent's (the slot); the child is
+    // top-aligned inside it.
+    final slot = find
+        .ancestor(
+          of: find.byType(Icon).first,
+          matching: find.byType(OverflowBox),
+        )
+        .first;
+    expect(
+      t.getTopLeft(find.byType(Icon).first).dy - t.getTopLeft(slot).dy,
+      moreOrLessEquals(TabBarMetrics.iconDrop, epsilon: 0.001),
+    );
+  }, variant: ios);
+
+  testWidgets('the pill is pillExtra wider than the tab spacing', (t) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    final pill = find.byWidgetPredicate(
+      (w) => w is DecoratedBox && w.decoration is ShapeDecoration,
+    );
+    expect(
+      t.getSize(pill).width,
+      moreOrLessEquals(86.0 + TabBarMetrics.pillExtra, epsilon: 0.01),
     );
   }, variant: ios);
 

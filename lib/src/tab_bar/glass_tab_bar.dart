@@ -82,7 +82,7 @@ class GlassTabBar extends StatefulWidget {
     this.indicatorColor,
     this.glass,
     this.mode,
-    this.itemWidth = 86.15,
+    this.itemWidth = 86.0,
     this.height = 62,
     this.enableFeedback = true,
     this.onSearch,
@@ -116,7 +116,7 @@ class GlassTabBar extends StatefulWidget {
   final GlassRenderMode? mode;
 
   /// The distance between neighbouring tabs at most (the selection pill is
-  /// 7.55 wider, as on iOS). Tabs move closer evenly when the bar would not
+  /// 7.98 wider, as on iOS). Tabs move closer evenly when the bar would not
   /// fit the width it is given.
   final double itemWidth;
 
@@ -926,22 +926,35 @@ class _GlassTabBarState extends State<GlassTabBar>
                           SizedBox(
                             height: TabBarMetrics.iconSlot,
                             child: OverflowBox(
-                              maxHeight: TabBarMetrics.iconSize,
+                              maxHeight:
+                                  TabBarMetrics.iconSize +
+                                  TabBarMetrics.iconDrop,
                               alignment: Alignment.topCenter,
-                              child: _icon(
-                                widget.items[i],
-                                i == widget.selectedIndex,
-                                c,
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                  top: TabBarMetrics.iconDrop,
+                                ),
+                                child: _icon(
+                                  widget.items[i],
+                                  i == widget.selectedIndex,
+                                  c,
+                                ),
                               ),
                             ),
                           ),
                           const SizedBox(height: TabBarMetrics.labelGap),
-                          Text(
-                            widget.items[i].label,
-                            maxLines: 1,
-                            overflow: TextOverflow.fade,
-                            softWrap: false,
-                            style: TabBarMetrics.label.copyWith(color: c),
+                          // UIKit sizes a label to whole points and sets
+                          // its text at the start, so the ink sits a little
+                          // towards the start of the tab.
+                          IntrinsicWidth(
+                            stepWidth: 1,
+                            child: Text(
+                              widget.items[i].label,
+                              maxLines: 1,
+                              overflow: TextOverflow.fade,
+                              softWrap: false,
+                              style: TabBarMetrics.label.copyWith(color: c),
+                            ),
                           ),
                         ],
                       );

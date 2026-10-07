@@ -9,13 +9,16 @@ abstract final class TabBarMetrics {
   /// The gap between the bar's edge and its tabs.
   static const double inset = 4;
 
-  /// How much wider than the tab spacing the pill is (93.7 over 86.15).
-  static const double pillExtra = 7.55;
+  /// How much wider than the tab spacing the pill is: 93.98 over 86.0
+  /// (measured from SwiftUI `TabView`, iOS 26.4: the pill's edges and the
+  /// tabs' ink centres, to a third of a point).
+  static const double pillExtra = 7.98;
 
   /// [pillExtra] when the bar fills the width beside a search tab or under
-  /// an accessory: the pill is 1.67 pt wider there (measured from SwiftUI
-  /// `TabView`, iOS 26.4, `-controls searchtab` and `accessory`).
-  static const double pillExtraFilled = 9.22;
+  /// an accessory (measured from SwiftUI `TabView`, iOS 26.4,
+  /// `-controls searchtab` and `accessory`: pill 100.7 over 90.5 and 124.0
+  /// over 114.0).
+  static const double pillExtraFilled = 10.1;
 
   /// A badge's top leading corner from its tab icon's centre, towards the
   /// end and up (measured from SwiftUI `TabView` `.badge(3)`, iOS 26.4).
@@ -93,6 +96,11 @@ abstract final class TabBarMetrics {
   /// [iconSize]: icon centre 60.8 pt and label ink top 78.7 pt below the
   /// bar's crop line, as SwiftUI's `TabView` (iOS 26.4, measured).
   static const double iconSlot = 25.2;
+
+  /// The icon sits this much below the top of its slot (measured from
+  /// SwiftUI `TabView`, iOS 26.4: tab icons' ink centres a third of a
+  /// point lower than [iconSlot] alone puts them).
+  static const double iconDrop = 1 / 3;
 
   /// The gap between a tab's icon slot and its label.
   static const double labelGap = 2;

@@ -392,7 +392,7 @@ Stack(
 )
 ```
 
-Tabs sit `itemWidth` (86.15, as on iOS) apart and move closer evenly when
+Tabs sit `itemWidth` (86.0, as on iOS) apart and move closer evenly when
 the bar would not fit, so five tabs fit a phone. Press, drag and release
 follow iOS 26's measured springs: the lens trails the finger and wobbles with
 its acceleration. The lens is drawn with the package's shader, fitted to iOS
