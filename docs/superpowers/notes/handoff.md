@@ -1,32 +1,20 @@
-# Handoff (2026-10-07, evening — work paused by the user)
+# Handoff (2026-10-08)
 
-Resume by reading this file, then TODO.md.
+All of the 2026-10-07 list is merged on `feat/borrow-lgw` (not pushed, not published):
+dev.8 metadata (dry-run clean), worktree cleanup, refactor (one class per file, colours
+as `GlassColors` constants), empty-state/button-label fixes, full-screen cover
+drag-to-dismiss + close button, tab bar round 3 (TODO item 5 Medium), fidelity group 4
+(55→58/75, `build/fidelity/g4-1`), plus GlassWheelPicker/GlassActivityIndicator/presets
+from a parallel session. analyze clean, 679 tests.
 
-## Branch map (nothing pushed, nothing published)
-- `feat/borrow-lgw` (main checkout): dev.7 history + `0257ea1` dev.8 metadata/screenshots
-  (dry-run clean, NOT published) + `47441d5` **wip(fidelity)**: an unverified edge-lens
-  experiment in `shaders/liquid_glass.frag` and `tool/fidelity/glass_model.py`. Verify or
-  revert that commit before any fidelity run (`git revert 47441d5` restores g13-2 state).
-- `feat/wt-integrate` (worktree `.claude/worktrees/integrate`): feat/borrow-lgw@0257ea1
-  + Android A2 report + the **finished refactor** (one class per file, 17 colour constants,
-  analyze clean, 626/626). → Merge into feat/borrow-lgw first.
-- `feat/comp-followups` (worktree `.claude/worktrees/comp-followups`), from wt-integrate:
-  `9fddac9` empty-state placement fix, `4d2c4f7` button label black (both done) +
-  `5fdf5a7` **wip** full-screen cover drag-to-dismiss + close button (unfinished).
-- `feat/tabbar-medium` (worktree `.claude/worktrees/tabbar-medium`), from wt-integrate:
-  `5694a69` **wip** label-flip investigation (unfinished, no fix yet).
-- `worktree-agent-a687ba16535ca1839`: the refactor source branch, already merged into
-  wt-integrate; its worktree can be removed.
-- `../alg-android-audit`, `../alg-glm-task9`: merged; keep only untracked screenshots/GLM scratch.
+## Next
+1. Fidelity item 8 (regular photo scenes): ΔE blocker looks backdrop-dependent; see
+   fidelity-status.md group-4 notes. Needs a new model term, not a refit.
+2. Tab bar: shader-mode photo scene 5.14 (was 4.77), the "Hard" list in TODO item 5.
+3. Component gap "Next (medium)" in TODO item 7, then the usability pass
+   (memory: usability-pass-after-fidelity).
+4. Optional: rename 8 files whose name ≠ class (see refactor report in git log 699c4ab..6bd738c).
+5. Publish only when the user asks.
 
-## Next steps (user's chosen list: 1,2,3,4,6,7,8 — 1–3 done)
-1. Merge `feat/wt-integrate` → `feat/borrow-lgw`, run analyze + tests.
-2. Finish `feat/comp-followups` task 3 (full-screen cover), merge.
-3. Finish `feat/tabbar-medium` (TODO item 5 Medium: label flip, accessory scene, motion frames), merge.
-4. Fidelity (user priority): TODO items 6 (clear-glass edges, group 4) and 8 (photo refits).
-   Rule: accept only runs with gains and zero losses vs build/fidelity/g13-2 (55/75).
-5. Then the usability pass (memory: usability-pass-after-fidelity).
-
-## Rules (unchanged)
-Never `dart pub publish` without the user's request (dry-run ok). No push/PR/merge to main
-without the user. Commits end with `Co-Authored-By:`. Reference sim E7A87B4A only for fidelity.
+Rules unchanged: no push/PR/merge to main or `dart pub publish` without the user;
+reference sim E7A87B4A only for fidelity; commits end with `Co-Authored-By:`.
