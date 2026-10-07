@@ -3,6 +3,7 @@ import 'package:flutter/material.dart' show Theme;
 
 import '../button/glass_control_size_scope.dart';
 import '../core/effective_glass_mode.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/ios_text.dart';
@@ -93,20 +94,17 @@ class GlassEmptyState extends StatelessWidget {
   Widget _glass(BuildContext context) => _column(
     context,
     iconColor: CupertinoDynamicColor.resolve(
-      CupertinoColors.secondaryLabel,
+      GlassColors.secondaryLabel,
       context,
     ),
     titleStyle: IOSText.style(
       EmptyStateMetrics.titleSize,
       weight: EmptyStateMetrics.titleWeight,
-      color: CupertinoDynamicColor.resolve(CupertinoColors.label, context),
+      color: CupertinoDynamicColor.resolve(GlassColors.label, context),
     ),
     descriptionStyle: IOSText.style(
       EmptyStateMetrics.descriptionSize,
-      color: CupertinoDynamicColor.resolve(
-        CupertinoColors.secondaryLabel,
-        context,
-      ),
+      color: CupertinoDynamicColor.resolve(GlassColors.secondaryLabel, context),
     ),
   );
 

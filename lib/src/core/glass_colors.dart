@@ -272,4 +272,21 @@ abstract final class GlassColors {
   /// A swipe action's fill when it sets no colour (iOS's systemGrey).
   static const CupertinoDynamicColor swipeActionDefault =
       CupertinoColors.systemGrey;
+
+  // Progress
+
+  /// A progress indicator's unfilled track (iOS's tertiarySystemFill).
+  static const CupertinoDynamicColor progressTrack =
+      CupertinoColors.tertiarySystemFill;
+
+  // Gauge
+
+  /// A gauge's unfilled track (iOS's tertiarySystemFill).
+  static const CupertinoDynamicColor gaugeTrack =
+      CupertinoColors.tertiarySystemFill;
+
+  // Toast
+
+  /// A toast's action button text (iOS's systemBlue).
+  static const CupertinoDynamicColor toastAction = CupertinoColors.systemBlue;
 }
