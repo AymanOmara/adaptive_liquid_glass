@@ -147,7 +147,7 @@ class GlassChip extends StatelessWidget {
                     color: selected
                         ? GlassColors.white
                         : CupertinoDynamicColor.resolve(
-                            CupertinoColors.secondaryLabel,
+                            GlassColors.secondaryLabel,
                             context,
                           ),
                   ),
