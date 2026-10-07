@@ -40,6 +40,7 @@ enum ControlScenes {
     case "pagecontrol": root = AnyView(PageControlReference())
     case "actionsheet": root = AnyView(ActionSheetReference())
     case "badge": root = AnyView(BadgeReference())
+    case "badgemore": root = AnyView(BadgeMoreReference())
     default: return false
     }
     window?.rootViewController = UIHostingController(rootView: root)
@@ -582,6 +583,20 @@ struct ActionSheetReference: View {
       }
       .onAppear { DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { shown = true } }
       .statusBarHidden(true)
+  }
+}
+
+/// `-controls badgemore`: an empty badge (UIKit's dot), a two-digit count
+/// and a word, for the badge's dot size and padding.
+@available(iOS 26.0, *)
+struct BadgeMoreReference: View {
+  var body: some View {
+    TabView {
+      Tab("Home", systemImage: "house") { Color.white }.badge("")
+      Tab("Inbox", systemImage: "tray") { Color.white }.badge(42)
+      Tab("Settings", systemImage: "gear") { Color.white }.badge("New")
+    }
+    .statusBarHidden(true)
   }
 }
 

@@ -1,4 +1,5 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/badge/badge_metrics.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
@@ -6,6 +7,7 @@ import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/glass_search_tab_button.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/lens_ends_clipper.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/tab_bar_fill_scope.dart';
+import 'package:adaptive_liquid_glass/src/tab_bar/tab_bar_metrics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Badge, NavigationBar;
 import 'package:flutter/services.dart';
@@ -364,6 +366,76 @@ void main() {
     );
     semantics.dispose();
   }, variant: ios);
+
+  testWidgets(
+    'badges: 20-pt count capsule, 18-pt empty circle, top leading corner '
+    'at badgeOffset',
+    (t) async {
+      shaderEnv();
+      await t.pumpWidget(
+        plainHost(
+          _Harness(
+            _picks(),
+            items: const [
+              GlassTabBarItem(
+                icon: CupertinoIcons.mail,
+                label: 'Mail',
+                badge: '3',
+              ),
+              GlassTabBarItem(
+                icon: CupertinoIcons.bell,
+                label: 'Alerts',
+                badge: '',
+              ),
+              GlassTabBarItem(
+                icon: CupertinoIcons.gear,
+                label: 'Settings',
+                badge: 'New',
+              ),
+            ],
+          ),
+        ),
+      );
+      final count = find.ancestor(
+        of: find.text('3'),
+        matching: find.byType(GlassBadge),
+      );
+      final countSize = t.getSize(count);
+      expect(BadgeMetrics.height, 20);
+      expect(countSize.height, BadgeMetrics.height);
+      expect(countSize.width, 20);
+      final text = find.ancestor(
+        of: find.text('New'),
+        matching: find.byType(GlassBadge),
+      );
+      final textSize = t.getSize(text);
+      expect(textSize.height, BadgeMetrics.height);
+      expect(textSize.width, greaterThan(20));
+      expect(find.byType(GlassBadge), findsNWidgets(2));
+      final empty = find.descendant(
+        of: find.byType(GlassTabBar),
+        matching: find.byWidgetPredicate(
+          (w) =>
+              w is SizedBox &&
+              w.width == TabBarMetrics.emptyBadge &&
+              w.height == TabBarMetrics.emptyBadge,
+        ),
+      );
+      expect(empty, findsOneWidget);
+      expect(TabBarMetrics.emptyBadge, 18);
+
+      void corner(Finder badge, Finder icon) {
+        final delta = t.getTopLeft(badge) - t.getCenter(icon);
+        expect(delta.dx, closeTo(TabBarMetrics.badgeOffset.dx, 0.01));
+        expect(delta.dy, closeTo(TabBarMetrics.badgeOffset.dy, 0.01));
+      }
+
+      corner(count, find.byIcon(CupertinoIcons.mail));
+      corner(empty, find.byIcon(CupertinoIcons.bell));
+      corner(text, find.byIcon(CupertinoIcons.gear));
+    },
+    variant: ios,
+  );
 
   testWidgets('Material: a Material 3 navigation bar, no glass lens', (
     t,

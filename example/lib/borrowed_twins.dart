@@ -12,6 +12,7 @@ Widget? borrowedTwin(String scene) => switch (scene) {
   'pagecontrol' => const _PageControl(),
   'actionsheet' => const _ActionSheet(),
   'badge' => const _Badge(),
+  'badgemore' => const _Badge(more: true),
   'tabbar' => const _TabBar(photo: false, dark: false),
   'tabbarphoto' => const _TabBar(photo: true, dark: false),
   'tabbardark' => const _TabBar(photo: false, dark: true),
@@ -230,8 +231,12 @@ class _ActionSheetState extends State<_ActionSheet> {
       const ColoredBox(color: Colors.white, child: SizedBox.expand());
 }
 
+/// `-controls badge`: Inbox with a count of 3. `badgemore`: an empty
+/// badge, 42 and "New".
 class _Badge extends StatefulWidget {
-  const _Badge();
+  const _Badge({this.more = false});
+
+  final bool more;
 
   @override
   State<_Badge> createState() => _BadgeState();
@@ -245,14 +250,22 @@ class _BadgeState extends State<_Badge> {
   Widget build(BuildContext context) => GlassScaffold(
     backgroundColor: Colors.white,
     tabBar: GlassTabBar(
-      items: const [
-        GlassTabBarItem(icon: CupertinoIcons.house_fill, label: 'Home'),
+      items: [
+        GlassTabBarItem(
+          icon: CupertinoIcons.house_fill,
+          label: 'Home',
+          badge: widget.more ? '' : null,
+        ),
         GlassTabBarItem(
           icon: CupertinoIcons.tray_fill,
           label: 'Inbox',
-          badge: '3',
+          badge: widget.more ? '42' : '3',
         ),
-        GlassTabBarItem(icon: CupertinoIcons.gear, label: 'Settings'),
+        GlassTabBarItem(
+          icon: CupertinoIcons.gear,
+          label: 'Settings',
+          badge: widget.more ? 'New' : null,
+        ),
       ],
       selectedIndex: _tab,
       onSelected: (i) => setState(() => _tab = i),

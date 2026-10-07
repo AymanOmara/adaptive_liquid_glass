@@ -20,6 +20,7 @@ import '../core/glass.dart';
 import '../core/glass_colors.dart';
 import '../core/glass_environment.dart';
 import '../core/glass_render_mode.dart';
+import '../core/glass_system_colors.dart';
 import '../core/render_mode_resolver.dart';
 import '../core/theme.dart';
 import '../foreground/glass_foreground.dart';
@@ -935,29 +936,33 @@ class _GlassTabBarState extends State<GlassTabBar>
     );
     final badge = item.badge;
     if (badge == null) return icon;
-    final dot = badge.isEmpty;
     return Stack(
       clipBehavior: Clip.none,
       children: [
         icon,
-        if (dot)
-          PositionedDirectional(
-            start: TabBarMetrics.iconSize * 0.7,
-            top: -1,
-            child: GlassBadge(label: badge, mode: GlassRenderMode.shader),
-          )
-        else
-          // Centred at badgeOffset from the icon's centre.
-          PositionedDirectional(
-            start: TabBarMetrics.iconSize / 2 + TabBarMetrics.badgeOffset.dx,
-            top: TabBarMetrics.iconSize / 2 + TabBarMetrics.badgeOffset.dy,
-            child: FractionalTranslation(
-              translation: Offset(_rtl ? 0.5 : -0.5, -0.5),
+        // Top leading corner at badgeOffset from the icon's centre: a
+        // longer count grows towards the end, as on iOS.
+        PositionedDirectional(
+          start: TabBarMetrics.iconSize / 2 + TabBarMetrics.badgeOffset.dx,
+          top: TabBarMetrics.iconSize / 2 + TabBarMetrics.badgeOffset.dy,
+          child: badge.isEmpty
+              // iOS draws an empty badge as a plain circle.
+              ? SizedBox.square(
+                  dimension: TabBarMetrics.emptyBadge,
+                  child: DecoratedBox(
+                    decoration: ShapeDecoration(
+                      shape: const CircleBorder(),
+                      color: CupertinoDynamicColor.resolve(
+                        GlassSystemColors.red,
+                        context,
+                      ),
+                    ),
+                  ),
+                )
               // Any glass mode draws the iOS badge; this bar is never
               // Material.
-              child: GlassBadge(label: badge, mode: GlassRenderMode.shader),
-            ),
-          ),
+              : GlassBadge(label: badge, mode: GlassRenderMode.shader),
+        ),
       ],
     );
   }

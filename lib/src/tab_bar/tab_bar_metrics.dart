@@ -17,9 +17,13 @@ abstract final class TabBarMetrics {
   /// `TabView`, iOS 26.4, `-controls searchtab` and `accessory`).
   static const double pillExtraFilled = 9.22;
 
-  /// A count badge's centre from its tab icon's centre, towards the end
-  /// and up (measured from SwiftUI `TabView` `.badge(3)`, iOS 26.4).
-  static const Offset badgeOffset = Offset(22, -7.3);
+  /// A badge's top leading corner from its tab icon's centre, towards the
+  /// end and up (measured from SwiftUI `TabView` `.badge(3)`, iOS 26.4).
+  static const Offset badgeOffset = Offset(12.2, -18.1);
+
+  /// An empty badge's diameter: iOS draws `.badge("")` as an 18-pt circle,
+  /// top-aligned with the count badges (measured, iOS 26.4).
+  static const double emptyBadge = 18;
 
   /// The held lens over the pill: 114.3 by 74 against 93.7 by 54.
   static const double lensGrowX = 20.6;
