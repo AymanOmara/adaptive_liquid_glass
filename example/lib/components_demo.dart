@@ -48,6 +48,7 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
   bool _advanced = false;
   double _count = 3;
   DateTime _date = DateTime(2026, 10, 6);
+  Color _accent = const Color(0xFF007AFF);
   String? _emailError;
   final _rows = ['Copied Image', 'Meeting notes', 'Shopping list'];
   int _page = 0;
@@ -386,6 +387,12 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                           onChanged: (d) => setState(() => _date = d),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 12),
+                    GlassColorPicker(
+                      label: const Text('Accent'),
+                      value: _accent,
+                      onChanged: (c) => setState(() => _accent = c),
                     ),
                   ],
                 ),

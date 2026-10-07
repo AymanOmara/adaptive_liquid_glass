@@ -1,3 +1,10 @@
+## Unreleased
+
+* `GlassColorPicker`: iOS 26's `ColorPicker` row (label and swatch) opening
+  a glass sheet with a preset grid, a spectrum square and hue bar, an
+  opacity slider and a hex field; a Material 3 list tile and bottom sheet
+  on Android. Geometry estimated, not yet measured.
+
 ## 0.1.0-dev.7
 
 * New components (Material 3 counterparts on Android):

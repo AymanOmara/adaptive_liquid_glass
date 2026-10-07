@@ -189,4 +189,21 @@ abstract final class GlassColors {
   /// The tab bar's shadow in shader mode, at full strength (BarShadow
   /// scales it by TabBarMetrics.shadowOpacity).
   static const Color tabBarShadow = Color(0xFF000000);
+
+  // ColorPicker (estimated, not measured)
+
+  /// The thin ring around the row's swatch.
+  static const Color colorPickerRing = Color(0x33000000);
+
+  /// The ring around the selected grid swatch.
+  static const Color colorPickerSelection = white;
+
+  /// The ring around the spectrum and hue bar thumbs.
+  static const Color colorPickerThumbRing = white;
+
+  /// The checkerboard's light cell under a translucent swatch.
+  static const Color colorPickerCheckerLight = white;
+
+  /// The checkerboard's dark cell under a translucent swatch.
+  static const Color colorPickerCheckerDark = Color(0xFFCCCCCC);
 }
