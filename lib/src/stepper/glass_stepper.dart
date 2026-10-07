@@ -117,7 +117,7 @@ class _GlassStepperState extends State<GlassStepper> {
   Widget _half(BuildContext context, int direction) {
     final enabled = direction < 0 ? _canDown : _canUp;
     final colour = CupertinoDynamicColor.resolve(
-      enabled ? CupertinoColors.label : CupertinoColors.tertiaryLabel,
+      enabled ? GlassColors.label : GlassColors.tertiaryLabel,
       context,
     );
     return Expanded(

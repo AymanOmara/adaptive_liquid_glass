@@ -179,7 +179,7 @@ class _GlassSegmentedControlState<T> extends State<GlassSegmentedControl<T>>
       GlassColors.segmentThumb,
       context,
     );
-    final label = CupertinoDynamicColor.resolve(CupertinoColors.label, context);
+    final label = CupertinoDynamicColor.resolve(GlassColors.label, context);
     return Listener(
       onPointerDown: _enabled ? _down : null,
       onPointerMove: _enabled ? _move : null,
