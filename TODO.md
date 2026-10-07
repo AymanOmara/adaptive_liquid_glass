@@ -10,11 +10,20 @@
   Bar-region mean |diff| native/shader: white 1.24/1.35, photo 1.93/5.14,
   dark 1.23/1.60, dark photo 2.27/3.95, badge 1.65/1.77, searchtab 1.97/2.33,
   accessory 4.48/4.73
-  Open: label offsets beside the search tab (~1 pt, UIKit pixel rounding)
-  Medium:
-  - unselected labels sometimes flip to white in native mode over the photo
-  - accessory scene (4.48 native / 4.73 shader)
-  - frame-by-frame comparison of press and drag motion
+  [done 2026-10-07] medium round 3: g13 refit had greyed the shader bar
+  (white 4.32) - bar keeps its fitted tone again; labels no longer flip
+  over the photo (first sample starts from the shown appearance); accessory
+  in the bar's material and label colour (4.48/6.55 -> 2.04/2.44); press,
+  tap and drag measured frame by frame vs SwiftUI TabView
+  (tool/fidelity/record_tabbar_motion.sh + tabbar_motion.py): growX 7.0 on
+  its own spring, no growth on a quick tap, travel 0.355/0.9, lens pops
+  and relifts on arrival, growLean 0.0067
+  Bar-region mean |diff| native/shader: white 1.24/1.35, photo 1.93/5.14,
+  dark 1.23/1.60, dark photo 2.27/3.95, badge 1.65/1.77, searchtab 1.97/2.06,
+  accessory 2.04/2.44
+  Open: label offsets beside the search tab (~1 pt, UIKit pixel rounding);
+  tap lens wider than iOS's, press lens peaks lower; drag lag unresolved
+  (debug-build stalls)
   Hard:
   - selected blue shifting with the colours behind it, as native's does
   - retune the shader-mode glass over photos (5.14 light, 3.95 dark)

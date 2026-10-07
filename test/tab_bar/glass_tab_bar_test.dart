@@ -996,4 +996,83 @@ void main() {
       contains(circle),
     );
   }, variant: ios);
+
+  group('motion (SwiftUI TabView, iOS 26.4)', () {
+    /// The bar's glass, which grows around a held lens.
+    double barWidth(WidgetTester t) => t
+        .getSize(
+          find
+              .descendant(
+                of: find.byType(GlassTabBar),
+                matching: find.byType(LiquidGlass),
+              )
+              .first,
+        )
+        .width;
+
+    testWidgets('a quick tap leaves the bar its size', (t) async {
+      shaderEnv();
+      await t.pumpWidget(plainHost(_Harness(_picks())));
+      final rest = barWidth(t);
+      final g = await t.startGesture(t.getCenter(find.text('Settings')));
+      await g.up();
+      var widest = rest;
+      for (var i = 0; i < 30; i++) {
+        await t.pump(const Duration(milliseconds: 16));
+        widest = barWidth(t) > widest ? barWidth(t) : widest;
+      }
+      expect(widest - rest, lessThan(1));
+      await t.pumpAndSettle();
+    }, variant: ios);
+
+    testWidgets('a held press grows the bar by growX a side until the lens '
+        'settles', (t) async {
+      shaderEnv();
+      await t.pumpWidget(plainHost(_Harness(_picks())));
+      final rest = barWidth(t);
+      final g = await t.startGesture(t.getCenter(find.text('History')));
+      for (var i = 0; i < 60; i++) {
+        await t.pump(const Duration(milliseconds: 16));
+      }
+      expect(
+        barWidth(t) - rest,
+        moreOrLessEquals(2 * TabBarMetrics.growX, epsilon: 0.5),
+      );
+      await g.up();
+      await t.pumpAndSettle();
+      expect(barWidth(t), moreOrLessEquals(rest, epsilon: 0.01));
+    }, variant: ios);
+
+    testWidgets('a quick tap on another tab never flashes its tint', (t) async {
+      shaderEnv();
+      await t.pumpWidget(plainHost(_Harness(_picks())));
+      final g = await t.startGesture(t.getCenter(find.text('Settings')));
+      await g.up();
+      await t.pump();
+      // The lens is on its way; the tab under it is not tinted yet.
+      expect(_labelColor(t, 'Settings'), isNot(_blue));
+      await t.pumpAndSettle();
+      expect(_labelColor(t, 'Settings'), _blue);
+    }, variant: ios);
+
+    testWidgets('a held lens sent to another tab pops, settles on arrival '
+        'and lifts again', (t) async {
+      shaderEnv();
+      await t.pumpWidget(plainHost(_Harness(_picks())));
+      final g = await t.startGesture(t.getCenter(find.text('Settings')));
+      final heights = <double>[];
+      for (var i = 0; i < 60; i++) {
+        await t.pump(const Duration(milliseconds: 16));
+        heights.add(t.getSize(_lens).height);
+      }
+      final full = heights.last;
+      // Popped up within ~7 frames (iOS: full at frame 6).
+      expect(heights[6], greaterThan(full - 4));
+      // Down towards the pill after it arrives, then up again.
+      final dip = heights.sublist(7, 40).reduce((a, b) => a < b ? a : b);
+      expect(dip, lessThan(full - 10));
+      await g.up();
+      await t.pumpAndSettle();
+    }, variant: ios);
+  });
 }

@@ -42,14 +42,17 @@ abstract final class TabBarMetrics {
   static const double lensReach = 7.1;
 
   /// While held the bar grows this much on each side, plus [growLean] of
-  /// the lens's offset from the centre towards the lens.
-  static const double growX = 9.15;
+  /// the lens's offset from the centre towards the lens (SwiftUI `TabView`,
+  /// iOS 26.4, `tool/fidelity/tabbar_motion.py`: 7.0 held, peaking at 7.7;
+  /// Kept's wider bar grew 9.15).
+  static const double growX = 7.0;
 
-  /// See [growX].
+  /// See [growX] (1.7 on SwiftUI's `TabView`).
   static const double growY = 1.65;
 
-  /// See [growX].
-  static const double growLean = 0.0237;
+  /// See [growX]. SwiftUI's `TabView` (iOS 26.4) shifts both bar edges
+  /// about 1.15 pt as the dragged lens crosses 172 pt (Kept leaned 0.0237).
+  static const double growLean = 0.0067;
 
   /// Tabs under the lens are magnified about their own centres (Kept).
   static const double magnifyX = 1.21;
@@ -113,6 +116,29 @@ abstract final class TabBarMetrics {
     letterSpacing: 0,
   );
 
+  /// The bar growing by [growX] when touched and back once the lens has
+  /// settled (SwiftUI `TabView`, iOS 26.4: half grown 3.5 frames after the
+  /// touch, peak 7.7 of 7.0 at frame 12; shrinking over 8 frames with a
+  /// 0.7-pt undershoot). A quick tap does not grow the bar.
+  static final SpringDescription grow = swiftUISpring(
+    response: 0.32,
+    dampingFraction: 0.6,
+  );
+
+  /// The lens popping up when a press sends it to another tab: SwiftUI's
+  /// `TabView` (iOS 26.4) has it at full height 6 frames after the touch,
+  /// a little over (7.3 pt above the bar against 6.0 held) at frame 8.
+  static final SpringDescription pop = swiftUISpring(
+    response: 0.25,
+    dampingFraction: 0.7,
+  );
+
+  /// After the popped lens arrives at a tab that is still held, iOS 26.4
+  /// lets it settle into the pill and lifts it again (SwiftUI `TabView`:
+  /// gone 2–4 frames after arriving, growing again 6 frames later, full
+  /// 12 frames after that with [press]).
+  static const Duration relift = Duration(milliseconds: 100);
+
   /// Pill to lens.
   static final SpringDescription press = swiftUISpring(
     response: 0.381,
@@ -131,11 +157,12 @@ abstract final class TabBarMetrics {
     dampingFraction: 1.0,
   );
 
-  /// The lens travelling from the selection to a pressed or tapped tab:
-  /// History to Settings arrives in ~11 frames on iOS 26.4 (Kept).
+  /// The lens travelling from the selection to a pressed or tapped tab
+  /// (SwiftUI `TabView`, iOS 26.4: Home to Music and Home to Settings fit
+  /// response 0.36 / 0.35, damping 0.88 / 0.97, within 0.3 pt a frame).
   static final SpringDescription travel = swiftUISpring(
-    response: 0.22,
-    dampingFraction: 0.85,
+    response: 0.355,
+    dampingFraction: 0.9,
   );
 
   /// The pill moving to a newly selected tab.
