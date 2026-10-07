@@ -33,7 +33,7 @@ class SwipeActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     // SwiftUI draws the capsules in their tint, opaque.
     final tint = CupertinoDynamicColor.resolve(
-      action.color ?? CupertinoColors.systemGrey,
+      action.color ?? GlassColors.swipeActionDefault,
       context,
     );
     final capsule = DecoratedBox(
@@ -86,7 +86,7 @@ class SwipeActionButton extends StatelessWidget {
                     softWrap: false,
                     style: SwipeMetrics.label.copyWith(
                       color: CupertinoDynamicColor.resolve(
-                        CupertinoColors.secondaryLabel,
+                        GlassColors.secondaryLabel,
                         context,
                       ),
                     ),

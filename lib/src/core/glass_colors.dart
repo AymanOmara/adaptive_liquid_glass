@@ -160,6 +160,16 @@ abstract final class GlassColors {
         darkColor: Color(0xFF38383A),
       );
 
+  /// A list section's opaque cell when the glass is off (iOS's
+  /// secondarySystemGroupedBackground).
+  static const CupertinoDynamicColor listSectionBackground =
+      CupertinoColors.secondarySystemGroupedBackground;
+
+  /// CupertinoTheme's default primary colour. A list row's icon uses
+  /// [listIcon] while the theme keeps this default.
+  static const CupertinoDynamicColor listDefaultAccent =
+      CupertinoColors.activeBlue;
+
   // Tab bar (measured from SwiftUI TabView, iOS 26.4, over white / black)
 
   /// The selected tab's icon and label (reads 0,126,245 on the white bar
@@ -189,4 +199,94 @@ abstract final class GlassColors {
   /// The tab bar's shadow in shader mode, at full strength (BarShadow
   /// scales it by TabBarMetrics.shadowOpacity).
   static const Color tabBarShadow = Color(0xFF000000);
+
+  // System colours (iOS 26; public as GlassSystemColors)
+
+  /// iOS 26's red: destructive actions, badges (measured light; dark from
+  /// Apple's iOS 26 palette).
+  static const CupertinoDynamicColor systemRed =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFFFF383C),
+        darkColor: Color(0xFFFF4245),
+      );
+
+  /// iOS 26's blue: the default accent (measured light and dark).
+  static const CupertinoDynamicColor systemBlue =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFF0088FF),
+        darkColor: Color(0xFF0091FF),
+      );
+
+  /// iOS 26's orange (measured light; dark from Apple's palette).
+  static const CupertinoDynamicColor systemOrange =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFFFF8D28),
+        darkColor: Color(0xFFFF9230),
+      );
+
+  /// iOS 26's green: a toggle that is on (measured light; dark from
+  /// Apple's palette).
+  static const CupertinoDynamicColor systemGreen =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFF34C759),
+        darkColor: Color(0xFF30D158),
+      );
+
+  // Text (iOS's semantic label colours, shared by components)
+
+  /// Primary text: titles, values, glyphs.
+  static const CupertinoDynamicColor label = CupertinoColors.label;
+
+  /// Secondary text: subtitles, footers, placeholders' icons.
+  static const CupertinoDynamicColor secondaryLabel =
+      CupertinoColors.secondaryLabel;
+
+  /// Tertiary text: disabled content, placeholders.
+  static const CupertinoDynamicColor tertiaryLabel =
+      CupertinoColors.tertiaryLabel;
+
+  // Sheet
+
+  /// A sheet's opaque surface when the glass is off (iOS's
+  /// systemBackground).
+  static const CupertinoDynamicColor sheetBackground =
+      CupertinoColors.systemBackground;
+
+  // Full-screen cover
+
+  /// A full-screen cover's default page colour (iOS's systemBackground).
+  static const CupertinoDynamicColor fullScreenCoverBackground =
+      CupertinoColors.systemBackground;
+
+  // Text field
+
+  /// A text field's error message (iOS's systemRed).
+  static const CupertinoDynamicColor textFieldError = CupertinoColors.systemRed;
+
+  // Swipe actions
+
+  /// The platter revealed behind a swiped row (SwiftUI: #E5E5EA in light
+  /// mode, iOS's systemGrey5).
+  static const CupertinoDynamicColor swipePlatter = CupertinoColors.systemGrey5;
+
+  /// A swipe action's fill when it sets no colour (iOS's systemGrey).
+  static const CupertinoDynamicColor swipeActionDefault =
+      CupertinoColors.systemGrey;
+
+  // Progress
+
+  /// A progress indicator's unfilled track (iOS's tertiarySystemFill).
+  static const CupertinoDynamicColor progressTrack =
+      CupertinoColors.tertiarySystemFill;
+
+  // Gauge
+
+  /// A gauge's unfilled track (iOS's tertiarySystemFill).
+  static const CupertinoDynamicColor gaugeTrack =
+      CupertinoColors.tertiarySystemFill;
+
+  // Toast
+
+  /// A toast's action button text (iOS's systemBlue).
+  static const CupertinoDynamicColor toastAction = CupertinoColors.systemBlue;
 }

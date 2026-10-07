@@ -1,6 +1,8 @@
 import 'package:adaptive_liquid_glass/src/core/glass_system_colors.dart';
+import 'package:adaptive_liquid_glass/src/gauge/gauge_arc_painter.dart';
+import 'package:adaptive_liquid_glass/src/gauge/gauge_linear_painter.dart';
 import 'package:adaptive_liquid_glass/src/gauge/gauge_metrics.dart';
-import 'package:adaptive_liquid_glass/src/gauge/gauge_painter.dart';
+import 'package:adaptive_liquid_glass/src/gauge/gauge_ring_painter.dart';
 import 'package:adaptive_liquid_glass/src/gauge/glass_gauge.dart';
 import 'package:adaptive_liquid_glass/src/gauge/glass_gauge_style.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';

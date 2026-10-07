@@ -317,10 +317,7 @@ class _GlassDisclosureGroupState extends State<GlassDisclosureGroup>
   /// colour when customized, or a dim grey while disabled.
   Color _leadingColor(BuildContext context) {
     if (!widget.enabled) {
-      return CupertinoDynamicColor.resolve(
-        CupertinoColors.tertiaryLabel,
-        context,
-      );
+      return CupertinoDynamicColor.resolve(GlassColors.tertiaryLabel, context);
     }
     final theme = CupertinoTheme.of(context);
     // Under a MaterialApp the Cupertino theme is derived from the
@@ -332,7 +329,7 @@ class _GlassDisclosureGroupState extends State<GlassDisclosureGroup>
     // CupertinoTheme.of resolves dynamic colours, so compare against the
     // resolved default blue, not the activeBlue constant itself.
     final defaultBlue = CupertinoDynamicColor.resolve(
-      CupertinoColors.activeBlue,
+      GlassColors.listDefaultAccent,
       context,
     );
     if (primary == null || primary == defaultBlue) {
@@ -343,13 +340,13 @@ class _GlassDisclosureGroupState extends State<GlassDisclosureGroup>
 
   Widget _labelRow(BuildContext context) {
     final title = CupertinoDynamicColor.resolve(
-      widget.enabled ? CupertinoColors.label : CupertinoColors.tertiaryLabel,
+      widget.enabled ? GlassColors.label : GlassColors.tertiaryLabel,
       context,
     );
     // SwiftUI draws the disclosure chevron in the label colour, not the
     // accent (measured: 0, 0, 0 on white).
     final chevronColor = CupertinoDynamicColor.resolve(
-      widget.enabled ? CupertinoColors.label : CupertinoColors.tertiaryLabel,
+      widget.enabled ? GlassColors.label : GlassColors.tertiaryLabel,
       context,
     );
     // Collapsed the chevron points toward the end; expanded it points

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' show SearchBar;
 import '../core/cupertino_l10n.dart';
 import '../core/effective_glass_mode.dart';
 import '../core/glass.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/ios_text.dart';
@@ -116,7 +117,7 @@ class _GlassSearchFieldState extends State<GlassSearchField> {
 
   Widget _glass(BuildContext context, String placeholder) {
     Color resolve(Color c) => CupertinoDynamicColor.resolve(c, context);
-    final secondary = resolve(CupertinoColors.secondaryLabel);
+    final secondary = resolve(GlassColors.secondaryLabel);
     return SizedBox(
       height: SearchMetrics.height,
       child: LiquidGlass(
@@ -147,7 +148,7 @@ class _GlassSearchFieldState extends State<GlassSearchField> {
                   ),
                   style: IOSText.style(
                     SearchMetrics.fontSize,
-                    color: resolve(CupertinoColors.label),
+                    color: resolve(GlassColors.label),
                   ),
                   padding: EdgeInsets.zero,
                   textInputAction: TextInputAction.search,
@@ -174,7 +175,7 @@ class _GlassSearchFieldState extends State<GlassSearchField> {
                           child: Icon(
                             CupertinoIcons.xmark_circle_fill,
                             size: SearchMetrics.clearSize,
-                            color: resolve(CupertinoColors.tertiaryLabel),
+                            color: resolve(GlassColors.tertiaryLabel),
                           ),
                         ),
                       ),

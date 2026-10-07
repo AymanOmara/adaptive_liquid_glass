@@ -33,7 +33,7 @@ class GlassDialogButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final destructive = action.role == GlassButtonRole.destructive;
     final colour = CupertinoDynamicColor.resolve(
-      destructive ? GlassSystemColors.red : CupertinoColors.label,
+      destructive ? GlassSystemColors.red : GlassColors.label,
       context,
     );
     return Semantics(

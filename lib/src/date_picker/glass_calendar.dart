@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show DateUtils, DefaultMaterialLocalizations, MaterialLocalizations;
 
+import '../core/glass_colors.dart';
 import '../core/glass_system_colors.dart';
 import '../core/ios_text.dart';
 import 'date_picker_metrics.dart';
@@ -55,7 +56,7 @@ class _GlassCalendarState extends State<GlassCalendar> {
         ) ??
         const DefaultMaterialLocalizations();
     Color resolve(Color c) => CupertinoDynamicColor.resolve(c, context);
-    final label = resolve(CupertinoColors.label);
+    final label = resolve(GlassColors.label);
     final blue = resolve(GlassSystemColors.blue);
     final first = l10n.firstDayOfWeekIndex;
     final daysInMonth = DateUtils.getDaysInMonth(_month.year, _month.month);
@@ -142,7 +143,7 @@ class _GlassCalendarState extends State<GlassCalendar> {
                         style: IOSText.style(
                           DatePickerMetrics.weekdayFontSize,
                           weight: FontWeight.w600,
-                          color: resolve(CupertinoColors.tertiaryLabel),
+                          color: resolve(GlassColors.tertiaryLabel),
                         ),
                       ),
                     ),
@@ -192,9 +193,9 @@ class _GlassCalendarState extends State<GlassCalendar> {
   }) {
     final enabled = _selectable(day);
     final colour = isSelected
-        ? CupertinoColors.white
+        ? GlassColors.white
         : !enabled
-        ? CupertinoDynamicColor.resolve(CupertinoColors.tertiaryLabel, context)
+        ? CupertinoDynamicColor.resolve(GlassColors.tertiaryLabel, context)
         : isToday
         ? blue
         : label;

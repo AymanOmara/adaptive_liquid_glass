@@ -4,6 +4,7 @@ import 'package:flutter/material.dart'
 
 import '../core/effective_glass_mode.dart';
 import '../core/glass.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_system_colors.dart';
@@ -211,7 +212,7 @@ class _GlassProgressIndicatorState extends State<GlassProgressIndicator>
             value: v,
             color: colour,
             track: CupertinoDynamicColor.resolve(
-              CupertinoColors.tertiarySystemFill,
+              GlassColors.progressTrack,
               context,
             ),
             stroke: ProgressMetrics.ringStroke,

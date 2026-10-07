@@ -4,10 +4,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Material, TextButton, Theme;
 import 'package:flutter/physics.dart';
 
+import '../core/glass_colors.dart';
 import '../core/ios_text.dart';
 import '../liquid_glass.dart';
 import 'toast_metrics.dart';
-import 'toast_queue.dart';
+import 'toast_request.dart';
 
 /// One toast on screen: springs in from its edge, answers a swipe and
 /// the auto-dismiss timer, then reports itself closed. Internal.
@@ -251,7 +252,7 @@ class _GlassToastViewState extends State<GlassToastView>
                             ToastMetrics.fontSize,
                             weight: FontWeight.w600,
                             color: CupertinoDynamicColor.resolve(
-                              CupertinoColors.systemBlue,
+                              GlassColors.toastAction,
                               context,
                             ),
                           ),

@@ -1,4 +1,6 @@
-import 'package:flutter/cupertino.dart' show Color, CupertinoDynamicColor;
+import 'package:flutter/cupertino.dart' show CupertinoDynamicColor;
+
+import 'glass_colors.dart';
 
 /// iOS 26's system colours, as SwiftUI draws them.
 ///
@@ -17,29 +19,14 @@ import 'package:flutter/cupertino.dart' show Color, CupertinoDynamicColor;
 /// ```
 abstract final class GlassSystemColors {
   /// iOS 26's red: destructive actions, badges.
-  static const CupertinoDynamicColor red = CupertinoDynamicColor.withBrightness(
-    color: Color(0xFFFF383C),
-    darkColor: Color(0xFFFF4245),
-  );
+  static const CupertinoDynamicColor red = GlassColors.systemRed;
 
   /// iOS 26's blue: the default accent.
-  static const CupertinoDynamicColor blue =
-      CupertinoDynamicColor.withBrightness(
-        color: Color(0xFF0088FF),
-        darkColor: Color(0xFF0091FF),
-      );
+  static const CupertinoDynamicColor blue = GlassColors.systemBlue;
 
   /// iOS 26's orange.
-  static const CupertinoDynamicColor orange =
-      CupertinoDynamicColor.withBrightness(
-        color: Color(0xFFFF8D28),
-        darkColor: Color(0xFFFF9230),
-      );
+  static const CupertinoDynamicColor orange = GlassColors.systemOrange;
 
   /// iOS 26's green: a toggle that is on.
-  static const CupertinoDynamicColor green =
-      CupertinoDynamicColor.withBrightness(
-        color: Color(0xFF34C759),
-        darkColor: Color(0xFF30D158),
-      );
+  static const CupertinoDynamicColor green = GlassColors.systemGreen;
 }

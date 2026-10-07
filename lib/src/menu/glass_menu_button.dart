@@ -8,6 +8,7 @@ import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import 'glass_menu_anchor.dart';
 import 'glass_menu_controller.dart';
+import 'glass_menu_controller_host.dart';
 import 'glass_menu_item.dart';
 
 /// An icon button that opens an iOS 26 pull-down menu: a glass panel that

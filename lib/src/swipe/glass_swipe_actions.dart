@@ -277,7 +277,7 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
     final progress = (reveal / (SwipeMetrics.gap * 4)).clamp(0.0, 1.0);
     // SwiftUI: #E5E5EA in light mode, the system's grey 5.
     final platter = CupertinoDynamicColor.resolve(
-      CupertinoColors.systemGrey5,
+      GlassColors.swipePlatter,
       context,
     );
     final row = DecoratedBox(

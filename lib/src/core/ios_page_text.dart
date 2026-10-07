@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 
+import 'glass_colors.dart';
 import 'ios_text.dart';
 
 /// [child] with iOS's body text (17 pt, the label colour) as its default
@@ -14,7 +15,7 @@ Widget iosPageText(Widget child) => Builder(
   builder: (context) => DefaultTextStyle(
     style: IOSText.style(
       17,
-      color: CupertinoDynamicColor.resolve(CupertinoColors.label, context),
+      color: CupertinoDynamicColor.resolve(GlassColors.label, context),
     ),
     child: child,
   ),

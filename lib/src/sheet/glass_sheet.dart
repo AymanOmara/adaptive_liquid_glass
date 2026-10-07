@@ -3,6 +3,7 @@ import 'dart:ui' show lerpDouble;
 import 'package:flutter/cupertino.dart';
 
 import '../core/glass.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
 import '../group/glass_group.dart';
@@ -80,7 +81,7 @@ class GlassSheet extends StatelessWidget {
                 decoration: ShapeDecoration(
                   shape: const StadiumBorder(),
                   color: CupertinoDynamicColor.resolve(
-                    CupertinoColors.tertiaryLabel,
+                    GlassColors.tertiaryLabel,
                     context,
                   ),
                 ),
@@ -119,7 +120,7 @@ class GlassSheet extends StatelessWidget {
     Widget content,
   ) {
     final surface = CupertinoDynamicColor.resolve(
-      CupertinoColors.systemBackground,
+      GlassColors.sheetBackground,
       context,
     );
     return Padding(

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show DropdownButton, DropdownMenuItem;
 
 import '../core/effective_glass_mode.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_system_colors.dart';
@@ -94,7 +95,7 @@ class GlassPicker<T> extends StatelessWidget {
   Widget _glass(BuildContext context) {
     final enabled = onChanged != null;
     final tint = CupertinoDynamicColor.resolve(
-      enabled ? color ?? GlassSystemColors.blue : CupertinoColors.tertiaryLabel,
+      enabled ? color ?? GlassSystemColors.blue : GlassColors.tertiaryLabel,
       context,
     );
     return GlassMenuAnchor(
