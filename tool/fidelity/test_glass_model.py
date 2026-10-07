@@ -416,3 +416,28 @@ def test_corner_zone_changes_rects_only():
         a = render(bg, scene, {**STANDARD, "cornerZone": 1.0}, scale=3)
         b = render(bg, scene, {**STANDARD, "cornerZone": 1.5}, scale=3)
         assert np.array_equal(a, b) == same
+
+
+def test_neck_blend_zero_outside_merges():
+    """field_blend's h (the merge-neck weight) is 0 outside merge necks: the
+    fold starts at 1e6, so a single shape never smooths, and two circles far
+    enough apart have blend 0 at both centres; close circles blend > 0 at
+    the midpoint."""
+    from glass_model import field_blend
+
+    def circle(x, y):
+        return {"rect": (x, y, 60, 60), "radius": 30, "n": 2.0, "zone": 1.0}
+
+    # Two 60x60 circles 90 px apart, k = 48: blend exactly 0 at both centres
+    # (|-30 - 60| = 90 > 48).
+    shapes = [circle(0, 0), circle(90, 0)]
+    _, b1 = field_blend(shapes, np.array(30.0), np.array(30.0), 48.0)
+    _, b2 = field_blend(shapes, np.array(120.0), np.array(30.0), 48.0)
+    assert b1 == 0.0 and b2 == 0.0
+    # One shape alone: blend 0 everywhere on a grid.
+    ys, xs = np.mgrid[0:200, 0:200]
+    _, b = field_blend([circle(0, 0)], xs + 0.5, ys + 0.5, 48.0)
+    assert not b.any()
+    # Two circles 12 px apart: blend > 0 at the midpoint.
+    _, b = field_blend([circle(0, 0), circle(72, 0)], np.array(66.0), np.array(30.0), 48.0)
+    assert b > 0.0

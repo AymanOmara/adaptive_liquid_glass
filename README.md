@@ -14,14 +14,24 @@ counterparts on Android, behind one API. App code never branches on platform.
 
 The shipped glass constants are certified against Apple's SwiftUI
 `.glassEffect` on the reference simulator (iPhone 17 Pro, iOS 26.4):
-**46/75 scenes pass** the official bars (SSIM ≥ 0.97, CIEDE2000 ΔE ≤ 2.0),
-median SSIM 0.9828 / median ΔE 1.09, min SSIM 0.9532, **0 scenes below
-SSIM 0.95** on the 75 in-set scenes (a 48-scene held-out set the fit never
-saw scores 18/48, min 0.9470). Model↔Flutter parity is 75/75. The full
-per-scene record, diagnosis and known residuals:
+
+| path | result |
+|---|---|
+| Shader (iOS < 26, or `mode: shader`) | every scene at SSIM ≥ 0.95 (minimum 0.9532); 46/75 pass the strict bars (SSIM ≥ 0.97 and ΔE ≤ 2.0); median SSIM 0.983, median ΔE 1.09 |
+| Native (iOS 26+, the default) | 75/75 at parity with SwiftUI (minimum SSIM 0.9996, maximum ΔE 0.05) |
+
+Over 75 scenes (regular, clear and tinted glass; capsules, circles and
+rounded rectangles; photo, text and gradient backgrounds; light and dark;
+merged groups): **46/75 scenes pass** the official bars (SSIM ≥ 0.97,
+CIEDE2000 ΔE ≤ 2.0), median SSIM 0.9828 / median ΔE 1.09, min SSIM 0.9532,
+**0 scenes below SSIM 0.95** on the 75 in-set scenes (a 48-scene held-out set
+the fit never saw scores 18/48, min 0.9470). Model↔Flutter parity is 75/75.
+The full per-scene record, diagnosis and known residuals:
 `docs/superpowers/notes/fidelity-status.md`.
 
-To re-run, follow `tool/fidelity/README.md`: capture both renderers with
+Press and morph motion uses SwiftUI's measured springs (press-in, release
+and `.bouncy` morph) and a size-dependent press growth. To re-run, follow
+`tool/fidelity/README.md`: capture both renderers with
 `tool/fidelity/capture.sh build/fidelity/<run>` (setup and options
 documented there), then score with
 `tool/fidelity/.venv/bin/python tool/fidelity/compare.py build/fidelity/<run>`.
@@ -32,7 +42,7 @@ documented there), then score with
 
 ```yaml
 dependencies:
-  adaptive_liquid_glass: ^0.1.0-dev.6
+  adaptive_liquid_glass: ^0.1.0-dev.7
 ```
 
 ```dart
@@ -41,7 +51,7 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 
 No setup is needed: no theme, no initialisation call, no platform checks.
 
-### Optional: preload the shaders
+### Setup (optional)
 
 Without it, the shaders load on first use: glass draws as a plain blur for a
 frame or two before switching over in place, and the scroll edge and tab lens
@@ -136,6 +146,10 @@ LiquidGlassTheme(
 )
 ```
 
+Glass and the text on it follow one brightness — the theme's (a
+`MaterialApp` with no dark theme gets light glass on a dark system; set a
+dark theme and the glass goes dark with it).
+
 On iOS 26 and later, glass is SwiftUI's own Liquid Glass: each `GlassGroup`
 hosts one `GlassEffectContainer` with a `.glassEffect` view per member in a
 platform view behind its content, so it matches a SwiftUI app pixel for pixel
@@ -146,19 +160,6 @@ one subtree, pass `mode:` to `GlassGroup` or `LiquidGlass`
 (`GlassRenderMode.auto`, `shader`, `native` or `material`); set
 `defaultMode: GlassRenderMode.shader` in the theme to opt out of native glass
 app-wide.
-
-The shader (older iOS, or `mode: shader`) loads on first use. Until it is
-ready (usually a frame or two), glass draws as a plain blur and then switches
-over in place. To skip that, optionally load the shaders before the first
-frame:
-
-```dart
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await AdaptiveLiquidGlass.initialize();
-  runApp(const MyApp());
-}
-```
 
 ### Android
 
@@ -175,19 +176,58 @@ On Android, and any platform other than iOS, `auto` renders Material 3:
 Text and icons on the surface use its matching "on" colour (`onSurface`, or
 the tint's `onPrimaryContainer`).
 
-### Accessibility
+## Which widget?
 
-- **Reduce Transparency** (iOS) turns glass into an opaque surface, as iOS
-  does (on iOS 26+ SwiftUI's glass does this itself).
-- **Increase Contrast** strengthens the rim and reduces lensing on the shader
-  path; on iOS 26+ it is whatever SwiftUI's own glass does.
-- **Reduce Motion** keeps the press glow and drops the stretch and bounce.
-- Glass is decoration: semantics come from the child, plus button semantics
-  when `onPressed` is set.
+Every component is iOS 26's own on iOS and gets a Material 3 counterpart on
+Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
+`flutter run -t lib/gallery.dart`).
+
+| Widget / function | What it is | Material 3 on Android |
+|---|---|---|
+| `LiquidGlass`, `GlassEffect.glassEffect` | Glass behind any child; SwiftUI's `.glassEffect(_:in:)` | Surface (table above) |
+| `Glass` | The material: `regular`, `clear`, `.tint()`, `.interactive()` | Variant mapping (table above) |
+| `GlassShape` | The outline: capsule, circle, `rect(r)`, `concentric()` | Same shape as a border |
+| `GlassGroup` | Neighbouring glass drawn in one pass; blends and morphs | Layout only (no merging) |
+| `LiquidGlassTheme`, `LiquidGlassThemeData` | Optional app-wide defaults (`defaultGlass`, `defaultMode`, `lightAngle`) | — |
+| `GlassRenderMode` | Force `auto`, `shader`, `native` or `material` for a subtree | — |
+| `AdaptiveLiquidGlass.initialize` | Optional: preload the shaders in `main()` | no-op |
+| `GlassBackdropSource`, `GlassForeground` | Adaptive label colour over busy content | — |
+| `GlassSystemColors` | iOS 26's red, blue, orange and green | — |
+| `GlassButton` (`+ .icon`), `GlassButtonRole`, `GlassButtonStyle`, `GlassButtonShape`, `GlassControlSize`, `GlassControlSizeScope` | SwiftUI's glass and prominent buttons, roles, sizes, shapes, loading | `FilledButton` / `IconButton` / `TextButton` |
+| `GlassBackButton` | Circular glass chevron that pops the route | `BackButton` |
+| `GlassNavigationBar`, `SliverGlassNavigationBar`, `GlassScrollEdgeStyle` | Inline and large-title nav bars, no bar background; `scrollEdgeStyle` blurs content scrolled under | `AppBar` / `SliverAppBar.large` |
+| `GlassScaffold`, `GlassBottomAccessory` | An iOS 26 screen in one widget; the Music-style mini-player slot | Same layout, Material bars |
+| `GlassToolbar`, `GlassToolbarSpacer` | The floating bottom toolbar, merged capsules | Material buttons |
+| `GlassTabBar`, `GlassTabBarItem` | iOS 26's floating tab bar, draggable lens, `onSearch` tab | `NavigationBar` |
+| `GlassToggle` | iOS 26's switch, glass lens thumb | `Switch` |
+| `GlassSlider` | Slider with a glass lens thumb, optional `divisions` | `Slider` |
+| `GlassSegmentedControl`, `GlassSegment` | Segmented control, sliding lens | `SegmentedButton` |
+| `GlassStepper` | Minus/plus capsule stepper | pair of icon buttons |
+| `GlassPicker`, `GlassPickerItem` | Menu-style picker, current choice checked | `DropdownButton` |
+| `GlassDatePicker` | Compact date picker opening a glass calendar | text button + `showDatePicker` |
+| `GlassMenuButton`, `GlassMenuItem` | Pull-down glass menu from an icon button | `MenuAnchor` |
+| `GlassMenuController` | Drives a menu from an outer gesture: slide-to-select (`glideTo`) | open/close only |
+| `GlassContextMenu` | Long-press lifts the child and opens the glass menu | popup menu |
+| `GlassPopoverAnchor`, `showGlassPopover` | SwiftUI's iPhone popover: a glass bubble over its anchor | Material surface bubble |
+| `showGlassAlert`, `GlassDialogAction` | iOS 26 alert: centred glass card, buttons side by side | `AlertDialog` |
+| `showGlassConfirmationDialog` | Small glass card, actions stacked; cancel taken by a tap outside | `AlertDialog` |
+| `showGlassActionSheet` | iOS 26's confirmation dialog on iPhone: stacked capsule buttons | modal bottom sheet |
+| `showGlassSheet`, `GlassSheet`, `GlassSheetDetent` | Modal sheet with detents (`medium`, `large`, `fraction`, `height`) | modal bottom sheet |
+| `showGlassToast`, `GlassToastAction`, `GlassToastHandle` | Glass capsule toast from the top, queued, swipe to dismiss | `SnackBar` |
+| `GlassTextField` (`+ .password`) | Text field in a glass capsule; password with an eye button | `TextField` |
+| `GlassSearchField` | Search capsule with magnifier and clear button | `SearchBar` |
+| `GlassListSection`, `GlassListTile` | Inset-grouped list, like Settings; rows with leading/title/value/trailing | `Card` of `ListTile`s |
+| `GlassChip` | Capsule chip with selected state and delete button | `FilterChip` / `InputChip` |
+| `GlassBadge` | Red count capsule (dot when empty) on a child's top trailing corner | `Badge` |
+| `GlassPageControl` | Page dots on a glass capsule; tap and scrub | row of Material dots |
+| `GlassProgressIndicator`, `GlassProgressStyle` | Linear bar on a glass track, or ring/spinner | `LinearProgressIndicator` / `CircularProgressIndicator` |
+| `GlassSwipeActions`, `GlassSwipeAction` | List swipe actions: tinted capsules, full swipe, haptic | iOS layout, Material colour |
 
 ## Cookbook
 
-Every recipe is in the example app's Gallery (`example/lib/gallery.dart`).
+One minimal example per component. All are in the example app's Gallery
+(`example/lib/gallery.dart`) and `example/lib/components_demo.dart`
+(`flutter run -t lib/components_demo.dart`).
 
 ### Glass button
 
@@ -197,6 +237,25 @@ const Text('Save').glassEffect(
   padding: const EdgeInsetsDirectional.symmetric(horizontal: 24, vertical: 14),
 )
 ```
+
+`GlassButton` is SwiftUI's `.buttonStyle(.glass)` and `.glassProminent`,
+with roles, control sizes, border shapes, and disabled and loading states:
+
+```dart
+GlassButton(onPressed: save, child: const Text('Save'))
+GlassButton(
+  onPressed: delete,
+  role: GlassButtonRole.destructive,
+  style: GlassButtonStyle.glassProminent,
+  child: const Text('Delete'),
+)
+GlassButton.icon(onPressed: share, icon: CupertinoIcons.share, semanticLabel: 'Share')
+GlassButton(onPressed: upload, loading: uploading, child: const Text('Upload'))
+```
+
+Sizes are measured from SwiftUI on iOS 26.4 (iOS 26 draws mini as small and
+extraLarge as large; icon-only buttons are capsules 12 pt wider than tall).
+Set a default with `GlassControlSizeScope(size: GlassControlSize.small, ...)`.
 
 ### Card with padding
 
@@ -341,33 +400,13 @@ its acceleration. The lens is drawn with the package's shader, fitted to iOS
 a band and splits colour there. So that the lens can refract the bar, the bar
 is shader glass too whenever the shader is available (pass `mode:` to force
 another path). Give a tab an `activeIcon` for its selected
-state. The selected tab takes `selectedColor` (default: the Cupertino theme's
-primary colour); the others take glass's readable colour. On Android it is a
-Material 3 `NavigationBar` in the same floating capsule. Each tab is a
-selectable button for VoiceOver and TalkBack, the order follows the
-reading direction, and with Reduce Motion the pill moves without animating.
-
-### Buttons
-
-`GlassButton` is SwiftUI's `.buttonStyle(.glass)` and `.glassProminent`,
-with roles, control sizes, border shapes, and disabled and loading states.
-Sizes are measured from SwiftUI on iOS 26.4 (iOS 26 draws mini as small and
-extraLarge as large; icon-only buttons are capsules 12 pt wider than tall):
-
-```dart
-GlassButton(onPressed: save, child: const Text('Save'))
-GlassButton(
-  onPressed: delete,
-  role: GlassButtonRole.destructive,
-  style: GlassButtonStyle.glassProminent,
-  child: const Text('Delete'),
-)
-GlassButton.icon(onPressed: share, icon: CupertinoIcons.share, semanticLabel: 'Share')
-GlassButton(onPressed: upload, loading: uploading, child: const Text('Upload'))
-```
-
-On Android it is a Material 3 `FilledButton` (`.tonal` for `glass`), an
-`IconButton` for icon-only buttons, and a `TextButton` for `cancel`.
+state. The selected tab takes `selectedColor` (default: iOS 26's tab bar
+blue, measured from SwiftUI's `TabView`); the others take glass's readable
+colour. `onSearch` adds iOS 26's search tab, a glass circle beside the bar.
+On Android it is a Material 3 `NavigationBar` in the same floating capsule.
+Each tab is a selectable button for VoiceOver and TalkBack, the order follows
+the reading direction, and with Reduce Motion the pill moves without
+animating.
 
 ### Navigation bar
 
@@ -375,7 +414,12 @@ On Android it is a Material 3 `FilledButton` (`.tonal` for `glass`), an
 // Inline title
 Scaffold(
   extendBodyBehindAppBar: true,
-  appBar: GlassNavigationBar(title: const Text('Detail'), actions: [...]),
+  appBar: GlassNavigationBar(
+    title: const Text('Inbox'),
+    scrollEdgeStyle: GlassScrollEdgeStyle.progressive, // optional
+    actions: [GlassButton.icon(
+      onPressed: share, icon: CupertinoIcons.share, semanticLabel: 'Share')],
+  ),
   body: ...,
 )
 
@@ -386,12 +430,15 @@ CustomScrollView(slivers: [
 ])
 ```
 
-No bar background, as on iOS 26: a glass back button when the route can
+No bar background, as on iOS 26: a `GlassBackButton` when the route can
 pop, the actions merged into one glass capsule, and a fade at the top once
-content is under the bar. The large title scrolls away with the content,
-the inline title fades in once it has gone, and pulling down stretches the
-large title. Metrics are measured from SwiftUI's `NavigationStack`
-(`tool/reference/`). On Android these are `AppBar` and `SliverAppBar.large`.
+content is under the bar. `GlassScrollEdgeStyle.progressive` is an opt-in
+graduated blur under the bar (strongest at the top, easing to sharp further
+down); the default `uniform` is one even blur. The large title scrolls away
+with the content, the inline title fades in once it has gone, and pulling
+down stretches the large title. Metrics are measured from SwiftUI's
+`NavigationStack` (`tool/reference/`). On Android these are `AppBar` and
+`SliverAppBar.large`.
 
 ### Screen layout
 
@@ -431,7 +478,7 @@ Neighbouring items merge into one glass capsule. A `GlassToolbarSpacer`
 starts a new capsule and pushes the groups apart, like SwiftUI's
 `ToolbarSpacer`.
 
-### Toggle, slider, segmented control
+### Toggle, slider, segmented control, stepper
 
 ```dart
 GlassToggle(value: wifi, onChanged: (v) => setState(() => wifi = v))
@@ -444,19 +491,128 @@ GlassSegmentedControl<Period>(
   selected: period,
   onChanged: (p) => setState(() => period = p),
 )
+GlassStepper(value: count, min: 0, max: 10, onChanged: (v) => setState(() => count = v))
 ```
 
 As in iOS 26, each thumb turns into a clear glass lens while it is
 pressed or dragged. The segmented control's lens slides between segments
-with a haptic on each one. All three follow the reading direction and
-Reduce Motion. On Android they are `Switch`, `Slider` and
-`SegmentedButton`.
+with a haptic on each one. All four follow the reading direction and
+Reduce Motion. On Android they are `Switch`, `Slider`, `SegmentedButton`
+and a pair of icon buttons.
 
-### Sheet, menu, search
+### Text field and search field
 
 ```dart
-showGlassSheet<void>(context: context, builder: (_) => details);
+GlassTextField(
+  placeholder: 'Email',
+  clearButton: true,
+  onChanged: (text) => setState(() => email = text),
+)
 
+const GlassTextField.password(
+  placeholder: 'Password',
+  onSubmitted: logIn,
+)
+
+GlassSearchField(onChanged: (q) => setState(() => query = q))
+```
+
+The text field is a glass capsule (a rounded rect when multi-line) with an
+optional `prefix` and `suffix`, a clear button, an `errorText` under the
+field, and a `semanticLabel` for screen readers. `.password` obscures the
+text and adds an eye button that shows and hides it. Put the search field
+in a `GlassBottomAccessory` slot or a toolbar for iOS 26's bottom search.
+On Android they are Material 3's `TextField` and `SearchBar`.
+
+### List section
+
+```dart
+GlassListSection(
+  header: const Text('General'),
+  children: [
+    GlassListTile(
+      leading: const Icon(CupertinoIcons.wifi),
+      title: const Text('Wi-Fi'),
+      trailing: GlassToggle(value: wifi, onChanged: setWifi),
+    ),
+    GlassListTile(
+      title: const Text('About'),
+      value: 'iOS 26.4',
+      chevron: true,
+      onTap: openAbout,
+    ),
+  ],
+)
+```
+
+iOS 26's inset-grouped list, measured against SwiftUI on iOS 26.4: rows on
+a rounded platter with hairline separators and optional header and footer.
+The platter is opaque by default, as iOS 26 Settings; pass
+`glass: Glass.regular` for a Liquid Glass platter over imagery. A tile's
+row highlights while pressed. On Android it is a Material 3 filled `Card`
+of `ListTile`s.
+
+### Chip and badge
+
+```dart
+GlassChip(
+  label: 'Whale watching',
+  icon: CupertinoIcons.tag,
+  selected: picked,
+  onSelected: (v) => setState(() => picked = v),
+  onDeleted: () => remove('Whale watching'),
+)
+
+GlassBadge.count(count: unread, child: const Icon(CupertinoIcons.mail))
+```
+
+The chip is a glass capsule with a selected state (tinted glass) and an
+optional delete button; without `onSelected` it is a display-only tag. The
+badge is iOS's small solid red capsule with a count (a dot when empty,
+hidden at 0) on a child's top trailing corner — iOS draws badges solid,
+not glass. Geometry estimated, not yet measured. On Android: `FilterChip`
+/ `InputChip` and `Badge`.
+
+### Page control and progress
+
+```dart
+GlassPageControl(
+  count: 3,
+  controller: pageController,
+  onPageChanged: (page) => debugPrint('page $page'),
+)
+
+GlassProgressIndicator(value: downloaded)   // 0..1, null indeterminate
+const GlassProgressIndicator.circular()     // a spinner
+```
+
+Tapping a half of the page control steps a page and dragging scrubs the
+dots, like UIKit's interactive page control. The progress indicator is a
+linear bar on a glass track, or a circular ring (iOS's activity spinner
+while indeterminate); the fill defaults to system blue. Geometry
+estimated, not yet measured. On Android: a row of Material dots, and
+Material 3 progress indicators.
+
+### Sheet
+
+```dart
+showGlassSheet<void>(
+  context: context,
+  detents: const [GlassSheetDetent.medium, GlassSheetDetent.large],
+  builder: (context) => details,
+);
+```
+
+The sheet works like SwiftUI's `presentationDetents`:
+- It follows a drag between its detents, and a drag or fling below the
+  lowest one dismisses it.
+- At a partial detent it is floating glass.
+- At `large` it runs edge to edge, opaque, with the screen's own corners.
+- `GlassSheetDetent.fraction(0.6)` and `.height(400)` make custom detents.
+
+### Menu button and controller
+
+```dart
 GlassMenuButton(
   icon: CupertinoIcons.ellipsis,
   semanticLabel: 'More',
@@ -467,41 +623,86 @@ GlassMenuButton(
         destructive: true, onSelected: delete),
   ],
 )
-
-GlassSearchField(onChanged: (q) => setState(() => query = q))
 ```
 
-- **Sheet:** floats in from the screen's edges with continuous corners.
-- **Menu:** a glass panel that springs out of its button.
-- **Search field:** a glass capsule with a localized placeholder and a
-  clear button.
-
-On Android they become a modal bottom sheet, a `MenuAnchor` and a
-`SearchBar`.
-
-### Swipe actions
+The menu opens over the button, from its top corner, as SwiftUI's `Menu`
+does; measured from SwiftUI. `GlassMenuController` drives it from an outer
+gesture — iOS's slide-to-select under a long-press:
 
 ```dart
-GlassSwipeActions(
-  key: ValueKey(item.id),
-  leading: [GlassSwipeAction(icon: CupertinoIcons.pin_fill, label: 'Pin',
-      color: CupertinoColors.systemOrange, onPressed: () => pin(item))],
-  trailing: [GlassSwipeAction(icon: CupertinoIcons.trash, label: 'Delete',
-      color: CupertinoColors.systemRed, onPressed: () => delete(item))],
-  child: ItemRow(item),
+final controller = GlassMenuController();
+
+GestureDetector(
+  onLongPressStart: (_) => controller.open(),
+  onLongPressMoveUpdate: (details) =>
+      controller.glideTo(details.globalPosition),
+  onLongPressEnd: (_) => controller.endGlide(),
+  onLongPressCancel: controller.cancelGlide,
+  child: const Text('Hold, then slide'),
+)
+
+GlassMenuButton(controller: controller, /* ... */)
+```
+
+On Android it is a Material 3 `MenuAnchor`; gliding is a no-op there, but
+opening and closing still work.
+
+### Context menu
+
+```dart
+GlassContextMenu(
+  items: [GlassMenuItem(label: 'Copy', icon: CupertinoIcons.doc_on_doc,
+      onSelected: copy)],
+  child: photo,
 )
 ```
 
-Swiping a row aside reveals tinted glass capsules with their labels
-underneath:
-- The row rubber-bands past its actions and springs open or shut.
-- A full swipe runs the outermost action, with a haptic as it passes the
-  threshold.
-- Only one row is open at a time. A scroll or a tap closes it.
-- VoiceOver and TalkBack get the actions as custom actions.
+A long-press lifts the item over the blurred page and opens the glass menu
+beside it. Assistive tech gets the items as custom actions. On Android the
+long-press opens a Material popup menu.
 
-All of these are in `example/lib/components_demo.dart`
-(`flutter run -t lib/components_demo.dart`).
+### Popover and picker
+
+```dart
+GlassPopoverAnchor(
+  popoverBuilder: (_) => const Padding(
+    padding: EdgeInsets.all(16),
+    child: Text('Liquid Glass popover'),
+  ),
+  builder: (context, open) => GlassButton.icon(
+    onPressed: open, icon: CupertinoIcons.info, semanticLabel: 'Info'),
+)
+
+GlassPicker<Period>(
+  items: const [
+    GlassPickerItem(value: Period.day, label: 'Day'),
+    GlassPickerItem(value: Period.week, label: 'Week'),
+  ],
+  selected: period,
+  onChanged: (p) => setState(() => period = p),
+)
+```
+
+- **Popover:** the glass bubble opens over its button, and the button steps
+  aside while it's open, as in SwiftUI. `showGlassPopover` anchors one to
+  any widget.
+- **Picker:** SwiftUI's menu style. It opens the glass menu with the
+  current choice checked.
+
+### Date picker
+
+```dart
+GlassDatePicker(
+  value: date,
+  firstDate: DateTime(2020),
+  lastDate: DateTime(2030),
+  onChanged: (d) => setState(() => date = d),
+)
+```
+
+The compact style: the date in a grey capsule, opening a glass calendar
+popover. Picking a day closes it. On Android, a text button opening
+Material's `showDatePicker`.
 
 ### Alert and confirmation dialog
 
@@ -535,77 +736,74 @@ buttons side by side. The confirmation dialog is a 240-pt card with its
 buttons stacked. As in iOS 26, its cancel action isn't drawn: a tap
 outside takes it. On Android they are `AlertDialog`s.
 
-### Sheet detents
+### Action sheet
 
 ```dart
-showGlassSheet<void>(
+showGlassActionSheet(
   context: context,
-  detents: const [GlassSheetDetent.medium, GlassSheetDetent.large],
-  builder: (_) => details,
+  title: 'Photo',
+  message: 'What would you like to do with it?',
+  actions: [
+    GlassDialogAction(label: 'Share', onPressed: share),
+    GlassDialogAction(
+      label: 'Delete',
+      role: GlassButtonRole.destructive,
+      onPressed: delete,
+    ),
+  ],
+  cancel: const GlassDialogAction(
+    label: 'Cancel',
+    role: GlassButtonRole.cancel,
+  ),
 );
 ```
 
-The sheet works like SwiftUI's `presentationDetents`:
-- It follows a drag between its detents, and a drag or fling below the
-  lowest one dismisses it.
-- At a partial detent it is floating glass.
-- At `large` it runs edge to edge, opaque, with the screen's own corners.
+iOS 26's confirmation dialog as SwiftUI draws it on iPhone, measured: a
+240-pt glass card with a semibold title, a secondary message and the
+actions stacked as capsule buttons. As on iOS, `cancel` is not drawn — a
+tap outside takes it. On Android it is a Material 3 modal bottom sheet
+with Cancel included.
 
-### Popover, picker, stepper, date picker
+### Toast
 
 ```dart
-GlassPopoverAnchor(
-  popoverBuilder: (_) => const Padding(
-    padding: EdgeInsets.all(16),
-    child: Text('Liquid Glass popover'),
-  ),
-  builder: (context, open) => GlassButton.icon(
-    onPressed: open, icon: CupertinoIcons.info, semanticLabel: 'Info'),
-)
+showGlassToast(
+  context,
+  message: 'Upload complete',
+  icon: CupertinoIcons.checkmark_circle,
+  action: GlassToastAction(label: 'View', onPressed: openFile),
+);
+```
 
-GlassPicker<Period>(
-  items: const [
-    GlassPickerItem(value: Period.day, label: 'Day'),
-    GlassPickerItem(value: Period.week, label: 'Week'),
-  ],
-  selected: period,
-  onChanged: (p) => setState(() => period = p),
-)
+A glass capsule slides in from the top with a spring; swipe up to dismiss,
+or wait for `duration` (4 s by default; null keeps it until dismissed).
+One toast shows at a time — later calls wait in a queue, and the returned
+`GlassToastHandle` dismisses its toast early, shown or still waiting
+(`handle.dismiss()`, `await handle.closed`). With Reduce Motion it fades
+instead of sliding, and it is announced as a live region. On Android it is a
+`SnackBar` through the nearest `ScaffoldMessenger`, otherwise a Material 3
+snackbar-styled surface at the bottom of the screen.
 
-GlassStepper(value: count, max: 10, onChanged: (v) => setState(() => count = v))
+### Swipe actions
 
-GlassDatePicker(
-  value: date,
-  firstDate: DateTime(2020),
-  lastDate: DateTime(2030),
-  onChanged: (d) => setState(() => date = d),
+```dart
+GlassSwipeActions(
+  key: ValueKey(item.id),
+  leading: [GlassSwipeAction(icon: CupertinoIcons.pin_fill, label: 'Pin',
+      color: CupertinoColors.systemOrange, onPressed: () => pin(item))],
+  trailing: [GlassSwipeAction(icon: CupertinoIcons.trash, label: 'Delete',
+      color: GlassSystemColors.red, onPressed: () => delete(item))],
+  child: ItemRow(item),
 )
 ```
 
-- **Popover:** the glass bubble opens over its button, and the button steps
-  aside while it's open, as in SwiftUI. `showGlassPopover` anchors one to
-  any widget.
-- **Picker:** SwiftUI's menu style. It opens the glass menu with the
-  current choice checked.
-- **Date picker:** the compact style. It opens a glass calendar.
-
-### Context menu and search tab
-
-```dart
-GlassContextMenu(
-  items: [GlassMenuItem(label: 'Copy', icon: CupertinoIcons.doc_on_doc,
-      onSelected: copy)],
-  child: photo,
-)
-
-GlassTabBar(items: tabs, selectedIndex: tab, onSelected: pick,
-    onSearch: openSearch)
-```
-
-- **Context menu:** a long-press lifts the item over the blurred page and
-  opens the glass menu beside it.
-- **Search tab:** `onSearch` adds iOS 26's search tab, a glass circle
-  beside the bar.
+Swiping a row aside reveals tinted glass capsules with their labels
+underneath:
+- The row rubber-bands past its actions and springs open or shut.
+- A full swipe (`allowsFullSwipe`, the default) runs the outermost action,
+  with a haptic as it passes the threshold.
+- Only one row is open at a time. A scroll or a tap closes it.
+- VoiceOver and TalkBack get the actions as custom actions.
 
 ### iOS 26 colours
 
@@ -638,9 +836,12 @@ menu. The remaining gaps:
 - The popover and menu glass tone.
 - The calendar's first weekday, which follows the region.
 
+`GlassChip`, `GlassBadge`, `GlassPageControl` and `GlassProgressIndicator`
+are geometry-estimated, not yet measured.
+
 ## Adaptive foreground over busy content
 
-By default the label colour follows the platform brightness. To follow the
+By default the label colour follows the theme's brightness. To follow the
 content actually behind the glass, wrap that content in a
 `GlassBackdropSource`; each group then samples it (a small GPU readback every
 250 ms) and `GlassForeground.labelColorOf(context)` switches between dark and
@@ -658,21 +859,28 @@ Stack(
 )
 ```
 
-## Fidelity
+## RTL and accessibility
 
-The shader is fitted against SwiftUI's own Liquid Glass, rendered on the
-reference simulator (iPhone 17 Pro, iOS 26.4), over 75 scenes (regular,
-clear and tinted glass; capsules, circles and rounded rectangles; photo,
-text and gradient backgrounds; light and dark; merged groups):
-
-| path | result |
-|---|---|
-| Shader (iOS < 26, or `mode: shader`) | every scene at SSIM ≥ 0.95 (minimum 0.9532); 46/75 pass the strict bars (SSIM ≥ 0.97 and ΔE ≤ 2.0); median SSIM 0.983, median ΔE 1.09 |
-| Native (iOS 26+, the default) | 75/75 at parity with SwiftUI (minimum SSIM 0.9996, maximum ΔE 0.05) |
-
-Press and morph motion uses SwiftUI's measured springs (press-in, release
-and `.bouncy` morph) and a size-dependent press growth. The harness lives in
-`tool/fidelity/` (see its README).
+- **RTL:** every component lays out by the reading direction — insets are
+  directional (`EdgeInsetsDirectional`), the tab bar, segmented control,
+  slider fill, list chevrons, swipe-action edges and back button all follow
+  `Directionality`. The glass light angle is not mirrored, matching iOS.
+- **Screen readers:** one semantics node per control; an explicit
+  `semanticLabel` replaces the visible text where one exists
+  (`GlassButton`, `GlassMenuButton`, `GlassMenuItem`, `GlassPicker`,
+  `GlassSearchField`, `GlassTextField`, `showGlassPopover`, and others).
+  Tabs, segments and rows are selectable buttons; swipe actions and context
+  menus appear as custom actions; toasts are live regions; tapping outside
+  a menu or picker is announced as "Dismiss".
+- **Reduce Motion:** springs are dropped — the tab bar's lens and pill, the
+  toggle thumb, the sheet, the toast (fades instead of sliding) and the
+  progress indicator's easing all move or appear without animating.
+- **Keyboard:** interactive glass takes focus and shows a focus ring;
+  `onPressed` glass and buttons answer Enter and Space.
+- **Reduce Transparency** (iOS) turns glass into an opaque surface, as iOS
+  does (on iOS 26+ SwiftUI's glass does this itself).
+- **Increase Contrast** strengthens the rim and reduces lensing on the shader
+  path; on iOS 26+ it is whatever SwiftUI's own glass does.
 
 ## Known limitations
 
@@ -689,3 +897,8 @@ and `.bouncy` morph) and a size-dependent press growth. The harness lives in
 - **Native interactive glass:** pressing native glass gets this package's
   stretch and growth, but not SwiftUI's own touch glow.
 - **Shader glow:** the shader's touch glow is brighter than SwiftUI's.
+
+## License
+
+MIT — see [LICENSE](LICENSE). The package includes code adapted from
+liquid_glass_widgets (MIT); see [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).
