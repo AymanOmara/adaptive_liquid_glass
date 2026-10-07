@@ -7,8 +7,10 @@ import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_system_colors.dart';
 import '../core/ios_text.dart';
+import 'gauge_arc_painter.dart';
+import 'gauge_linear_painter.dart';
 import 'gauge_metrics.dart';
-import 'gauge_painter.dart';
+import 'gauge_ring_painter.dart';
 import 'glass_gauge_style.dart';
 
 /// iOS 26's gauge, like SwiftUI's `Gauge`: a capsule track filled to

@@ -7,7 +7,7 @@ import 'package:flutter/physics.dart';
 import '../core/ios_text.dart';
 import '../liquid_glass.dart';
 import 'toast_metrics.dart';
-import 'toast_queue.dart';
+import 'toast_request.dart';
 
 /// One toast on screen: springs in from its edge, answers a swipe and
 /// the auto-dismiss timer, then reports itself closed. Internal.
