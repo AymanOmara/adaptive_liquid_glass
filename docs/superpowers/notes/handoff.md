@@ -1,26 +1,32 @@
-# Handoff (2026-10-07)
+# Handoff (2026-10-07, evening — work paused by the user)
 
-State of `feat/borrow-lgw` for whoever picks this up next (another account or session).
+Resume by reading this file, then TODO.md.
 
-## Where things are
-- Branch `feat/borrow-lgw` holds everything below. It is **not pushed and not merged to main**. 0.1.0-dev.7 is on pub.dev; work after it is unreleased.
-- Next work: `TODO.md` (items 5-8) and `docs/superpowers/notes/tabbar-todo.md`.
-- Brief for sub-agents/GLM: `docs/superpowers/notes/agent-brief.md` (conventions, test helpers, GLM usage).
-- Tests: `flutter analyze` clean, 626 tests pass; `tool/fidelity` pytest 200 pass.
+## Branch map (nothing pushed, nothing published)
+- `feat/borrow-lgw` (main checkout): dev.7 history + `0257ea1` dev.8 metadata/screenshots
+  (dry-run clean, NOT published) + `47441d5` **wip(fidelity)**: an unverified edge-lens
+  experiment in `shaders/liquid_glass.frag` and `tool/fidelity/glass_model.py`. Verify or
+  revert that commit before any fidelity run (`git revert 47441d5` restores g13-2 state).
+- `feat/wt-integrate` (worktree `.claude/worktrees/integrate`): feat/borrow-lgw@0257ea1
+  + Android A2 report + the **finished refactor** (one class per file, 17 colour constants,
+  analyze clean, 626/626). → Merge into feat/borrow-lgw first.
+- `feat/comp-followups` (worktree `.claude/worktrees/comp-followups`), from wt-integrate:
+  `9fddac9` empty-state placement fix, `4d2c4f7` button label black (both done) +
+  `5fdf5a7` **wip** full-screen cover drag-to-dismiss + close button (unfinished).
+- `feat/tabbar-medium` (worktree `.claude/worktrees/tabbar-medium`), from wt-integrate:
+  `5694a69` **wip** label-flip investigation (unfinished, no fix yet).
+- `worktree-agent-a687ba16535ca1839`: the refactor source branch, already merged into
+  wt-integrate; its worktree can be removed.
+- `../alg-android-audit`, `../alg-glm-task9`: merged; keep only untracked screenshots/GLM scratch.
 
-## Merged since dev.7
-- Tab bar round 2 (badge, magnifier, shadow, quick-tap lens hold, pill/label/icon placement).
-- New components: GlassDisclosureGroup, GlassEmptyState, showGlassFullScreenCover, GlassGauge.
-- Fidelity groups 1+3 colour refit: device 47/75 → 55/75 (`build/fidelity/g13-2`).
+## Next steps (user's chosen list: 1,2,3,4,6,7,8 — 1–3 done)
+1. Merge `feat/wt-integrate` → `feat/borrow-lgw`, run analyze + tests.
+2. Finish `feat/comp-followups` task 3 (full-screen cover), merge.
+3. Finish `feat/tabbar-medium` (TODO item 5 Medium: label flip, accessory scene, motion frames), merge.
+4. Fidelity (user priority): TODO items 6 (clear-glass edges, group 4) and 8 (photo refits).
+   Rule: accept only runs with gains and zero losses vs build/fidelity/g13-2 (55/75).
+5. Then the usability pass (memory: usability-pass-after-fidelity).
 
-## Tools and machine state
-- Fidelity: `tool/fidelity/` (README there). The venv `tool/fidelity/.venv` and captures in `build/` exist only in the main checkout (not in git).
-- Side by side vs SwiftUI: `tool/reference/side_by_side.sh`, `tool/reference/show_pair.sh`.
-- Simulators (iPhone 17 Pro, iOS 26.4, light): `E7A87B4A-…` fidelity reference (only for fidelity runs), `2AC3AF21-…` components, `62E521E0-…` tab bar.
-- GLM: `command opencode run -m zai-coding-plan/glm-5.3 "<prompt>"`, relative paths (the repo path has a space). Kill long fit jobs when done; a stale one once pushed the load average to ~990.
-- `.claude/worktrees/` holds old agent worktrees; all their work is merged, so they can be cleaned up.
-
-## Rules
-- Never `dart pub publish` without an explicit request from the user; dry-run is fine.
-- No push, PR or merge to main without the user.
-- Commits end with a `Co-Authored-By:` line.
+## Rules (unchanged)
+Never `dart pub publish` without the user's request (dry-run ok). No push/PR/merge to main
+without the user. Commits end with `Co-Authored-By:`. Reference sim E7A87B4A only for fidelity.
