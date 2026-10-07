@@ -30,6 +30,12 @@ Future<void> main() async {
 
 enum _Period { day, week, month }
 
+const _periods = [
+  GlassPickerItem(value: _Period.day, label: 'Day'),
+  GlassPickerItem(value: _Period.week, label: 'Week'),
+  GlassPickerItem(value: _Period.month, label: 'Month'),
+];
+
 /// The components showcase.
 class ComponentsDemo extends StatefulWidget {
   /// Creates the showcase.
@@ -478,6 +484,31 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                       GlassListTile(title: Text('Proxy'), value: 'Off'),
                       GlassListTile(title: Text('DNS'), value: 'Automatic'),
                     ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              GlassListSection(
+                header: const Text('Picker styles'),
+                children: [
+                  GlassPicker<_Period>(
+                    style: GlassPickerStyle.navigationLink,
+                    label: const Text('Period'),
+                    items: _periods,
+                    selected: _period,
+                    onChanged: (p) => setState(() => _period = p),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              GlassListSection(
+                header: const Text('Period'),
+                children: [
+                  GlassPicker<_Period>(
+                    style: GlassPickerStyle.inline,
+                    items: _periods,
+                    selected: _period,
+                    onChanged: (p) => setState(() => _period = p),
                   ),
                 ],
               ),

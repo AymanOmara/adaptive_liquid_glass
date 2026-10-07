@@ -1,3 +1,10 @@
+## Unreleased
+
+* `GlassPicker.style` (`GlassPickerStyle`): `inline` rows with a checkmark
+  for a `GlassListSection`, and `navigationLink`, a row with the current
+  choice and a chevron that pushes a page of the choices (like SwiftUI's
+  `.pickerStyle(.inline)` / `.navigationLink`). Material 3 counterparts.
+
 ## 0.1.0-dev.7
 
 * New components (Material 3 counterparts on Android):

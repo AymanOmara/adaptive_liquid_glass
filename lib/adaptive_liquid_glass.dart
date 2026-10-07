@@ -63,6 +63,7 @@ export 'src/navigation/sliver_glass_navigation_bar.dart'
 export 'src/page_control/glass_page_control.dart';
 export 'src/picker/glass_picker.dart';
 export 'src/picker/glass_picker_item.dart';
+export 'src/picker/glass_picker_style.dart';
 export 'src/popover/glass_popover_anchor.dart';
 export 'src/popover/show_glass_popover.dart';
 export 'src/progress/glass_progress_indicator.dart';
