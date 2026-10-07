@@ -46,9 +46,18 @@
     toolbar, estimated: SwiftUI's cover has neither)
   - [done] GlassButton label black like SwiftUI (was 85% black)
   Next (medium): pull to refresh (refreshable), searchable presentation,
-  GlassWheelPicker, date picker upgrades (graphical, time, wheel)
-  Later: keyboard toolbar, share link, colour picker, tabBarMinimizeBehavior,
-  sidebarAdaptable, zoom transitions, TipKit tips
+  date picker upgrades (graphical, time, wheel); GlassWheelPicker [done, 8973f94]
+  [done 2026-10-08] small wins (S) from the gap table, each in its own
+  worktree, merged on feat/borrow-lgw: GlassLink + GlassShareLink (callbacks
+  only, no url_launcher/share_plus by decision), GlassPicker.style inline /
+  navigationLink (GlassPickerStyle), GlassLabel (+ GlassLabelLayout,
+  GlassLabelStyle now public), GlassColorPicker (row + glass sheet: swatch
+  grid, HSV spectrum, hue bar, opacity, hex). All geometry estimated, not
+  measured. +49 tests.
+  Later: keyboard toolbar, tabBarMinimizeBehavior, sidebarAdaptable,
+  zoom transitions, TipKit tips
+  Measure later: GlassLabel, GlassLink/ShareLink, GlassColorPicker sheet vs
+  SwiftUI (all shipped with estimated metrics)
 
 8-fidelity groups 1+3 colour refit [done 2026-10-07]: device 47/75 -> 55/75
   (8 gains, 0 losses), min SSIM 0.9525 (build/fidelity/g13-2)
