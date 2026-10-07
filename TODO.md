@@ -19,11 +19,11 @@
   - selected blue shifting with the colours behind it, as native's does
   - retune the shader-mode glass over photos (5.14 light, 3.95 dark)
 
-6-fidelity group 4: clear glass edges (~11 scenes: clear text + photo, all shapes)
-  - deltaE already passes (0.7-2.1); SSIM fails at the edge band (0.90-0.94)
-  - measure SwiftUI's edge lens precisely (tool/fidelity/measure_lens.py), then refit
-    edge refraction + rim; try liquid_glass_widgets' curved-glass lens profile
-  - research task; baseline build/fidelity/g13-2 (55/75)
+6-fidelity group 4: clear glass edges [partly done 2026-10-07]: device 55/75 -> 58/75
+  (3 gains, 0 losses, min SSIM 0.9525), build/fidelity/g4-1
+  - shipped: postJacobianMax (clear 1.15) + clear lens/frost/rim refit
+  - rejected: WIP 47441d5 (reverted), liquid_glass_widgets lens profile
+  - remaining: clear-rect28-photo light/dark, clear capsule/rect text (0.958-0.964)
 
 7-components from docs/superpowers/notes/component-gap.md (2026-10-07)
   [done 2026-10-07] GlassDisclosureGroup, GlassEmptyState (+ .search),
@@ -40,7 +40,8 @@
 
 8-fidelity groups 1+3 colour refit [done 2026-10-07]: device 47/75 -> 55/75
   (8 gains, 0 losses), min SSIM 0.9525 (build/fidelity/g13-2)
-  Remaining failures:
+  Remaining failures (2026-10-07 refit over 46 regular keys: SSIM up, 0 gains,
+  not shipped; needs a chroma-dependent colour term, see fidelity-status.md):
   - regular rect photo-dark (deltaE ~3.4)
   - regular rect photo-light (deltaE ~2.6)
   - capsule and tinted-capsule photo scenes

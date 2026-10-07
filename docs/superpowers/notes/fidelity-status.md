@@ -417,3 +417,82 @@ Known residuals after g13: regular rect photo-dark ΔE is still > 3
 tinted-capsule-photo/gradient stay below the bars, and the clear-family
 residuals are unchanged (group 4 material). Parity: model vs the g13-2
 Flutter captures 75/75 (`test_glass_model.py` now points there).
+
+## Fidelity group 4: clear glass edges (shipped)
+
+Run: `build/fidelity/g4-1` (Flutter on the reference simulator E7A87B4A,
+shipped build, no `-constants`; SwiftUI refs copied from `g13-2`;
+regular-capsule-photo-light recaptured once after a mid-transition frame).
+**58/75 pass (was 55 in `g13-2`), median SSIM 0.9830 / ΔE 1.28, mean
+0.9809 / 1.255, min SSIM 0.9525 (unchanged), 0 below 0.95.** Three gains,
+zero losses; no regular, tinted or merge scene moved.
+
+| scene | g13-2 | g4-1 |
+|---|---|---|
+| clear-capsule-photo-dark | 0.9689 / 1.22 | 0.9733 / 1.12 \* |
+| clear-rect16-photo-light | 0.9676 / 2.07 | 0.9726 / 2.00 \* |
+| clear-rect16-photo-dark | 0.9678 / 1.84 | 0.9705 / 1.76 \* |
+| clear-rect28-photo-light | 0.9654 / 2.10 | 0.9705 / 2.04 |
+| clear-rect28-photo-dark | 0.9659 / 1.88 | 0.9689 / 1.81 |
+| clear-capsule-text-light | 0.9532 / 0.69 | 0.9633 / 0.60 |
+| clear-capsule-text-dark | 0.9541 / 0.69 | 0.9595 / 0.63 |
+| clear-rect16-text-light | 0.9656 / 0.68 | 0.9611 / 0.67 |
+| clear-rect16-text-dark | 0.9685 / 0.65 | 0.9643 / 0.66 |
+| clear-rect28-text-light | 0.9611 / 0.70 | 0.9583 / 0.68 |
+| clear-rect28-text-dark | 0.9644 / 0.67 | 0.9606 / 0.67 |
+
+Measured basis (`measure_lens.py` decode of the `measure-v1/v2` clear
+scenes against the model, `build/g4b/lensdiff-std.txt`): the displacement
+field already matches SwiftUI to 0.1-0.4 pt on rect sides and circles (1-2
+pt only in the capsule's outer 3 pt and rect corners at 1-4 pt), but the
+decoded blur does not: SwiftUI's clear blur stays 1.1-1.4 pt through the
+band, ours rose to 2.0-2.2 pt at 1-4 pt depth and 3.3-3.9 pt at the edge,
+because the post-lens taps were stretched through the lens Jacobian up to
+4x. New per-variant constant `postJacobianMax` (uVar O.w; 4 = old
+behaviour, regular sets keep 4) clamps that stretch. Clear sets ship 1.15
+with a coordinate-descent refit whose objective is the predicted device
+pass count (model + per-scene g13-2 device−model offset, margin 0.001 SSIM
+/ 0.03 ΔE, no predicted loss): blurSigma 1.2 → 1.28 / 1.1534 → 1.2334,
+postBlurShare 0.45 → 0.31 / 0.2882 → 0.1482, frostWideMixCentre −0.08,
+lensEdge +1 pt, lensDecay +0.25 pt, lensStrength −2.54 → −2.49,
+rimIntensity 0 → 0.15, rimMix 0.63 → 0.48 / 0.5247 → 0.3747. Model
+predicted 58/75 and the device landed on exactly the predicted gains.
+Parity model vs `g4-1`: 75/75 (`test_glass_model.py` now points there).
+
+Tried and rejected (model, full 75 unless noted):
+
+- **The WIP edge-lens commit 47441d5** (Jacobian clamp 1.3 and a lens depth
+  knee at 0.933 × lensSizeRef, for every variant): model 56 → 58 but loses
+  clear-capsule-photo-light and softens regular-circle-photo-light;
+  reverted. The depth knee alone loses a scene (13/24 clear vs 14); only
+  the clamp, made per-variant, survived.
+- **liquid_glass_widgets 1.10.0 curved-glass lens profile** (paraxial
+  `(1 − d/B)^p` displacement from their circular bevel,
+  `liquid_glass_render.frag`): p 2 / B 18 pt, p 2 / B 22, p 3 / B 24 all
+  lose 6 of 14 passing clear scenes (min SSIM 0.73-0.88). SwiftUI's
+  measured profile is exponential with a steeper outer 1-2 pt, which
+  lens v3 + `lensEdge` already fit; nothing was borrowed.
+- **Post share fading in over the outer band** (2 or 4 pt): +0 / +1 clear
+  scene, dominated by the clamp.
+
+Remaining clear failures: rect28 photo (SSIM 0.970-0.969, ΔE 2.04 light)
+and all capsule/rect text scenes (0.958-0.964). The refit traded
+0.003-0.004 SSIM on the rect text scenes (none passing before or after)
+for the photo gains; text-band residual is the mirrored-content phase match
+noted in round 4.
+
+### Item 8 (regular photo scenes): tried, not shipped
+
+A predicted-device coordinate descent over 46 regular/regularDark keys
+(blur, frost tail, fill, saturation, dim, shadow, rim, rimBack, tone
+knots; `build/g4b/cd3a.log`) ran a full round with **no pass gain**. It
+lifts SSIM (predicted regular-capsule-photo-dark 0.9525 → 0.9560, rect
+photo-dark 0.969 → 0.973) and the loss, but ΔE stays the blocker: rect
+photo-dark 3.48 → 3.35, rect photo-light 2.65 → 2.62, tinted-capsule-photo-
+light 2.36 → 2.32, and capsule-photo-light worsens 1.90 → 1.97. Per the
+zero-gain rule the constants stay. Diagnosis (`build/g4b/lab.py`):
+the rect photo error is a broad interior offset over the photo's dark
+regions (light: dL −2.1, da −1.3; dark: dL −1.9 with 1.28x L contrast),
+absent on gradient/text backdrops, so it is a backdrop-dependent colour
+response the grey tone LUT + single saturation gain cannot express (a
+chroma-dependent vibrancy term is the next candidate).
