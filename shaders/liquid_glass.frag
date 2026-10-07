@@ -249,13 +249,8 @@ void main() {
   float band = max(A.y, 1.0);
   float decay = max(A.x, 1e-3);
   float sc = C.w > 0.0 ? min(1.0, halfMin / C.w) : 1.0;
-  // Fidelity group 4 (measured on the clear size series with
-  // measure_lens.py): the profile's depth scale shrinks from a smaller knee
-  // than its amplitude, 0.933 x the size ref (a 28 pt capsule keeps the full
-  // decay while its amplitude shrinks; a 20 pt rect shrinks both).
-  float scd = C.w > 0.0 ? min(1.0, halfMin / (C.w * 0.933)) : 1.0;
   float cut = exp(-band / decay);
-  float ls = max(decay * scd, 1e-3);
+  float ls = max(decay * sc, 1e-3);
   float ex = exp(-max(ldepth, 0.0) / ls);
   float v = max(ex - cut, 0.0) / max(1.0 - cut, 1e-6);
   float lensK = A.z * (1.0 - 0.5 * hc) * band * sc;
@@ -306,11 +301,8 @@ void main() {
         ? d : lensField(px);
     float lap = fxp + fxm + fyp + fym - 4.0 * fc;
     float kappa = lap / max(0.5 * gradLen, 1e-3);
-    // Jacobian clamp 1.3 (fidelity group 4, glass_model.POST_JMAX):
-    // SwiftUI's decoded clear blur stays ~1.1-1.4 pt into the outer 4 pt of
-    // the band, so the post-lens taps may stretch at most 1.3x.
-    float ja = clamp(1.0 - dLens, -1.3, 1.3) * sPost;
-    float jb = clamp(1.0 + lensAmt * kappa, -1.3, 1.3) * sPost;
+    float ja = clamp(1.0 - dLens, -4.0, 4.0) * sPost;
+    float jb = clamp(1.0 + lensAmt * kappa, -4.0, 4.0) * sPost;
     vec2 tng = vec2(-nrm.y, nrm.x);
     col = base * 0.44444445;
     for (int i = 0; i < 3; i++) {

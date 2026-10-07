@@ -272,14 +272,7 @@ def frost_taps(sigma_px):
 
 
 # 3-point Gauss-Hermite rule for a unit Gaussian: nodes 0, +-sqrt(3).
-# Jacobian clamp of the post-lens taps. Fidelity group 4 (measure_lens.py
-# blur decode): SwiftUI's clear-glass blur stays ~1.1-1.4 pt into the outer
-# 4 pt of the band, so the post-lens taps may stretch at most 1.3x (was 4).
-POST_JMAX = 1.3
-# Lens depth-scale knee over lensSizeRef (fidelity group 4: the clear
-# capsule, 28 pt, keeps the full decay while its amplitude shrinks; the 20 pt
-# rect shrinks both, decay by ~0.7).
-LENS_DEPTH_RATIO = 0.933
+POST_JMAX = 4.0  # Jacobian clamp of the post-lens taps
 POST_TAPS = ((-np.sqrt(3.0), 1.0 / 6.0), (0.0, 2.0 / 3.0), (np.sqrt(3.0), 1.0 / 6.0))
 
 
@@ -567,19 +560,14 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     decay = np.maximum(A[..., 0], 1e-3)
     size_ref = C[..., 3]
     sc = np.where(size_ref > 0, np.minimum(1.0, g["half_min"] / np.maximum(size_ref, 1e-6)), 1.0)
-    # Fidelity group 4 (measured on the clear size series, measure_lens.py
-    # fields): the profile's depth scale shrinks from a smaller knee than
-    # its amplitude, LENS_DEPTH_RATIO x lensSizeRef.
-    scd = np.where(size_ref > 0, np.minimum(1.0, g["half_min"] / np.maximum(
-        size_ref * LENS_DEPTH_RATIO, 1e-6)), 1.0)
     cut = np.exp(-band / decay)
-    t = np.maximum(np.exp(-np.maximum(ldepth, 0.0) / np.maximum(decay * scd, 1e-3)) - cut,
+    t = np.maximum(np.exp(-np.maximum(ldepth, 0.0) / np.maximum(decay * sc, 1e-3)) - cut,
                    0.0) / np.maximum(1.0 - cut, 1e-6)  # profile weight v (also weights dispersion)
     lens_amt = A[..., 2] * band * sc * t  # == lens_v3(depth, half_min, -strength*band, ...)
     # d(lens_amt)/d(depth), for the post-lens blur's Jacobian.
     dlens = np.where(t > 0, -A[..., 2] * band * sc * np.exp(
-        -np.maximum(ldepth, 0.0) / np.maximum(decay * scd, 1e-3)) / np.maximum(
-        decay * scd, 1e-3) / np.maximum(1.0 - cut, 1e-6), 0.0)
+        -np.maximum(ldepth, 0.0) / np.maximum(decay * sc, 1e-3)) / np.maximum(
+        decay * sc, 1e-3) / np.maximum(1.0 - cut, 1e-6), 0.0)
     # Lens edge term (Task 17d, measured: SwiftUI's lens is steeper in the
     # outer 1-2 pt): an extra inward offset lensEdge x exp(-depth / decay).
     le = I[..., 1] * np.exp(-np.maximum(ldepth, 0.0) / np.maximum(I[..., 2], 1e-3))
