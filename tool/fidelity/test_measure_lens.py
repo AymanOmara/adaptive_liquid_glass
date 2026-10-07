@@ -103,6 +103,10 @@ def test_measure_scene_matrix():
     # Task 9 adds rect16 x {regular, clear} x {light, dark} over the four
     # rotated gradients (bases shared with the lens scenes, new backgrounds).
     # Task 17d review: 48 held-out robustness scenes ("holdout-..."), appended.
+    # Fidelity group 2: 13 merge layouts x 3 ("g2-..."), appended after them.
+    g2 = [i for i in ids if i.startswith("g2-")]
+    assert len(g2) == 39 and ids[-39:] == g2
+    ids = ids[:-39]
     holdout = [i for i in ids if i.startswith("holdout-")]
     assert len(holdout) == 48 and ids[-48:] == holdout
     ids = ids[:-48]
@@ -124,6 +128,8 @@ def test_measure_scene_matrix():
     # decode window (shape + 16 pt) stays on the 402 x 874 pt screen.
     for s in spec["scenes"]:
         sh = s["shapes"][0]
+        if s["id"].startswith("g2-"):
+            continue
         if "-s" in s["id"].split("--")[0].split("rect16")[-1]:
             assert min(sh["w"], sh["h"]) / 2 == int(s["id"].split("-s")[1].split("-")[0])
         assert sh["x"] >= 16 and sh["y"] + sh["h"] + 16 <= 874 and sh["x"] + sh["w"] + 16 <= 402

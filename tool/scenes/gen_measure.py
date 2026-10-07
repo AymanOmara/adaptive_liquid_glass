@@ -114,6 +114,41 @@ for v in ("regular", "clear"):
                                             "tint": None}]})
 scenes += HOLDOUT
 
+
+# Fidelity group 2 (borrow item A2): does SwiftUI size a merged group's
+# size-dependent appearance per shape or per blob? Layouts whose blob is
+# larger than its members along the shorter side (2x2 grids, a vertical
+# capsule pair) separate the two; rows keep the members' shorter side.
+# Ids "g2-<layout>-<brightness>--<background>"; spacing 20 like scenes.json
+# unless the layout says "nocont" (no GlassEffectContainer).
+def _circles(d, cols, rows, gap, y0=560):
+    x0 = (W - cols * d - (cols - 1) * gap) / 2
+    return [{"x": x0 + c * (d + gap), "y": y0 + r * (d + gap), "w": d, "h": d,
+             "shape": "circle", "radius": 0, "variant": "regular", "tint": None}
+            for r in range(rows) for c in range(cols)]
+
+
+def _capsules(gap, y0=520):
+    return [{"x": (W - 200) / 2, "y": y0 + i * (56 + gap), "w": 200, "h": 56,
+             "shape": "capsule", "radius": 0, "variant": "regular", "tint": None}
+            for i in range(2)]
+
+
+G2_LAYOUTS = {
+    "solo60": (_circles(60, 1, 1, 0), 20),
+    "solo60-nocont": (_circles(60, 1, 1, 0), None),
+    "row2c60g4-nocont": (_circles(60, 2, 1, 4), None),
+    "row3c60g4": (_circles(60, 3, 1, 4), 20),
+    **{f"grid2c60g{g}": (_circles(60, 2, 2, g), 20) for g in (0, 4, 16, 30)},
+    **{f"row2c72g{g}": (_circles(72, 2, 1, g), 20) for g in (4, 30)},
+    "row2c40g4": (_circles(40, 2, 1, 4), 20),
+    **{f"vcap2g{g}": (_capsules(g), 20) for g in (4, 30)},
+}
+for lname, (shapes, spacing) in G2_LAYOUTS.items():
+    for b, bg in (("light", "flat-v128"), ("dark", "flat-v128"), ("light", "photo")):
+        scenes.append({"id": f"g2-{lname}-{b}--{bg}", "background": bg, "brightness": b,
+                       "spacing": spacing, "shapes": shapes})
+
 if __name__ == "__main__":
     OUT.write_text(json.dumps(
         {"device": {"width": W, "height": 874, "scale": 3}, "scenes": scenes, "motion": []},

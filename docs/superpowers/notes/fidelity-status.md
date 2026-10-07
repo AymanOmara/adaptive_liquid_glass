@@ -318,8 +318,28 @@ verdicts are informational until signed.
   scenes sit at SSIM 0.965/0.979, above the 0.95 hard target, and the
   union-extent fill factor stays recorded as the known next lever; the
   plan's stop criterion (a round adding zero passes) fired first (round 3,
-  see above).
+  see above). Measured in fidelity group 2: SwiftUI sizes merged shapes per
+  member, not per blob, so the union-extent fill factor is refuted (see
+  below).
 - **Task 8c (colour-matrix contingency): not triggered.** The trigger
   condition (per-channel colour residual over ΔE 2.0 after the tone LUT)
   was not measured in the final round; median ΔE 1.09 with the worst
   per-scene ΔE documented in the round-2 table above.
+
+## Fidelity group 2: merged shapes (borrow item A2, shipped)
+
+Run: `build/fidelity/g2-1` (Flutter on simulator 2AC3AF21, iPhone 17 Pro, iOS 26.4; SwiftUI refs from `build/fidelity/final`. SwiftUI on 2AC3 vs the E7A8 refs differs by at most 3 levels, mean < 0.004, on 5 checked scenes; Flutter on 2AC3 equals `release-dev7` bit for bit). **47/75 pass (was 46), min SSIM 0.9532, 0 below 0.95, median 0.9830 / ΔE 1.09.** Parity model vs Flutter: 75/75, min SSIM 0.9960, max ΔE 0.34. All non-merge scenes are pixel-identical to `release-dev7` inside the glass (only the status bar differs).
+
+| scene | before (release-dev7) | after (g2-1) |
+|---|---|---|
+| merge-gap4-photo-light | 0.9662 / 1.99 (fail) | 0.9738 / 1.84 (pass) |
+| merge-gap16-photo-light | 0.9798 / 2.03 | 0.9798 / 2.03 (unchanged: its circles do not touch) |
+| merge-gap30-photo-light | 0.9802 / 1.91 | 0.9802 / 1.91 (unchanged) |
+
+Measurement (new `g2-*` scenes in `tool/scenes/measure.json`, `gen_measure.py`: 13 layouts × {light, dark} over flat grey v128 and light over the photo; captures in `build/fidelity/g2-measure`, SwiftUI only):
+
+- **Size-dependent appearance is per member, not per blob.** Over flat grey, SwiftUI's small-shape level (204 light / 88 dark, the same as a lone 60 pt circle) holds for every merged layout: rows of 2 and 3, 2×2 grids at gaps 0/4/16/30 (blob 120×120 pt), and a vertical pair of 200×56 capsules at gap 4 (blob 200×116). Two merged 72 pt circles stay in the large class (213 / 60). Over the photo a capsule renders identically whether its neighbour merges (gap 4) or not (gap 30). So the plan's union-extent fill factor (Task 8) and any per-blob frost/lens size would make merged layouts worse; the per-shape fill, frost and lens size terms stay.
+- **The merge-scene colour error is not merging.** merge-gap30 (unmerged in both renderers) has the same interior error (model 8-16 levels too bright) as gap4/gap16; it is the small-shape colour response over dark backdrops (small regular glass is steeper: over flats 51→255 SwiftUI goes 170→253, the model 182→253), i.e. the regular fill/tone family, left to the colour refit.
+- **The neck was a lens crease.** With a unit normal from the smooth-union field, the normal flips sides at the neck's saddle, so the lens drew a hard vertical seam through the bridge; SwiftUI refracts the bridge smoothly as one surface. Neck SSIM (|x − mid| < 15 pt) on merge-gap4 was 0.918 vs 0.980 elsewhere.
+
+What changed: inside merge necks (where the lens field's smin weight h > 0, new `lensBlend` in the shader, `field_blend` in the model) the lens uses the field over its gradient length as depth and scales the displacement by the gradient length (clamped 0.05-1), after liquid_glass_widgets' blended geometry (which builds normals from the unnormalised SDF gradient). Outside necks the factor is exactly 1, so single shapes and separated groups are bit-identical. No constants changed. Model sweep (model vs SwiftUI, 3 merge scenes + 11 g2 photo layouts, mean SSIM): off 0.9637; displacement scale only 0.9699; depth only 0.9682; both 0.9705 (shipped); both with h-weighted gate 0.9701; exponent 2 on either term worse.
