@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart'
     show OverScrollHeaderStretchConfiguration;
 
+import '../core/glass_colors.dart';
 import 'clip_below.dart';
 import 'nav_bar_content.dart';
 import 'nav_bar_metrics.dart';
@@ -47,7 +48,7 @@ class LargeTitleDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    final label = CupertinoDynamicColor.resolve(CupertinoColors.label, context);
+    final label = CupertinoDynamicColor.resolve(GlassColors.label, context);
     final dir = Directionality.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {

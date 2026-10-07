@@ -3,6 +3,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/cupertino.dart';
 
 import '../button/glass_button_metrics_scope.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_render_mode.dart';
 import '../group/glass_group.dart';
 import '../group/glass_union_scope.dart';
@@ -75,7 +76,7 @@ class NavBarContent extends StatelessWidget {
         (automaticallyImplyLeading && glassCanImplyBack(context)
             ? GlassBackButton(mode: mode)
             : null);
-    final label = CupertinoDynamicColor.resolve(CupertinoColors.label, context);
+    final label = CupertinoDynamicColor.resolve(GlassColors.label, context);
     // Bar items keep their size at any text size, as on iOS (the bar's
     // height is fixed); the title still scales.
     Widget item(Widget child) => MediaQuery.withNoTextScaling(child: child);
