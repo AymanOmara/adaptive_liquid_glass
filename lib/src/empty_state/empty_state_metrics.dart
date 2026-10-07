@@ -36,6 +36,20 @@ abstract final class EmptyStateMetrics {
   /// description's cap top to the button label's).
   static const double actionsGap = 20.33;
 
+  /// Space SwiftUI keeps below the block, lifting it above a plain
+  /// centring (measured: a centred column sat 13.33 pt low without actions,
+  /// so the block is 26.67 pt taller than its content).
+  static const double bottomInset = 26.67;
+
+  /// [bottomInset] when the block has actions (measured: 2.67 pt low with
+  /// one small glass action).
+  static const double actionsBottomInset = 5.33;
+
+  /// The `.search` variant's icon gap: SwiftUI's magnifying glass is taller
+  /// than CupertinoIcons.search and sits further above the title (fitted:
+  /// the title and description land where SwiftUI's do).
+  static const double searchIconGap = 19;
+
   /// The gap between stacked actions (estimated).
   static const double actionSpacing = 12;
 

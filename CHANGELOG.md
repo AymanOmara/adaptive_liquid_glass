@@ -1,3 +1,9 @@
+## Unreleased
+
+- `GlassEmptyState` sits where SwiftUI's `ContentUnavailableView` does
+  (measured; it was 2.5-10 pt low): a fitted bottom inset, and a taller
+  icon gap for `.search`.
+
 ## 0.1.0-dev.8
 
 - Add light and dark iOS example screenshots to the pub.dev package gallery.

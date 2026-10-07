@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 Widget? newComponentTwin(String scene) => switch (scene) {
   'disclosure' => const _Disclosure(),
   'emptystate' => const _EmptyState(),
+  'emptystate2' => const _EmptyStateSwap(),
   'fullscreencover' => const _FullScreenCover(),
   'gauge' => const _Gauge(),
   _ => null,
@@ -79,7 +80,36 @@ class _EmptyState extends StatelessWidget {
             ),
           ),
         ),
-        Expanded(child: Center(child: GlassEmptyState.search(query: 'kiwi'))),
+        Expanded(
+          child: Center(child: GlassEmptyState.search(query: 'kiwi')),
+        ),
+      ],
+    ),
+  );
+}
+
+/// The search empty state for "kiwi" in the top 437 pt band, "No Mail"
+/// without actions in the bottom one, over white.
+class _EmptyStateSwap extends StatelessWidget {
+  const _EmptyStateSwap();
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.white,
+    body: Column(
+      children: [
+        Expanded(
+          child: Center(child: GlassEmptyState.search(query: 'kiwi')),
+        ),
+        const Expanded(
+          child: Center(
+            child: GlassEmptyState(
+              icon: Icon(CupertinoIcons.tray),
+              title: Text('No Mail'),
+              description: Text('New messages you receive will appear here.'),
+            ),
+          ),
+        ),
       ],
     ),
   );

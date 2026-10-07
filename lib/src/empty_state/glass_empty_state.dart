@@ -35,7 +35,16 @@ class GlassEmptyState extends StatelessWidget {
     this.description,
     this.actions = const [],
     this.mode,
-  });
+  }) : _iconGap = EmptyStateMetrics.iconGap;
+
+  const GlassEmptyState._search({
+    super.key,
+    required this.title,
+    this.icon,
+    this.description,
+    this.actions = const [],
+    this.mode,
+  }) : _iconGap = EmptyStateMetrics.searchIconGap;
 
   /// Creates the search empty state, like
   /// `ContentUnavailableView.search(text:)`: a magnifying glass, "No
@@ -46,7 +55,7 @@ class GlassEmptyState extends StatelessWidget {
     String? query,
     List<Widget> actions = const [],
     GlassRenderMode? mode,
-  }) => GlassEmptyState(
+  }) => GlassEmptyState._search(
     key: key,
     icon: const Icon(CupertinoIcons.search),
     title: Text(
@@ -83,6 +92,9 @@ class GlassEmptyState extends StatelessWidget {
   /// The rendering path; see [GlassRenderMode].
   final GlassRenderMode? mode;
 
+  /// The icon's gap to the title on the glass path.
+  final double _iconGap;
+
   @override
   Widget build(BuildContext context) => GlassModeBuilder(
     mode: mode,
@@ -106,6 +118,11 @@ class GlassEmptyState extends StatelessWidget {
       EmptyStateMetrics.descriptionSize,
       color: CupertinoDynamicColor.resolve(GlassColors.secondaryLabel, context),
     ),
+    iconGap: _iconGap,
+    // SwiftUI's block sits above a plain centring (measured).
+    bottomInset: actions.isEmpty
+        ? EmptyStateMetrics.bottomInset
+        : EmptyStateMetrics.actionsBottomInset,
   );
 
   Widget _material(BuildContext context) {
@@ -125,9 +142,13 @@ class GlassEmptyState extends StatelessWidget {
     required Color iconColor,
     required TextStyle titleStyle,
     required TextStyle descriptionStyle,
+    double iconGap = EmptyStateMetrics.iconGap,
+    double bottomInset = 0,
   }) => Padding(
-    padding: const EdgeInsetsDirectional.symmetric(
-      horizontal: EmptyStateMetrics.horizontalPadding,
+    padding: EdgeInsetsDirectional.only(
+      start: EmptyStateMetrics.horizontalPadding,
+      end: EmptyStateMetrics.horizontalPadding,
+      bottom: bottomInset,
     ),
     child: Column(
       mainAxisSize: MainAxisSize.min,
@@ -143,7 +164,7 @@ class GlassEmptyState extends StatelessWidget {
               child: icon!,
             ),
           ),
-          const SizedBox(height: EmptyStateMetrics.iconGap),
+          SizedBox(height: iconGap),
         ],
         Semantics(
           header: true,

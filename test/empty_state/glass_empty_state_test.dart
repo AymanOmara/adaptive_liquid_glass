@@ -205,4 +205,58 @@ void main() {
     expect(find.byType(Card), findsNothing);
     expect(find.byType(LiquidGlass), findsNothing);
   }, variant: android);
+
+  testWidgets('sits above a plain centring, like SwiftUI', (t) async {
+    shaderEnv();
+    // The column's box is its content plus the bottom inset.
+    double gapBelowDescription(WidgetTester t) =>
+        t.getBottomLeft(find.byType(GlassEmptyState)).dy -
+        t
+            .getBottomLeft(
+              find.text('New messages you receive will appear here.'),
+            )
+            .dy;
+    await t.pumpWidget(plainHost(_state));
+    expect(
+      gapBelowDescription(t),
+      closeTo(EmptyStateMetrics.bottomInset, 0.01),
+    );
+    await t.pumpWidget(
+      plainHost(
+        const GlassEmptyState(
+          title: Text('No Mail'),
+          description: Text('New messages you receive will appear here.'),
+          actions: [GlassButton(onPressed: _noop, child: Text('Refresh'))],
+        ),
+      ),
+    );
+    expect(
+      t.getBottomLeft(find.byType(GlassEmptyState)).dy -
+          t.getBottomLeft(find.byType(LiquidGlass)).dy,
+      closeTo(EmptyStateMetrics.actionsBottomInset, 0.01),
+    );
+  }, variant: ios);
+
+  testWidgets('search: the taller icon gap', (t) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(GlassEmptyState.search()));
+    expect(
+      t.getTopLeft(find.text(GlassEmptyState.searchTitle)).dy -
+          t.getBottomLeft(find.byIcon(CupertinoIcons.search)).dy,
+      closeTo(EmptyStateMetrics.searchIconGap, 0.01),
+    );
+  }, variant: ios);
+
+  testWidgets('Material: no SwiftUI inset; plainly centred', (t) async {
+    shaderEnv();
+    await t.pumpWidget(appHost(const Center(child: _state)));
+    expect(
+      t.getBottomLeft(find.byType(GlassEmptyState)).dy,
+      t
+          .getBottomLeft(
+            find.text('New messages you receive will appear here.'),
+          )
+          .dy,
+    );
+  }, variant: android);
 }

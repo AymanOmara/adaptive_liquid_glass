@@ -29,7 +29,7 @@
   [done 2026-10-07] GlassDisclosureGroup, GlassEmptyState (+ .search),
   showGlassFullScreenCover + GlassFullScreenCoverHandle, GlassGauge
   Follow-ups:
-  - empty state block sits 2.5-10 pt lower than SwiftUI
+  - [done] empty state placement (title/description within 0.33 pt)
   - full-screen cover: transition timing estimated; drag-to-dismiss and
     glass close button not built
   - GlassButton label renders (38,38,38) vs SwiftUI black
