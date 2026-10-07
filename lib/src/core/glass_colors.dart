@@ -160,6 +160,16 @@ abstract final class GlassColors {
         darkColor: Color(0xFF38383A),
       );
 
+  /// A list section's opaque cell when the glass is off (iOS's
+  /// secondarySystemGroupedBackground).
+  static const CupertinoDynamicColor listSectionBackground =
+      CupertinoColors.secondarySystemGroupedBackground;
+
+  /// CupertinoTheme's default primary colour. A list row's icon uses
+  /// [listIcon] while the theme keeps this default.
+  static const CupertinoDynamicColor listDefaultAccent =
+      CupertinoColors.activeBlue;
+
   // Tab bar (measured from SwiftUI TabView, iOS 26.4, over white / black)
 
   /// The selected tab's icon and label (reads 0,126,245 on the white bar
@@ -252,4 +262,14 @@ abstract final class GlassColors {
 
   /// A text field's error message (iOS's systemRed).
   static const CupertinoDynamicColor textFieldError = CupertinoColors.systemRed;
+
+  // Swipe actions
+
+  /// The platter revealed behind a swiped row (SwiftUI: #E5E5EA in light
+  /// mode, iOS's systemGrey5).
+  static const CupertinoDynamicColor swipePlatter = CupertinoColors.systemGrey5;
+
+  /// A swipe action's fill when it sets no colour (iOS's systemGrey).
+  static const CupertinoDynamicColor swipeActionDefault =
+      CupertinoColors.systemGrey;
 }

@@ -141,7 +141,7 @@ class GlassListSection extends StatelessWidget {
         ? DecoratedBox(
             decoration: ShapeDecoration(
               color: CupertinoDynamicColor.resolve(
-                CupertinoColors.secondarySystemGroupedBackground,
+                GlassColors.listSectionBackground,
                 context,
               ),
               shape: RoundedSuperellipseBorder(
@@ -157,7 +157,7 @@ class GlassListSection extends StatelessWidget {
             child: content,
           );
     final caption = CupertinoDynamicColor.resolve(
-      CupertinoColors.secondaryLabel,
+      GlassColors.secondaryLabel,
       context,
     );
     return Padding(
