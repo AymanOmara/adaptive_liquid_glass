@@ -137,7 +137,10 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
     body: Stack(
       fit: StackFit.expand,
       children: [
-        Image.asset('assets/backgrounds/photo.png', fit: BoxFit.cover),
+        if (const bool.fromEnvironment('PLAIN_BACKGROUND'))
+          ColoredBox(color: Theme.of(context).scaffoldBackgroundColor)
+        else
+          Image.asset('assets/backgrounds/photo.png', fit: BoxFit.cover),
         // The scaffold pads the body's MediaQuery by the bars; read it
         // below the scaffold, not with this State's context.
         Builder(

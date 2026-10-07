@@ -10,6 +10,11 @@ counterparts on Android, behind one API. App code never branches on platform.
 - **RTL-safe:** directional insets throughout; the light angle is not
   mirrored, matching iOS.
 
+## Screenshots
+
+The package screenshot gallery above shows the example app on iOS 26.4 in
+light and dark modes, including glass controls, buttons and floating navigation.
+
 ## Fidelity
 
 The shipped glass constants are certified against Apple's SwiftUI
@@ -42,7 +47,7 @@ documented there), then score with
 
 ```yaml
 dependencies:
-  adaptive_liquid_glass: ^0.1.0-dev.7
+  adaptive_liquid_glass: ^0.1.0-dev.8
 ```
 
 ```dart

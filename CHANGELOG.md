@@ -1,3 +1,8 @@
+## 0.1.0-dev.8
+
+- Add light and dark iOS example screenshots to the pub.dev package gallery.
+- Remove the private repository link from package metadata.
+
 ## 0.1.0-dev.7
 
 * New components (Material 3 counterparts on Android):
