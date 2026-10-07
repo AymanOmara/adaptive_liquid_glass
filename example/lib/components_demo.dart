@@ -45,6 +45,7 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
   bool _wifi = true;
   double _volume = 0.6;
   bool _toolbar = false;
+  bool _advanced = false;
   double _count = 3;
   DateTime _date = DateTime(2026, 10, 6);
   String? _emailError;
@@ -295,6 +296,39 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                     ),
                     child: const Text('Action sheet'),
                   ),
+                  GlassButton(
+                    onPressed: () => showGlassFullScreenCover<void>(
+                      context: context,
+                      builder: (context) => Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsetsDirectional.symmetric(
+                              horizontal: 16,
+                            ),
+                            child: Row(
+                              children: [
+                                const Spacer(),
+                                GlassButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Done'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Spacer(),
+                          const Text(
+                            'Cover',
+                            style: TextStyle(
+                              fontSize: 34,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Spacer(),
+                        ],
+                      ),
+                    ),
+                    child: const Text('Full screen'),
+                  ),
                   GlassPopoverAnchor(
                     popoverBuilder: (_) => const Padding(
                       padding: EdgeInsets.all(16),
@@ -432,6 +466,22 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                 ],
               ),
               const SizedBox(height: 24),
+              GlassListSection(
+                header: const Text('Advanced'),
+                children: [
+                  GlassDisclosureGroup(
+                    leading: const Icon(CupertinoIcons.gear),
+                    label: const Text('Advanced'),
+                    isExpanded: _advanced,
+                    onExpansionChanged: (v) => setState(() => _advanced = v),
+                    children: const [
+                      GlassListTile(title: Text('Proxy'), value: 'Off'),
+                      GlassListTile(title: Text('DNS'), value: 'Automatic'),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -465,6 +515,38 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                 ],
               ),
               const SizedBox(height: 24),
+              GlassGauge(
+                value: _volume,
+                label: const Text('Battery'),
+                currentValueLabel: Text('${(_volume * 100).round()}%'),
+                minimumValueLabel: const Text('0'),
+                maximumValueLabel: const Text('100'),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GlassGauge(
+                    value: _volume * 40,
+                    min: 0,
+                    max: 40,
+                    style: GlassGaugeStyle.accessoryCircular,
+                    label: const Text('Temp'),
+                    currentValueLabel: Text('${(_volume * 40).round()}'),
+                    minimumValueLabel: const Text('0'),
+                    maximumValueLabel: const Text('40'),
+                    tint: GlassSystemColors.orange,
+                  ),
+                  const SizedBox(width: 48),
+                  GlassGauge(
+                    value: _volume,
+                    style: GlassGaugeStyle.accessoryCircularCapacity,
+                    label: const Text('Battery'),
+                    currentValueLabel: Text('${(_volume * 100).round()}'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
               const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -474,6 +556,20 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                   ),
                   SizedBox(width: 32),
                   GlassBadge(child: Icon(CupertinoIcons.bell, size: 28)),
+                ],
+              ),
+              const SizedBox(height: 24),
+              GlassEmptyState(
+                icon: const Icon(CupertinoIcons.tray),
+                title: const Text('No Mail'),
+                description: const Text(
+                  'New messages you receive will appear here.',
+                ),
+                actions: [
+                  GlassButton(
+                    onPressed: () => _snack('Refresh'),
+                    child: const Text('Refresh'),
+                  ),
                 ],
               ),
               const SizedBox(height: 24),

@@ -213,14 +213,18 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `showGlassConfirmationDialog` | Small glass card, actions stacked; cancel taken by a tap outside | `AlertDialog` |
 | `showGlassActionSheet` | iOS 26's confirmation dialog on iPhone: stacked capsule buttons | modal bottom sheet |
 | `showGlassSheet`, `GlassSheet`, `GlassSheetDetent` | Modal sheet with detents (`medium`, `large`, `fraction`, `height`) | modal bottom sheet |
+| `showGlassFullScreenCover`, `GlassFullScreenCoverHandle` | `.fullScreenCover`: opaque edge-to-edge modal sliding up | full-screen `Dialog` |
 | `showGlassToast`, `GlassToastAction`, `GlassToastHandle` | Glass capsule toast from the top, queued, swipe to dismiss | `SnackBar` |
 | `GlassTextField` (`+ .password`) | Text field in a glass capsule; password with an eye button | `TextField` |
 | `GlassSearchField` | Search capsule with magnifier and clear button | `SearchBar` |
 | `GlassListSection`, `GlassListTile` | Inset-grouped list, like Settings; rows with leading/title/value/trailing | `Card` of `ListTile`s |
+| `GlassDisclosureGroup` | SwiftUI's DisclosureGroup: a list row with a rotating chevron that expands its rows | `ExpansionTile` |
+| `GlassEmptyState` (`+ .search`) | ContentUnavailableView: icon, title, description, actions | plain centred column |
 | `GlassChip` | Capsule chip with selected state and delete button | `FilterChip` / `InputChip` |
 | `GlassBadge` | Red count capsule (dot when empty) on a child's top trailing corner | `Badge` |
 | `GlassPageControl` | Page dots on a glass capsule; tap and scrub | row of Material dots |
 | `GlassProgressIndicator`, `GlassProgressStyle` | Linear bar on a glass track, or ring/spinner | `LinearProgressIndicator` / `CircularProgressIndicator` |
+| `GlassGauge`, `GlassGaugeStyle` | SwiftUI's Gauge: linear capacity, accessoryCircular, accessoryCircularCapacity | `LinearProgressIndicator` / `CircularProgressIndicator` |
 | `GlassSwipeActions`, `GlassSwipeAction` | List swipe actions: tinted capsules, full swipe, haptic | iOS layout, Material colour |
 
 ## Cookbook
@@ -552,6 +556,33 @@ The platter is opaque by default, as iOS 26 Settings; pass
 row highlights while pressed. On Android it is a Material 3 filled `Card`
 of `ListTile`s.
 
+### Disclosure group
+
+```dart
+GlassListSection(
+  header: const Text('Settings'),
+  children: [
+    GlassDisclosureGroup(
+      leading: const Icon(CupertinoIcons.gear),
+      label: const Text('Advanced'),
+      initiallyExpanded: true,
+      children: const [
+        GlassListTile(title: Text('Proxy'), value: 'Off'),
+        GlassListTile(title: Text('DNS'), value: 'Automatic'),
+      ],
+    ),
+  ],
+)
+```
+
+A list row that expands to reveal more rows beneath it, like SwiftUI's
+`DisclosureGroup`: the label row lays out as a list row whose chevron
+rotates to point down while the children, indented, spring open, and it
+keeps the list's press highlight. Leave the state internal with
+`initiallyExpanded`, or drive it with `isExpanded` and
+`onExpansionChanged`. Geometry measured against SwiftUI on iOS 26.4. On
+Android it is a Material 3 `ExpansionTile`.
+
 ### Chip and badge
 
 ```dart
@@ -593,6 +624,57 @@ while indeterminate); the fill defaults to system blue. Geometry
 estimated, not yet measured. On Android: a row of Material dots, and
 Material 3 progress indicators.
 
+### Empty state
+
+```dart
+GlassEmptyState(
+  icon: const Icon(CupertinoIcons.tray),
+  title: const Text('No Mail'),
+  description: const Text('New messages you receive will appear here.'),
+  actions: [GlassButton(onPressed: refresh, child: const Text('Refresh'))],
+)
+
+GlassEmptyState.search(query: 'kiwi')
+```
+
+SwiftUI's `ContentUnavailableView`: a centred icon, title, description and
+stacked actions where a list or a search has nothing to show. `.search`
+draws the magnifying glass, "No Results for “kiwi”" and a hint, so an
+empty search is one line (`searchTitle` and `searchDescription` are exposed
+to localise them). Actions are small buttons unless a
+`GlassControlSizeScope` above says otherwise. It draws no platter of its
+own and nothing animates. Geometry measured against SwiftUI on iOS 26.4.
+On Android the same column takes Material 3 typography.
+
+### Gauge
+
+```dart
+GlassGauge(
+  value: 0.62,
+  label: const Text('Battery'),
+  currentValueLabel: const Text('62%'),
+  minimumValueLabel: const Text('0'),
+  maximumValueLabel: const Text('100'),
+)
+GlassGauge(
+  value: 21, min: 0, max: 40,
+  style: GlassGaugeStyle.accessoryCircular,
+  label: const Text('Temp'),
+  currentValueLabel: const Text('21'),
+  tint: GlassSystemColors.orange,
+)
+```
+
+SwiftUI's `Gauge` in its three forms: `linearCapacity` (the default, a
+capsule track filled to the value), `accessoryCircular` (an open ring with
+a dot marking the value) and `accessoryCircularCapacity` (a ring filled to
+the value). `tint` colours the fill (by default blue on the linear gauge
+and the label colour on the rings, as SwiftUI), and the value does not
+animate; SwiftUI's gauges do not either. Geometry measured against SwiftUI
+on iOS 26.4. On Android it is a
+Material 3 `LinearProgressIndicator` or `CircularProgressIndicator` with
+the labels around it.
+
 ### Sheet
 
 ```dart
@@ -609,6 +691,40 @@ The sheet works like SwiftUI's `presentationDetents`:
 - At a partial detent it is floating glass.
 - At `large` it runs edge to edge, opaque, with the screen's own corners.
 - `GlassSheetDetent.fraction(0.6)` and `.height(400)` make custom detents.
+
+### Full-screen cover
+
+```dart
+final cover = showGlassFullScreenCover<void>(
+  context: context,
+  builder: (context) => Column(
+    children: [
+      Align(
+        alignment: AlignmentDirectional.topEnd,
+        child: Padding(
+          padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+          child: GlassButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Done'),
+          ),
+        ),
+      ),
+      const Expanded(child: PlayerView()),
+    ],
+  ),
+);
+// later: cover.dismiss();
+```
+
+SwiftUI's `.fullScreenCover`: an opaque page sliding up over the whole
+screen, for a video player or a photo editor. The page below neither
+scales nor dims; the background runs edge to edge while the content
+respects the safe area, and with Reduce Motion it cross-fades instead of
+sliding. `Navigator.pop` from inside closes it, or keep the returned
+`GlassFullScreenCoverHandle` (`dismiss`, and `result` completes with the
+value it closed with) to close it from anywhere. Layout matches SwiftUI;
+the transition timing is estimated. On Android it is a Material 3
+full-screen dialog.
 
 ### Menu button and controller
 
