@@ -1,6 +1,6 @@
 1- match the flutter shader with native navigation bar  
 2-check the other main components that could be added
-3-update the readme according the current code status
+3-[done 2026-10-07] update the readme according the current code status
 4-add more Swift-UI components
 5-tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
   Medium:
@@ -16,3 +16,10 @@
   - measure SwiftUI's edge lens precisely (tool/fidelity/measure_lens.py), then refit
     edge refraction + rim; try liquid_glass_widgets' curved-glass lens profile
   - research task; baseline build/fidelity/release-dev7 (46/75)
+
+7-components from docs/superpowers/notes/component-gap.md (2026-10-07)
+  In progress: GlassDisclosureGroup, GlassEmptyState, showGlassFullScreenCover, GlassGauge
+  Next (medium): pull to refresh (refreshable), searchable presentation,
+  GlassWheelPicker, date picker upgrades (graphical, time, wheel)
+  Later: keyboard toolbar, share link, colour picker, tabBarMinimizeBehavior,
+  sidebarAdaptable, zoom transitions, TipKit tips
