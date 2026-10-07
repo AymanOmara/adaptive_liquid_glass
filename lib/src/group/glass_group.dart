@@ -175,10 +175,15 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
         box.getTransformTo(null),
         Offset.zero & box.size,
       );
+      // Before the first sample the labels follow the appearance; the
+      // hysteresis starts from it, so a backdrop near middle grey keeps
+      // them (as iOS 26.4's tab bar does over a mid-grey photo) whatever
+      // was on screen at the first sample (an image still decoding).
+      final shown = _sampled ?? GlassForeground.backgroundBrightnessOf(context);
       for (final b in GlassBackdropSources.instance.boundaries) {
         final l = await sampleLuminance(b, region);
         if (l == null) continue;
-        final next = foregroundBrightnessFor(l, current: _sampled);
+        final next = foregroundBrightnessFor(l, current: shown);
         // A flip needs two samples in a row: content scrolling past would
         // otherwise flip the labels back and forth.
         if (next == _sampled) {

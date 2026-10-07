@@ -28,10 +28,7 @@ enum MotionScenes {
   /// Handles `-motion <id>` for the SwiftUI renderer. Returns false when the
   /// launch is not a SwiftUI motion launch (the static host then runs).
   static func install(in window: UIWindow?) -> Bool {
-    // `-dump` (Task 16b) captures the screen, so it serves both renderers.
-    if LaunchArgs.arg("motion") != nil, let d = LaunchArgs.arg("dump") {
-      FrameDump.shared = FrameDump(spec: d)
-    }
+    installDump()
     guard let id = LaunchArgs.arg("motion"), LaunchArgs.arg("renderer") == "swiftui",
           let window else { return false }
     guard #available(iOS 26.0, *) else {
@@ -52,6 +49,15 @@ enum MotionScenes {
     window.rootViewController = UIHostingController(
       rootView: MotionSceneView(spec: spec, background: bg))
     return true
+  }
+
+  /// `-dump` (Task 16b) captures the screen, so it serves both renderers
+  /// and any scene (`-controls tabbar`, `-twin tabbar`, as well as
+  /// `-motion`).
+  static func installDump() {
+    if FrameDump.shared == nil, let d = LaunchArgs.arg("dump") {
+      FrameDump.shared = FrameDump(spec: d)
+    }
   }
 
   private static func fail(_ window: UIWindow, _ message: String) {

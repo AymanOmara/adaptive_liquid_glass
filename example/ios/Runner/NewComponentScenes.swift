@@ -59,6 +59,31 @@ struct EmptyStateReference: View {
   }
 }
 
+/// The bands of `EmptyStateReference` swapped and varied: the search empty
+/// state for "kiwi" in the top 437 pt band, "No Mail" without actions in the
+/// bottom one; measures the block's placement without actions and lower on
+/// the screen.
+@available(iOS 26.0, *)
+struct EmptyStateSwapReference: View {
+  var body: some View {
+    VStack(spacing: 0) {
+      ContentUnavailableView.search(text: "kiwi")
+        .frame(height: 437)
+      ContentUnavailableView(
+        "No Mail",
+        systemImage: "tray",
+        description: Text("New messages you receive will appear here.")
+      )
+      .frame(height: 437)
+    }
+    .frame(width: 402, height: 874)
+    .background(Color.white)
+    .ignoresSafeArea()
+    .environment(\.colorScheme, .light)
+    .statusBarHidden(true)
+  }
+}
+
 /// A white "Home" page that, 0.3 s after launch, presents a full-screen
 /// cover: a Done glass button top-trailing (16 pt horizontal padding) and
 /// a bold large "Cover" title centred, on the default system background.
@@ -88,6 +113,27 @@ struct FullScreenCoverReference: View {
     }
     .statusBarHidden(true)
     .environment(\.colorScheme, .light)
+  }
+}
+
+/// The full-screen cover's motion, for recording: a white page presents a
+/// solid blue cover 1 s after launch and dismisses it 2.5 s later
+/// (`tool/reference` timing capture tracks the cover's top edge).
+@available(iOS 26.0, *)
+struct CoverTimingReference: View {
+  @State private var shown = false
+  var body: some View {
+    Color.white
+      .ignoresSafeArea()
+      .fullScreenCover(isPresented: $shown) {
+        Color.blue.ignoresSafeArea().statusBarHidden(true)
+      }
+      .onAppear {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { shown = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { shown = false }
+      }
+      .statusBarHidden(true)
+      .environment(\.colorScheme, .light)
   }
 }
 

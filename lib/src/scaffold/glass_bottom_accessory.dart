@@ -1,8 +1,10 @@
 import 'package:flutter/widgets.dart';
 
 import '../core/glass.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_render_mode.dart';
 import '../core/ios_text.dart';
+import '../foreground/glass_foreground.dart';
 import '../liquid_glass.dart';
 import 'scaffold_metrics.dart';
 
@@ -54,16 +56,27 @@ class GlassBottomAccessory extends StatelessWidget
       mode: mode,
       onPressed: onPressed,
       padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
-      // SwiftUI's accessory content is body text: 17 pt.
-      child: DefaultTextStyle.merge(
-        style: IOSText.style(17),
-        child: IconTheme.merge(
-          data: const IconThemeData(size: 20),
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: child,
-          ),
-        ),
+      // SwiftUI's accessory content is body text: 17 pt, in the primary
+      // label colour (black on the light bar, not the 85 % of vibrant
+      // labels on glass), dark or light by what is behind the glass.
+      child: Builder(
+        builder: (context) {
+          final color =
+              GlassForeground.backgroundBrightnessOf(context) ==
+                  Brightness.light
+              ? GlassColors.label.color
+              : GlassColors.label.darkColor;
+          return DefaultTextStyle.merge(
+            style: IOSText.style(17).copyWith(color: color),
+            child: IconTheme.merge(
+              data: IconThemeData(size: 20, color: color),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: child,
+              ),
+            ),
+          );
+        },
       ),
     ),
   );

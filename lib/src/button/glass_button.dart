@@ -7,6 +7,8 @@ import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
 import '../core/glass_system_colors.dart';
+import '../foreground/glass_foreground.dart';
+import '../foreground/glass_label_style.dart';
 import '../liquid_glass.dart';
 import 'button_metrics.dart';
 import 'glass_button_metrics_scope.dart';
@@ -213,7 +215,24 @@ class GlassButton extends StatelessWidget {
           padding: _iconOnly || circle
               ? EdgeInsets.zero
               : EdgeInsetsDirectional.symmetric(horizontal: m.padding),
-          child: Center(widthFactor: 1, heightFactor: 1, child: content),
+          child: Center(
+            widthFactor: 1,
+            heightFactor: 1,
+            child: labelColor != null
+                ? content
+                // SwiftUI's glass button label is opaque black on light
+                // content (measured), not the 85% of other glass labels.
+                : Builder(
+                    builder: (context) => GlassLabelStyle(
+                      color:
+                          GlassForeground.backgroundBrightnessOf(context) ==
+                              Brightness.light
+                          ? GlassColors.buttonLabelOnLight
+                          : GlassColors.labelOnDark,
+                      child: content,
+                    ),
+                  ),
+          ),
         ),
       ),
     );

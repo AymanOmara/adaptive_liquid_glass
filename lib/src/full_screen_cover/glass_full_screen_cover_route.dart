@@ -1,8 +1,12 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show MaterialLocalizations;
 import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 
+import '../button/glass_button.dart';
+import '../button/glass_button_shape.dart';
 import '../core/glass_colors.dart';
 import '../core/ios_page_text.dart';
+import 'full_screen_cover_drag.dart';
 import 'full_screen_cover_metrics.dart';
 
 /// The route [showGlassFullScreenCover] pushes on the glass path: an
@@ -15,8 +19,21 @@ class GlassFullScreenCoverRoute<T> extends PageRoute<T> {
     this.backgroundColor,
     this.semanticLabel,
     this.capturedThemes,
+    this.dragToDismiss = false,
+    this.showsCloseButton = false,
+    this.closeButtonSemanticLabel,
     super.settings,
   });
+
+  /// Whether dragging the cover down dismisses it, like a sheet.
+  final bool dragToDismiss;
+
+  /// Whether a glass close button (an xmark circle) sits top-trailing.
+  final bool showsCloseButton;
+
+  /// What assistive tech calls the close button; defaults to the
+  /// localized "Close".
+  final String? closeButtonSemanticLabel;
 
   /// Builds the cover's content, inside the safe area.
   final WidgetBuilder builder;
@@ -84,14 +101,49 @@ class GlassFullScreenCoverRoute<T> extends PageRoute<T> {
             child: SafeArea(
               top: true,
               bottom: true,
-              child: iosPageText(Builder(builder: builder)),
+              child: iosPageText(
+                showsCloseButton
+                    ? Stack(
+                        children: [
+                          // Fills the safe area so the button sits at its
+                          // corner however small the content is.
+                          const SizedBox.expand(),
+                          Builder(builder: builder),
+                          PositionedDirectional(
+                            top: 0,
+                            end: FullScreenCoverMetrics.closeButtonInset,
+                            child: Builder(builder: _closeButton),
+                          ),
+                        ],
+                      )
+                    : Builder(builder: builder),
+              ),
             ),
           ),
         ),
       ),
     );
-    return capturedThemes?.wrap(page) ?? page;
+    final draggable = FullScreenCoverDragDismiss(
+      enabled: dragToDismiss,
+      child: page,
+    );
+    return capturedThemes?.wrap(draggable) ?? draggable;
   }
+
+  /// iOS 26's close button: a glass circle with an xmark, popping the
+  /// cover (respecting `PopScope`).
+  Widget _closeButton(BuildContext context) => GlassButton.icon(
+    onPressed: () => Navigator.maybePop(context),
+    icon: CupertinoIcons.xmark,
+    shape: GlassButtonShape.circle,
+    semanticLabel:
+        closeButtonSemanticLabel ??
+        Localizations.of<MaterialLocalizations>(
+          context,
+          MaterialLocalizations,
+        )?.closeButtonLabel ??
+        'Close',
+  );
 
   @override
   Widget buildTransitions(

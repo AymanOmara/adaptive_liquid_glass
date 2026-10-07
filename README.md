@@ -742,9 +742,14 @@ scales nor dims; the background runs edge to edge while the content
 respects the safe area, and with Reduce Motion it cross-fades instead of
 sliding. `Navigator.pop` from inside closes it, or keep the returned
 `GlassFullScreenCoverHandle` (`dismiss`, and `result` completes with the
-value it closed with) to close it from anywhere. Layout matches SwiftUI;
-the transition timing is estimated. On Android it is a Material 3
-full-screen dialog.
+value it closed with) to close it from anywhere. Layout matches SwiftUI,
+and the slide's timing is fitted from a recording of SwiftUI's cover. On
+Android it is a Material 3 full-screen dialog.
+
+Two options SwiftUI's cover lacks, both off by default:
+`dragToDismiss: true` lets it be dragged down to close like a sheet, and
+`showsCloseButton: true` adds a glass xmark close button top-trailing (a
+Material close icon on Android).
 
 ### Menu button and controller
 

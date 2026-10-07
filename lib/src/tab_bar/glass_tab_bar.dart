@@ -153,6 +153,50 @@ class _GlassTabBarState extends State<GlassTabBar>
     vsync: this,
   );
 
+  /// The bar's growth around a held lens: 0 at rest, 1 grown (see
+  /// TabBarMetrics.grow). Frozen when the finger lifts; it goes back once
+  /// the lens settles, so a quick tap leaves the bar as it is.
+  late final AnimationController _grow = AnimationController.unbounded(
+    vsync: this,
+  );
+
+  void _springGrow(double target) {
+    if (_reduceMotion) {
+      _grow.value = target;
+    } else {
+      _grow
+          .animateWith(
+            SpringSimulation(
+              TabBarMetrics.grow,
+              _grow.value,
+              target,
+              _grow.velocity,
+            ),
+          )
+          .whenCompleteOrCancel(() {
+            // A spring stops within its tolerance: land the bar on its
+            // size.
+            if (mounted &&
+                !_grow.isAnimating &&
+                (_grow.value - target).abs() < 0.01) {
+              _grow.value = target;
+            }
+          });
+    }
+  }
+
+  /// Whether the lens is up: from touch-down until it settles. A quick
+  /// tap selects before the lens has visibly grown, and the new tab must
+  /// not flash its tint under it.
+  bool _lensUp = false;
+
+  /// The lens settling into the pill, with the bar shrinking back.
+  void _settle() {
+    _lensUp = false;
+    _springPress(TabBarMetrics.release, 0);
+    _springGrow(0);
+  }
+
   /// Drives [_x] towards the finger with a spring integrated every frame.
   /// Restarting a spring simulation on each touch (every ~4 frames) left
   /// the lens still for the restart frame: a visible stutter.
@@ -338,7 +382,12 @@ class _GlassTabBarState extends State<GlassTabBar>
       return;
     }
     final velocity = _xVelocity;
-    final acceleration = (velocity - _lastVelocity) / dt * _itemWidth;
+    // Only a dragged lens wobbles: SwiftUI's TabView (iOS 26.4) keeps a
+    // lens travelling to a pressed tab at its height (Kept's wobble was
+    // measured dragging).
+    final acceleration = _dragging
+        ? (velocity - _lastVelocity) / dt * _itemWidth
+        : 0.0;
     _lastVelocity = velocity;
     final spring = TabBarMetrics.wobble;
     final k = spring.stiffness / spring.mass;
@@ -393,7 +442,9 @@ class _GlassTabBarState extends State<GlassTabBar>
   @override
   void dispose() {
     _holdTimer?.cancel();
+    _reliftTimer?.cancel();
     _followTicker.dispose();
+    _grow.dispose();
     _light.dispose();
     _wobbleTicker.dispose();
     _wobble.dispose();
@@ -404,9 +455,11 @@ class _GlassTabBarState extends State<GlassTabBar>
 
   void _down(DragDownDetails details) {
     _held = true;
+    _lensUp = true;
     _finger = _toSlots(details.localPosition.dx);
     _fingerSlot = _nearestSlot;
     _cancelPendingRelease();
+    _cancelRelift();
     _holdTimer?.cancel();
     _holdTimer = Timer(TabBarMetrics.tapHold, () {
       _holdTimer = null;
@@ -414,16 +467,26 @@ class _GlassTabBarState extends State<GlassTabBar>
       _pendingSettle = null;
       if (mounted && !_held) settle?.call();
     });
-    _springPress(TabBarMetrics.press, 1);
     _dragging = false;
     _springLight(TabBarMetrics.light, 1);
+    _springGrow(1);
     // The lens grows at the current selection and travels to the finger,
-    // as iOS does (a tap on a far tab sends it across the bar).
-    _springX(TabBarMetrics.travel, _lensTarget(_finger));
+    // as iOS does (a tap on a far tab sends it across the bar). Sent
+    // across, it pops up at once and, if still held when it arrives,
+    // settles and lifts again (iOS 26.4).
+    final target = _lensTarget(_finger);
+    final travels = (target - _x.value).abs() > 0.5 && !_reduceMotion;
+    _springPress(travels ? TabBarMetrics.pop : TabBarMetrics.press, 1);
+    _springX(TabBarMetrics.travel, target);
+    if (travels) {
+      _reliftAt = target;
+      _x.addListener(_reliftOnArrival);
+    }
     _startWobble();
   }
 
   void _drag(DragUpdateDetails details) {
+    if (_cancelRelift()) _springPress(TabBarMetrics.press, 1);
     _finger = _toSlots(details.localPosition.dx);
     _follow(_lensTarget(_finger));
     final slot = _nearestSlot;
@@ -439,6 +502,9 @@ class _GlassTabBarState extends State<GlassTabBar>
 
   void _release(double velocity) {
     _held = false;
+    _cancelRelift();
+    // The bar stays as grown as it is until the lens settles.
+    _grow.stop();
     _springLight(TabBarMetrics.lightOff, 0);
     final slot = _nearestSlot;
     final index = _rtl ? _count - 1 - slot : slot;
@@ -452,7 +518,7 @@ class _GlassTabBarState extends State<GlassTabBar>
       _arrival = slot.toDouble();
       _x.addListener(_settleOnArrival);
     } else {
-      _shrink(() => _springPress(TabBarMetrics.release, 0));
+      _shrink(_settle);
     }
     if (index != widget.selectedIndex) {
       widget.onSelected(index);
@@ -468,7 +534,7 @@ class _GlassTabBarState extends State<GlassTabBar>
   /// Springs the pill (settling any lens) back to [GlassTabBar.selectedIndex].
   void _reconcile() {
     _cancelPendingRelease();
-    _springPress(TabBarMetrics.release, 0);
+    _settle();
     _springX(TabBarMetrics.slide, _slot(widget.selectedIndex).toDouble());
   }
 
@@ -487,7 +553,36 @@ class _GlassTabBarState extends State<GlassTabBar>
     if (target == null || (_x.value - target).abs() > 0.15) return;
     _arrival = null;
     _x.removeListener(_settleOnArrival);
-    _shrink(() => _springPress(TabBarMetrics.release, 0));
+    _shrink(_settle);
+  }
+
+  /// Where a popped, held lens is travelling to; null when not waiting.
+  double? _reliftAt;
+
+  /// Lifts the lens again TabBarMetrics.relift after it settled.
+  Timer? _reliftTimer;
+
+  void _reliftOnArrival() {
+    final target = _reliftAt;
+    if (target == null || (_x.value - target).abs() > 0.15) return;
+    _reliftAt = null;
+    _x.removeListener(_reliftOnArrival);
+    if (!_held) return;
+    _springPress(TabBarMetrics.release, 0);
+    _reliftTimer = Timer(TabBarMetrics.relift, () {
+      _reliftTimer = null;
+      if (mounted && _held) _springPress(TabBarMetrics.press, 1);
+    });
+  }
+
+  /// Stops a pending relift; true when the lens was settling for one.
+  bool _cancelRelift() {
+    _reliftAt = null;
+    _x.removeListener(_reliftOnArrival);
+    final timer = _reliftTimer;
+    _reliftTimer = null;
+    timer?.cancel();
+    return timer != null;
   }
 
   void _cancelPendingRelease() {
@@ -523,17 +618,43 @@ class _GlassTabBarState extends State<GlassTabBar>
             child: TabBarFillScope(child: _sizedBar()),
           ),
           const SizedBox(width: GlassSearchTabButton.gap),
-          GlassSearchTabButton(
-            onPressed: onSearch,
-            semanticLabel:
-                widget.searchLabel ??
-                cupertinoL10n(context).searchTextFieldPlaceholderLabel,
-            glass: widget.glass,
-            mode: _barMode,
+          // The circle is the bar's material (UIKit draws both), with the
+          // bar's shadow in shader mode.
+          CustomPaint(
+            painter: _searchShader(context) ? const BarShadow() : null,
+            child: withTabBarGlass(
+              context,
+              GlassSearchTabButton(
+                onPressed: onSearch,
+                semanticLabel:
+                    widget.searchLabel ??
+                    cupertinoL10n(context).searchTextFieldPlaceholderLabel,
+                glass: widget.glass,
+                mode: _barMode,
+              ),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  /// Whether the search circle is drawn by the shader (and so needs the
+  /// bar's shadow). Resolved here: the bar's own flags are set while it
+  /// lays out, after this circle is built.
+  bool _searchShader(BuildContext context) {
+    final environment = GlassPlatform.instance.environment.value;
+    final requested = widget.mode ?? LiquidGlassTheme.of(context).defaultMode;
+    final lens =
+        environment.shaderSupported &&
+        (widget.mode == null ||
+            resolveGlassMode(requested: requested, environment: environment) ==
+                EffectiveGlassMode.shader);
+    return resolveGlassMode(
+          requested: widget.mode ?? (lens ? GlassRenderMode.shader : requested),
+          environment: environment,
+        ) ==
+        EffectiveGlassMode.shader;
   }
 
   Widget _sizedBar() => LayoutBuilder(
@@ -643,7 +764,7 @@ class _GlassTabBarState extends State<GlassTabBar>
         onPanEnd: (d) => _release(d.velocity.pixelsPerSecond.dx),
         onPanCancel: () => _release(0),
         child: AnimatedBuilder(
-          animation: Listenable.merge([_x, _press, _wobble, _light]),
+          animation: Listenable.merge([_x, _press, _grow, _wobble, _light]),
           builder: (context, _) => _bar(_press.value, selected, indicator),
         ),
       ),
@@ -654,11 +775,11 @@ class _GlassTabBarState extends State<GlassTabBar>
     // p springs past 0 and 1; the lens shows only while it is above 0,
     // but the pill and lens sizes follow p itself (the pill squashes).
     final t = p.clamp(0.0, 1.0);
-    // Only a lens that is held or still visibly grown is drawn: a release
-    // spring rebounds a hair above zero, and a hair-thin lens would still
-    // refract a ghost of the tabs over the pill.
+    // Only a lens that is held, not yet settled or still visibly grown is
+    // drawn: a release spring rebounds a hair above zero, and a hair-thin
+    // lens would still refract a ghost of the tabs over the pill.
     // (The release spring's second rebound peaks near 0.016.)
-    final lensShown = _held || p > 0.05;
+    final lensShown = _held || _lensUp || p > 0.05;
     final lensContent =
         _shaderLens && TabLensProgram.instance.program.value != null;
     final x = _toPixels(_x.value);
@@ -670,9 +791,11 @@ class _GlassTabBarState extends State<GlassTabBar>
       width: _pillWidth + TabBarMetrics.lensGrowX * p,
       height: _contentHeight + TabBarMetrics.lensGrowY * p + wobble * 2,
     );
-    final lean = TabBarMetrics.growLean * (x - _rowWidth / 2) * t;
-    final growX = TabBarMetrics.growX * t;
-    final growY = TabBarMetrics.growY * t;
+    // The bar grows on its own spring, not the lens's (see _grow).
+    final g = _grow.value;
+    final lean = TabBarMetrics.growLean * (x - _rowWidth / 2) * g;
+    final growX = TabBarMetrics.growX * g;
+    final growY = TabBarMetrics.growY * g;
     // The bar's glass reaches past the row by the inset plus its growth.
     final glowInsetX = TabBarMetrics.inset + growX;
     final glowInsetY = TabBarMetrics.inset + growY;
