@@ -1,3 +1,9 @@
+## Unreleased
+
+* `GlassLabel`: SwiftUI's `Label(_:systemImage:)`, an icon and title
+  with vibrant label colours on glass (`GlassLabelLayout` picks the parts
+  shown; geometry estimated). `GlassLabelStyle` is now public.
+
 ## 0.1.0-dev.7
 
 * New components (Material 3 counterparts on Android):
