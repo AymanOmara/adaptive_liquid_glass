@@ -9,12 +9,21 @@ Widget? newComponentTwin(String scene) => switch (scene) {
   'disclosure' => const _Disclosure(),
   'emptystate' => const _EmptyState(),
   'fullscreencover' => const _FullScreenCover(),
+  'gauge' => const _Gauge(),
   _ => null,
 };
 
 /// The buttons' no-op, as the SwiftUI scene's empty `Button` actions.
 void _noop() {}
 
+/// [child] centred at ([x], [y]) in screen points.
+Widget _at(double x, double y, Widget child) => Positioned(
+  left: x - 201,
+  top: y - 200,
+  width: 402,
+  height: 400,
+  child: Center(child: child),
+);
 
 class _Disclosure extends StatelessWidget {
   const _Disclosure();
@@ -124,3 +133,60 @@ class _FullScreenCoverState extends State<_FullScreenCover> {
   );
 }
 
+/// The linear battery gauge above the temp and battery rings, the column
+/// centred at 201, 300, over white, ignoring the safe area.
+class _Gauge extends StatelessWidget {
+  const _Gauge();
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: Colors.white,
+    child: Stack(
+      children: [
+        _at(
+          201,
+          300,
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                width: 300,
+                child: GlassGauge(
+                  value: 0.62,
+                  label: Text('Battery'),
+                  currentValueLabel: Text('62%'),
+                  minimumValueLabel: Text('0'),
+                  maximumValueLabel: Text('100'),
+                ),
+              ),
+              const SizedBox(height: 48),
+              const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GlassGauge(
+                    value: 21,
+                    min: 0,
+                    max: 40,
+                    style: GlassGaugeStyle.accessoryCircular,
+                    label: Text('Temp'),
+                    currentValueLabel: Text('21'),
+                    minimumValueLabel: Text('0'),
+                    maximumValueLabel: Text('40'),
+                    tint: GlassSystemColors.orange,
+                  ),
+                  SizedBox(width: 48),
+                  GlassGauge(
+                    value: 0.62,
+                    style: GlassGaugeStyle.accessoryCircularCapacity,
+                    label: Text('Battery'),
+                    currentValueLabel: Text('62'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}

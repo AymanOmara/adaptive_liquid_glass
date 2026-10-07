@@ -224,6 +224,7 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `GlassBadge` | Red count capsule (dot when empty) on a child's top trailing corner | `Badge` |
 | `GlassPageControl` | Page dots on a glass capsule; tap and scrub | row of Material dots |
 | `GlassProgressIndicator`, `GlassProgressStyle` | Linear bar on a glass track, or ring/spinner | `LinearProgressIndicator` / `CircularProgressIndicator` |
+| `GlassGauge`, `GlassGaugeStyle` | SwiftUI's Gauge: linear capacity, accessoryCircular, accessoryCircularCapacity | `LinearProgressIndicator` / `CircularProgressIndicator` |
 | `GlassSwipeActions`, `GlassSwipeAction` | List swipe actions: tinted capsules, full swipe, haptic | iOS layout, Material colour |
 
 ## Cookbook
@@ -645,6 +646,34 @@ to localise them). Actions are small buttons unless a
 own and nothing animates. Geometry measured against SwiftUI on iOS 26.4.
 On Android the same column takes Material 3 typography.
 
+### Gauge
+
+```dart
+GlassGauge(
+  value: 0.62,
+  label: const Text('Battery'),
+  currentValueLabel: const Text('62%'),
+  minimumValueLabel: const Text('0'),
+  maximumValueLabel: const Text('100'),
+)
+GlassGauge(
+  value: 21, min: 0, max: 40,
+  style: GlassGaugeStyle.accessoryCircular,
+  label: const Text('Temp'),
+  currentValueLabel: const Text('21'),
+  tint: GlassSystemColors.orange,
+)
+```
+
+SwiftUI's `Gauge` in its three forms: `linearCapacity` (the default, a
+capsule track filled to the value), `accessoryCircular` (an open ring with
+a dot marking the value) and `accessoryCircularCapacity` (a ring filled to
+the value). `tint` colours the fill (by default blue on the linear gauge
+and the label colour on the rings, as SwiftUI), and the value does not
+animate; SwiftUI's gauges do not either. Geometry measured against SwiftUI
+on iOS 26.4. On Android it is a
+Material 3 `LinearProgressIndicator` or `CircularProgressIndicator` with
+the labels around it.
 
 ### Sheet
 

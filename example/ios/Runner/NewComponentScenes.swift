@@ -90,3 +90,52 @@ struct FullScreenCoverReference: View {
     .environment(\.colorScheme, .light)
   }
 }
+
+/// A linear capacity battery gauge (62%, 0/100 labels, 300 wide) above a
+/// pair of circular gauges — an orange accessoryCircular temp gauge (21 of
+/// 0…40, 0/40 labels) and an accessoryCircularCapacity battery gauge (62)
+/// — in a VStack (spacing 48) centred at 201, 300. White 402 x 874 page.
+@available(iOS 26.0, *)
+struct GaugeReference: View {
+  var body: some View {
+    ZStack(alignment: .topLeading) {
+      Color.white
+      VStack(spacing: 48) {
+        Gauge(value: 0.62) {
+          Text("Battery")
+        } currentValueLabel: {
+          Text("62%")
+        } minimumValueLabel: {
+          Text("0")
+        } maximumValueLabel: {
+          Text("100")
+        }
+        .frame(width: 300)
+        HStack(spacing: 48) {
+          Gauge(value: 21, in: 0...40) {
+            Text("Temp")
+          } currentValueLabel: {
+            Text("21")
+          } minimumValueLabel: {
+            Text("0")
+          } maximumValueLabel: {
+            Text("40")
+          }
+          .gaugeStyle(.accessoryCircular)
+          .tint(.orange)
+          Gauge(value: 0.62) {
+            Text("Battery")
+          } currentValueLabel: {
+            Text("62")
+          }
+          .gaugeStyle(.accessoryCircularCapacity)
+        }
+      }
+      .position(x: 201, y: 300)
+    }
+    .frame(width: 402, height: 874)
+    .ignoresSafeArea()
+    .environment(\.colorScheme, .light)
+    .statusBarHidden(true)
+  }
+}

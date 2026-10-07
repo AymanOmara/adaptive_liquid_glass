@@ -515,6 +515,38 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                 ],
               ),
               const SizedBox(height: 24),
+              GlassGauge(
+                value: _volume,
+                label: const Text('Battery'),
+                currentValueLabel: Text('${(_volume * 100).round()}%'),
+                minimumValueLabel: const Text('0'),
+                maximumValueLabel: const Text('100'),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GlassGauge(
+                    value: _volume * 40,
+                    min: 0,
+                    max: 40,
+                    style: GlassGaugeStyle.accessoryCircular,
+                    label: const Text('Temp'),
+                    currentValueLabel: Text('${(_volume * 40).round()}'),
+                    minimumValueLabel: const Text('0'),
+                    maximumValueLabel: const Text('40'),
+                    tint: GlassSystemColors.orange,
+                  ),
+                  const SizedBox(width: 48),
+                  GlassGauge(
+                    value: _volume,
+                    style: GlassGaugeStyle.accessoryCircularCapacity,
+                    label: const Text('Battery'),
+                    currentValueLabel: Text('${(_volume * 100).round()}'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
               const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
