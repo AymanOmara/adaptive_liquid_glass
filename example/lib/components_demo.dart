@@ -296,6 +296,39 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                     ),
                     child: const Text('Action sheet'),
                   ),
+                  GlassButton(
+                    onPressed: () => showGlassFullScreenCover<void>(
+                      context: context,
+                      builder: (context) => Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsetsDirectional.symmetric(
+                              horizontal: 16,
+                            ),
+                            child: Row(
+                              children: [
+                                const Spacer(),
+                                GlassButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Done'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Spacer(),
+                          const Text(
+                            'Cover',
+                            style: TextStyle(
+                              fontSize: 34,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Spacer(),
+                        ],
+                      ),
+                    ),
+                    child: const Text('Full screen'),
+                  ),
                   GlassPopoverAnchor(
                     popoverBuilder: (_) => const Padding(
                       padding: EdgeInsets.all(16),

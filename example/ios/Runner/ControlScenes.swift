@@ -42,6 +42,7 @@ enum ControlScenes {
     case "badge": root = AnyView(BadgeReference())
     case "disclosure": root = AnyView(DisclosureReference())
     case "emptystate": root = AnyView(EmptyStateReference())
+    case "fullscreencover": root = AnyView(FullScreenCoverReference())
     default: return false
     }
     window?.rootViewController = UIHostingController(rootView: root)

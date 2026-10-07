@@ -43,6 +43,8 @@ export 'src/disclosure/glass_disclosure_group.dart';
 export 'src/empty_state/glass_empty_state.dart';
 export 'src/foreground/glass_backdrop_source.dart' show GlassBackdropSource;
 export 'src/foreground/glass_foreground.dart';
+export 'src/full_screen_cover/glass_full_screen_cover_handle.dart';
+export 'src/full_screen_cover/show_glass_full_screen_cover.dart';
 export 'src/glass_effect.dart';
 export 'src/group/glass_group.dart' show GlassGroup;
 export 'src/liquid_glass.dart' show LiquidGlass;

@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 Widget? newComponentTwin(String scene) => switch (scene) {
   'disclosure' => const _Disclosure(),
   'emptystate' => const _EmptyState(),
+  'fullscreencover' => const _FullScreenCover(),
   _ => null,
 };
 
@@ -72,6 +73,54 @@ class _EmptyState extends StatelessWidget {
         Expanded(child: Center(child: GlassEmptyState.search(query: 'kiwi'))),
       ],
     ),
+  );
+}
+
+/// A white "Home" page that, 0.3 s after launch, presents the full-screen
+/// cover: a Done glass button top-trailing and a bold large "Cover" title
+/// centred.
+class _FullScreenCover extends StatefulWidget {
+  const _FullScreenCover();
+
+  @override
+  State<_FullScreenCover> createState() => _FullScreenCoverState();
+}
+
+class _FullScreenCoverState extends State<_FullScreenCover> {
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      showGlassFullScreenCover<void>(
+        context: context,
+        builder: (context) => Column(
+          children: [
+            Padding(
+              padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  const Spacer(),
+                  GlassButton(onPressed: _noop, child: const Text('Done')),
+                ],
+              ),
+            ),
+            const Spacer(),
+            const Text(
+              'Cover',
+              style: TextStyle(fontSize: 34, fontWeight: FontWeight.w700),
+            ),
+            const Spacer(),
+          ],
+        ),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => const ColoredBox(
+    color: Colors.white,
+    child: SizedBox.expand(child: Center(child: Text('Home'))),
   );
 }
 

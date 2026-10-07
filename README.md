@@ -213,6 +213,7 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `showGlassConfirmationDialog` | Small glass card, actions stacked; cancel taken by a tap outside | `AlertDialog` |
 | `showGlassActionSheet` | iOS 26's confirmation dialog on iPhone: stacked capsule buttons | modal bottom sheet |
 | `showGlassSheet`, `GlassSheet`, `GlassSheetDetent` | Modal sheet with detents (`medium`, `large`, `fraction`, `height`) | modal bottom sheet |
+| `showGlassFullScreenCover`, `GlassFullScreenCoverHandle` | `.fullScreenCover`: opaque edge-to-edge modal sliding up | full-screen `Dialog` |
 | `showGlassToast`, `GlassToastAction`, `GlassToastHandle` | Glass capsule toast from the top, queued, swipe to dismiss | `SnackBar` |
 | `GlassTextField` (`+ .password`) | Text field in a glass capsule; password with an eye button | `TextField` |
 | `GlassSearchField` | Search capsule with magnifier and clear button | `SearchBar` |
@@ -662,6 +663,39 @@ The sheet works like SwiftUI's `presentationDetents`:
 - At `large` it runs edge to edge, opaque, with the screen's own corners.
 - `GlassSheetDetent.fraction(0.6)` and `.height(400)` make custom detents.
 
+### Full-screen cover
+
+```dart
+final cover = showGlassFullScreenCover<void>(
+  context: context,
+  builder: (context) => Column(
+    children: [
+      Align(
+        alignment: AlignmentDirectional.topEnd,
+        child: Padding(
+          padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+          child: GlassButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Done'),
+          ),
+        ),
+      ),
+      const Expanded(child: PlayerView()),
+    ],
+  ),
+);
+// later: cover.dismiss();
+```
+
+SwiftUI's `.fullScreenCover`: an opaque page sliding up over the whole
+screen, for a video player or a photo editor. The page below neither
+scales nor dims; the background runs edge to edge while the content
+respects the safe area, and with Reduce Motion it cross-fades instead of
+sliding. `Navigator.pop` from inside closes it, or keep the returned
+`GlassFullScreenCoverHandle` (`dismiss`, and `result` completes with the
+value it closed with) to close it from anywhere. Layout matches SwiftUI;
+the transition timing is estimated. On Android it is a Material 3
+full-screen dialog.
 
 ### Menu button and controller
 
