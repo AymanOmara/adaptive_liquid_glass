@@ -6,6 +6,7 @@ import '../foreground/glass_backdrop_source.dart';
 import '../platform/glass_platform.dart';
 import '../tab_bar/glass_tab_bar.dart';
 import '../tab_bar/tab_bar_fill_scope.dart';
+import '../tab_bar/tab_lens.dart';
 import '../toolbar/toolbar_metrics.dart';
 import 'scaffold_metrics.dart';
 
@@ -83,9 +84,11 @@ class GlassScaffold extends StatelessWidget {
       return accessory;
     }
     final theme = LiquidGlassTheme.of(context);
+    // UIKit draws the accessory in the tab bar's material, so the shader
+    // draws it with the bar's glass too.
     return LiquidGlassTheme(
       data: theme.copyWith(defaultMode: tabBar.mode ?? GlassRenderMode.shader),
-      child: accessory,
+      child: Builder(builder: (context) => withTabBarGlass(context, accessory)),
     );
   }
 

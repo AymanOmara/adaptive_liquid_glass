@@ -35,11 +35,25 @@ Bar-region mean |diff| after round 2 (`build/side-by-side-tabbar2-*-after`):
 | Search tab | 1.97 | 2.33 |
 | Accessory | 4.48 | 4.73 |
 
-## Medium
+## Medium (round 3)
 
-- [ ] Native mode over the photo: unselected labels sometimes flip to white (backdrop brightness sampling in `lib/src/foreground` / `lib/src/group`; iOS keeps them dark).
-- [ ] Accessory scene: 4.48 native / 4.73 shader after round 2 (5.06 / 6.21 after round 1).
-- [ ] Press/drag motion: frame-by-frame comparison of lens growth, stretch and release vs native (fixed-rate recordings).
+How it is measured: `-controls <scene>` (SwiftUI) vs `-twin <scene> -mode native|shader`, `simctl io screenshot` after 3 s, mean |diff| over the bottom 360 px rows (y ≥ 2262 @3x, the round-2 crop), simulator iPhone 17 Pro / iOS 26.4. Re-taken captures: an occasional launch is caught mid-transition (|diff| > 10); such outliers are re-shot.
+
+Starting point (after merging the g13 refit, which greyed the shader bar): shader 4.32 / 4.77 / 3.35 / 7.24 / 4.62 / 6.03 / 10.57 for the seven scenes below. Restoring the bar's fitted tone (identity tone knots, pre-refit fill drop and tint; search circle in the bar's material with its shadow) brought them back to the round-2 values (photo 4.77 → 5.14, the one scene the refit had helped).
+
+- [x] Unselected labels flipping to white over the photo (native mode). Cause: the photo's mean luminance under the bar is 0.438, inside the ±0.08 hysteresis band around 0.5. The first brightness sample decided: taken before the photo decoded (white page) the labels stayed dark; taken after, 0.438 < 0.5 flipped them white and the hysteresis held that (1 launch in 6). The first sample now starts from the brightness the labels already show (`GlassGroup._sample`), so near-grey backdrops keep the appearance's labels, as iOS does (dark in light mode, light in dark mode). 10/10 launches dark.
+- [x] Accessory scene: largest contributors were the accessory row (text and glyphs 17 px / 3–10 px off, labels 85 % black vs SwiftUI's black) and, in shader mode, the accessory's glass (243 vs UIKit's 253: it took the g13 tone, not the bar's material). Now the accessory is drawn with `withTabBarGlass`, its content takes the primary label colour, and the twin lays out its CupertinoIcons stand-ins at the SF Symbols' frame widths (music.note 14.33 pt, play.fill 13.33, from the reference ink). Library changes alone: native 4.48 → 4.57 (black glyphs, still misplaced), shader 6.55 → 4.97; with the twin layout 2.04 / 2.44. What is left is glyph shape (house, gearshape vs CupertinoIcons: ~0.76 + 0.22 of it) and icons ~2 px high.
+- [ ] Press/drag motion: see below.
+
+| Scene | Native (round 2 → 3) | Shader (round 2 → 3) |
+|---|---|---|
+| White page | 1.24 → 1.24 | 1.35 → 1.35 |
+| Photo | 1.93 (flips to 4.00) → 1.93 stable | 5.14 → 5.14 |
+| Dark | 1.23 → 1.23 | 1.60 → 1.60 |
+| Dark photo | 2.27 → 2.27 | 3.95 → 3.95 |
+| Badge | 1.65 → 1.65 | 1.77 → 1.77 |
+| Search tab | 1.97 → 1.97 | 2.33 → 2.06 |
+| Accessory | 4.48 → 2.04 | 4.73 → 2.44 |
 
 ## Hard
 

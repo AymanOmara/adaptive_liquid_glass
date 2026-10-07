@@ -247,15 +247,32 @@ class _AccessoryState extends State<_Accessory> {
     bottomAccessory: const GlassBottomAccessory(
       child: Row(
         children: [
-          Icon(CupertinoIcons.music_note),
+          // SF Symbols lay out narrower than their 20-pt CupertinoIcons
+          // stand-ins: the reference's music.note frame is 14.33 pt wide,
+          // play.fill's 13.33 (from its ink, @3x). The glyphs overhang.
+          _SymbolFrame(width: 14.33, icon: CupertinoIcons.music_note),
           SizedBox(width: 8),
           Text('Now Playing'),
           Spacer(),
-          Icon(CupertinoIcons.play_fill),
+          _SymbolFrame(width: 13.33, icon: CupertinoIcons.play_fill),
         ],
       ),
     ),
     body: const SizedBox.expand(),
+  );
+}
+
+/// [icon] laid out [width] wide, as the SF Symbol it stands in for.
+class _SymbolFrame extends StatelessWidget {
+  const _SymbolFrame({required this.width, required this.icon});
+
+  final double width;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: width,
+    child: OverflowBox(maxWidth: double.infinity, child: Icon(icon)),
   );
 }
 

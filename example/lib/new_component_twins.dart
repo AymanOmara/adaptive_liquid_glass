@@ -79,7 +79,9 @@ class _EmptyState extends StatelessWidget {
             ),
           ),
         ),
-        Expanded(child: Center(child: GlassEmptyState.search(query: 'kiwi'))),
+        Expanded(
+          child: Center(child: GlassEmptyState.search(query: 'kiwi')),
+        ),
       ],
     ),
   );
