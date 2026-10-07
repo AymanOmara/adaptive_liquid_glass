@@ -53,6 +53,8 @@ export 'src/glass_effect.dart';
 export 'src/group/glass_group.dart' show GlassGroup;
 export 'src/label/glass_label.dart';
 export 'src/label/glass_label_layout.dart';
+export 'src/link/glass_link.dart';
+export 'src/link/glass_share_link.dart';
 export 'src/liquid_glass.dart' show LiquidGlass;
 export 'src/list/glass_list_section.dart';
 export 'src/list/glass_list_tile.dart';
