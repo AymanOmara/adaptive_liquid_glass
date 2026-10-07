@@ -3,6 +3,8 @@
 - `GlassEmptyState` sits where SwiftUI's `ContentUnavailableView` does
   (measured; it was 2.5-10 pt low): a fitted bottom inset, and a taller
   icon gap for `.search`.
+- `GlassButton`'s glass label is opaque black over light content, as
+  SwiftUI's `.glass` button draws it (measured; it read 38,38,38).
 
 ## 0.1.0-dev.8
 

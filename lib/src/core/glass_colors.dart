@@ -112,6 +112,13 @@ abstract final class GlassColors {
         darkColor: Color(0xFF535356),
       );
 
+  // Button
+
+  /// A glass button's label over light content: opaque black, where other
+  /// glass labels take [labelOnLight] (measured: SwiftUI's `.glass` button
+  /// draws its label 0,0,0 over white; 85% black read 38,38,38).
+  static const Color buttonLabelOnLight = black;
+
   // Menu
 
   /// The row under a gliding finger in a glass menu (estimated, not

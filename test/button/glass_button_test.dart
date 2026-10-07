@@ -262,4 +262,45 @@ void main() {
       greaterThan(glassButtonMetrics(GlassControlSize.regular).height),
     );
   }, variant: ios);
+
+  testWidgets('glass label: opaque black over light, white over dark', (
+    t,
+  ) async {
+    shaderEnv();
+    Widget host(Brightness b) => plainHost(
+      GlassForeground(
+        backgroundBrightness: b,
+        child: GlassButton.icon(
+          onPressed: () {},
+          icon: CupertinoIcons.add,
+          label: const Text('Add'),
+        ),
+      ),
+    );
+    await t.pumpWidget(host(Brightness.light));
+    // SwiftUI draws 0,0,0 (measured), not 85% black.
+    expect(styleOf(t, 'Add').color, const Color(0xFF000000));
+    expect(
+      IconTheme.of(t.element(find.byIcon(CupertinoIcons.add))).color,
+      const Color(0xFF000000),
+    );
+    await t.pumpWidget(host(Brightness.dark));
+    expect(styleOf(t, 'Add').color, const Color(0xFFFFFFFF));
+  }, variant: ios);
+
+  testWidgets("the app's own label colour still wins", (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      plainHost(
+        GlassButton(
+          onPressed: () {},
+          child: const Text('Mine', style: TextStyle(color: Color(0xFF123456))),
+        ),
+      ),
+    );
+    final text = t.widget<RichText>(
+      find.descendant(of: find.text('Mine'), matching: find.byType(RichText)),
+    );
+    expect(text.text.style!.color, const Color(0xFF123456));
+  }, variant: ios);
 }

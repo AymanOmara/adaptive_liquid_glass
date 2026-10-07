@@ -32,7 +32,7 @@
   - [done] empty state placement (title/description within 0.33 pt)
   - full-screen cover: transition timing estimated; drag-to-dismiss and
     glass close button not built
-  - GlassButton label renders (38,38,38) vs SwiftUI black
+  - [done] GlassButton label black like SwiftUI (was 85% black)
   Next (medium): pull to refresh (refreshable), searchable presentation,
   GlassWheelPicker, date picker upgrades (graphical, time, wheel)
   Later: keyboard toolbar, share link, colour picker, tabBarMinimizeBehavior,
