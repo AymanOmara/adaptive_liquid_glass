@@ -46,10 +46,13 @@ KEYS = ["blurSigma", "blurSizeRef", "frostWideSigma", "frostWideMixEdge", "frost
         "rimWidth", "rimIntensity", "fillOpacity", "fillSizeRef", "fillSizeDrop", "fillR", "fillG", "fillB", "saturation", "dim",
         "shadowRadius", "shadowOpacity", "tintStrength",
         "tone0", "tone1", "tone2", "tone3", "tone4", "tone5", "tone6", "tone7", "tone8",
+        "stone0", "stone1", "stone2", "stone3", "stone4", "stone5", "stone6", "stone7", "stone8",
+        "smallSizeLo", "smallSizeHi",
         "postBlurShare", "normalRadiusScale", "lensEdge", "lensEdgeDecay",
         "rimMix", "rimMixWidth", "rimMixCut", "rimMixLumaFloor",
         "toneLift", "toneLiftKnee", "toneLiftSizeRef", "blurAspectPower", "rimBack"]
 TONE_KEYS = [f"tone{i}" for i in range(9)]
+STONE_KEYS = [f"stone{i}" for i in range(9)]
 BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
           # Task 17b: frost sigma x min(1, halfMin / blurSizeRef) (pt); 0 = off.
           "blurSizeRef": (0, 200),
@@ -62,6 +65,10 @@ BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
           "frostWideSizeDrop": (0, 5),
           # Task 17d tone LUT knots (grey, inputs i/8).
           **{k: (0, 1) for k in TONE_KEYS},
+          # Task g13 small-shape tone curve: knots (grey, inputs i/8) and
+          # the size window (pt) over which it fades out (off when hi <= 0).
+          **{k: (0, 1) for k in STONE_KEYS},
+          "smallSizeLo": (0, 60), "smallSizeHi": (0, 60),
           # Task 17d clear-analysis features (measured shapes, fitted sizes):
           # post-lens blur share of the frost variance, lens normals from a
           # rounder rect (radius x scale), lens edge term (pt, pt) and the
@@ -199,6 +206,8 @@ def get(c, set_name, key):
         return rgb["RGB".index(key[-1])]
     if key.startswith("tone") and key[4:].isdigit():
         return float(v["toneKnots"][int(key[4:])])
+    if key.startswith("stone") and key[5:].isdigit():
+        return float(v["smallToneKnots"][int(key[5:])])
     return float(v[key])
 
 
@@ -212,6 +221,8 @@ def put(c, set_name, key, value):
         v["fillColor"] = "#" + "".join(f"{int(round(x * 255)):02X}" for x in rgb)
     elif key.startswith("tone") and key[4:].isdigit():
         v.setdefault("toneKnots", [i / 8 for i in range(9)])[int(key[4:])] = float(value)
+    elif key.startswith("stone") and key[5:].isdigit():
+        v.setdefault("smallToneKnots", [i / 8 for i in range(9)])[int(key[5:])] = float(value)
     else:
         v[key] = float(value)
 

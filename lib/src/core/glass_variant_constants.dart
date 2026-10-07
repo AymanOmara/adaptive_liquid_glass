@@ -29,6 +29,9 @@ class GlassVariantConstants {
     this.frostWideSizeRef = 0,
     this.frostWideSizeDrop = 0,
     this.toneKnots = identityToneKnots,
+    this.smallToneKnots = identityToneKnots,
+    this.smallSizeLo = 0,
+    this.smallSizeHi = 0,
     this.glowStrength = 0.25,
     this.postBlurShare = 0,
     this.normalRadiusScale = 1,
@@ -93,6 +96,9 @@ class GlassVariantConstants {
       base.frostWideSizeDrop,
     ),
     toneKnots: GlassJson.knots(j, 'toneKnots', base.toneKnots),
+    smallToneKnots: GlassJson.knots(j, 'smallToneKnots', base.smallToneKnots),
+    smallSizeLo: GlassJson.number(j, 'smallSizeLo', base.smallSizeLo),
+    smallSizeHi: GlassJson.number(j, 'smallSizeHi', base.smallSizeHi),
     glowStrength: GlassJson.number(j, 'glowStrength', base.glowStrength),
     postBlurShare: GlassJson.number(j, 'postBlurShare', base.postBlurShare),
     normalRadiusScale: GlassJson.number(
@@ -227,6 +233,22 @@ class GlassVariantConstants {
   /// fitted). [identityToneKnots] disables it.
   final List<double> toneKnots;
 
+  /// Grey tone LUT for small shapes: Task g13: measured on the reference
+  /// simulator — SwiftUI switches small shapes (half shorter side <= ~32 pt)
+  /// to a steeper tone response; this LUT is applied after the fill wash and
+  /// dim, weighted from 1 at [smallSizeLo] to 0 at [smallSizeHi].
+  /// [identityToneKnots] disables it.
+  final List<double> smallToneKnots;
+
+  /// Half shorter side (logical px) at and below which [smallToneKnots] is
+  /// applied at full weight (Task g13).
+  final double smallSizeLo;
+
+  /// Half shorter side (logical px) at and above which [smallToneKnots] is
+  /// off; the weight is linear in between. The feature is off when this is
+  /// <= 0 (Task g13).
+  final double smallSizeHi;
+
   /// Brightness of the touch glow at full press (Task 17d; 0.25 is the
   /// pre-17d behaviour, left for the motion fit).
   final double glowStrength;
@@ -358,6 +380,9 @@ class GlassVariantConstants {
     'frostWideSizeRef': frostWideSizeRef,
     'frostWideSizeDrop': frostWideSizeDrop,
     'toneKnots': toneKnots,
+    'smallToneKnots': smallToneKnots,
+    'smallSizeLo': smallSizeLo,
+    'smallSizeHi': smallSizeHi,
     'glowStrength': glowStrength,
     'postBlurShare': postBlurShare,
     'normalRadiusScale': normalRadiusScale,

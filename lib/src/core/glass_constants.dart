@@ -43,13 +43,17 @@ class GlassConstants {
   /// The shipped values (certified at the Task A1 tree): the Task
   /// 17c constants (edge lens from Task 15c, size-dependent frost/fill from
   /// 17b, frost wide tail from 17c) plus the 17d additions (tone LUT, small
-  /// dark-shape tone lift, clear lens grid, anisotropic frost) and the A1
-  /// continuous-corner outline, fitted by
+  /// dark-shape tone lift, clear lens grid, anisotropic frost), the A1
+  /// continuous-corner outline and the g13 colour refit (fitted
+  /// regular/regularDark tone LUTs, fill/saturation/tint), fitted by
   /// the NumPy model (`tool/fidelity/fit.py`) against SwiftUI screenshots
   /// of `tool/scenes/scenes.json`. Device-certified on the reference
-  /// simulator: 46/75 scenes pass, median SSIM 0.9830 / median ΔE 1.09,
-  /// min SSIM 0.9532, 0 scenes below 0.95 (75 in-set scenes; pre-A1 held-out
-  /// 48-scene set: 18/48, min 0.9470). Per-set and per-scene numbers, and
+  /// simulator: 55/75 scenes pass, median SSIM 0.9830 / median ΔE 1.29,
+  /// min SSIM 0.9525, 0 scenes below 0.95 (75 in-set scenes). The g13
+  /// refit adds a small-shape tone curve: shapes whose half shorter side
+  /// is at or below 32 pt get the small tone LUT at full weight, fading
+  /// linearly to off at 34 pt (SwiftUI's small glass has a steeper tone
+  /// response, Task g13). Per-set and per-scene numbers, and
   /// the known residuals, live in
   /// `docs/superpowers/notes/fidelity-status.md` — cite that note, not
   /// per-set numbers here.
@@ -63,6 +67,22 @@ class GlassConstants {
       frostWideMixCentre: 0.9298,
       frostWideSizeRef: 75.4199,
       frostWideSizeDrop: 1.1423,
+      // Task g13: fitted tone LUT plus a small-shape tone curve (steeper
+      // SwiftUI response below 32 pt half shorter side).
+      toneKnots: [
+        0,
+        0.125,
+        0.25,
+        0.375,
+        0.4853,
+        0.6023,
+        0.7654,
+        0.9079,
+        0.9919,
+      ],
+      smallToneKnots: [0, 0.1, 0.2, 0.3, 0.5, 0.611, 0.7142, 0.8538, 0.962],
+      smallSizeLo: 32,
+      smallSizeHi: 34,
       lensBand: 18.2615,
       lensStrength: -2.6351,
       lensDecay: 6.1712,
@@ -71,14 +91,14 @@ class GlassConstants {
       rimWidth: 1.2454,
       rimIntensity: 0.2315,
       fillColor: Color(0xFFFEFDFD),
-      fillOpacity: 0.6804,
+      fillOpacity: 0.6839,
       fillSizeRef: 43.9952,
-      fillSizeDrop: 0.1268,
-      saturation: 1.7415,
+      fillSizeDrop: 0,
+      saturation: 1.7401,
       dim: 0.0046,
       shadowRadius: 20.8906,
       shadowOpacity: 0.0494,
-      tintStrength: 1.0219,
+      tintStrength: 1.024,
     ),
     clear: GlassVariantConstants(
       blurSigma: 1.2,
@@ -118,7 +138,23 @@ class GlassConstants {
       frostWideMixCentre: 0.908,
       frostWideSizeRef: 79.2109,
       frostWideSizeDrop: 2.7378,
-      toneLift: 0.7827,
+      // Task g13: fitted tone LUT plus a small-shape tone curve (steeper
+      // SwiftUI response below 32 pt half shorter side).
+      toneKnots: [
+        0,
+        0.1917,
+        0.2754,
+        0.3813,
+        0.4936,
+        0.6408,
+        0.7513,
+        0.8537,
+        0.9861,
+      ],
+      smallToneKnots: [0, 0.0675, 0.3273, 0.4709, 0.8295, 0.92, 0.96, 0.985, 1],
+      smallSizeLo: 32,
+      smallSizeHi: 34,
+      toneLift: 0.7708,
       toneLiftKnee: 0.9995,
       toneLiftSizeRef: 48.0387,
       blurAspectPower: 0.28,
@@ -128,16 +164,16 @@ class GlassConstants {
       lensSizeRef: 38.791,
       dispersion: 0,
       rimWidth: 1.3623,
-      rimIntensity: 0.3493,
-      fillColor: Color(0xFF1B1817),
-      fillOpacity: 0.665,
+      rimIntensity: 0.3293,
+      fillColor: Color(0xFF191818),
+      fillOpacity: 0.6672,
       fillSizeRef: 36.0728,
-      fillSizeDrop: 0.798,
-      saturation: 1.8791,
+      fillSizeDrop: 0,
+      saturation: 1.967,
       dim: 0.001,
       shadowRadius: 20.3036,
       shadowOpacity: 0.0264,
-      tintStrength: 1.0084,
+      tintStrength: 1.0054,
     ),
     clearDark: GlassVariantConstants(
       blurSigma: 1.1534,

@@ -11,7 +11,8 @@ uniform vec4 uTouch;       // x, y, glow, glowRadius px
 uniform vec4 uRects[16];   // x, y, w, h px
 uniform vec4 uInfo[16];    // radius px, variant(0 regular, 1 clear), cornerExponent (0 = global), fill scale
 uniform vec4 uTints[16];   // rgb, strength
-uniform vec4 uVar[24];     // per variant (regular A-L, then clear A-L):
+uniform vec4 uVar[30];     // per variant (regular A-L, then clear A-L, then
+                           // regular M-O, then clear M-O):
                            //   A(lens decay px, band px, lens strength, disp) B(rimW, rimI, fillOpacity, dim)
                            //   C(shadowR, shadowO, tintS, lens size ref px) D(fillR, fillG, fillB, saturation)
                            //   E(frost wide sigma px, wide mix edge, wide mix centre, wide size ref px)
@@ -21,6 +22,9 @@ uniform vec4 uVar[24];     // per variant (regular A-L, then clear A-L):
                            //   J(rim mix, rim mix width px, rim mix cut px, rim mix luma floor)
                            //   K(tone lift knee, tone lift size ref px, post-lens sigma px, blur size ref px)
                            //   L(rim back strength, lens vertical-only weight, rim tint, rim hue turns)
+                           //   M, N, O.x: small-shape tone LUT, 9 grey output
+                           //   knots at inputs i/8 (Task g13); O.yz(smallSizeLo
+                           //   px, smallSizeHi px)
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -94,6 +98,24 @@ float lensField(vec2 p) {
     d = smin(d, shapeOf(p, uRects[i], info, rs, 1.0), uGlobal2.x);
   }
   return d;
+}
+
+// Tone LUT (Task 17d, glass_model.tone_apply): 9 grey output knots at
+// inputs i/8, hat-sum form (no dynamic array indexing, so it is SkSL-safe:
+// the knots travel as two vec4s and a float). Identity knots reproduce c.
+// Used by the main tone stage (G, H, I.x) and the small-shape tone curve
+// (M, N, O.x; Task g13).
+vec3 toneLut(vec3 c, vec4 a, vec4 b, float k8) {
+  vec3 c8 = c * 8.0;
+  return vec3(a.x)
+      + (vec3(a.y) - vec3(a.x)) * clamp(c8, 0.0, 1.0)
+      + (vec3(a.z) - vec3(a.y)) * clamp(c8 - 1.0, 0.0, 1.0)
+      + (vec3(a.w) - vec3(a.z)) * clamp(c8 - 2.0, 0.0, 1.0)
+      + (vec3(b.x) - vec3(a.w)) * clamp(c8 - 3.0, 0.0, 1.0)
+      + (vec3(b.y) - vec3(b.x)) * clamp(c8 - 4.0, 0.0, 1.0)
+      + (vec3(b.z) - vec3(b.y)) * clamp(c8 - 5.0, 0.0, 1.0)
+      + (vec3(b.w) - vec3(b.z)) * clamp(c8 - 6.0, 0.0, 1.0)
+      + (vec3(k8) - vec3(b.w)) * clamp(c8 - 7.0, 0.0, 1.0);
 }
 
 // The largest smin weight h = max(k - |a - b|, 0) / k met while folding the
@@ -172,6 +194,9 @@ void main() {
   vec4 J = mix(uVar[9], uVar[21], clearMix);
   vec4 K = mix(uVar[10], uVar[22], clearMix);
   vec4 L4 = mix(uVar[11], uVar[23], clearMix);
+  vec4 M = mix(uVar[24], uVar[27], clearMix);
+  vec4 N = mix(uVar[25], uVar[28], clearMix);
+  vec4 O = mix(uVar[26], uVar[29], clearMix);
   float hc = uGlobal2.z;
 
   float inside = 1.0 - smoothstep(-0.75, 0.75, d);
@@ -331,16 +356,7 @@ void main() {
   // Tone LUT (Task 17d, glass_model.tone_apply): 9 grey knots at inputs
   // i/8, hat-sum form, on the frosted backdrop before the fill wash (where
   // SwiftUI's flat-grey response places it); identity knots reproduce col.
-  vec3 c8 = col * 8.0;
-  col = vec3(G.x)
-      + (vec3(G.y) - vec3(G.x)) * clamp(c8, 0.0, 1.0)
-      + (vec3(G.z) - vec3(G.y)) * clamp(c8 - 1.0, 0.0, 1.0)
-      + (vec3(G.w) - vec3(G.z)) * clamp(c8 - 2.0, 0.0, 1.0)
-      + (vec3(H.x) - vec3(G.w)) * clamp(c8 - 3.0, 0.0, 1.0)
-      + (vec3(H.y) - vec3(H.x)) * clamp(c8 - 4.0, 0.0, 1.0)
-      + (vec3(H.z) - vec3(H.y)) * clamp(c8 - 5.0, 0.0, 1.0)
-      + (vec3(H.w) - vec3(H.z)) * clamp(c8 - 6.0, 0.0, 1.0)
-      + (vec3(I.x) - vec3(H.w)) * clamp(c8 - 7.0, 0.0, 1.0);
+  col = toneLut(col, G, H, I.x);
 
   // Small-shape shadow lift (Task 17d / 8b, fitted): SwiftUI lifts the dark
   // end behind small dark glass. + I.w x size x max(0, 1 - col / K.x)^2,
@@ -351,6 +367,17 @@ void main() {
 
   col = mix(col, D.rgb, B.z * fillScale);
   col *= (1.0 - B.w);
+
+  // Small-shape tone curve (Task g13, measured on the reference simulator):
+  // SwiftUI switches small shapes (half shorter side <= ~32 pt) to a
+  // steeper tone response. Applied after the fill wash and dim, weighted
+  // from 1 at O.y (smallSizeLo) to 0 at O.z (smallSizeHi); off when
+  // smallSizeHi <= 0.
+  if (O.z > 0.0) {
+    float sw = clamp((O.z - halfMin) / max(O.z - O.y, 1e-3), 0.0, 1.0);
+    col = mix(col, toneLut(col, M, N, O.x), sw);
+  }
+
   col = mix(col, tint.rgb, tint.a);
 
   vec2 L = vec2(cos(uGlobal.z), sin(uGlobal.z));

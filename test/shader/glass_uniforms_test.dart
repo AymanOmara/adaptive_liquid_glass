@@ -50,7 +50,7 @@ void main() {
         }),
       ),
     );
-    expect(f.length, 304);
+    expect(f.length, 328);
     expect(f.sublist(0, 4), [1, 3, -2, 0]);
     expect(f.sublist(4, 8), [
       60,
@@ -176,19 +176,16 @@ void main() {
     expect(f[276], 0.5);
   });
 
-  test('tone LUT knots pack into G, H and I (identity when absent)', () {
-    final identity = packGlassUniforms(frame(const []));
-    expect(
-      identity.sublist(232, 236),
-      GlassVariantConstants.identityToneKnots.sublist(0, 4),
-    );
-    expect(
-      identity.sublist(236, 240),
-      GlassVariantConstants.identityToneKnots.sublist(4, 8),
-    );
-    expect(identity[240], 1.0);
+  test('tone LUT knots pack into G, H and I (standard when absent)', () {
+    final std = packGlassUniforms(frame(const []));
+    // Since the g13 refit the shipped regular set carries fitted knots;
+    // fromJson fills absent keys from standard, so the pack carries them.
+    final reg = GlassConstants.standard.regular.toneKnots;
+    expect(std.sublist(232, 236), reg.sublist(0, 4));
+    expect(std.sublist(236, 240), reg.sublist(4, 8));
+    expect(std[240], reg[8]);
     // The clear set's knots live 48 floats later.
-    expect(identity[240 + 48], 1.0);
+    expect(std[240 + 48], GlassConstants.standard.clear.toneKnots[8]);
 
     final c = GlassConstants.fromJson({
       'regular': {
@@ -420,6 +417,44 @@ void main() {
       s(const Rect.fromLTWH(100, 0, 40, 40), union: 'a'),
     ]);
     expect(out.single.cornerExponent, 2);
+  });
+
+  test('small-shape tone curve packs into M, N and O (on for regular)', () {
+    final d = packGlassUniforms(frame(const []));
+    // The g13 refit ships the curve on regular/regularDark; clear keeps
+    // the identity knots and a closed size window.
+    final reg = GlassConstants.standard.regular;
+    expect(d.sublist(304, 308), reg.smallToneKnots.sublist(0, 4));
+    expect(d.sublist(308, 312), reg.smallToneKnots.sublist(4, 8));
+    expect(d.sublist(312, 316), [
+      reg.smallToneKnots[8],
+      reg.smallSizeLo * 3,
+      reg.smallSizeHi * 3,
+      0,
+    ]);
+    // The clear set 48 floats later stays identity/off.
+    expect(
+      d.sublist(316, 320),
+      GlassVariantConstants.identityToneKnots.sublist(0, 4),
+    );
+    expect(d.sublist(324, 328), [1.0, 0, 0, 0]);
+
+    final c = GlassConstants.fromJson({
+      'regular': {
+        'smallToneKnots': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
+        'smallSizeLo': 30.0,
+        'smallSizeHi': 34.0,
+      },
+    });
+    final f = packGlassUniforms(frame(const [], constants: c));
+    expect(f.sublist(304, 308), [0.0, 0.1, 0.2, 0.3]);
+    expect(f.sublist(308, 312), [0.4, 0.5, 0.6, 0.7]);
+    // O = (knot 8, smallSizeLo px, smallSizeHi px, 0).
+    expect(f.sublist(312, 316), [0.8, 30 * 3, 34 * 3, 0]);
+    // The clear set keeps the identity defaults (N.x = knot 4).
+    expect(f[320], 0.5);
+    expect(f[324], 1.0);
+    expect(f.sublist(325, 328), [0, 0, 0]);
   });
 
   test('lensVertical and the rim tint pack into L.yzw (off by default)', () {

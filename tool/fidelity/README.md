@@ -96,6 +96,8 @@ can never score well.
 | `build/fidelity/final` (Task 17c) | 17b + frost wide tail (`frostWide*`, sharp core + wide component from the coded captures), shipped `GlassConstants.standard` | 42/75 | 0.981 | 1.56 | 0.9655 | 1.71 |
 | `build/fidelity/final-17d` (Task 17d round 4) | 17c + tone LUT, small dark-shape tone lift, clear lens grid, anisotropic frost | 46/75 | 0.9828 | 1.09 | 0.9790 | 1.335 |
 | `build/fidelity/a1-device2` (Task A1) | 17d + continuous-corner outline (`cornerZone` 1.2) | 46/75 | 0.9830 | 1.09 | 0.9798 | 1.324 |
+| `build/fidelity/g2-1` (group 2) | A1 + merge-neck lens blend (`lensBlend`; no constants change) | 47/75 | 0.9830 | 1.09 | 0.9799 | 1.322 |
+| `build/fidelity/g13-2` (g13) | g2 + colour refit: fitted regular/regularDark tone LUTs, small-shape tone curve (`smallToneKnots`, ≤ 32 pt half shorter side), fill/saturation/tint refit | 55/75 | 0.9830 | 1.29 | 0.9803 | 1.270 |
 
 In v2, 65 of the 75 scenes improved in SSIM and 62 in ΔE. Regular glass now
 sits at a median SSIM of 0.939 and ΔE of 7.0. Clear glass in dark mode got

@@ -120,7 +120,7 @@ List<GlassShapeUniform> mergeUnions(List<GlassShapeUniform> shapes) {
 }
 
 /// Number of user floats after `uSize`.
-const int kGlassUniformFloats = 304;
+const int kGlassUniformFloats = 328;
 
 /// Packs [u] into the float layout documented in `shaders/liquid_glass.frag`:
 ///
@@ -133,7 +133,8 @@ const int kGlassUniformFloats = 304;
 /// | 16–79   | uRects[16]     | x, y, w, h px                             |
 /// | 80–143  | uInfo[16]      | radius px, clear?, cornerExponent, fill scale |
 /// | 144–207 | uTints[16]     | rgb, strength                             |
-/// | 208–303 | uVar[24]       | regular A–L, then clear A–L               |
+/// | 208–303 | uVar[0..23]    | regular A–L, then clear A–L               |
+/// | 304–327 | uVar[24..29]   | regular M–O, then clear M–O               |
 ///
 /// Per variant: A = (lens decay px, lens band px, lens strength, dispersion),
 /// B = (rim width px, rim intensity, fillOpacity, dim),
@@ -147,7 +148,10 @@ const int kGlassUniformFloats = 304;
 /// J = (rim mix, rim mix width px, rim mix cut px, rim mix luma floor),
 /// K = (tone lift knee, tone lift size ref px, post-lens sigma px =
 /// blurSigma·√postBlurShare, blur size ref px),
-/// L = (rim back strength, lens vertical-only weight, rim tint, rim hue turns).
+/// L = (rim back strength, lens vertical-only weight, rim tint, rim hue turns),
+/// M, N, O.x = small-shape tone LUT: 9 grey output knots at inputs i/8,
+/// applied after the fill wash and dim, weighted from 1 at smallSizeLo to 0 at
+/// smallSizeHi (Task g13), O.yz = (smallSizeLo px, smallSizeHi px).
 List<double> packGlassUniforms(GlassFrameUniforms u) {
   final dpr = u.devicePixelRatio;
   final shapes = u.shapes.where(_drawable).take(_maxShapes).toList();
@@ -205,11 +209,12 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
     }
   }
 
-  var k = 208;
-  for (final v in [
+  final variantSets = [
     u.constants.of(GlassVariant.regular, u.brightness),
     u.constants.of(GlassVariant.clear, u.brightness),
-  ]) {
+  ];
+  var k = 208;
+  for (final v in variantSets) {
     // The frost blur is the composed ImageFilter, not a uniform.
     f.setAll(k, [
       v.lensDecay * dpr,
@@ -268,6 +273,19 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
     ]);
     f.setAll(k + 44, [v.rimBack, v.lensVertical, v.rimTint, v.rimHue / 360]);
     k += 48;
+  }
+  // Small-shape tone curve (Task g13): M–O per variant, appended after both
+  // variants' A–L blocks (uVar[24..29]).
+  for (final v in variantSets) {
+    f.setAll(k, v.smallToneKnots.sublist(0, 4));
+    f.setAll(k + 4, v.smallToneKnots.sublist(4, 8));
+    f.setAll(k + 8, [
+      v.smallToneKnots[8],
+      v.smallSizeLo * dpr,
+      v.smallSizeHi * dpr,
+      0,
+    ]);
+    k += 12;
   }
   return f;
 }

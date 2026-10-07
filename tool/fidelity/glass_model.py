@@ -39,9 +39,13 @@ def _standard():
 
 
 # Task 17d keys added after the 17c constants files; files without them
-# render exactly as before (GlassVariantConstants' Dart defaults).
+# render exactly as before (GlassVariantConstants' Dart defaults). The g13
+# small-shape tone curve keys follow the same rule.
 VARIANT_DEFAULTS = {
     "toneKnots": [i / 8 for i in range(9)],
+    "smallToneKnots": [i / 8 for i in range(9)],
+    "smallSizeLo": 0.0,
+    "smallSizeHi": 0.0,
     "glowStrength": 0.25,
     "postBlurShare": 0.0,
     "normalRadiusScale": 1.0,
@@ -375,6 +379,7 @@ def _uvar(constants, brightness, scale):
     for base in ("regular", "clear"):
         v = constants[base + ("Dark" if brightness == "dark" else "")]
         knots = np.asarray(v["toneKnots"], np.float64)
+        small = np.asarray(v["smallToneKnots"], np.float64)
         res.append({
             "A": np.array([v["lensDecay"] * scale, v["lensBand"] * scale,
                            v["lensStrength"], v["dispersion"]]),
@@ -400,6 +405,12 @@ def _uvar(constants, brightness, scale):
                                                         POST_SHARE_MAX)) * scale,
                            v["blurSizeRef"] * scale]),
             "L": np.array([v["rimBack"], 0.0, 0.0, 0.0]),
+            # Small-shape tone LUT (Task g13): grey output values at inputs
+            # i/8, plus the size window in px.
+            "M": small[0:4].copy(),
+            "N": small[4:8].copy(),
+            "O": np.array([small[8], v["smallSizeLo"] * scale,
+                           v["smallSizeHi"] * scale, 0.0]),
         })
     return res
 
@@ -519,12 +530,13 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     uv = _uvar(constants, brightness, scale)
     if np.all(clear_mix == 0) or np.all(clear_mix == 1):
         u = uv[1] if np.all(clear_mix == 1) else uv[0]
-        A, B, C, D, E, F, G, H, I, J, K, L = (u[n] for n in "ABCDEFGHIJKL")
+        A, B, C, D, E, F, G, H, I, J, K, L, M, N, O = (u[n] for n in "ABCDEFGHIJKLMNO")
     else:
         cm = np.asarray(clear_mix)[..., None]
-        A, B, C, D, E, F, G, H, I, J, K, L = (uv[0][n] * (1 - cm) + uv[1][n] * cm for n in "ABCDEFGHIJKL")
-    A, B, C, D, E, F, I, J, K, L = (np.broadcast_to(x, g["d"].shape + (4,))
-                                    for x in (A, B, C, D, E, F, I, J, K, L))
+        A, B, C, D, E, F, G, H, I, J, K, L, M, N, O = (
+            uv[0][n] * (1 - cm) + uv[1][n] * cm for n in "ABCDEFGHIJKLMNO")
+    A, B, C, D, E, F, I, J, K, L, M, N, O = (np.broadcast_to(x, g["d"].shape + (4,))
+                                             for x in (A, B, C, D, E, F, I, J, K, L, M, N, O))
 
     d, nx, ny, px, py = g["d"], g["nx"], g["ny"], g["px"], g["py"]
     inside = 1.0 - _smoothstep(-0.75, 0.75, d)
@@ -657,6 +669,20 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     fsm = np.broadcast_to(fill_scale, g["d"].shape)[m][:, None]
     col = col + (Dm[:, :3] - col) * (Bm[:, 2:3] * fsm)
     col = col * (1.0 - Bm[:, 3:4])
+    # Small-shape tone curve (Task g13, measured on the reference simulator):
+    # shapes whose half shorter side is at most ~32 pt use a second, steeper
+    # tone LUT after the fill wash and dim, weighted from 1 at smallSizeLo
+    # to 0 at smallSizeHi (px, both from O blended); off when smallSizeHi
+    # <= 0.
+    Om = O[m]
+    sm = Om[:, 2] > 0
+    if np.any(sm):
+        Om_s = Om[sm]
+        w = np.clip((Om_s[:, 2] - hmm[sm]) / np.maximum(Om_s[:, 2] - Om_s[:, 1], 1e-3),
+                    0.0, 1.0)
+        kn = np.concatenate([M[m][sm], N[m][sm], Om_s[:, :1]], axis=1).T  # (9, n)
+        lut = tone_apply(col[sm].T, kn).T
+        col[sm] = col[sm] + (lut - col[sm]) * w[:, None]
     col = col + (tim[:, :3] - col) * tim[:, 3:4]
 
     lx, ly = np.cos(light_angle), np.sin(light_angle)
