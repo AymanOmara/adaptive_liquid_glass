@@ -1,4 +1,5 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/cupertino.dart';
@@ -185,5 +186,49 @@ void main() {
     );
     final theme = LiquidGlassTheme.of(t.element(find.text('Playing')));
     expect(theme.defaultMode, GlassRenderMode.shader);
+  }, variant: ios);
+
+  testWidgets('the accessory is drawn in the tab bar\'s material', (t) async {
+    shaderEnv();
+    await _pump(
+      t,
+      GlassScaffold(
+        tabBar: _tabBar(),
+        bottomAccessory: const GlassBottomAccessory(child: Text('Playing')),
+        body: const SizedBox(),
+      ),
+    );
+    final accessory = LiquidGlassTheme.of(
+      t.element(find.text('Playing')),
+    ).constants.regular;
+    final bar = LiquidGlassTheme.of(
+      t.element(find.text('History').first),
+    ).constants.regular;
+    expect(accessory.fillOpacity, bar.fillOpacity);
+    expect(accessory.blurSigma, bar.blurSigma);
+    expect(accessory.toneKnots, bar.toneKnots);
+  }, variant: ios);
+
+  testWidgets('accessory content takes the primary label colour', (t) async {
+    shaderEnv();
+    await _pump(
+      t,
+      GlassScaffold(
+        backgroundColor: const Color(0xFFFFFFFF),
+        tabBar: _tabBar(),
+        bottomAccessory: const GlassBottomAccessory(
+          child: Row(
+            children: [Icon(CupertinoIcons.play_fill), Text('Playing')],
+          ),
+        ),
+        body: const SizedBox(),
+      ),
+    );
+    final text = t.element(find.text('Playing'));
+    expect(DefaultTextStyle.of(text).style.color, GlassColors.label.color);
+    expect(
+      IconTheme.of(t.element(find.byIcon(CupertinoIcons.play_fill))).color,
+      GlassColors.label.color,
+    );
   }, variant: ios);
 }

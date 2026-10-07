@@ -2,7 +2,7 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -229,4 +229,42 @@ void main() {
     );
     expect(GlassForeground.labelColorOf(inner), isA<Color>());
   });
+
+  // iOS 26.4's tab bar keeps its labels over a mid-grey photo (mean
+  // luminance 0.44): the first sample starts from the appearance, so it no
+  // longer depends on whether the photo had decoded by then.
+  Future<Brightness> midGrey(WidgetTester t, Brightness theme) async {
+    GlassPlatform.instance.debugEnvironment = iosEnv;
+    late BuildContext inner;
+    await t.pumpWidget(
+      host(
+        t,
+        CupertinoTheme(
+          data: CupertinoThemeData(brightness: theme),
+          child: Stack(
+            children: [
+              const Positioned.fill(
+                child: GlassBackdropSource(
+                  child: ColoredBox(color: Color(0xFF707070)),
+                ),
+              ),
+              glass((c) => inner = c),
+            ],
+          ),
+        ),
+      ),
+    );
+    await settle(t);
+    final b = GlassForeground.backgroundBrightnessOf(inner);
+    await t.pumpWidget(const SizedBox());
+    return b;
+  }
+
+  testWidgets('mid grey keeps the light appearance\'s dark labels', (t) async {
+    expect(await midGrey(t, Brightness.light), Brightness.light);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('mid grey keeps the dark appearance\'s light labels', (t) async {
+    expect(await midGrey(t, Brightness.dark), Brightness.dark);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 }
