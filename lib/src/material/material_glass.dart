@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/glass.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_shape.dart';
 import '../core/glass_variant.dart';
 import '../core/shape_border.dart';
@@ -70,7 +71,7 @@ class MaterialGlass extends StatelessWidget {
       color: color,
       elevation: glass.variant == GlassVariant.regular ? 1 : 0,
       shadowColor: scheme.shadow,
-      surfaceTintColor: Colors.transparent,
+      surfaceTintColor: GlassColors.transparent,
       shape: sizeIndependentBorder(shape),
       clipBehavior: Clip.antiAlias,
       child: _inkWell(content),
@@ -116,7 +117,7 @@ class MaterialGlass extends StatelessWidget {
       splashFactory: ripple ? null : NoSplash.splashFactory,
       overlayColor: ripple
           ? null
-          : const WidgetStatePropertyAll(Colors.transparent),
+          : const WidgetStatePropertyAll(GlassColors.transparent),
       child: content,
     );
   }
