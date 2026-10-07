@@ -32,6 +32,7 @@ class GlassVariantConstants {
     this.smallToneKnots = identityToneKnots,
     this.smallSizeLo = 0,
     this.smallSizeHi = 0,
+    this.postJacobianMax = 4,
     this.glowStrength = 0.25,
     this.postBlurShare = 0,
     this.normalRadiusScale = 1,
@@ -99,6 +100,11 @@ class GlassVariantConstants {
     smallToneKnots: GlassJson.knots(j, 'smallToneKnots', base.smallToneKnots),
     smallSizeLo: GlassJson.number(j, 'smallSizeLo', base.smallSizeLo),
     smallSizeHi: GlassJson.number(j, 'smallSizeHi', base.smallSizeHi),
+    postJacobianMax: GlassJson.number(
+      j,
+      'postJacobianMax',
+      base.postJacobianMax,
+    ),
     glowStrength: GlassJson.number(j, 'glowStrength', base.glowStrength),
     postBlurShare: GlassJson.number(j, 'postBlurShare', base.postBlurShare),
     normalRadiusScale: GlassJson.number(
@@ -249,6 +255,11 @@ class GlassVariantConstants {
   /// <= 0 (Task g13).
   final double smallSizeHi;
 
+  /// Largest stretch of the post-lens blur taps through the lens's Jacobian
+  /// (fidelity group 4: SwiftUI's clear-glass blur stays ~1.1-1.4 pt into the
+  /// outer 4 pt of the band). 4 is the original clamp.
+  final double postJacobianMax;
+
   /// Brightness of the touch glow at full press (Task 17d; 0.25 is the
   /// pre-17d behaviour, left for the motion fit).
   final double glowStrength;
@@ -383,6 +394,7 @@ class GlassVariantConstants {
     'smallToneKnots': smallToneKnots,
     'smallSizeLo': smallSizeLo,
     'smallSizeHi': smallSizeHi,
+    'postJacobianMax': postJacobianMax,
     'glowStrength': glowStrength,
     'postBlurShare': postBlurShare,
     'normalRadiusScale': normalRadiusScale,

@@ -85,9 +85,14 @@ void main() {
     expect(c.regularDark.fillSizeDrop, 0);
     expect(c.regularDark.saturation, 1.967);
     expect(c.regularDark.tintStrength, 1.0054);
-    expect(c.clear.postBlurShare, 0.45);
-    expect(c.clear.lensStrength, -2.54);
-    expect(c.clear.blurSigma, 1.2);
+    // Fidelity group 4: clear-lens refit with the post-lens Jacobian clamp.
+    expect(c.clear.postBlurShare, 0.31);
+    expect(c.clear.lensStrength, -2.49);
+    expect(c.clear.blurSigma, 1.28);
+    expect(c.clear.postJacobianMax, 1.15);
+    expect(c.clearDark.postJacobianMax, 1.15);
+    expect(c.regular.postJacobianMax, 4);
+    expect(c.regularDark.postJacobianMax, 4);
     expect(c.clear.blurSizeRef, 0);
     expect(c.clear.fillSizeRef, 0);
     expect(c.clearDark.lensSizeRef, 28.7);

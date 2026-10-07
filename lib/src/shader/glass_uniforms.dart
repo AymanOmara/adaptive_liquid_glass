@@ -151,7 +151,8 @@ const int kGlassUniformFloats = 328;
 /// L = (rim back strength, lens vertical-only weight, rim tint, rim hue turns),
 /// M, N, O.x = small-shape tone LUT: 9 grey output knots at inputs i/8,
 /// applied after the fill wash and dim, weighted from 1 at smallSizeLo to 0 at
-/// smallSizeHi (Task g13), O.yz = (smallSizeLo px, smallSizeHi px).
+/// smallSizeHi (Task g13), O.yz = (smallSizeLo px, smallSizeHi px),
+/// O.w = postJacobianMax (fidelity group 4).
 List<double> packGlassUniforms(GlassFrameUniforms u) {
   final dpr = u.devicePixelRatio;
   final shapes = u.shapes.where(_drawable).take(_maxShapes).toList();
@@ -283,7 +284,7 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
       v.smallToneKnots[8],
       v.smallSizeLo * dpr,
       v.smallSizeHi * dpr,
-      0,
+      v.postJacobianMax,
     ]);
     k += 12;
   }

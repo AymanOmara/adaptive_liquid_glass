@@ -430,14 +430,15 @@ void main() {
       reg.smallToneKnots[8],
       reg.smallSizeLo * 3,
       reg.smallSizeHi * 3,
-      0,
+      reg.postJacobianMax,
     ]);
-    // The clear set 48 floats later stays identity/off.
+    // The clear set 48 floats later stays identity/off; O.w carries the
+    // clear post-lens Jacobian clamp (fidelity group 4).
     expect(
       d.sublist(316, 320),
       GlassVariantConstants.identityToneKnots.sublist(0, 4),
     );
-    expect(d.sublist(324, 328), [1.0, 0, 0, 0]);
+    expect(d.sublist(324, 328), [1.0, 0, 0, 1.15]);
 
     final c = GlassConstants.fromJson({
       'regular': {
@@ -449,12 +450,12 @@ void main() {
     final f = packGlassUniforms(frame(const [], constants: c));
     expect(f.sublist(304, 308), [0.0, 0.1, 0.2, 0.3]);
     expect(f.sublist(308, 312), [0.4, 0.5, 0.6, 0.7]);
-    // O = (knot 8, smallSizeLo px, smallSizeHi px, 0).
-    expect(f.sublist(312, 316), [0.8, 30 * 3, 34 * 3, 0]);
+    // O = (knot 8, smallSizeLo px, smallSizeHi px, postJacobianMax).
+    expect(f.sublist(312, 316), [0.8, 30 * 3, 34 * 3, 4]);
     // The clear set keeps the identity defaults (N.x = knot 4).
     expect(f[320], 0.5);
     expect(f[324], 1.0);
-    expect(f.sublist(325, 328), [0, 0, 0]);
+    expect(f.sublist(325, 328), [0, 0, 1.15]);
   });
 
   test('lensVertical and the rim tint pack into L.yzw (off by default)', () {

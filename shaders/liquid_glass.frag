@@ -24,7 +24,8 @@ uniform vec4 uVar[30];     // per variant (regular A-L, then clear A-L, then
                            //   L(rim back strength, lens vertical-only weight, rim tint, rim hue turns)
                            //   M, N, O.x: small-shape tone LUT, 9 grey output
                            //   knots at inputs i/8 (Task g13); O.yz(smallSizeLo
-                           //   px, smallSizeHi px)
+                           //   px, smallSizeHi px); O.w post-lens Jacobian
+                           //   clamp (fidelity group 4)
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -301,8 +302,12 @@ void main() {
         ? d : lensField(px);
     float lap = fxp + fxm + fyp + fym - 4.0 * fc;
     float kappa = lap / max(0.5 * gradLen, 1e-3);
-    float ja = clamp(1.0 - dLens, -4.0, 4.0) * sPost;
-    float jb = clamp(1.0 + lensAmt * kappa, -4.0, 4.0) * sPost;
+    // Fidelity group 4 (measure_lens.py blur decode): SwiftUI's clear-glass
+    // blur stays ~1.1-1.4 pt into the outer 4 pt of the band, so the
+    // post-lens taps stretch at most O.w (postJacobianMax; 4 = before).
+    float jm = max(O.w, 1e-3);
+    float ja = clamp(1.0 - dLens, -jm, jm) * sPost;
+    float jb = clamp(1.0 + lensAmt * kappa, -jm, jm) * sPost;
     vec2 tng = vec2(-nrm.y, nrm.x);
     col = base * 0.44444445;
     for (int i = 0; i < 3; i++) {

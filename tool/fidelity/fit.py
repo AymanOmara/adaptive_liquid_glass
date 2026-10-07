@@ -50,7 +50,8 @@ KEYS = ["blurSigma", "blurSizeRef", "frostWideSigma", "frostWideMixEdge", "frost
         "smallSizeLo", "smallSizeHi",
         "postBlurShare", "normalRadiusScale", "lensEdge", "lensEdgeDecay",
         "rimMix", "rimMixWidth", "rimMixCut", "rimMixLumaFloor",
-        "toneLift", "toneLiftKnee", "toneLiftSizeRef", "blurAspectPower", "rimBack"]
+        "toneLift", "toneLiftKnee", "toneLiftSizeRef", "blurAspectPower", "rimBack",
+        "postJacobianMax"]
 TONE_KEYS = [f"tone{i}" for i in range(9)]
 STONE_KEYS = [f"stone{i}" for i in range(9)]
 BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
@@ -69,6 +70,8 @@ BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
           # the size window (pt) over which it fades out (off when hi <= 0).
           **{k: (0, 1) for k in STONE_KEYS},
           "smallSizeLo": (0, 60), "smallSizeHi": (0, 60),
+          # Fidelity group 4: post-lens tap stretch clamp (4 = shipped before).
+          "postJacobianMax": (0.5, 4),
           # Task 17d clear-analysis features (measured shapes, fitted sizes):
           # post-lens blur share of the frost variance, lens normals from a
           # rounder rect (radius x scale), lens edge term (pt, pt) and the

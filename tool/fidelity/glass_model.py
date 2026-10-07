@@ -46,6 +46,7 @@ VARIANT_DEFAULTS = {
     "smallToneKnots": [i / 8 for i in range(9)],
     "smallSizeLo": 0.0,
     "smallSizeHi": 0.0,
+    "postJacobianMax": 4.0,
     "glowStrength": 0.25,
     "postBlurShare": 0.0,
     "normalRadiusScale": 1.0,
@@ -272,7 +273,6 @@ def frost_taps(sigma_px):
 
 
 # 3-point Gauss-Hermite rule for a unit Gaussian: nodes 0, +-sqrt(3).
-POST_JMAX = 4.0  # Jacobian clamp of the post-lens taps
 POST_TAPS = ((-np.sqrt(3.0), 1.0 / 6.0), (0.0, 2.0 / 3.0), (np.sqrt(3.0), 1.0 / 6.0))
 
 
@@ -410,7 +410,7 @@ def _uvar(constants, brightness, scale):
             "M": small[0:4].copy(),
             "N": small[4:8].copy(),
             "O": np.array([small[8], v["smallSizeLo"] * scale,
-                           v["smallSizeHi"] * scale, 0.0]),
+                           v["smallSizeHi"] * scale, v["postJacobianMax"]]),
         })
     return res
 
@@ -614,8 +614,11 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     pm = sp_post >= 0.25
     if np.any(pm):
         sp_ = sp_post[pm]
-        ja = np.clip(1.0 - dlens[m][pm], -POST_JMAX, POST_JMAX)
-        jb = np.clip(1.0 + lens_amt[m][pm] * g["kappa"][m][pm], -POST_JMAX, POST_JMAX)
+        # Jacobian clamp O.w = postJacobianMax (fidelity group 4: SwiftUI's
+        # clear blur stays ~1.1-1.4 pt into the outer 4 pt of the band).
+        jmax = np.maximum(O[..., 3][m][pm], 1e-3)
+        ja = np.clip(1.0 - dlens[m][pm], -jmax, jmax)
+        jb = np.clip(1.0 + lens_amt[m][pm] * g["kappa"][m][pm], -jmax, jmax)
         nxm, nym = nx[m][pm], ny[m][pm]
         sxm, sym = spx[m][pm], spy[m][pm]
         acc = base[pm] * (4.0 / 9.0)

@@ -9,9 +9,9 @@ from compare import load, region_for, score
 from glass_model import render, render_window, resolve_constants
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-# Flutter captures of the shipped g13 standard (Task g13 colour refit,
-# passed at launch via CONSTANTS; SwiftUI refs copied from build/fidelity/final).
-BASE = ROOT / "build/fidelity/g13-2"
+# Flutter captures of the shipped standard (fidelity group 4 clear-lens refit;
+# shipped build, SwiftUI refs copied from build/fidelity/g13-2).
+BASE = ROOT / "build/fidelity/g4-1"
 SPEC = json.loads((ROOT / "tool/scenes/scenes.json").read_text())
 STANDARD = json.loads((ROOT / "tool/fidelity/standard_constants.json").read_text())
 
@@ -20,10 +20,10 @@ PARITY_SCENES = [s["id"] for s in SPEC["scenes"]]  # all 75
 
 # Skips (all 75 cases, visibly in `pytest -rs`) when the captures are absent;
 # they are not committed. Recreate them with the shipped standard:
-#   RENDERERS=flutter tool/fidelity/capture.sh build/fidelity/g13-2
+#   RENDERERS=flutter tool/fidelity/capture.sh build/fidelity/g4-1
 PARITY_SKIP = ("75-scene parity needs Flutter captures of the shipped build in "
-               "build/fidelity/g13-2; run `RENDERERS=flutter tool/fidelity/capture.sh "
-               "build/fidelity/g13-2` (see tool/fidelity/README.md)")
+               "build/fidelity/g4-1; run `RENDERERS=flutter tool/fidelity/capture.sh "
+               "build/fidelity/g4-1` (see tool/fidelity/README.md)")
 
 
 @pytest.mark.skipif(not BASE.exists(), reason=PARITY_SKIP)
