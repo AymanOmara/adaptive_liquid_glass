@@ -18,6 +18,10 @@ abstract final class GlassColors {
   /// showing.
   static const Color invisible = Color(0x01000000);
 
+  /// `Glass.smoke`'s tint: black at 35%, darkening regular glass into a
+  /// smoked pane without hiding what is behind it.
+  static const Color smokeTint = Color(0x59000000);
+
   /// Label on glass over a light background: black at 85%, as iOS's
   /// vibrant primary label.
   static const Color labelOnLight = Color(0xD9000000);

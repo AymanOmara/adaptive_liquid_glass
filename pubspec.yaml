@@ -3,11 +3,15 @@ description: >-
   iOS 26 Liquid Glass for Flutter, measured against SwiftUI, with Material 3
   counterparts on Android behind one API.
 
-version: 0.1.0-dev.8
+version: 0.1.0-dev.10
 
 homepage: https://pub.dev/packages/adaptive_liquid_glass
 
 screenshots:
+  - description: Components on a plain background in light mode (iOS 26.4).
+    path: screenshots/ios-components-plain-light.png
+  - description: Components on a plain background in dark mode (iOS 26.4).
+    path: screenshots/ios-components-plain-dark.png
   - description: Adaptive Liquid Glass components on iOS 26.4 in light mode.
     path: screenshots/ios-components-light.png
   - description: Adaptive Liquid Glass components on iOS 26.4 in dark mode.

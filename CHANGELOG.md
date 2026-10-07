@@ -1,3 +1,19 @@
+## 0.1.0-dev.10
+
+* `Glass` presets: `Glass.frosted`, `Glass.crystal`, `Glass.smoke`,
+  `Glass.accent` and `Glass.tinted(color)`, all composed from the existing
+  material API.
+* `GlassActivityIndicator`: iOS's spinner as a standalone widget
+  (`CircularProgressIndicator` on the Material path).
+* `GlassWheelPicker`: SwiftUI's `.pickerStyle(.wheel)` in a glass surface
+  with a clear-glass selection band and haptics (`ListWheelScrollView` on
+  the Material path).
+
+## 0.1.0-dev.9
+
+- Add light and dark screenshots with plain backgrounds to the pub.dev gallery.
+- Keep photo-background screenshots as additional glass-effect examples.
+
 ## 0.1.0-dev.8
 
 - Add light and dark iOS example screenshots to the pub.dev package gallery.

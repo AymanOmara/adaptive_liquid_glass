@@ -75,3 +75,9 @@ reviewed and fixed by Claude.
 - Open: GLES uv flip in liquid_glass.frag / tab_lens_content.frag may be wrong
   on Flutter ≥ 3.46 (Android); toast `closed` never completes if its overlay
   is torn down; default English strings in chip/page control not localized.
+
+### Added 2026-10-07 (from liquidify comparison)
+- Usability pass item: `.liquidGlass()`-style extensions over stock Material
+  widgets (ElevatedButton, AppBar, Card, Switch, Slider, NavigationBar, …)
+  that map to the existing Glass* widgets, plus an adapter registry for
+  user-defined widgets. Biggest adoption win; do it in the usability pass.

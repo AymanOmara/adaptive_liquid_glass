@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
+import 'glass_colors.dart';
+import 'glass_system_colors.dart';
 import 'glass_variant.dart';
 
 /// An immutable description of a Liquid Glass material.
@@ -12,6 +14,14 @@ import 'glass_variant.dart';
 /// Glass.regular.tint(Colors.blue)        // tinted
 /// Glass.regular.interactive()            // reacts to touch
 /// Glass.clear.tint(Colors.orange).interactive()
+///
+/// // Named presets, composed from the above:
+/// Glass.frosted                          // same as Glass.regular
+/// Glass.crystal                          // same as Glass.clear
+/// Glass.smoke                            // regular, darkened
+/// Glass.accent                           // regular, iOS 26 system blue
+/// Glass.tinted(Colors.pink)              // Glass.regular.tint(Colors.pink)
+/// Glass.smoke.interactive()              // presets chain like any Glass
 /// ```
 @immutable
 class Glass {
@@ -26,6 +36,31 @@ class Glass {
 
   /// No effect (`Glass.identity`).
   static const Glass identity = Glass._(GlassVariant.identity);
+
+  // Named presets. Each is composed from the fields above; none adds a
+  // field or changes the shader.
+
+  /// Standard frosted glass: an alias of [regular].
+  static const Glass frosted = regular;
+
+  /// Highly transparent glass for photos and video: an alias of [clear].
+  static const Glass crystal = clear;
+
+  /// Regular glass darkened with [GlassColors.smokeTint] (black at 35%).
+  static const Glass smoke = Glass._(
+    GlassVariant.regular,
+    tintColor: GlassColors.smokeTint,
+  );
+
+  /// Regular glass tinted with iOS 26's system blue
+  /// ([GlassSystemColors.blue]).
+  static const Glass accent = Glass._(
+    GlassVariant.regular,
+    tintColor: GlassSystemColors.blue,
+  );
+
+  /// Regular glass tinted with [color]: `Glass.regular.tint(color)`.
+  static Glass tinted(Color color) => regular.tint(color);
 
   /// Which glass material this is.
   final GlassVariant variant;

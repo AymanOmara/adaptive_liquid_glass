@@ -14,6 +14,7 @@
 library;
 
 export 'src/action_sheet/show_glass_action_sheet.dart';
+export 'src/activity_indicator/glass_activity_indicator.dart';
 export 'src/adaptive_liquid_glass_setup.dart';
 export 'src/badge/glass_badge.dart';
 export 'src/button/glass_button.dart';
@@ -84,3 +85,5 @@ export 'src/toast/glass_toast_handle.dart';
 export 'src/toast/show_glass_toast.dart';
 export 'src/toolbar/glass_toolbar.dart';
 export 'src/toolbar/glass_toolbar_spacer.dart';
+export 'src/wheel_picker/glass_wheel_picker.dart';
+export 'src/wheel_picker/wheel_picker_metrics.dart' show WheelPickerMetrics;

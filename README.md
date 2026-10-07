@@ -12,8 +12,9 @@ counterparts on Android, behind one API. App code never branches on platform.
 
 ## Screenshots
 
-The package screenshot gallery above shows the example app on iOS 26.4 in
-light and dark modes, including glass controls, buttons and floating navigation.
+The screenshot gallery shows the example app on iOS 26.4 in light and dark
+modes. Plain backgrounds make the controls easier to inspect; photo backgrounds
+show the glass effect over imagery.
 
 ## Fidelity
 
@@ -47,7 +48,7 @@ documented there), then score with
 
 ```yaml
 dependencies:
-  adaptive_liquid_glass: ^0.1.0-dev.8
+  adaptive_liquid_glass: ^0.1.0-dev.9
 ```
 
 ```dart
@@ -96,6 +97,18 @@ LiquidGlass(
   child: const Text('Continue'),
 )
 ```
+
+`Glass` has named presets when you don't want to compose one:
+
+| Preset | Means |
+|---|---|
+| `Glass.regular` / `Glass.frosted` | standard frosted glass (the default) |
+| `Glass.clear` / `Glass.crystal` | highly transparent, for photos and video |
+| `Glass.smoke` | regular glass darkened with a smoke tint |
+| `Glass.accent` | regular glass tinted iOS 26 system blue |
+| `Glass.tinted(color)` | shorthand for `Glass.regular.tint(color)` |
+
+Every preset still chains: `Glass.smoke.interactive()`.
 
 With `onPressed` the glass is a button: it gets button semantics, takes
 focus, answers Enter and Space, and its glass turns interactive (the press
@@ -209,6 +222,7 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `GlassSegmentedControl`, `GlassSegment` | Segmented control, sliding lens | `SegmentedButton` |
 | `GlassStepper` | Minus/plus capsule stepper | pair of icon buttons |
 | `GlassPicker`, `GlassPickerItem` | Menu-style picker, current choice checked | `DropdownButton` |
+| `GlassWheelPicker` | `.pickerStyle(.wheel)`: scrolling rows under a clear-glass selection band, haptics | `ListWheelScrollView` on a Material surface |
 | `GlassDatePicker` | Compact date picker opening a glass calendar | text button + `showDatePicker` |
 | `GlassMenuButton`, `GlassMenuItem` | Pull-down glass menu from an icon button | `MenuAnchor` |
 | `GlassMenuController` | Drives a menu from an outer gesture: slide-to-select (`glideTo`) | open/close only |
@@ -227,6 +241,7 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `GlassEmptyState` (`+ .search`) | ContentUnavailableView: icon, title, description, actions | plain centred column |
 | `GlassChip` | Capsule chip with selected state and delete button | `FilterChip` / `InputChip` |
 | `GlassBadge` | Red count capsule (dot when empty) on a child's top trailing corner | `Badge` |
+| `GlassActivityIndicator` | iOS's spinner on its own (`ProgressView()` with no value) | `CircularProgressIndicator` |
 | `GlassPageControl` | Page dots on a glass capsule; tap and scrub | row of Material dots |
 | `GlassProgressIndicator`, `GlassProgressStyle` | Linear bar on a glass track, or ring/spinner | `LinearProgressIndicator` / `CircularProgressIndicator` |
 | `GlassGauge`, `GlassGaugeStyle` | SwiftUI's Gauge: linear capacity, accessoryCircular, accessoryCircularCapacity | `LinearProgressIndicator` / `CircularProgressIndicator` |

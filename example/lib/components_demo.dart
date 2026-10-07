@@ -379,6 +379,17 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                       ],
                     ),
                     const SizedBox(height: 12),
+                    GlassWheelPicker<_Period>(
+                      items: const [
+                        GlassPickerItem(value: _Period.day, label: 'Day'),
+                        GlassPickerItem(value: _Period.week, label: 'Week'),
+                        GlassPickerItem(value: _Period.month, label: 'Month'),
+                      ],
+                      selected: _period,
+                      height: 128,
+                      onChanged: (p) => setState(() => _period = p),
+                    ),
+                    const SizedBox(height: 12),
                     Row(
                       children: [
                         const Expanded(child: Text('Date')),
@@ -515,6 +526,8 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                   GlassProgressIndicator.circular(value: _volume),
                   const SizedBox(width: 16),
                   const GlassProgressIndicator.circular(),
+                  const SizedBox(width: 16),
+                  const GlassActivityIndicator(),
                 ],
               ),
               const SizedBox(height: 24),
