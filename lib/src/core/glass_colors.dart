@@ -234,4 +234,17 @@ abstract final class GlassColors {
   /// Tertiary text: disabled content, placeholders.
   static const CupertinoDynamicColor tertiaryLabel =
       CupertinoColors.tertiaryLabel;
+
+  // Sheet
+
+  /// A sheet's opaque surface when the glass is off (iOS's
+  /// systemBackground).
+  static const CupertinoDynamicColor sheetBackground =
+      CupertinoColors.systemBackground;
+
+  // Full-screen cover
+
+  /// A full-screen cover's default page colour (iOS's systemBackground).
+  static const CupertinoDynamicColor fullScreenCoverBackground =
+      CupertinoColors.systemBackground;
 }

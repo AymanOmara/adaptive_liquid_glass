@@ -35,10 +35,10 @@ class GlassMenuRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = CupertinoDynamicColor.resolve(
       item.onSelected == null
-          ? CupertinoColors.tertiaryLabel
+          ? GlassColors.tertiaryLabel
           : item.destructive
           ? GlassSystemColors.red
-          : CupertinoColors.label,
+          : GlassColors.label,
       context,
     );
     return Semantics(

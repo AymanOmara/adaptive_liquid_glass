@@ -52,7 +52,7 @@ class GlassDialogCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color resolve(Color c) => CupertinoDynamicColor.resolve(c, context);
-    final secondary = resolve(CupertinoColors.secondaryLabel);
+    final secondary = resolve(GlassColors.secondaryLabel);
     final title = this.title;
     final message = this.message;
     final buttons = [
@@ -81,7 +81,7 @@ class GlassDialogCard extends StatelessWidget {
               style: IOSText.style(
                 DialogMetrics.titleSize,
                 weight: alertText ? FontWeight.w600 : FontWeight.w400,
-                color: resolve(CupertinoColors.label),
+                color: resolve(GlassColors.label),
               ),
             ),
           if (title != null && message != null)
