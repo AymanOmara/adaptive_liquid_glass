@@ -1,3 +1,43 @@
+## 0.1.0-dev.7
+
+* New components (Material 3 counterparts on Android):
+  - `GlassTextField`, with `GlassTextField.password`.
+  - `showGlassToast`, with `GlassToastAction` and `GlassToastHandle`.
+  - `GlassListSection` and `GlassListTile`: iOS 26's inset-grouped list,
+    measured against SwiftUI on iOS 26.4.
+  - `showGlassActionSheet`: iOS 26's confirmation dialog, measured.
+  - `GlassChip`, `GlassBadge`, `GlassPageControl` and
+    `GlassProgressIndicator` (geometry estimated, not yet measured).
+* `AdaptiveLiquidGlass.initialize()` preloads the shaders before the first
+  frame.
+* `GlassMenuController` drives slide-to-select from an outer gesture
+  (`glideTo`, `endGlide`, `cancelGlide`).
+* `GlassScrollEdgeStyle.progressive` on the navigation bars: an opt-in
+  graduated blur under the bar. The default is unchanged.
+* Rounded rectangles use a continuous (iOS-style) corner
+  (`GlassConstants.cornerZone`).
+* Interactive glass stretches toward a finger dragged past its edge, and
+  shows a focus ring under keyboard focus.
+* `GlassTabBar` re-measured against SwiftUI's `TabView`: selected and
+  unselected colours, pill, icon and label sizes, and the bar's glass.
+* Accessibility: one screen-reader node per control; explicit labels
+  replace the visible text; `semanticLabel` on `GlassPicker`,
+  `GlassMenuItem`, `showGlassPopover` and `GlassSearchField`; tapping
+  outside a menu or picker is announced as "Dismiss".
+* Fixes:
+  - Glass and the text on it now follow one brightness (the theme's),
+    including inside dialogs, sheets, popovers, menus and toasts. Behaviour
+    change: a `MaterialApp` with no dark theme now gets light glass on a
+    dark system.
+  - `GlassTabBar`: the pill no longer stops on a different tab from the
+    selected tint when `selectedIndex` does not change, and the held lens
+    no longer draws black on the native path.
+  - `GlassToggle` returns to `value` when the parent rejects a change.
+  - The tab bar's search button had no screen-reader tap action; disabled
+    stepper halves still offered one.
+* Includes code adapted from liquid_glass_widgets (MIT); see
+  `THIRD_PARTY_NOTICES`.
+
 ## 0.1.0-dev.6
 
 * Fix: on iOS 26 (native glass), content no longer flickers as it scrolls
