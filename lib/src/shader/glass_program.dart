@@ -9,6 +9,17 @@ class GlassProgram {
   /// The shared instance.
   static final GlassProgram instance = GlassProgram._();
 
+  /// What `GlassMember` listens to for the program: [instance]'s
+  /// [program] unless a test replaces it, since the shader asset does not
+  /// load under `flutter test`.
+  static ValueListenable<Object?> get memberProgram => _memberProgram;
+  static ValueListenable<Object?> _memberProgram = instance.program;
+
+  /// Replaces [memberProgram]; pass `null` to restore [instance]'s.
+  @visibleForTesting
+  static set debugMemberProgram(ValueListenable<Object?>? p) =>
+      _memberProgram = p ?? instance.program;
+
   /// Asset key of the shader inside this package.
   static const String assetKey =
       'packages/adaptive_liquid_glass/shaders/liquid_glass.frag';

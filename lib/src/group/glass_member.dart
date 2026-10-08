@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import '../core/glass.dart';
@@ -23,14 +22,6 @@ import 'glass_member_rendering.dart';
 import 'glass_press_geometry.dart';
 import 'glass_registry.dart';
 import 'scroll_chain.dart';
-
-/// The glass shader program, or null until it has loaded.
-///
-/// Members on the shader path show a blur-only surface until then.
-/// Replaceable in tests: the shader asset does not load under
-/// `flutter test`.
-@visibleForTesting
-ValueListenable<Object?> glassShaderProgram = GlassProgram.instance.program;
 
 /// A `LiquidGlass` inside a group. Internal.
 class GlassMember extends StatefulWidget {
@@ -297,7 +288,7 @@ class GlassMemberState extends State<GlassMember>
   /// first frame, by which time the shader has usually loaded.
   Widget _untilShaderLoads(GlassGroupScope scope, Widget content) =>
       ValueListenableBuilder<Object?>(
-        valueListenable: glassShaderProgram,
+        valueListenable: GlassProgram.memberProgram,
         builder: (context, program, content) => GlassLoadingSurface(
           glass: widget.glass,
           shape: widget.shape,

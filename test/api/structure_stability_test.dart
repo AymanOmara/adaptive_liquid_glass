@@ -1,6 +1,5 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
-import 'package:adaptive_liquid_glass/src/group/glass_member.dart';
 import 'package:adaptive_liquid_glass/src/group/glass_member_box.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
@@ -40,10 +39,10 @@ void main() {
   setUp(() {
     GlassProgram.instance.debugReset(skipLoad: true);
     _program.value = null;
-    glassShaderProgram = _program;
+    GlassProgram.debugMemberProgram = _program;
   });
   tearDown(() {
-    glassShaderProgram = GlassProgram.instance.program;
+    GlassProgram.debugMemberProgram = null;
     GlassPlatform.instance.debugReset();
   });
 

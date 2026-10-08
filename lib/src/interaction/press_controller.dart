@@ -62,7 +62,9 @@ class GlassPressController extends ChangeNotifier {
   void _animateTo(double target, double response, double damping) {
     // The unbounded controller leaves the spring's residual (within its
     // tolerance) as its value; snap to the target once the spring is done so
-    // the glass returns to its exact rest geometry.
+    // the glass returns to its exact rest geometry. `.then`, not morph's
+    // `whenCompleteOrCancel`: a cancelled spring (up() interrupting down())
+    // must not snap to its stale target.
     _controller
         .animateWith(
           SpringSimulation(
