@@ -1,3 +1,20 @@
+## 0.1.4 (2026-10-09)
+
+- `GlassTabBar` motion, measured frame by frame against SwiftUI's
+  `TabView` (iOS 26.4):
+  - The lens is the same size as iOS's on press, tap and drag (within
+    ~1 pt), and the idle pill matches.
+  - A tapped lens travels at iOS's speed (a selection change no longer
+    restarts it as a faster slide), lifts 7.0 pt as iOS's does, and the
+    new pill fades in late, as on iOS.
+  - The bar's light and glow on press and drag, and the first frames'
+    brightness, follow iOS's.
+  - The lens no longer bends page text or the bottom accessory.
+  - Labels beside the search tab sit where iOS sets them.
+- `GlassSearchable` in the navigation bar clears the status bar.
+- A centred `GlassMenuAnchor` menu (picker) stays on screen near the edges.
+- README: a tab bar demo GIF.
+
 ## 0.1.3 (2026-10-08)
 
 - README: fidelity numbers from the latest device run (59/75 strict
