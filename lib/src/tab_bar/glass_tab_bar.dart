@@ -895,16 +895,14 @@ class _GlassTabBarState extends State<GlassTabBar>
                                   ),
                                 ),
                               ),
+                            // The pill grows with the lens and cross-fades
+                            // with the bar's light, so the young lens reads
+                            // as bright as the pill, evenly (iOS 26.4: no
+                            // pill inside it, no flash as the light comes).
                             Positioned.fromRect(
-                              rect: p < 0
-                                  ? lens
-                                  : Rect.fromCenter(
-                                      center: lens.center,
-                                      width: _pillWidth,
-                                      height: _contentHeight,
-                                    ),
+                              rect: lens,
                               child: Opacity(
-                                opacity: 1 - t,
+                                opacity: 1 - light.clamp(0.0, 1.0),
                                 child: DecoratedBox(
                                   decoration: ShapeDecoration(
                                     shape: const StadiumBorder(),
@@ -948,6 +946,7 @@ class _GlassTabBarState extends State<GlassTabBar>
               child: _shaderLens
                   ? withTabLens(
                       context,
+                      bend: t,
                       const GlassGroup(
                         mode: GlassRenderMode.shader,
                         child: LiquidGlass(

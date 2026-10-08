@@ -123,19 +123,32 @@ const tabLensContentStrength = -0.8;
 /// to none inside: iOS's bent tabs are soft.
 const tabLensContentBlur = 2.5;
 
-/// [child] with clear glass drawn as the tab lens.
-Widget withTabLens(BuildContext context, Widget child) {
+/// [child] with clear glass drawn as the tab lens. [bend] (0-1) scales its
+/// refraction: iOS's lens bends in as it grows out of the pill, so a
+/// pill-sized lens (still inside the bar) does not pull the page past the
+/// bar's edge into a dark ring, nor light a rim yet (SwiftUI `TabView`,
+/// iOS 26.4: the lens reads as even as the pill for its first frames).
+Widget withTabLens(BuildContext context, Widget child, {double bend = 1}) {
   final theme = LiquidGlassTheme.of(context);
   return LiquidGlassTheme(
     data: theme.copyWith(
       constants: theme.constants.copyWith(
-        clear: tabLensLight,
-        clearDark: tabLensDark,
+        clear: _bent(tabLensLight, bend),
+        clearDark: _bent(tabLensDark, bend),
       ),
     ),
     child: child,
   );
 }
+
+GlassVariantConstants _bent(GlassVariantConstants c, double bend) => bend >= 1
+    ? c
+    : GlassVariantConstants.fromJson({
+        'lensStrength': c.lensStrength * bend,
+        'lensEdge': c.lensEdge * bend,
+        'dispersion': c.dispersion * bend,
+        'rimMix': c.rimMix * bend,
+      }, c);
 
 /// Overrides on regular glass for the tab bar itself, fitted to iOS 26.4's
 /// tab bar (Kept, and SwiftUI's `TabView`): UIKit's bar is flatter than

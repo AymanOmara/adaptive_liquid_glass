@@ -37,11 +37,11 @@ abstract final class GlassColors {
   /// systemGroupedBackground, light).
   static const Color opaqueLight = Color(0xFFF2F2F7);
 
-  /// The dark tab bar's fill while a lens is held (Kept over black): more
+  /// The dark tab bar's fill while a lens is held or dragged: more
   /// see-through and brightened like the lens backdrop. Away from the lens
-  /// the bar reads about 34 instead of 25 (BarGlow lights it near the lens),
-  /// and the page behind it gains contrast.
-  static const Color tabBarPressedFill = Color(0xFF5C5C5C);
+  /// the bar reads about 30 instead of 25 over black, as SwiftUI's
+  /// `TabView` (iOS 26.4; BarGlow lights it near the lens).
+  static const Color tabBarPressedFill = Color(0xFF4C4C4C);
 
   /// A control thumb's shadow at rest (black at 12%).
   static const Color thumbShadow = Color(0x1F000000);
