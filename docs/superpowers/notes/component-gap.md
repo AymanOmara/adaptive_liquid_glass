@@ -77,9 +77,9 @@ entrypoint (fidelity constants, not stable API).
 | NavigationLink | `.pickerStyle(.navigationLink)` | **no** | med | S | same row composition, pushes detail list |
 | Palette | `.pickerStyle(.palette)` | **no** | low | M | verify: macOS-only in SwiftUI; iOS 26 status unclear |
 | Date compact | `.datePickerStyle(.compact)` | **yes** — `GlassDatePicker` | med | — | capsule → glass calendar popover |
-| Date graphical | `.datePickerStyle(.graphical)` | **partial** — `GlassCalendar` (internal, not exported) | med | S | exists as compact picker's popover; export standalone + week numbers |
-| Date wheel | `.datePickerStyle(.wheel)` | **no** | med | M | wheel rows in glass capsule |
-| Time / range | `hourAndMinute`, `DateRange` graph | **no** | med | M | no time, no range selection |
+| Date graphical | `.datePickerStyle(.graphical)` | **yes** — `GlassDatePicker(style: graphical)`, `GlassCalendar` exported | med | — | inline calendar, `showWeekNumbers`; geometry estimated |
+| Date wheel | `.datePickerStyle(.wheel)` | **yes** — `GlassDatePicker(style: wheel)`, `GlassDateWheel` | med | — | columns on one surface; geometry estimated, not measured |
+| Time / range | `hourAndMinute`, `DateRange` graph | **partial** — `pickerMode: time` / `dateAndTime` | med | S | time capsule → wheel popover; no range selection |
 
 ### Text & search
 
@@ -155,7 +155,7 @@ entrypoint (fidelity constants, not stable API).
 4. **GlassEmptyState** (ContentUnavailableView) — *S, high value.* `GlassEmptyState({icon, title, description, actions})` centered on optional glass platter; actions row of `GlassButton`s. Material: `Card`-free plain column. Measure against SwiftUI `ContentUnavailableView` label spacing and_actions layout.
 5. **showGlassFullScreenCover** — *S, med-high value.* `showGlassFullScreenCover(context, builder)` — opaque edge-to-edge route, status-bar aware, optional drag-to-dismiss from top, glass close `GlassBackButton`. Material: `Dialog.fullscreen`. Measure against `.fullScreenCover` transition timing.
 6. **GlassGauge** — *S, med value.* `GlassGauge({value, minValue, maxValue, label, currentValueLabel, tint})` with `linear` and `circular` styles on a glass capsule track. Material: styled `LinearProgressIndicator`/custom. Measure against SwiftUI `Gauge(.accessoryCircular)` ring thickness, label placement.
-7. **GlassDatePicker upgrades** — *M, med value.* Export internal `GlassCalendar` as standalone graphical picker; add `.hourAndMinute` time rows and wheel variant reusing the new `GlassWheelPicker`. Material: `showDatePicker`/`showTimePicker`. Measure against iOS 26 compact→graphical popover and wheel picker perspective.
+7. ~~**GlassDatePicker upgrades**~~ — done (styles, modes, `GlassCalendar`/`GlassDateWheel` exported; wheel and time geometry estimated, not measured). *M, med value.* Export internal `GlassCalendar` as standalone graphical picker; add `.hourAndMinute` time rows and wheel variant reusing the new `GlassWheelPicker`. Material: `showDatePicker`/`showTimePicker`. Measure against iOS 26 compact→graphical popover and wheel picker perspective.
 8. **GlassWheelPicker** — *M, med value.* `GlassWheelPicker<T>({items, selected, onChanged, itemExtent})` — `CupertinoPicker` in a glass capsule with a clear-glass selection lens band and haptics; also serves as `GlassPicker(wheel)` style. Material: dialog wheel fallback. Measure against iOS wheel picker: row perspective, lens blur depth, haptic cadence.
 
 Honorable mentions (next after the 8): keyboard toolbar (M), `GlassShareLink` (S),

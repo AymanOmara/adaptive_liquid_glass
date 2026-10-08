@@ -9,7 +9,17 @@ import 'date_picker_metrics.dart';
 
 /// A month calendar as iOS 26's compact date picker shows it: the month,
 /// paging arrows, weekday initials and the days, the selected one on a
-/// blue circle.
+/// blue circle. `GlassDatePicker` shows it inline in its graphical style
+/// and in a popover in its compact style.
+///
+/// ```dart
+/// GlassCalendar(
+///   selected: date,
+///   firstDate: DateTime(2020),
+///   lastDate: DateTime(2030),
+///   onSelected: (d) => setState(() => date = d),
+/// )
+/// ```
 class GlassCalendar extends StatefulWidget {
   /// Creates a calendar showing [selected]'s month.
   const GlassCalendar({
@@ -18,6 +28,7 @@ class GlassCalendar extends StatefulWidget {
     required this.onSelected,
     required this.firstDate,
     required this.lastDate,
+    this.showWeekNumbers = false,
   });
 
   /// The selected day.
@@ -31,6 +42,10 @@ class GlassCalendar extends StatefulWidget {
 
   /// The latest selectable day.
   final DateTime lastDate;
+
+  /// Whether a column of ISO week numbers leads each row (estimated
+  /// layout).
+  final bool showWeekNumbers;
 
   @override
   State<GlassCalendar> createState() => _GlassCalendarState();
@@ -46,6 +61,32 @@ class _GlassCalendarState extends State<GlassCalendar> {
 
   void _page(int by) =>
       setState(() => _month = DateTime(_month.year, _month.month + by));
+
+  /// The ISO-8601 week number of [d]'s week: the week of its Thursday,
+  /// counted from the year's first Monday. In UTC, so a daylight-saving
+  /// hour cannot shorten a day.
+  static int _isoWeek(DateTime d) {
+    final thursday = DateTime.utc(d.year, d.month, d.day + 3 - (d.weekday - 1));
+    return 1 + thursday.difference(DateTime.utc(thursday.year)).inDays ~/ 7;
+  }
+
+  /// A week row's leading week-number cell; [start] is the day of the
+  /// month in its first cell (zero or negative for a leading blank). The
+  /// row's fourth day decides the week, whichever weekday leads it.
+  Widget _weekNumber(int start, Color colour) => SizedBox(
+    width: DatePickerWheelMetrics.weekNumberWidth,
+    child: Center(
+      child: ExcludeSemantics(
+        child: Text(
+          '${_isoWeek(DateTime(_month.year, _month.month, start + 3))}',
+          style: IOSText.style(
+            DatePickerMetrics.weekdayFontSize,
+            color: colour,
+          ),
+        ),
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -134,6 +175,11 @@ class _GlassCalendarState extends State<GlassCalendar> {
             const SizedBox(height: 16),
             Row(
               children: [
+                if (widget.showWeekNumbers)
+                  const SizedBox(
+                    width: DatePickerWheelMetrics.weekNumberWidth,
+                    child: Center(child: Text('')),
+                  ),
                 for (final w in weekdays)
                   Expanded(
                     child: Center(
@@ -156,6 +202,11 @@ class _GlassCalendarState extends State<GlassCalendar> {
                 height: DatePickerMetrics.row,
                 child: Row(
                   children: [
+                    if (widget.showWeekNumbers)
+                      _weekNumber(
+                        r * 7 - lead + 1,
+                        resolve(GlassColors.tertiaryLabel),
+                      ),
                     for (var c = 0; c < 7; c++)
                       Expanded(
                         child: r * 7 + c < cells.length

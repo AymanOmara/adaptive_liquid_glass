@@ -39,6 +39,7 @@ class GlassWheelPicker<T> extends StatefulWidget {
     required this.onChanged,
     this.itemExtent = WheelPickerMetrics.itemExtent,
     this.height = WheelPickerMetrics.height,
+    this.surface = true,
     this.mode,
     this.semanticLabel,
   }) : assert(itemExtent > 0, 'itemExtent must be positive'),
@@ -59,6 +60,12 @@ class GlassWheelPicker<T> extends StatefulWidget {
 
   /// The wheel's height (iOS's default: 216 pt).
   final double height;
+
+  /// Whether the wheel draws its own glass (or Material) surface and
+  /// selection band. False draws the drum alone, for a parent composing
+  /// several columns on one surface, as `GlassDatePicker`'s wheel style
+  /// does.
+  final bool surface;
 
   /// The rendering path; see [GlassRenderMode].
   final GlassRenderMode? mode;
@@ -144,12 +151,15 @@ class _GlassWheelPickerState<T> extends State<GlassWheelPicker<T>> {
   );
 
   /// iOS's default width unless the parent constrains it (a tight width
-  /// stretches it).
-  Widget _sized(Widget child) => SizedBox(
-    width: WheelPickerMetrics.width,
-    height: widget.height,
-    child: child,
-  );
+  /// stretches it). A surfaceless wheel never sets one: the parent
+  /// composing the columns does.
+  Widget _sized(Widget child) => widget.surface
+      ? SizedBox(
+          width: WheelPickerMetrics.width,
+          height: widget.height,
+          child: child,
+        )
+      : SizedBox(height: widget.height, child: child);
 
   Widget _semantics(Widget child) {
     final last = widget.items.length - 1;
@@ -220,6 +230,10 @@ class _GlassWheelPickerState<T> extends State<GlassWheelPicker<T>> {
       _enabled ? GlassColors.label : GlassColors.tertiaryLabel,
       context,
     );
+    final wheel = _wheel(
+      IOSText.style(WheelPickerMetrics.fontSize, color: colour),
+    );
+    if (!widget.surface) return wheel;
     return LiquidGlass(
       shape: const GlassShape.rect(WheelPickerMetrics.surfaceRadius),
       mode: widget.mode,
@@ -234,7 +248,7 @@ class _GlassWheelPickerState<T> extends State<GlassWheelPicker<T>> {
               child: const SizedBox.expand(),
             ),
           ),
-          _wheel(IOSText.style(WheelPickerMetrics.fontSize, color: colour)),
+          wheel,
         ],
       ),
     );
@@ -249,6 +263,8 @@ class _GlassWheelPickerState<T> extends State<GlassWheelPicker<T>> {
     final style = (theme.textTheme.titleLarge ?? const TextStyle()).copyWith(
       color: colour,
     );
+    final wheel = _wheel(style);
+    if (!widget.surface) return wheel;
     return Material(
       color: scheme.surfaceContainerHigh,
       borderRadius: const BorderRadius.all(
@@ -268,7 +284,7 @@ class _GlassWheelPickerState<T> extends State<GlassWheelPicker<T>> {
               ),
             ),
           ),
-          _wheel(style),
+          wheel,
         ],
       ),
     );
