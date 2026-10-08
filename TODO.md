@@ -86,3 +86,8 @@
     overlay above GlassBottomAccessory / GlassTabBar.
   - GlassSearchable with navigationBar placement draws the search field in the
     status-bar area, over the Dynamic Island. Respect the top safe-area inset.
+  - GlassTabBar lens while DRAGGING shows refracted fragments of the accessory above
+    it ("Now Playing" text) plus colour fringing along the lens's top edge; gone once
+    the drag settles (seen on the components demo, dark, plain background). Lens
+    samples outside the bar's rect: clamp the lens backdrop to the bar bounds, or
+    exclude GlassBottomAccessory from the lens backdrop.
