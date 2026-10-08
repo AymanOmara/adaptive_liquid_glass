@@ -50,10 +50,21 @@ and CHANGELOG.md.
   Done 2026-10-09: lens size (press, tap, drag, idle pill within ~1 pt);
   tapped lens travel, lift (7.0 pt peak) and late pill fade-in; labels
   beside the search tab (searchLabelShift).
-  Open (small):
-  - tap brightness frames 0-10 still ~7 levels off: glyphs magnified under
-    the travelling lens sit/brighten differently (tabbar_light.py, tap)
+  Open (small), measured 2026-10-09 against SwiftUI TabView (tabbardark):
+  - tap brightness: frames 0-10 mean |diff| ~7 levels (10-60: 2.4). The
+    icons and labels magnified under the travelling lens come out brighter
+    and in other places than iOS's (e.g. Music's icon top white under our
+    lens, Settings' glyph appearing later); mean +3.3 brighter early
+  - tap timing: our lens shows ~1 frame before iOS's (frame 1-2 vs 3-4)
+    and stays ~1 frame ahead throughout
+  - tapped lens at its end narrows faster than iOS's (35 vs 51 pt wide on
+    its last visible frame)
+  - selected pill over black: 54 grey levels against iOS's 50-51
+  - press brightness: frames 0-10 mean |diff| ~4.5
+  - drag brightness: mean |diff| ~3-4 (mid-drag within +-4)
   - icons beside the search tab ~0.4 pt right of iOS's on Music/Settings
+    (Home matches); plain-bar labels +0.4 px, Home +1.1-1.3 px
+  - glyph shapes: CupertinoIcons stand-ins vs SF Symbols (house, gear)
   Hard:
   - retune the shader-mode glass over photos (5.14 light, 3.95 dark): the
     biggest visible gap left
