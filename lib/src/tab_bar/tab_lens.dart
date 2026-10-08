@@ -19,12 +19,14 @@ const tabLensLight = GlassVariantConstants(
   // sharp.
   blurSigma: 0.75,
   postBlurShare: 0.9,
-  // A near-linear outward bend over the outer 8.25 pt (33 pt at the rim,
-  // about 5x compression: iOS squeezes the page above into the band)
+  // A near-linear outward bend over the outer 8.25 pt (4 pt at the rim;
+  // with the tail below the band reaches about 10 pt past the rim, as
+  // iOS's does: about 8 pt, measured on `-controls lensreach`, a hue ramp
+  // above the bar. 33 pt pulled whole text rows into the band.)
   // plus an outward tail (negative lensEdge) that still moves the bar's
   // edge about 3.5 pt at 8 pt in.
   lensBand: 8.25,
-  lensStrength: 4,
+  lensStrength: 0.5,
   lensDecay: 1000,
   lensSizeRef: 0,
   dispersion: 0.3,
@@ -60,12 +62,14 @@ const tabLensDark = GlassVariantConstants(
   // sharp.
   blurSigma: 0.75,
   postBlurShare: 0.9,
-  // A near-linear outward bend over the outer 8.25 pt (33 pt at the rim,
-  // about 5x compression: iOS squeezes the page above into the band)
+  // A near-linear outward bend over the outer 8.25 pt (4 pt at the rim;
+  // with the tail below the band reaches about 10 pt past the rim, as
+  // iOS's does: about 8 pt, measured on `-controls lensreach`, a hue ramp
+  // above the bar. 33 pt pulled whole text rows into the band.)
   // plus an outward tail (negative lensEdge) that still moves the bar's
   // edge about 3.5 pt at 8 pt in.
   lensBand: 8.25,
-  lensStrength: 4,
+  lensStrength: 0.5,
   lensDecay: 1000,
   lensSizeRef: 0,
   dispersion: 0.3,

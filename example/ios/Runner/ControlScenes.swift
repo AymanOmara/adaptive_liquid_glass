@@ -20,6 +20,9 @@ enum ControlScenes {
     case "tabbarphoto": root = AnyView(TabBarBackdropReference(photo: true, dark: false))
     case "tabbardark": root = AnyView(TabBarBackdropReference(photo: false, dark: true))
     case "tabbarphotodark": root = AnyView(TabBarBackdropReference(photo: true, dark: true))
+    case "accessorytext": root = AnyView(AccessoryTextReference(accessory: true))
+    case "tabbartext": root = AnyView(AccessoryTextReference(accessory: false))
+    case "lensreach": root = AnyView(LensReachReference())
     case "sheet": root = AnyView(SheetReference(large: false))
     case "menu": root = AnyView(MenuReference())
     case "search": root = AnyView(SearchReference())
@@ -201,6 +204,83 @@ struct AccessoryReference: View {
       Image(systemName: "play.fill")
     }
     .padding(.horizontal, 16)
+  }
+}
+
+/// Dark mode, the accessory and the tab bar over rows of white text (one
+/// every 34 pt from the top), to see what the tab lens bends into its rim.
+/// `tabbartext`: the same without the accessory.
+@available(iOS 26.0, *)
+struct AccessoryTextReference: View {
+  let accessory: Bool
+  var body: some View {
+    if accessory {
+      tabs.tabViewBottomAccessory {
+        HStack {
+          Image(systemName: "music.note")
+          Text("Now Playing")
+          Spacer()
+          Image(systemName: "play.fill")
+        }
+        .padding(.horizontal, 16)
+      }
+    } else {
+      tabs
+    }
+  }
+
+  var tabs: some View {
+    TabView {
+      Tab("Home", systemImage: "house.fill") { page }
+      Tab("Music", systemImage: "music.note") { page }
+      Tab("Settings", systemImage: "gearshape.fill") { page }
+    }
+    .environment(\.colorScheme, .dark)
+  }
+
+  var page: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      ForEach(0..<25, id: \.self) { _ in
+        Text("Day Week Month Day Week")
+          .font(.system(size: 22))
+          .foregroundStyle(.white)
+          .frame(height: 34)
+      }
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    .padding(.leading, 20)
+    .background(Color.black)
+    .ignoresSafeArea()
+  }
+}
+
+/// Dark mode, the tab bar over a black page with a hue ramp in screen
+/// coordinates from y 789 pt (the bar's top, hue 0) up to y 681 pt (hue
+/// 0.75): a pixel's hue in the lens's band tells how far above the bar it
+/// was sampled.
+@available(iOS 26.0, *)
+struct LensReachReference: View {
+  var body: some View {
+    TabView {
+      Tab("Home", systemImage: "house.fill") { page }
+      Tab("Music", systemImage: "music.note") { page }
+      Tab("Settings", systemImage: "gearshape.fill") { page }
+    }
+    .environment(\.colorScheme, .dark)
+  }
+
+  var page: some View {
+    Canvas { ctx, size in
+      ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black))
+      for i in 0..<216 {
+        let y = 789.0 - Double(i + 1) * 0.5
+        let hue = Double(i) / 216 * 0.75
+        ctx.fill(
+          Path(CGRect(x: 0, y: y, width: size.width, height: 0.5)),
+          with: .color(Color(hue: hue, saturation: 1, brightness: 1)))
+      }
+    }
+    .ignoresSafeArea()
   }
 }
 

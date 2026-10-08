@@ -23,7 +23,7 @@ SCENE="${SCENE:-tabbardark}"
 MODES="${MODES:-native shader}"
 PRE="${PRE:-0.4}"
 POST="${POST:-1.6}"
-CROP="0,2280,1206,342"   # x,y,w,h px: the bar, its lens overhang and growth
+CROP="${CROP:-0,2280,1206,342}"   # x,y,w,h px: the bar, its lens overhang and growth
 mkdir -p "$OUT"
 "$IDB" connect "$UDID" >/dev/null
 if [[ -z "${SKIP_BUILD:-}" ]]; then

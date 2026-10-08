@@ -96,6 +96,31 @@ void main() {
     expect(_bodyPadding(t).bottom, 21 + 62 + 8 + 48);
   }, variant: ios);
 
+  testWidgets('the accessory paints after the tab bar, out of its lens', (
+    t,
+  ) async {
+    shaderEnv();
+    await _pump(
+      t,
+      GlassScaffold(
+        tabBar: _tabBar(),
+        bottomAccessory: const GlassBottomAccessory(child: Text('Playing')),
+        body: const SizedBox(key: Key('body')),
+      ),
+    );
+    // Children of a Stack paint in order; the tab lens samples only what
+    // was painted before it.
+    final order = t
+        .widgetList(
+          find.byWidgetPredicate(
+            (w) => w is GlassTabBar || w is GlassBottomAccessory,
+          ),
+        )
+        .map((w) => w.runtimeType)
+        .toList();
+    expect(order, [GlassTabBar, GlassBottomAccessory]);
+  }, variant: ios);
+
   testWidgets('the body is a backdrop source unless turned off', (t) async {
     shaderEnv();
     await _pump(t, const GlassScaffold(body: SizedBox()));

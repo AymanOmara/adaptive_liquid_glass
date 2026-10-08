@@ -17,6 +17,9 @@ Widget? borrowedTwin(String scene) => switch (scene) {
   'tabbarphoto' => const _TabBar(photo: true, dark: false),
   'tabbardark' => const _TabBar(photo: false, dark: true),
   'tabbarphotodark' => const _TabBar(photo: true, dark: true),
+  'accessorytext' => const _AccessoryText(accessory: true),
+  'tabbartext' => const _AccessoryText(accessory: false),
+  'lensreach' => const _LensReach(),
   _ => null,
 };
 
@@ -317,4 +320,121 @@ class _TabBarState extends State<_TabBar> {
     );
     return widget.dark ? _dark(context, scaffold) : scaffold;
   }
+}
+
+/// `-controls accessorytext`: dark, the accessory and the tab bar over rows
+/// of white text, one every 34 pt from the top; `tabbartext` without the
+/// accessory.
+class _AccessoryText extends StatefulWidget {
+  const _AccessoryText({required this.accessory});
+
+  final bool accessory;
+
+  @override
+  State<_AccessoryText> createState() => _AccessoryTextState();
+}
+
+class _AccessoryTextState extends State<_AccessoryText> {
+  int _tab = 0;
+
+  @override
+  Widget build(BuildContext context) => _dark(
+    context,
+    GlassScaffold(
+      backgroundColor: Colors.black,
+      tabBar: GlassTabBar(
+        items: const [
+          GlassTabBarItem(icon: CupertinoIcons.house_fill, label: 'Home'),
+          GlassTabBarItem(icon: CupertinoIcons.music_note, label: 'Music'),
+          GlassTabBarItem(icon: CupertinoIcons.gear_solid, label: 'Settings'),
+        ],
+        selectedIndex: _tab,
+        onSelected: (i) => setState(() => _tab = i),
+        mode: twinBarMode(context),
+      ),
+      bottomAccessory: !widget.accessory
+          ? null
+          : const GlassBottomAccessory(
+              child: Row(
+                children: [
+                  Icon(CupertinoIcons.music_note),
+                  SizedBox(width: 8),
+                  Text('Now Playing'),
+                  Spacer(),
+                  Icon(CupertinoIcons.play_fill),
+                ],
+              ),
+            ),
+      body: Padding(
+        padding: const EdgeInsetsDirectional.only(start: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var i = 0; i < 25; i++)
+              const SizedBox(
+                height: 34,
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    'Day Week Month Day Week',
+                    style: TextStyle(fontSize: 22, color: Colors.white),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+/// `-controls lensreach`: dark, the tab bar over a black page with a hue
+/// ramp from y 789 (hue 0) up to y 681 (hue 0.75), in screen coordinates.
+class _LensReach extends StatefulWidget {
+  const _LensReach();
+
+  @override
+  State<_LensReach> createState() => _LensReachState();
+}
+
+class _LensReachState extends State<_LensReach> {
+  int _tab = 0;
+
+  @override
+  Widget build(BuildContext context) => _dark(
+    context,
+    GlassScaffold(
+      backgroundColor: Colors.black,
+      tabBar: GlassTabBar(
+        items: const [
+          GlassTabBarItem(icon: CupertinoIcons.house_fill, label: 'Home'),
+          GlassTabBarItem(icon: CupertinoIcons.music_note, label: 'Music'),
+          GlassTabBarItem(icon: CupertinoIcons.gear_solid, label: 'Settings'),
+        ],
+        selectedIndex: _tab,
+        onSelected: (i) => setState(() => _tab = i),
+        mode: twinBarMode(context),
+      ),
+      body: const CustomPaint(painter: _HueRamp(), size: Size.infinite),
+    ),
+  );
+}
+
+class _HueRamp extends CustomPainter {
+  const _HueRamp();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (var i = 0; i < 216; i++) {
+      final y = 789.0 - (i + 1) * 0.5;
+      canvas.drawRect(
+        Rect.fromLTWH(0, y, size.width, 0.5),
+        Paint()
+          ..color = HSVColor.fromAHSV(1, i / 216 * 0.75 * 360, 1, 1).toColor(),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_HueRamp old) => false;
 }

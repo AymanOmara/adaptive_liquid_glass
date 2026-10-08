@@ -153,40 +153,55 @@ class GlassScaffold extends StatelessWidget {
               child: MediaQuery.removePadding(
                 context: context,
                 removeBottom: true,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                // The accessory paints after the bars, so the tab lens's
+                // backdrop (what was painted before it) holds the page but
+                // not the accessory: iOS's lens never bends the accessory's
+                // content into its rim.
+                child: Stack(
                   children: [
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (accessory != null)
+                          SizedBox(height: accessory.preferredSize.height),
+                        if (accessory != null && bottomBar)
+                          const SizedBox(height: ScaffoldMetrics.accessoryGap),
+                        if (tabBar != null)
+                          accessory == null && tabBar.onSearch == null
+                              ? Center(child: tabBar)
+                              : tabBar.onSearch != null
+                              // The search tab spreads the bar across.
+                              ? Padding(
+                                  padding:
+                                      const EdgeInsetsDirectional.symmetric(
+                                        horizontal:
+                                            ScaffoldMetrics.accessoryInset,
+                                      ),
+                                  child: tabBar,
+                                )
+                              // As iOS 26: with an accessory the tab bar
+                              // widens to the accessory's width.
+                              : Padding(
+                                  padding:
+                                      const EdgeInsetsDirectional.symmetric(
+                                        horizontal:
+                                            ScaffoldMetrics.accessoryInset,
+                                      ),
+                                  child: TabBarFillScope(child: tabBar),
+                                ),
+                        ?toolbar,
+                      ],
+                    ),
                     if (accessory != null)
-                      Padding(
-                        padding: const EdgeInsetsDirectional.symmetric(
-                          horizontal: ScaffoldMetrics.accessoryInset,
-                        ),
+                      PositionedDirectional(
+                        top: 0,
+                        start: ScaffoldMetrics.accessoryInset,
+                        end: ScaffoldMetrics.accessoryInset,
+                        height: accessory.preferredSize.height,
                         child: tabBar == null
                             ? accessory
                             : _sameGlassAsTabBar(context, tabBar, accessory),
                       ),
-                    if (accessory != null && bottomBar)
-                      const SizedBox(height: ScaffoldMetrics.accessoryGap),
-                    if (tabBar != null)
-                      accessory == null && tabBar.onSearch == null
-                          ? Center(child: tabBar)
-                          : tabBar.onSearch != null
-                          // The search tab spreads the bar across.
-                          ? Padding(
-                              padding: const EdgeInsetsDirectional.symmetric(
-                                horizontal: ScaffoldMetrics.accessoryInset,
-                              ),
-                              child: tabBar,
-                            )
-                          // As iOS 26: with an accessory the tab bar
-                          // widens to the accessory's width.
-                          : Padding(
-                              padding: const EdgeInsetsDirectional.symmetric(
-                                horizontal: ScaffoldMetrics.accessoryInset,
-                              ),
-                              child: TabBarFillScope(child: tabBar),
-                            ),
-                    ?toolbar,
                   ],
                 ),
               ),
