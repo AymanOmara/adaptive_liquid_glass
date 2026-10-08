@@ -91,3 +91,6 @@
     the drag settles (seen on the components demo, dark, plain background). Lens
     samples outside the bar's rect: clamp the lens backdrop to the bar bounds, or
     exclude GlassBottomAccessory from the lens backdrop.
+    Also: the fringe is RGB-split (per-channel displacement at the lens edge) and the
+    "Settings" label smears at the bottom-right edge; native shows neither on the tab
+    lens. Frames: build/tabbar-drag-leak-1.png, -2.png (captured mid-drag 2026-10-08).
