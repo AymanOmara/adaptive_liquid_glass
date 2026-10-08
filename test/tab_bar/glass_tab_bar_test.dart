@@ -764,7 +764,7 @@ void main() {
     t,
   ) async {
     shaderEnv();
-    expect(TabBarMetrics.tapHold, const Duration(milliseconds: 150));
+    expect(TabBarMetrics.tapHold, const Duration(milliseconds: 130));
     final picks = <int>[];
     await t.pumpWidget(plainHost(_Harness(picks)));
     // A tap on the selected tab: the lens has nowhere to travel, so
@@ -772,13 +772,13 @@ void main() {
     final g = await t.startGesture(t.getCenter(find.text('History')));
     await t.pump(const Duration(milliseconds: 16));
     await g.up();
-    // 144 ms after touch-down, still inside tapHold: the lens stays up.
-    for (var i = 0; i < 8; i++) {
+    // 128 ms after touch-down, still inside tapHold: the lens stays up.
+    for (var i = 0; i < 7; i++) {
       await t.pump(const Duration(milliseconds: 16));
     }
     expect(_lens, findsOneWidget);
     // iOS has settled it into the pill by ~330 ms; so do we.
-    for (var i = 0; i < 12; i++) {
+    for (var i = 0; i < 13; i++) {
       await t.pump(const Duration(milliseconds: 16));
     }
     expect(_lens, findsNothing);

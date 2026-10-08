@@ -154,6 +154,16 @@ class _GlassTabBarState extends State<GlassTabBar>
     vsync: this,
   );
 
+  /// The pill fading in at a quick tap's new tab once its lens is gone
+  /// (see TabBarMetrics.tapPillIn); 1 otherwise.
+  late final AnimationController _pillIn = AnimationController(
+    vsync: this,
+    value: 1,
+    duration: TabBarMetrics.tapPillIn,
+  );
+
+  static const Curve _pillInCurve = Interval(0.48, 1, curve: Curves.easeInOut);
+
   /// The bar's growth around a held lens: 0 at rest, 1 grown (see
   /// TabBarMetrics.grow). Frozen when the finger lifts; it goes back once
   /// the lens settles, so a quick tap leaves the bar as it is.
@@ -192,9 +202,9 @@ class _GlassTabBarState extends State<GlassTabBar>
   bool _lensUp = false;
 
   /// The lens settling into the pill, with the bar shrinking back.
-  void _settle() {
+  void _settle([SpringDescription? spring]) {
     _lensUp = false;
-    _springPress(TabBarMetrics.release, 0);
+    _springPress(spring ?? TabBarMetrics.release, 0);
     _springGrow(0);
   }
 
@@ -452,7 +462,12 @@ class _GlassTabBarState extends State<GlassTabBar>
     super.didUpdateWidget(old);
     if (_held) return;
     if (old.selectedIndex != widget.selectedIndex) {
-      _springX(TabBarMetrics.slide, _slot(widget.selectedIndex).toDouble());
+      final slot = _slot(widget.selectedIndex).toDouble();
+      // A released lens already heading there keeps its travel spring;
+      // restarting it as a slide sent a tapped lens across too fast.
+      if (!(_x.isAnimating && _xTarget == slot)) {
+        _springX(TabBarMetrics.slide, slot);
+      }
     } else if (old.items.length != widget.items.length) {
       _x.value = _slot(widget.selectedIndex).toDouble();
     }
@@ -469,6 +484,7 @@ class _GlassTabBarState extends State<GlassTabBar>
     _wobble.dispose();
     _x.dispose();
     _press.dispose();
+    _pillIn.dispose();
     super.dispose();
   }
 
@@ -537,6 +553,11 @@ class _GlassTabBarState extends State<GlassTabBar>
       // pill. A quick tap's lens settles at tapHold, still travelling.
       _arrival = slot.toDouble();
       _x.addListener(_settleOnArrival);
+    } else if (_holdTimer != null) {
+      _shrink(() {
+        _settle(TabBarMetrics.tapSettle);
+        if (travelling && !_reduceMotion) _pillIn.forward(from: 0);
+      });
     } else {
       _shrink(_settle);
     }
@@ -784,7 +805,14 @@ class _GlassTabBarState extends State<GlassTabBar>
         onPanEnd: (d) => _release(d.velocity.pixelsPerSecond.dx),
         onPanCancel: () => _release(0),
         child: AnimatedBuilder(
-          animation: Listenable.merge([_x, _press, _grow, _wobble, _light]),
+          animation: Listenable.merge([
+            _x,
+            _press,
+            _grow,
+            _wobble,
+            _light,
+            _pillIn,
+          ]),
           builder: (context, _) => _bar(_press.value, selected, indicator),
         ),
       ),
@@ -905,11 +933,12 @@ class _GlassTabBarState extends State<GlassTabBar>
                               rect: lens,
                               child: Opacity(
                                 opacity:
-                                    1 -
-                                    math.max(
-                                      light.clamp(0.0, 1.0),
-                                      t * _travelling.clamp(0.0, 1.0),
-                                    ),
+                                    (1 -
+                                        math.max(
+                                          light.clamp(0.0, 1.0),
+                                          t * _travelling.clamp(0.0, 1.0),
+                                        )) *
+                                    _pillInCurve.transform(_pillIn.value),
                                 child: DecoratedBox(
                                   decoration: ShapeDecoration(
                                     shape: const StadiumBorder(),

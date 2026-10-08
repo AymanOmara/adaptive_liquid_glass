@@ -221,8 +221,22 @@ abstract final class TabBarMetrics {
 
   /// After a quick tap the lens stays up this long from touch-down, then
   /// shrinks into the pill wherever it is: SwiftUI's `TabView` (iOS 26.4,
-  /// Home to Settings) drops it ~150 ms in, before it arrives, so it never
-  /// reaches the held lens's full width or height (tabbar_motion.py, tap).
-  /// A longer press releases at once; Reduce Motion skips it.
-  static const Duration tapHold = Duration(milliseconds: 150);
+  /// Home to Settings) drops it ~130 ms in, before it arrives, so it never
+  /// reaches the held lens's full width or height (tabbar_motion.py, tap:
+  /// 7.0 pt above the bar at most). A longer press releases at once;
+  /// Reduce Motion skips it.
+  static const Duration tapHold = Duration(milliseconds: 130);
+
+  /// After a quick tap on another tab the new pill fades in over this,
+  /// from the lens starting to settle: SwiftUI's `TabView` (iOS 26.4)
+  /// shows nothing there for ~130 ms after the lens starts settling, then
+  /// fades the pill in over ~140 ms (tabbar_light.py, tap).
+  static const Duration tapPillIn = Duration(milliseconds: 280);
+
+  /// A quick tap's lens settling into the pill: softer than [release]
+  /// (iOS 26.4 takes ~6 frames from 7 pt above the bar, not 4).
+  static final SpringDescription tapSettle = swiftUISpring(
+    response: 0.35,
+    dampingFraction: 0.7,
+  );
 }
