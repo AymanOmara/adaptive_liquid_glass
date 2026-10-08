@@ -50,7 +50,7 @@ void main() {
         }),
       ),
     );
-    expect(f.length, 328);
+    expect(f.length, 336);
     expect(f.sublist(0, 4), [1, 3, -2, 0]);
     expect(f.sublist(4, 8), [
       60,
@@ -456,6 +456,20 @@ void main() {
     expect(f[320], 0.5);
     expect(f[324], 1.0);
     expect(f.sublist(325, 328), [0, 0, 1.15]);
+  });
+
+  test('ambient colour packs into P after the M-O blocks (item 8)', () {
+    final c = GlassConstants.fromJson({
+      'regular': {'ambientMix': 0.25, 'ambientReach': 12.0},
+      'clear': {'ambientMix': 0.0, 'ambientReach': 0.0},
+    });
+    final f = packGlassUniforms(frame(const [], constants: c));
+    // Reach is a length (x dpr 3); the mix is a weight.
+    expect(f.sublist(328, 332), [0.25, 36, 0, 0]);
+    expect(f.sublist(332, 336), [0, 0, 0, 0]);
+    final d = packGlassUniforms(frame(const []));
+    final reg = GlassConstants.standard.regular;
+    expect(d.sublist(328, 332), [reg.ambientMix, reg.ambientReach * 3, 0, 0]);
   });
 
   test('lensVertical and the rim tint pack into L.yzw (off by default)', () {

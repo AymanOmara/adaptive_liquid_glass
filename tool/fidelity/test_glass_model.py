@@ -523,3 +523,40 @@ def test_neck_blend_zero_outside_merges():
     # Two circles 12 px apart: blend > 0 at the midpoint.
     _, b = field_blend([circle(0, 0), circle(72, 0)], np.array(66.0), np.array(30.0), 48.0)
     assert b > 0.0
+
+
+# --- Item 8: ambient colour ----------------------------------------------------
+
+def _ambient(mix, reach=0.0):
+    c = json.loads(json.dumps(STANDARD))
+    for n in ("regular", "regularDark"):
+        c[n].update(ambientMix=mix, ambientReach=reach)
+    return resolve_constants(c)
+
+
+def test_ambient_colour_adds_the_backdrop_average_chroma():
+    """Over a flat colour the average is the colour itself, so the interior
+    moves by exactly mix x (colour - luma(colour)) (to 8-bit rounding)."""
+    rgb = np.array([0.3, 0.12, 0.05])
+    bg = np.broadcast_to(rgb, (500, 500, 3)).copy()
+    sc = _small_scene(120, 100, shape="rect", variant="regular")  # 50 pt: large class
+    off, box = render_window(bg, sc, _ambient(0.0))
+    on, _ = render_window(bg, sc, _ambient(0.2, 10.0))
+    x0, y0, x1, y1 = box
+    cy, cx = (y1 - y0) // 2, (x1 - x0) // 2
+    want = 0.2 * (rgb - rgb @ np.array([0.2126, 0.7152, 0.0722]))
+    assert np.allclose(on[cy, cx] - off[cy, cx], want, atol=1.5 / 255)
+
+
+def test_ambient_colour_is_off_for_small_shapes_and_grey_backdrops():
+    rgb = np.array([0.8, 0.3, 0.2])
+    bg = np.broadcast_to(rgb, (500, 500, 3)).copy()
+    small = _small_scene(200, 56, variant="regular")  # 28 pt: small class
+    a, _ = render_window(bg, small, _ambient(0.0))
+    b, _ = render_window(bg, small, _ambient(0.5, 20.0))
+    assert np.array_equal(a, b)
+    grey = np.full((500, 500, 3), 0.4)
+    large = _small_scene(120, 100, shape="rect", variant="regular")
+    a, _ = render_window(grey, large, _ambient(0.0))
+    b, _ = render_window(grey, large, _ambient(0.5, 20.0))
+    assert np.abs(a - b).max() <= 1 / 255 + 1e-9

@@ -47,6 +47,8 @@ VARIANT_DEFAULTS = {
     "smallSizeLo": 0.0,
     "smallSizeHi": 0.0,
     "postJacobianMax": 4.0,
+    "ambientMix": 0.0,
+    "ambientReach": 0.0,
     "glowStrength": 0.25,
     "postBlurShare": 0.0,
     "normalRadiusScale": 1.0,
@@ -345,6 +347,7 @@ SCORE_PAD_PT = 12
 # Blurred texture kept around the window for lens/dispersion taps, rounded up
 # to this many px so the blur cache survives small lens changes.
 TAP_BUCKET_PX = 64
+AMBIENT_GRID = 5  # ambient colour taps per side (item 8)
 
 
 def _sample(tex, x0, y0, sx, sy):
@@ -411,6 +414,8 @@ def _uvar(constants, brightness, scale):
             "N": small[4:8].copy(),
             "O": np.array([small[8], v["smallSizeLo"] * scale,
                            v["smallSizeHi"] * scale, v["postJacobianMax"]]),
+            # Ambient colour (item 8): mix and reach px.
+            "P": np.array([v["ambientMix"], v["ambientReach"] * scale, 0.0, 0.0]),
         })
     return res
 
@@ -530,13 +535,13 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     uv = _uvar(constants, brightness, scale)
     if np.all(clear_mix == 0) or np.all(clear_mix == 1):
         u = uv[1] if np.all(clear_mix == 1) else uv[0]
-        A, B, C, D, E, F, G, H, I, J, K, L, M, N, O = (u[n] for n in "ABCDEFGHIJKLMNO")
+        A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P = (u[n] for n in "ABCDEFGHIJKLMNOP")
     else:
         cm = np.asarray(clear_mix)[..., None]
-        A, B, C, D, E, F, G, H, I, J, K, L, M, N, O = (
-            uv[0][n] * (1 - cm) + uv[1][n] * cm for n in "ABCDEFGHIJKLMNO")
-    A, B, C, D, E, F, I, J, K, L, M, N, O = (np.broadcast_to(x, g["d"].shape + (4,))
-                                             for x in (A, B, C, D, E, F, I, J, K, L, M, N, O))
+        A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P = (
+            uv[0][n] * (1 - cm) + uv[1][n] * cm for n in "ABCDEFGHIJKLMNOP")
+    A, B, C, D, E, F, I, J, K, L, M, N, O, P = (np.broadcast_to(x, g["d"].shape + (4,))
+                                                for x in (A, B, C, D, E, F, I, J, K, L, M, N, O, P))
 
     d, nx, ny, px, py = g["d"], g["nx"], g["ny"], g["px"], g["py"]
     inside = 1.0 - _smoothstep(-0.75, 0.75, d)
@@ -679,14 +684,46 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     # <= 0.
     Om = O[m]
     sm = Om[:, 2] > 0
+    small_w = np.zeros(len(Om))
     if np.any(sm):
         Om_s = Om[sm]
         w = np.clip((Om_s[:, 2] - hmm[sm]) / np.maximum(Om_s[:, 2] - Om_s[:, 1], 1e-3),
                     0.0, 1.0)
+        small_w[sm] = w
         kn = np.concatenate([M[m][sm], N[m][sm], Om_s[:, :1]], axis=1).T  # (9, n)
         lut = tone_apply(col[sm].T, kn).T
         col[sm] = col[sm] + (lut - col[sm]) * w[:, None]
     col = col + (tim[:, :3] - col) * tim[:, 3:4]
+    # Ambient colour (item 8, fitted on the regular photo scenes): SwiftUI's
+    # large glass picks up the chroma of the backdrop's average over the
+    # shape (its rect inflated by P.y px): + P.x x (avg - luma(avg)),
+    # off in the small-shape class (x (1 - small weight)). Added after
+    # the tint mix (tinted glass keeps the full ambient chroma). The average is
+    # 5 x 5 taps of the blurred texture over the attribute-blended rect.
+    Pm = P[m]
+    am = Pm[:, 0] * (1.0 - small_w)
+    if np.any(am != 0):
+        rects = np.stack([np.asarray(s_["rect"], np.float64) for s_ in shapes])  # (n, 4)
+        rc = sum(np.broadcast_to(w_, g["d"].shape)[m][:, None] * r_
+                 for w_, r_ in zip(weights, rects))
+        e = Pm[:, 1]
+        ax0, ay0 = rc[:, 0] - e, rc[:, 1] - e
+        aw, ah = rc[:, 2] + 2 * e, rc[:, 3] + 2 * e
+        emax = float(np.max(e))
+        abox = (int(np.floor(rects[:, 0].min() - emax)) - 4, int(np.floor(rects[:, 1].min() - emax)) - 4,
+                int(np.ceil((rects[:, 0] + rects[:, 2]).max() + emax)) + 4,
+                int(np.ceil((rects[:, 1] + rects[:, 3]).max() + emax)) + 4)
+        atex = blurred_window(bg, sigma * scale * blur_scale, abox,
+                              group_blur_aspect(scene, constants))
+        acc = 0.0
+        for i in range(AMBIENT_GRID):
+            for j in range(AMBIENT_GRID):
+                fx = (i + 0.5) / AMBIENT_GRID
+                fy = (j + 0.5) / AMBIENT_GRID
+                acc = acc + _sample(atex, abox[0], abox[1], ax0 + aw * fx, ay0 + ah * fy)
+        acc = acc / AMBIENT_GRID ** 2
+        al = (acc * LUMA).sum(-1, keepdims=True)
+        col = col + am[:, None] * (acc - al)
 
     lx, ly = np.cos(light_angle), np.sin(light_angle)
     rim_w = np.maximum(Bm[:, 0], 0.5)

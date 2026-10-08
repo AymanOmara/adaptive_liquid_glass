@@ -11,8 +11,9 @@ uniform vec4 uTouch;       // x, y, glow, glowRadius px
 uniform vec4 uRects[16];   // x, y, w, h px
 uniform vec4 uInfo[16];    // radius px, variant(0 regular, 1 clear), cornerExponent (0 = global), fill scale
 uniform vec4 uTints[16];   // rgb, strength
-uniform vec4 uVar[30];     // per variant (regular A-L, then clear A-L, then
-                           // regular M-O, then clear M-O):
+uniform vec4 uVar[32];     // per variant (regular A-L, then clear A-L, then
+                           // regular M-O, then clear M-O, then regular P,
+                           // then clear P):
                            //   A(lens decay px, band px, lens strength, disp) B(rimW, rimI, fillOpacity, dim)
                            //   C(shadowR, shadowO, tintS, lens size ref px) D(fillR, fillG, fillB, saturation)
                            //   E(frost wide sigma px, wide mix edge, wide mix centre, wide size ref px)
@@ -26,6 +27,7 @@ uniform vec4 uVar[30];     // per variant (regular A-L, then clear A-L, then
                            //   knots at inputs i/8 (Task g13); O.yz(smallSizeLo
                            //   px, smallSizeHi px); O.w post-lens Jacobian
                            //   clamp (fidelity group 4)
+                           //   P(ambient mix, ambient reach px, 0, 0) (item 8)
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -153,6 +155,7 @@ void main() {
   float halfMin = 0.0;  // half the shorter side, for the lens size factor
   float fillScale = 0.0;  // per-shape fillOpacity factor (fill size scaling)
   vec4 tint = vec4(0.0);
+  vec4 rcB = vec4(0.0);  // attribute-blended rect, for the ambient colour
   float d = 1e6;
   float wk = uGlobal2.x * 0.5 + 1.0;
   float dmin = 1e6;
@@ -169,6 +172,7 @@ void main() {
       halfMin *= s;
       fillScale *= s;
       tint *= s;
+      rcB *= s;
       dmin = e;
     }
     float w = exp(-(e - dmin) / wk);
@@ -177,11 +181,13 @@ void main() {
     halfMin += w * 0.5 * min(uRects[i].z, uRects[i].w);
     fillScale += w * info.w;
     tint += w * uTints[i];
+    rcB += w * uRects[i];
   }
   clearMix /= wsum;
   halfMin /= wsum;
   fillScale /= wsum;
   tint /= wsum;
+  rcB /= wsum;
 
   vec4 A = mix(uVar[0], uVar[12], clearMix);
   vec4 B = mix(uVar[1], uVar[13], clearMix);
@@ -198,6 +204,7 @@ void main() {
   vec4 M = mix(uVar[24], uVar[27], clearMix);
   vec4 N = mix(uVar[25], uVar[28], clearMix);
   vec4 O = mix(uVar[26], uVar[29], clearMix);
+  vec4 P = mix(uVar[30], uVar[31], clearMix);
   float hc = uGlobal2.z;
 
   float inside = 1.0 - smoothstep(-0.75, 0.75, d);
@@ -378,12 +385,33 @@ void main() {
   // steeper tone response. Applied after the fill wash and dim, weighted
   // from 1 at O.y (smallSizeLo) to 0 at O.z (smallSizeHi); off when
   // smallSizeHi <= 0.
+  float sw = 0.0;
   if (O.z > 0.0) {
-    float sw = clamp((O.z - halfMin) / max(O.z - O.y, 1e-3), 0.0, 1.0);
+    sw = clamp((O.z - halfMin) / max(O.z - O.y, 1e-3), 0.0, 1.0);
     col = mix(col, toneLut(col, M, N, O.x), sw);
   }
 
   col = mix(col, tint.rgb, tint.a);
+
+  // Ambient colour (item 8, fitted on the regular photo scenes: the
+  // residual sat where our frosted backdrop is grey but SwiftUI's glass
+  // carries the backdrop's average hue): + P.x x (avg - luma(avg)), avg =
+  // 5 x 5 taps of the blurred texture over the blended rect inflated by
+  // P.y px; off in the small-shape class (x (1 - sw)). After the tint
+  // mix: tinted glass keeps the full ambient chroma. Skipped when 0.
+  float am = P.x * (1.0 - sw);
+  if (am != 0.0) {
+    vec2 a0 = rcB.xy - vec2(P.y);
+    vec2 asz = rcB.zw + vec2(2.0 * P.y);
+    vec3 acc = vec3(0.0);
+    for (int i = 0; i < 5; i++) {
+      for (int j = 0; j < 5; j++) {
+        acc += tex(a0 + asz * (vec2(float(i), float(j)) + 0.5) * 0.2).rgb;
+      }
+    }
+    acc *= 0.04;
+    col += am * (acc - vec3(dot(acc, vec3(0.2126, 0.7152, 0.0722))));
+  }
 
   vec2 L = vec2(cos(uGlobal.z), sin(uGlobal.z));
   float rimW = max(B.x * (1.0 + hc), 0.5);

@@ -120,7 +120,7 @@ List<GlassShapeUniform> mergeUnions(List<GlassShapeUniform> shapes) {
 }
 
 /// Number of user floats after `uSize`.
-const int kGlassUniformFloats = 328;
+const int kGlassUniformFloats = 336;
 
 /// Packs [u] into the float layout documented in `shaders/liquid_glass.frag`:
 ///
@@ -135,6 +135,7 @@ const int kGlassUniformFloats = 328;
 /// | 144–207 | uTints[16]     | rgb, strength                             |
 /// | 208–303 | uVar[0..23]    | regular A–L, then clear A–L               |
 /// | 304–327 | uVar[24..29]   | regular M–O, then clear M–O               |
+/// | 328–335 | uVar[30..31]   | regular P, then clear P                   |
 ///
 /// Per variant: A = (lens decay px, lens band px, lens strength, dispersion),
 /// B = (rim width px, rim intensity, fillOpacity, dim),
@@ -152,7 +153,8 @@ const int kGlassUniformFloats = 328;
 /// M, N, O.x = small-shape tone LUT: 9 grey output knots at inputs i/8,
 /// applied after the fill wash and dim, weighted from 1 at smallSizeLo to 0 at
 /// smallSizeHi (Task g13), O.yz = (smallSizeLo px, smallSizeHi px),
-/// O.w = postJacobianMax (fidelity group 4).
+/// O.w = postJacobianMax (fidelity group 4),
+/// P = (ambientMix, ambientReach px, 0, 0) (item 8).
 List<double> packGlassUniforms(GlassFrameUniforms u) {
   final dpr = u.devicePixelRatio;
   final shapes = u.shapes.where(_drawable).take(_maxShapes).toList();
@@ -287,6 +289,11 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
       v.postJacobianMax,
     ]);
     k += 12;
+  }
+  // Ambient colour (item 8): P per variant (uVar[30..31]).
+  for (final v in variantSets) {
+    f.setAll(k, [v.ambientMix, v.ambientReach * dpr, 0, 0]);
+    k += 4;
   }
   return f;
 }

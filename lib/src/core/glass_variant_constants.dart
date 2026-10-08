@@ -33,6 +33,8 @@ class GlassVariantConstants {
     this.smallSizeLo = 0,
     this.smallSizeHi = 0,
     this.postJacobianMax = 4,
+    this.ambientMix = 0,
+    this.ambientReach = 0,
     this.glowStrength = 0.25,
     this.postBlurShare = 0,
     this.normalRadiusScale = 1,
@@ -105,6 +107,8 @@ class GlassVariantConstants {
       'postJacobianMax',
       base.postJacobianMax,
     ),
+    ambientMix: GlassJson.number(j, 'ambientMix', base.ambientMix),
+    ambientReach: GlassJson.number(j, 'ambientReach', base.ambientReach),
     glowStrength: GlassJson.number(j, 'glowStrength', base.glowStrength),
     postBlurShare: GlassJson.number(j, 'postBlurShare', base.postBlurShare),
     normalRadiusScale: GlassJson.number(
@@ -260,6 +264,16 @@ class GlassVariantConstants {
   /// outer 4 pt of the band). 4 is the original clamp.
   final double postJacobianMax;
 
+  /// Strength of the ambient colour (item 8): the glass adds this times the
+  /// chroma (colour minus its luma) of the blurred backdrop's average over
+  /// the shape, as SwiftUI's large regular glass carries the backdrop's
+  /// average hue. Off in the small-shape class; 0 = off.
+  final double ambientMix;
+
+  /// How far (pt) the ambient colour's average reaches beyond the shape's
+  /// rect on each side (item 8).
+  final double ambientReach;
+
   /// Brightness of the touch glow at full press (Task 17d; 0.25 is the
   /// pre-17d behaviour, left for the motion fit).
   final double glowStrength;
@@ -395,6 +409,8 @@ class GlassVariantConstants {
     'smallSizeLo': smallSizeLo,
     'smallSizeHi': smallSizeHi,
     'postJacobianMax': postJacobianMax,
+    'ambientMix': ambientMix,
+    'ambientReach': ambientReach,
     'glowStrength': glowStrength,
     'postBlurShare': postBlurShare,
     'normalRadiusScale': normalRadiusScale,
