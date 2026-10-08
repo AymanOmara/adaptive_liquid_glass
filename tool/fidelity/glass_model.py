@@ -63,6 +63,16 @@ VARIANT_DEFAULTS = {
     "rimBack": 0.35,
     "toneLiftKnee": 0.5,
     "toneLiftSizeRef": 0.0,
+    # Item 8 round 3 (Gemini terms, docs/superpowers/notes/
+    # gemini-fidelity-answer.md), each off at its default.
+    "linearLight": 0.0,      # 1: saturation, fill, dim, tint, ambient in linear light
+    "vibrancyK": 0.0,        # compressive vibrancy: gain 1 / (1 + k |C|)
+    "toneLumaMix": 0.0,      # tone LUT keyed on luma (0 = per channel); shader P.z
+    "ambientGate": 0.0,      # ambient x mix(1, (1 - tint) x K_family x ratio^p, gate)
+    "ambientGatePower": 0.0,  # p: merge ratio = union area / bbox area
+    "mergeSizeMix": 0.0,     # merged groups: size terms from R_eff = sqrt(A_union / pi)
+    "edgeSharpMix": 0.0,     # clear edge: mix toward the sharp backdrop, k_sharp
+    "edgeSharpSigma": 1.3,   # pt, band weight exp(-(depth / sigma)^2)
 }
 
 
@@ -293,14 +303,48 @@ def frost_wide_mix(sample_depth, half_min, v):
     return np.clip(w, 0.0, 1.0)
 
 
-def fill_size_factor(shape, v):
+def shape_area(s):
+    """Area (pt^2) of a scene shape: its rect minus the rounded corners."""
+    r = min(shape_radius(s), 0.5 * min(s["w"], s["h"]))
+    return s["w"] * s["h"] - (4.0 - np.pi) * r * r
+
+
+def merge_size_k(scene, constants):
+    """(mergeSizeMix, R_eff pt, K_family) of a scene (item 8 round 3).
+    For a merged group (spacing set, two or more shapes) R_eff =
+    sqrt(sum of member areas / pi) and K = area / union bbox area;
+    otherwise (0, 0, 1). The mix is the largest member's mergeSizeMix."""
+    shapes = scene["shapes"]
+    if not scene.get("spacing") or len(shapes) < 2:
+        return 0.0, 0.0, 1.0
+    area = sum(shape_area(s) for s in shapes)
+    bw = max(s["x"] + s["w"] for s in shapes) - min(s["x"] for s in shapes)
+    bh = max(s["y"] + s["h"] for s in shapes) - min(s["y"] for s in shapes)
+    m = max(float(constants[variant_key(s, scene["brightness"])]["mergeSizeMix"])
+            for s in shapes)
+    return m, float(np.sqrt(area / np.pi)), float(min(1.0, area / (bw * bh)))
+
+
+def size_half_min(shape, scene, constants):
+    """Half the shorter side (pt) the size terms (frost sigma, fill, frost
+    tail, tone curves) use: the shape's own, mixed toward the merged group's
+    R_eff by mergeSizeMix (item 8 round 3; 0 = per shape, as shipped)."""
+    hm = 0.5 * min(shape["w"], shape["h"])
+    if scene is None:
+        return hm
+    m, r_eff, _ = merge_size_k(scene, constants)
+    return hm + m * (r_eff - hm) if m else hm
+
+
+def fill_size_factor(shape, v, half_min=None):
     """Per-shape fillOpacity factor as packGlassUniforms writes uInfo.w
     (Task 17b): 1 - fillSizeDrop * (1 - min(1, halfMin / fillSizeRef)), 1 when
     fillSizeRef <= 0. `shape` in logical px (scene units)."""
     ref = float(v["fillSizeRef"])
     if ref <= 0:
         return 1.0
-    half_min = 0.5 * min(shape["w"], shape["h"])
+    if half_min is None:
+        half_min = 0.5 * min(shape["w"], shape["h"])
     return 1.0 - float(v["fillSizeDrop"]) * (1.0 - min(1.0, half_min / ref))
 
 
@@ -318,7 +362,7 @@ def group_blur_sigma(scene, constants):
     for s in scene["shapes"]:
         v = constants[variant_key(s, scene["brightness"])]
         ref = float(v["blurSizeRef"])
-        k = min(1.0, 0.5 * min(s["w"], s["h"]) / ref) if ref > 0 else 1.0
+        k = min(1.0, size_half_min(s, scene, constants) / ref) if ref > 0 else 1.0
         share = min(max(float(v.get("postBlurShare", 0.0)), 0.0), POST_SHARE_MAX)
         out = max(out, float(v["blurSigma"]) * k * np.sqrt(1.0 - share))
     return out
@@ -414,10 +458,25 @@ def _uvar(constants, brightness, scale):
             "N": small[4:8].copy(),
             "O": np.array([small[8], v["smallSizeLo"] * scale,
                            v["smallSizeHi"] * scale, v["postJacobianMax"]]),
-            # Ambient colour (item 8): mix and reach px.
-            "P": np.array([v["ambientMix"], v["ambientReach"] * scale, 0.0, 0.0]),
+            # Ambient colour (item 8): mix and reach px; P.z luma-keyed tone
+            # mix (item 8 round 3, shipped in the shader).
+            "P": np.array([v["ambientMix"], v["ambientReach"] * scale, v["toneLumaMix"], 0.0]),
+            # Item 8 round 3 (model experiments, off by default).
+            "Q": np.array([v["linearLight"], v["vibrancyK"], 0.0, v["ambientGate"]]),
+            "R": np.array([v["mergeSizeMix"], v["edgeSharpMix"], v["edgeSharpSigma"] * scale,
+                           v["ambientGatePower"]]),
         })
     return res
+
+
+def srgb_to_linear(c):
+    c = np.clip(c, 0.0, None)
+    return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+
+
+def linear_to_srgb(c):
+    c = np.clip(c, 0.0, None)
+    return np.where(c <= 0.0031308, c * 12.92, 1.055 * c ** (1 / 2.4) - 0.055)
 
 
 def tone_apply(col, k):
@@ -523,25 +582,34 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     tint = 0.0
     clear_mix = 0.0
     fill_scale = 0.0  # uInfo.w: per-shape fill size factor, blended
+    # Size terms' half shorter side (px), blended; = g["half_min"] unless
+    # mergeSizeMix moves a merged group toward its R_eff (the lens keeps
+    # the per-shape size, measured).
+    hm_size = 0.0
     for w, s, src in zip(weights, shapes, scene["shapes"]):
         v = constants[variant_key(src, brightness)]
-        fill_scale = fill_scale + w * fill_size_factor(src, v)
+        hs = size_half_min(src, scene, constants)
+        hm_size = hm_size + w * hs * scale
+        fill_scale = fill_scale + w * fill_size_factor(src, v, hs)
         if s["tint"] is not None:
             rgb, a = s["tint"]
             tint = tint + w[..., None] * np.concatenate([rgb, [v["tintStrength"] * a]])
         clear_mix = clear_mix + w * s["clear"]
+    if merge_size_k(scene, constants)[0] == 0:
+        hm_size = g["half_min"]  # bit-exact with the shipped path
     tint = np.broadcast_to(tint, g["d"].shape + (4,)) if np.ndim(tint) else np.zeros(g["d"].shape + (4,))
 
     uv = _uvar(constants, brightness, scale)
     if np.all(clear_mix == 0) or np.all(clear_mix == 1):
         u = uv[1] if np.all(clear_mix == 1) else uv[0]
-        A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P = (u[n] for n in "ABCDEFGHIJKLMNOP")
+        A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R = (u[n] for n in "ABCDEFGHIJKLMNOPQR")
     else:
         cm = np.asarray(clear_mix)[..., None]
-        A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P = (
-            uv[0][n] * (1 - cm) + uv[1][n] * cm for n in "ABCDEFGHIJKLMNOP")
-    A, B, C, D, E, F, I, J, K, L, M, N, O, P = (np.broadcast_to(x, g["d"].shape + (4,))
-                                                for x in (A, B, C, D, E, F, I, J, K, L, M, N, O, P))
+        A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R = (
+            uv[0][n] * (1 - cm) + uv[1][n] * cm for n in "ABCDEFGHIJKLMNOPQR")
+    A, B, C, D, E, F, I, J, K, L, M, N, O, P, Q, R = (
+        np.broadcast_to(x, g["d"].shape + (4,))
+        for x in (A, B, C, D, E, F, I, J, K, L, M, N, O, P, Q, R))
 
     d, nx, ny, px, py = g["d"], g["nx"], g["ny"], g["px"], g["py"]
     inside = 1.0 - _smoothstep(-0.75, 0.75, d)
@@ -589,7 +657,7 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     if blur_scale is None:
         blur_scale = 1.0
     # Frost v2: weight of the wide taps from the sampled point's depth.
-    hm = np.maximum(g["half_min"], 1.0)
+    hm = np.maximum(hm_size, 1.0)
     wide_w = E[..., 1] + (E[..., 2] - E[..., 1]) * (depth - lens_amt) / hm
     wide_w = wide_w - np.where(E[..., 3] > 0, F[..., 0] * np.maximum(
         0.0, 1.0 - hm / np.maximum(E[..., 3], 1e-6)), 0.0)
@@ -613,7 +681,7 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     base = _sample(tex, tx0, ty0, spx[m], spy[m])
     col = base.copy()
     Km = K[m]
-    hm_ = np.broadcast_to(g["half_min"], g["d"].shape)[m]
+    hm_ = np.broadcast_to(hm_size, g["d"].shape)[m]
     sp_post = Km[:, 2] * np.where(Km[:, 3] > 0, np.minimum(
         1.0, hm_ / np.maximum(Km[:, 3], 1e-6)), 1.0) * blur_scale
     pm = sp_post >= 0.25
@@ -644,6 +712,14 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
         for dx, dy, wt in unit:
             wide = wide + wt * _sample(tex, tx0, ty0, spx[m] + dx * sxm, spy[m] + dy * sxm)
         col = col + (wide - col) * wm[:, None]
+    # Clear edge over text (item 8 round 3, Gemini term 6, model only: the
+    # shader has no sharp backdrop texture): mix toward the un-blurred
+    # backdrop at the lens sample by edgeSharpMix x exp(-(depth / sigma)^2).
+    Rm = R[m]
+    if np.any(Rm[:, 1] != 0):
+        we = Rm[:, 1] * np.exp(-(np.maximum(depth[m], 0.0) / np.maximum(Rm[:, 2], 1e-3)) ** 2)
+        sharp_s = _sample(bg, 0, 0, spx[m], spy[m])
+        col = col + (sharp_s - col) * we[:, None]
     # Dispersion replaces red/blue by single taps; carry the core channel's
     # full frost offset (post-lens blur + wide mix) over to them, so
     # dispersion 0 is an exact no-op and a grey backdrop stays grey. The
@@ -656,8 +732,26 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     col[:, 2] += (b2 + core_off[:, 2] - col[:, 2]) * tm
 
     Dm, Bm, tim = D[m], B[m], tint[m]
+    # Item 8 round 3 (Gemini terms 1-3). Linear light (Q.x >= 0.5): the
+    # colour stage below runs on linear values; the tone LUTs keep their
+    # encoded-domain curves (applied between enc / dec) and the result is
+    # re-encoded before the rim. Off: enc / dec are the identity.
+    Qm = Q[m]
+    lin = (Qm[:, 0] >= 0.5)[:, None]
+    any_lin = bool(np.any(lin))
+    dec = (lambda x: np.where(lin, srgb_to_linear(x), x)) if any_lin else (lambda x: x)
+    enc = (lambda x: np.where(lin, linear_to_srgb(x), x)) if any_lin else (lambda x: x)
+    col = dec(col)
     luma = (col * LUMA).sum(-1, keepdims=True)
-    col = luma + (col - luma) * Dm[:, 3:4]
+    vk = Qm[:, 1:2]
+    if np.any(vk != 0):
+        # Compressive vibrancy: chroma gain (S - 1) x 1 / (1 + k |C|).
+        cv = col - luma
+        gain = 1.0 / (1.0 + vk * np.sqrt((cv * cv).sum(-1, keepdims=True)))
+        col = luma + cv * (1.0 + (Dm[:, 3:4] - 1.0) * gain)
+    else:
+        col = luma + (col - luma) * Dm[:, 3:4]
+    col = enc(col)
     # Tone LUT (Task 17d): grey knots blended across variants like the other
     # uniform blocks. Physically Apple's tone sits on the blurred backdrop
     # before the fill wash (flat-exact placement; the post-fill placement
@@ -665,17 +759,27 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     kr = np.concatenate([uv[0]["G"][:4], uv[0]["H"][:4], uv[0]["I"][:1]])
     kc = np.concatenate([uv[1]["G"][:4], uv[1]["H"][:4], uv[1]["I"][:1]])
     cm1 = np.broadcast_to(np.asarray(clear_mix), g["d"].shape)[m]
-    col = tone_apply(col.T, kr[:, None] * (1 - cm1) + kc[:, None] * cm1).T
+    knots = kr[:, None] * (1 - cm1) + kc[:, None] * cm1
+    tl = P[m][:, 2:3]
+    if np.any(tl != 0):
+        # Luma-keyed tone: the LUT moves luma, chroma rides along.
+        y = (col * LUMA).sum(-1, keepdims=True)
+        keyed = col + tone_apply(np.repeat(y.T, 3, 0), knots).T - y
+        col = tone_apply(col.T, knots).T
+        col = col + (keyed - col) * tl
+    else:
+        col = tone_apply(col.T, knots).T
     # Small-shape shadow lift (Task 17d / 8b, fitted: SwiftUI lifts the dark
     # end behind small dark glass): + toneLift x size x max(0, 1 - c/knee)^2,
     # size = max(0, 1 - halfMin / toneLiftSizeRef).
     Km = K[m]
-    hmm = np.broadcast_to(g["half_min"], g["d"].shape)[m]
+    hmm = np.broadcast_to(hm_size, g["d"].shape)[m]
     lsz = np.where(Km[:, 1] > 0, np.maximum(0.0, 1.0 - hmm / np.maximum(Km[:, 1], 1e-3)), 0.0)
     lk = np.maximum(1.0 - col / np.maximum(Km[:, 0:1], 1e-3), 0.0)
     col = col + (I[..., 3][m] * lsz)[:, None] * lk * lk
+    col = dec(col)
     fsm = np.broadcast_to(fill_scale, g["d"].shape)[m][:, None]
-    col = col + (Dm[:, :3] - col) * (Bm[:, 2:3] * fsm)
+    col = col + (dec(Dm[:, :3]) - col) * (Bm[:, 2:3] * fsm)
     col = col * (1.0 - Bm[:, 3:4])
     # Small-shape tone curve (Task g13, measured on the reference simulator):
     # shapes whose half shorter side is at most ~32 pt use a second, steeper
@@ -691,9 +795,11 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
                     0.0, 1.0)
         small_w[sm] = w
         kn = np.concatenate([M[m][sm], N[m][sm], Om_s[:, :1]], axis=1).T  # (9, n)
-        lut = tone_apply(col[sm].T, kn).T
+        full = enc(col).copy()
+        full[sm] = tone_apply(full[sm].T, kn).T
+        lut = dec(full)[sm]
         col[sm] = col[sm] + (lut - col[sm]) * w[:, None]
-    col = col + (tim[:, :3] - col) * tim[:, 3:4]
+    col = col + (dec(tim[:, :3]) - col) * tim[:, 3:4]
     # Ambient colour (item 8, fitted on the regular photo scenes): SwiftUI's
     # large glass picks up the chroma of the backdrop's average over the
     # shape (its rect inflated by P.y px): + P.x x (avg - luma(avg)),
@@ -702,6 +808,16 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     # 5 x 5 taps of the blurred texture over the attribute-blended rect.
     Pm = P[m]
     am = Pm[:, 0] * (1.0 - small_w)
+    gate = Qm[:, 3]
+    if np.any(gate != 0):
+        # Gated ambient (Gemini term 4, coordinator's form): x (1 - tint) x
+        # K_family x ratio^p; K_family 1 for regular / clear, 0 for tinted
+        # glass; ratio = union area / bbox area for a merge (1 otherwise).
+        ratio = merge_size_k(scene, constants)[2]
+        ta = np.clip(tim[:, 3], 0.0, 1.0)
+        kfam = np.where(ta > 0, 0.0, 1.0)
+        gf = (1.0 - ta) * kfam * ratio ** np.maximum(Rm[:, 3], 0.0)
+        am = am * (1.0 + gate * (gf - 1.0))
     if np.any(am != 0):
         rects = np.stack([np.asarray(s_["rect"], np.float64) for s_ in shapes])  # (n, 4)
         rc = sum(np.broadcast_to(w_, g["d"].shape)[m][:, None] * r_
@@ -722,8 +838,10 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
                 fy = (j + 0.5) / AMBIENT_GRID
                 acc = acc + _sample(atex, abox[0], abox[1], ax0 + aw * fx, ay0 + ah * fy)
         acc = acc / AMBIENT_GRID ** 2
+        acc = dec(acc)
         al = (acc * LUMA).sum(-1, keepdims=True)
         col = col + am[:, None] * (acc - al)
+    col = enc(col)
 
     lx, ly = np.cos(light_angle), np.sin(light_angle)
     rim_w = np.maximum(Bm[:, 0], 0.5)

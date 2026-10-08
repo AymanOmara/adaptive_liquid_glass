@@ -9,9 +9,9 @@ from compare import load, region_for, score
 from glass_model import render, render_window, resolve_constants
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-# Flutter captures of the shipped standard (fidelity group 4 clear-lens refit;
-# shipped build, SwiftUI refs copied from build/fidelity/g13-2).
-BASE = ROOT / "build/fidelity/g4-1"
+# Flutter captures of the shipped standard (item 8 round 3: luma-keyed tone,
+# ambient chroma and regular light refit; shipped build, no -constants).
+BASE = ROOT / "build/fidelity/g8-3"
 SPEC = json.loads((ROOT / "tool/scenes/scenes.json").read_text())
 STANDARD = json.loads((ROOT / "tool/fidelity/standard_constants.json").read_text())
 
@@ -20,10 +20,10 @@ PARITY_SCENES = [s["id"] for s in SPEC["scenes"]]  # all 75
 
 # Skips (all 75 cases, visibly in `pytest -rs`) when the captures are absent;
 # they are not committed. Recreate them with the shipped standard:
-#   RENDERERS=flutter tool/fidelity/capture.sh build/fidelity/g4-1
+#   RENDERERS=flutter tool/fidelity/capture.sh build/fidelity/g8-3
 PARITY_SKIP = ("75-scene parity needs Flutter captures of the shipped build in "
-               "build/fidelity/g4-1; run `RENDERERS=flutter tool/fidelity/capture.sh "
-               "build/fidelity/g4-1` (see tool/fidelity/README.md)")
+               "build/fidelity/g8-3; run `RENDERERS=flutter tool/fidelity/capture.sh "
+               "build/fidelity/g8-3` (see tool/fidelity/README.md)")
 
 
 @pytest.mark.skipif(not BASE.exists(), reason=PARITY_SKIP)
@@ -289,16 +289,21 @@ def test_small_tone_curve_neutral_forms_are_no_ops():
     are a no-op even with the size window open, and smallSizeHi <= 0 guards
     the stage off entirely. Since the g13 refit the curve ships ON for
     regular/regularDark (clear/clearDark stay off), the reference here is
-    STANDARD with the keys explicitly reset to the defaults."""
+    STANDARD with the keys explicitly reset to the defaults. The ambient
+    chroma (item 8, on for regular light since round 3) is gated by the
+    same size window, so it is held at 0 here."""
     bg = np.random.default_rng(7).random((400, 400, 3))
     sc = _small_scene(200, 56, variant="regular")  # half shorter side 28 pt
-    neutral = _with_small(smallToneKnots=list(IDENTITY), smallSizeLo=0.0, smallSizeHi=0.0)
+    neutral = _with_small(smallToneKnots=list(IDENTITY), smallSizeLo=0.0, smallSizeHi=0.0,
+                          ambientMix=0.0)
     a, _ = render_window(bg, sc, neutral)
     b, _ = render_window(bg, sc, _with_small(smallToneKnots=list(IDENTITY),
-                                             smallSizeLo=30.0, smallSizeHi=34.0))
+                                             smallSizeLo=30.0, smallSizeHi=34.0,
+                                             ambientMix=0.0))
     assert np.array_equal(a, b)
     c, _ = render_window(bg, sc, _with_small(smallToneKnots=list(SMALL_KNOTS),
-                                             smallSizeLo=30.0, smallSizeHi=0.0))
+                                             smallSizeLo=30.0, smallSizeHi=0.0,
+                                             ambientMix=0.0))
     assert np.array_equal(a, c)
     # And the shipped curve really is on for the regular sets (g13).
     d, _ = render_window(bg, sc, STANDARD)
@@ -560,3 +565,70 @@ def test_ambient_colour_is_off_for_small_shapes_and_grey_backdrops():
     a, _ = render_window(grey, large, _ambient(0.0))
     b, _ = render_window(grey, large, _ambient(0.5, 20.0))
     assert np.abs(a - b).max() <= 1 / 255 + 1e-9
+
+
+# --- Item 8 round 3: Gemini terms (model experiments, off by default) ---------
+
+def _gemini(over, sets=("regular", "regularDark")):
+    c = json.loads(json.dumps(STANDARD))
+    for n in sets:
+        c[n].update(over)
+    return resolve_constants(c)
+
+
+def _colour_bg():
+    return np.random.default_rng(5).random((500, 500, 3)) * 0.6 + 0.2
+
+
+def test_round3_terms_each_change_a_large_regular_shape():
+    bg = _colour_bg()
+    sc = _small_scene(120, 100, shape="rect", variant="regular")
+    off, _ = render_window(bg, sc, _gemini({}))
+    for over in ({"linearLight": 1.0}, {"vibrancyK": 2.0}, {"toneLumaMix": 1.0}):
+        on, _ = render_window(bg, sc, _gemini(over))
+        assert not np.array_equal(on, off), over
+
+
+def test_vibrancy_k0_and_grey_backdrop_are_neutral():
+    from glass_model import VARIANT_DEFAULTS
+    assert all(VARIANT_DEFAULTS[k] == 0.0 for k in (
+        "linearLight", "vibrancyK", "toneLumaMix", "ambientGate", "ambientGatePower",
+        "mergeSizeMix", "edgeSharpMix"))
+    grey = np.full((500, 500, 3), 0.4)
+    sc = _small_scene(120, 100, shape="rect", variant="regular")
+    a, _ = render_window(grey, sc, _gemini({}))
+    for over in ({"vibrancyK": 2.0}, {"toneLumaMix": 1.0}):
+        b, _ = render_window(grey, sc, _gemini(over))
+        assert np.abs(a - b).max() <= 1 / 255 + 1e-9, over
+
+
+def test_ambient_gate_removes_ambient_from_tinted_glass():
+    rgb = np.array([0.3, 0.12, 0.05])
+    bg = np.broadcast_to(rgb, (500, 500, 3)).copy()
+    sc = _small_scene(120, 100, shape="rect", variant="regular")
+    sc["shapes"][0]["tint"] = "#0A84FF99"
+    base, _ = render_window(bg, sc, _gemini({"ambientMix": 0.0}))
+    ungated, _ = render_window(bg, sc, _gemini({"ambientMix": 0.3, "ambientReach": 10.0}))
+    gated, _ = render_window(bg, sc, _gemini({"ambientMix": 0.3, "ambientReach": 10.0,
+                                              "ambientGate": 1.0}))
+    assert not np.array_equal(base, ungated)
+    assert np.array_equal(base, gated)
+
+
+def test_merge_size_and_gate_ratio_follow_the_union():
+    from glass_model import merge_size_k
+    sc = _scene("merge-gap16-photo-light")
+    c = _gemini({"mergeSizeMix": 1.0})
+    m, r_eff, ratio = merge_size_k(sc, c)
+    area = 2 * np.pi * 30 ** 2
+    assert m == 1.0 and r_eff == pytest.approx(np.sqrt(area / np.pi))
+    assert 0.5 < ratio < 1.0
+    assert merge_size_k(_scene("regular-circle-photo-light"), c) == (0.0, 0.0, 1.0)
+
+
+def test_edge_sharp_mix_sharpens_clear_glass():
+    bg = _colour_bg()
+    sc = _small_scene(120, 100, shape="rect", variant="clear")
+    a, _ = render_window(bg, sc, _gemini({}, ("clear", "clearDark")))
+    b, _ = render_window(bg, sc, _gemini({"edgeSharpMix": 0.6}, ("clear", "clearDark")))
+    assert b.std() > a.std()

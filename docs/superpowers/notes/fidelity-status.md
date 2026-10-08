@@ -533,3 +533,51 @@ residual is a frontier between the rect photo scenes and tinted/merge photo
 scenes that a single global chroma term cannot split: SwiftUI appears to
 treat tinted and merged glass differently from plain large rects.
 
+
+### Item 8 round 3 (2026-10-08): Gemini terms, luma-keyed tone shipped
+
+Source: `gemini-fidelity-answer.md` (six candidate terms). All six are in
+`glass_model.py` as per-variant keys, off at their defaults (parity holds).
+Scoring: predicted device = model + per-scene g8-1 offsets (device − model
+of the g8-1 constants; `build/g8r3/offsets.json`, |offset| ≤ 0.005 SSIM /
+0.08 ΔE). Scripts and logs: `build/g8r3/` (`run.py` LS + cd4-style descent,
+`grid.py` scans). Time-boxed to ~2 h of fitting on a loaded machine, so
+terms 1, 2, 4, 6 got scans or a partial descent, not a full refit.
+
+| term | keys | scenes | best predicted | gains / losses |
+|---|---|---|---|---|
+| 1 linear light (sat, fill, dim, tint, ambient in linear; tone LUTs stay encoded) | `linearLight` | 27 light / 24 dark | 4-5/27 light, 0/24 dark at the shipped fill; the LS refit did not finish in the time box | 0 / 17-18 light, 20 dark |
+| 2 compressive vibrancy 1/(1+k\|C\|) | `vibrancyK`, saturation | 27 light / 24 dark | light 22/22 at k 1-3, sat 1.44-1.7; dark k 1 sat 2.3 20/20 | 0 / 0 (dark loses 2 rect gradient at the shipped sat) |
+| 3 luma-keyed tone LUT | `toneLumaMix` | 27 light / 24 dark | light 0.5 → 23/22; descent (mix 0.6, sat 1.49, tone1-4/7) 23, capsule-photo-light 0.9715 / 1.49; dark 0.5 → 20/20 | **light +1 / 0**, dark 0 / 0 |
+| 4 gated ambient x (1 − tint) x K_family x (A_union/A_bbox)^p | `ambientGate`, `ambientGatePower` | 18 light rect/circle/tinted | gate 1 at mix 0.25-0.5, reach 20-60: 8-12/16 | 0 / 4 (tinted rect16/28 photo+gradient light) |
+| 5 merged size terms from R_eff = sqrt(A_union/π) | `mergeSizeMix` | 3 merge | mix 1: 0/3 (ΔE 1.3-1.5 → 2.1-2.3) | 0 / 3 (all three already pass, no gain possible alone) |
+| 6 clear dual-sample edge (σ_edge, k_sharp) | `edgeSharpMix`, `edgeSharpSigma` | 6 clear text, 21 clear | k 0.55 σ 1.3: every text scene −0.007 to −0.009 SSIM; descent drifts to k 0.02 σ 4 (interior sharpening), 14/14 | 0 / 0 (model only: the shader has no sharp backdrop texture) |
+
+Findings: (4) the gate is applied correctly (gated tinted scenes are
+bit-identical to ambientMix 0), but the device wants the 0.18 ambient on
+tinted rects, so the gate's premise is refuted on those scenes; the rect
+photo-light ΔE does not respond to ambient alone (2.74 → 2.75-2.92), it
+needs the tone/saturation that also move the small shapes. (5) the merge
+scenes prefer the per-shape size rules. Greedy combination: from term 3 the
+descent tried `vibrancyK` +0.5 and ambient ±0.03, both rejected, so the
+combination is term 3 alone.
+
+Ported: term 3 only (`toneLumaMix`, uVar P.z, no new uniform slot; shader
+`toned = mix(toneLut(col), col + toneLut(luma) − luma, P.z)`). Shipped
+regular set = g8-1 (ambient 0.18 / 60 pt, small knot 8 0.974) + mix 0.6,
+saturation 1.4901, toneKnots [0, .113, .25, .363, .4973, .6263, .7534,
+.8839, 1].
+
+Device, `build/fidelity/g8-3` (shipped build, no `-constants`; the two
+regular-capsule-photo Flutter shots were blank after the build and were
+recaptured with `RENDERERS=flutter SKIP_BUILD=1`): **59/75 (was 58), gain
+regular-capsule-photo-light 0.9694/1.53 → 0.9714/1.49, 0 losses, min SSIM
+0.9525 (unchanged), median SSIM 0.9831 / ΔE 1.19, mean 0.9810 / 1.197.**
+Device matched the prediction to ≤ 0.0002 SSIM / 0.05 ΔE. Parity
+(`test_glass_model.py`) now points at g8-3: 75/75.
+
+TODO (item 8, for TODO.md, owned by another session): remaining regular
+failures are rect16/28 photo light (ΔE 2.66 / 2.59) and dark (3.4-3.5),
+capsule photo dark (SSIM 0.9525), tinted capsule photo/gradient light (ΔE
+2.34 / 2.23). Untried in full: a linear-light refit (all fill/tone keys,
+needs > 2 h of LS) and term 6 with a real sharp-backdrop texture.

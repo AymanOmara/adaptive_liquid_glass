@@ -35,6 +35,7 @@ class GlassVariantConstants {
     this.postJacobianMax = 4,
     this.ambientMix = 0,
     this.ambientReach = 0,
+    this.toneLumaMix = 0,
     this.glowStrength = 0.25,
     this.postBlurShare = 0,
     this.normalRadiusScale = 1,
@@ -109,6 +110,7 @@ class GlassVariantConstants {
     ),
     ambientMix: GlassJson.number(j, 'ambientMix', base.ambientMix),
     ambientReach: GlassJson.number(j, 'ambientReach', base.ambientReach),
+    toneLumaMix: GlassJson.number(j, 'toneLumaMix', base.toneLumaMix),
     glowStrength: GlassJson.number(j, 'glowStrength', base.glowStrength),
     postBlurShare: GlassJson.number(j, 'postBlurShare', base.postBlurShare),
     normalRadiusScale: GlassJson.number(
@@ -274,6 +276,11 @@ class GlassVariantConstants {
   /// rect on each side (item 8).
   final double ambientReach;
 
+  /// How far the tone LUT is keyed on luma instead of applied per channel
+  /// (item 8 round 3): at 1 the LUT moves the frosted backdrop's luma and
+  /// its chroma rides along unchanged; 0 = per channel, as before.
+  final double toneLumaMix;
+
   /// Brightness of the touch glow at full press (Task 17d; 0.25 is the
   /// pre-17d behaviour, left for the motion fit).
   final double glowStrength;
@@ -411,6 +418,7 @@ class GlassVariantConstants {
     'postJacobianMax': postJacobianMax,
     'ambientMix': ambientMix,
     'ambientReach': ambientReach,
+    'toneLumaMix': toneLumaMix,
     'glowStrength': glowStrength,
     'postBlurShare': postBlurShare,
     'normalRadiusScale': normalRadiusScale,

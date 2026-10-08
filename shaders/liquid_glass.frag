@@ -27,7 +27,8 @@ uniform vec4 uVar[32];     // per variant (regular A-L, then clear A-L, then
                            //   knots at inputs i/8 (Task g13); O.yz(smallSizeLo
                            //   px, smallSizeHi px); O.w post-lens Jacobian
                            //   clamp (fidelity group 4)
-                           //   P(ambient mix, ambient reach px, 0, 0) (item 8)
+                           //   P(ambient mix, ambient reach px, luma-keyed tone mix, 0) (item 8;
+                           //   P.z item 8 round 3)
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -368,7 +369,15 @@ void main() {
   // Tone LUT (Task 17d, glass_model.tone_apply): 9 grey knots at inputs
   // i/8, hat-sum form, on the frosted backdrop before the fill wash (where
   // SwiftUI's flat-grey response places it); identity knots reproduce col.
-  col = toneLut(col, G, H, I.x);
+  // Luma-keyed tone (item 8 round 3, Gemini term 3): P.z of the way toward
+  // moving luma through the LUT and carrying the chroma along unchanged.
+  vec3 toned = toneLut(col, G, H, I.x);
+  if (P.z != 0.0) {
+    float y = dot(col, vec3(0.2126, 0.7152, 0.0722));
+    vec3 keyed = col + vec3(toneLut(vec3(y), G, H, I.x).x - y);
+    toned = mix(toned, keyed, P.z);
+  }
+  col = toned;
 
   // Small-shape shadow lift (Task 17d / 8b, fitted): SwiftUI lifts the dark
   // end behind small dark glass. + I.w x size x max(0, 1 - col / K.x)^2,

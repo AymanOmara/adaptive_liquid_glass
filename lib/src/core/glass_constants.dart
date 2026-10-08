@@ -68,19 +68,14 @@ class GlassConstants {
       frostWideSizeRef: 75.4199,
       frostWideSizeDrop: 1.1423,
       // Task g13: fitted tone LUT plus a small-shape tone curve (steeper
-      // SwiftUI response below 32 pt half shorter side).
-      toneKnots: [
-        0,
-        0.125,
-        0.25,
-        0.375,
-        0.4853,
-        0.6023,
-        0.7654,
-        0.9079,
-        0.9919,
-      ],
-      smallToneKnots: [0, 0.1, 0.2, 0.3, 0.5, 0.611, 0.7142, 0.8538, 0.962],
+      // SwiftUI response below 32 pt half shorter side). Item 8 rounds 2-3:
+      // ambient backdrop chroma (large shapes) and a luma-keyed tone LUT,
+      // with the tone knots and saturation refit.
+      toneKnots: [0, 0.113, 0.25, 0.363, 0.4973, 0.6263, 0.7534, 0.8839, 1],
+      toneLumaMix: 0.6,
+      ambientMix: 0.18,
+      ambientReach: 60,
+      smallToneKnots: [0, 0.1, 0.2, 0.3, 0.5, 0.611, 0.7142, 0.8538, 0.974],
       smallSizeLo: 32,
       smallSizeHi: 34,
       lensBand: 18.2615,
@@ -94,7 +89,7 @@ class GlassConstants {
       fillOpacity: 0.6839,
       fillSizeRef: 43.9952,
       fillSizeDrop: 0,
-      saturation: 1.7401,
+      saturation: 1.4901,
       dim: 0.0046,
       shadowRadius: 20.8906,
       shadowOpacity: 0.0494,

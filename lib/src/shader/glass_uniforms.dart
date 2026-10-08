@@ -154,7 +154,7 @@ const int kGlassUniformFloats = 336;
 /// applied after the fill wash and dim, weighted from 1 at smallSizeLo to 0 at
 /// smallSizeHi (Task g13), O.yz = (smallSizeLo px, smallSizeHi px),
 /// O.w = postJacobianMax (fidelity group 4),
-/// P = (ambientMix, ambientReach px, 0, 0) (item 8).
+/// P = (ambientMix, ambientReach px, toneLumaMix, 0) (item 8; P.z round 3).
 List<double> packGlassUniforms(GlassFrameUniforms u) {
   final dpr = u.devicePixelRatio;
   final shapes = u.shapes.where(_drawable).take(_maxShapes).toList();
@@ -292,7 +292,7 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
   }
   // Ambient colour (item 8): P per variant (uVar[30..31]).
   for (final v in variantSets) {
-    f.setAll(k, [v.ambientMix, v.ambientReach * dpr, 0, 0]);
+    f.setAll(k, [v.ambientMix, v.ambientReach * dpr, v.toneLumaMix, 0]);
     k += 4;
   }
   return f;

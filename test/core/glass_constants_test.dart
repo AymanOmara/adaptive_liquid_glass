@@ -60,16 +60,22 @@ void main() {
     // above 34 pt), and a fill/saturation/tint refit; fillSizeDrop goes
     // to 0 (the small-shape response moved into the small tone LUT).
     expect(c.regular.blurSigma, 5.9236);
-    expect(c.regular.toneKnots[4], 0.4853);
-    expect(c.regular.toneKnots[8], 0.9919);
+    // Item 8 round 3 refit the regular tone knots and saturation and
+    // turned on the ambient chroma and the luma-keyed tone LUT.
+    expect(c.regular.toneKnots[4], 0.4973);
+    expect(c.regular.toneKnots[8], 1);
+    expect(c.regular.toneLumaMix, 0.6);
+    expect(c.regular.ambientMix, 0.18);
+    expect(c.regular.ambientReach, 60);
+    expect(c.regularDark.toneLumaMix, 0);
     expect(c.regular.smallToneKnots[4], 0.5);
-    expect(c.regular.smallToneKnots[8], 0.962);
+    expect(c.regular.smallToneKnots[8], 0.974);
     expect(c.regular.smallSizeLo, 32);
     expect(c.regular.smallSizeHi, 34);
     expect(c.regular.fillOpacity, 0.6839);
     expect(c.regular.fillSizeRef, 43.9952);
     expect(c.regular.fillSizeDrop, 0);
-    expect(c.regular.saturation, 1.7401);
+    expect(c.regular.saturation, 1.4901);
     expect(c.regular.tintStrength, 1.024);
     expect(c.regularDark.blurSigma, 8.2468);
     expect(c.regularDark.toneKnots[1], 0.1917);

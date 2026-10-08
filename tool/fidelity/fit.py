@@ -51,7 +51,10 @@ KEYS = ["blurSigma", "blurSizeRef", "frostWideSigma", "frostWideMixEdge", "frost
         "postBlurShare", "normalRadiusScale", "lensEdge", "lensEdgeDecay",
         "rimMix", "rimMixWidth", "rimMixCut", "rimMixLumaFloor",
         "toneLift", "toneLiftKnee", "toneLiftSizeRef", "blurAspectPower", "rimBack",
-        "postJacobianMax", "ambientMix", "ambientReach"]
+        "postJacobianMax", "ambientMix", "ambientReach",
+        # Item 8 round 3 (Gemini terms, model experiments, off by default).
+        "linearLight", "vibrancyK", "toneLumaMix", "ambientGate", "ambientGatePower",
+        "mergeSizeMix", "edgeSharpMix", "edgeSharpSigma"]
 TONE_KEYS = [f"tone{i}" for i in range(9)]
 STONE_KEYS = [f"stone{i}" for i in range(9)]
 BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
@@ -75,6 +78,12 @@ BOUNDS = {"blurSigma": (0, 30), "lensBand": (1, 40), "lensStrength": (-3, 3),
           # Item 8 ambient colour: chroma of the backdrop's average over the
           # shape's rect inflated by ambientReach (pt), mixed in by ambientMix.
           "ambientMix": (-1, 1), "ambientReach": (0, 200),
+          # Item 8 round 3: linear light flag, compressive vibrancy k, luma-keyed
+          # tone mix, ambient gate and its merge power, merged-size mix, clear
+          # sharp edge (k_sharp, sigma pt).
+          "linearLight": (0, 1), "vibrancyK": (0, 10), "toneLumaMix": (0, 1),
+          "ambientGate": (0, 1), "ambientGatePower": (0, 4), "mergeSizeMix": (0, 1),
+          "edgeSharpMix": (0, 1), "edgeSharpSigma": (0.3, 4),
           # Task 17d clear-analysis features (measured shapes, fitted sizes):
           # post-lens blur share of the frost variance, lens normals from a
           # rounder rect (radius x scale), lens edge term (pt, pt) and the
