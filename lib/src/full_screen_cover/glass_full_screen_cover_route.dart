@@ -6,7 +6,7 @@ import '../button/glass_button.dart';
 import '../button/glass_button_shape.dart';
 import '../core/glass_colors.dart';
 import '../core/ios_page_text.dart';
-import 'full_screen_cover_drag.dart';
+import 'full_screen_cover_drag_dismiss.dart';
 import 'full_screen_cover_metrics.dart';
 
 /// The route [showGlassFullScreenCover] pushes on the glass path: an

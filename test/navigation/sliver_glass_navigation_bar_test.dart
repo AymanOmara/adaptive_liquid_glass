@@ -1,6 +1,6 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/navigation/glass_scroll_edge.dart';
 import 'package:adaptive_liquid_glass/src/navigation/nav_bar_metrics.dart';
-import 'package:adaptive_liquid_glass/src/navigation/scroll_edge.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/material.dart';

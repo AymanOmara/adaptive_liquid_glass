@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
-import 'package:adaptive_liquid_glass/src/button/button_metrics.dart';
+import 'package:adaptive_liquid_glass/src/button/glass_button_metrics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

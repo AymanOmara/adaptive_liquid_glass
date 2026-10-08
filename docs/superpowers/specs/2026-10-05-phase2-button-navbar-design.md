@@ -171,13 +171,13 @@ Material widgets when it resolves to `material`.
 
 ```
 lib/src/button/glass_button.dart          GlassButton, enums
-lib/src/button/button_metrics.dart        measured per-size metrics
+lib/src/button/glass_button_metrics.dart        measured per-size metrics
 lib/src/button/material_button.dart       Material mapping
 lib/src/navigation/glass_back_button.dart
 lib/src/navigation/glass_navigation_bar.dart
 lib/src/navigation/sliver_glass_navigation_bar.dart
 lib/src/navigation/nav_bar_metrics.dart
-lib/src/navigation/scroll_edge.dart       scroll edge effect
+lib/src/navigation/glass_scroll_edge.dart       scroll edge effect
 test/button/…, test/navigation/…
 example/ios/Runner/…                       SwiftUI reference screens
 ```

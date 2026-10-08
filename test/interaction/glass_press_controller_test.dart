@@ -1,5 +1,5 @@
 import 'package:adaptive_liquid_glass/src/group/glass_press_geometry.dart';
-import 'package:adaptive_liquid_glass/src/interaction/press_controller.dart';
+import 'package:adaptive_liquid_glass/src/interaction/glass_press_controller.dart';
 import 'package:adaptive_liquid_glass/testing.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';

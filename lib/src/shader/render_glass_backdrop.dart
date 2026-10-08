@@ -8,10 +8,10 @@ import '../group/glass_registry.dart';
 import 'glass_backdrop.dart';
 import 'glass_backdrop_config.dart';
 import 'glass_backdrop_debug_frame.dart';
+import 'glass_frame_uniforms.dart';
 import 'glass_program.dart';
 import 'glass_shape_uniform.dart';
-import 'glass_uniforms.dart';
-import 'texture_space.dart';
+import 'glass_texture_space.dart';
 
 /// See [GlassBackdrop].
 class RenderGlassBackdrop extends RenderProxyBox {

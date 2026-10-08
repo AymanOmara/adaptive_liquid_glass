@@ -2,7 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
 
-import '../shader/glass_uniforms.dart' show kFirstUserFloat;
+import '../shader/glass_frame_uniforms.dart' show kFirstUserFloat;
 import 'progressive_blur_uniforms.dart';
 
 /// Blurs what lies behind it, strongest at its top edge and sharp at its

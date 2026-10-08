@@ -4,7 +4,7 @@ import 'package:flutter/widgets.dart';
 
 import '../core/glass_colors.dart';
 import '../core/glass_variant_constants.dart';
-import '../core/theme.dart';
+import '../core/liquid_glass_theme.dart';
 
 /// The tab bar's lens, fitted to iOS 26.4's tab bar (Kept) frame by frame.
 ///

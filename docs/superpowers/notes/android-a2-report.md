@@ -14,7 +14,7 @@ task U1 changed the public API.
   `README.md`, `CHANGELOG.md`, `example/lib/`, `example/test/` — no overlap.
 - U1 brought in: `glassEffect()`, `padding`/`onPressed`/`adaptiveForeground`
   on `LiquidGlass`, the Dart-only Android plugin declaration
-  (`lib/src/platform/android_plugin.dart`), lazy shader loading (A1 4.3 fix),
+  (`lib/src/platform/adaptive_liquid_glass_android.dart`), lazy shader loading (A1 4.3 fix),
   the real Material `onPressed` path (A1 4.6 fix), the example Gallery page
   and the `test/api/` suite. 35 files, +2633/−565.
 

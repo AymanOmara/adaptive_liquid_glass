@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'core/glass.dart';
 import 'core/glass_render_mode.dart';
 import 'core/glass_shape.dart';
-import 'core/theme.dart';
+import 'core/liquid_glass_theme.dart';
 import 'glass_effect.dart';
 import 'group/glass_group.dart';
 import 'group/glass_group_scope.dart';

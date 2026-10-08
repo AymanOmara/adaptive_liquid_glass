@@ -46,19 +46,19 @@
 | `lib/src/core/glass_render_mode.dart` | `GlassRenderMode`, `EffectiveGlassMode` |
 | `lib/src/core/glass_environment.dart` | `GlassEnvironment` value |
 | `lib/src/core/render_mode_resolver.dart` | `resolveGlassMode` |
-| `lib/src/core/theme.dart` | `LiquidGlassThemeData`, `LiquidGlassTheme` |
+| `lib/src/core/liquid_glass_theme.dart` | `LiquidGlassThemeData`, `LiquidGlassTheme` |
 | `lib/src/core/glass_constants.dart` | fitted constants + JSON |
 | `lib/src/core/swiftui_spring.dart` | SwiftUI spring → `SpringDescription` |
 | `lib/src/platform/glass_platform.dart` | method/event channel, live `GlassEnvironment` |
 | `lib/src/shader/glass_program.dart` | loads the fragment program once |
-| `lib/src/shader/glass_uniforms.dart` | pure uniform packing |
-| `lib/src/shader/texture_space.dart` | probe result: how shader coords map to the screen |
+| `lib/src/shader/glass_frame_uniforms.dart` | pure uniform packing |
+| `lib/src/shader/glass_texture_space.dart` | probe result: how shader coords map to the screen |
 | `lib/src/shader/render_glass_backdrop.dart` | render object that pushes clip + backdrop layer |
 | `lib/src/group/glass_entry.dart` | one member's registry record |
 | `lib/src/group/glass_registry.dart` | members of a group |
 | `lib/src/group/glass_group.dart` | `GlassGroup` widget, scope, mode resolution, motion listeners |
-| `lib/src/group/morph_controller.dart` | `glassId` springs |
-| `lib/src/interaction/press_controller.dart` | `.interactive()` spring + geometry |
+| `lib/src/group/glass_morph_controller.dart` | `glassId` springs |
+| `lib/src/interaction/glass_press_controller.dart` | `.interactive()` spring + geometry |
 | `lib/src/liquid_glass.dart` | `LiquidGlass` widget + member plumbing |
 | `lib/src/material/material_glass.dart` | Android rendering |
 | `lib/src/degraded/degraded_glass.dart` | no-shader fallback |
@@ -1057,7 +1057,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ### Task 5: Constants, SwiftUI springs and theme
 
 **Files:**
-- Create: `lib/src/core/glass_constants.dart`, `lib/src/core/swiftui_spring.dart`, `lib/src/core/theme.dart`, `lib/testing.dart`, `test/core/glass_constants_test.dart`, `test/core/swiftui_spring_test.dart`, `test/core/theme_test.dart`
+- Create: `lib/src/core/glass_constants.dart`, `lib/src/core/swiftui_spring.dart`, `lib/src/core/liquid_glass_theme.dart`, `lib/testing.dart`, `test/core/glass_constants_test.dart`, `test/core/swiftui_spring_test.dart`, `test/core/theme_test.dart`
 - Modify: `lib/adaptive_liquid_glass.dart`
 
 **Interfaces:**
@@ -1513,7 +1513,7 @@ class GlassConstants {
 }
 ```
 
-`lib/src/core/theme.dart`:
+`lib/src/core/liquid_glass_theme.dart`:
 
 ```dart
 import 'dart:math' as math;
@@ -1609,7 +1609,7 @@ library;
 export 'src/core/glass_constants.dart';
 ```
 
-Add `export 'src/core/theme.dart';` to `lib/adaptive_liquid_glass.dart`.
+Add `export 'src/core/liquid_glass_theme.dart';` to `lib/adaptive_liquid_glass.dart`.
 
 - [ ] **Step 4: Run tests**
 
@@ -1858,7 +1858,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ### Task 7: Uniform packing and union merging
 
 **Files:**
-- Create: `lib/src/shader/glass_uniforms.dart`, `test/shader/glass_uniforms_test.dart`
+- Create: `lib/src/shader/glass_frame_uniforms.dart`, `test/shader/glass_uniforms_test.dart`
 
 **Interfaces:**
 - Consumes: `GlassVariant`, `GlassConstants`.
@@ -1874,7 +1874,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ```dart
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
-import 'package:adaptive_liquid_glass/src/shader/glass_uniforms.dart';
+import 'package:adaptive_liquid_glass/src/shader/glass_frame_uniforms.dart';
 import 'package:adaptive_liquid_glass/testing.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -1995,7 +1995,7 @@ void main() {
 Run: `flutter test test/shader/glass_uniforms_test.dart`
 Expected: FAIL — file missing.
 
-- [ ] **Step 3: Implement** — `lib/src/shader/glass_uniforms.dart`
+- [ ] **Step 3: Implement** — `lib/src/shader/glass_frame_uniforms.dart`
 
 ```dart
 import 'dart:math' as math;
@@ -2201,7 +2201,7 @@ filter bounds**? It also proves `vec4` uniform arrays compile under impellerc.
 **Files:**
 - Create: `example/shaders/probe.frag`, `example/integration_test/probe_test.dart`, `docs/superpowers/notes/shader-probe.md`
 - Modify: `example/pubspec.yaml` (shader asset, `integration_test` dev dependency)
-- Create: `lib/src/shader/texture_space.dart`, `test/shader/texture_space_test.dart`
+- Create: `lib/src/shader/glass_texture_space.dart`, `test/shader/texture_space_test.dart`
 - Replace: `shaders/liquid_glass.frag`
 - Create: `lib/src/shader/glass_program.dart`, `example/integration_test/shader_smoke_test.dart`
 
@@ -2332,7 +2332,7 @@ Write the printed PROBE lines, the date, Flutter version (`flutter --version | h
 - [ ] **Step 5: Write the failing texture-space test** — `test/shader/texture_space_test.dart`
 
 ```dart
-import 'package:adaptive_liquid_glass/src/shader/texture_space.dart';
+import 'package:adaptive_liquid_glass/src/shader/glass_texture_space.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -2363,7 +2363,7 @@ void main() {
 }
 ```
 
-- [ ] **Step 6: Implement** — `lib/src/shader/texture_space.dart`
+- [ ] **Step 6: Implement** — `lib/src/shader/glass_texture_space.dart`
 
 Set `kGlassTextureSpace` to the probe's answer.
 
@@ -2424,7 +2424,7 @@ Run: `flutter test test/shader/texture_space_test.dart` — Expected: PASS.
 #include <flutter/runtime_effect.glsl>
 precision highp float;
 
-// Float layout must match lib/src/shader/glass_uniforms.dart.
+// Float layout must match lib/src/shader/glass_frame_uniforms.dart.
 uniform vec2 uSize;        // engine: texture size
 uniform vec4 uGlobal;      // count, dpr, lightAngle, opaque
 uniform vec4 uGlobal2;     // smoothing px, cornerExponent, highContrast, -
@@ -2617,8 +2617,8 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
-import 'package:adaptive_liquid_glass/src/shader/glass_uniforms.dart';
-import 'package:adaptive_liquid_glass/src/shader/texture_space.dart';
+import 'package:adaptive_liquid_glass/src/shader/glass_frame_uniforms.dart';
+import 'package:adaptive_liquid_glass/src/shader/glass_texture_space.dart';
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/testing.dart';
 import 'package:flutter/widgets.dart';
@@ -3116,7 +3116,7 @@ import 'package:adaptive_liquid_glass/src/material/material_glass.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:adaptive_liquid_glass/src/shader/render_glass_backdrop.dart';
-import 'package:adaptive_liquid_glass/src/shader/texture_space.dart';
+import 'package:adaptive_liquid_glass/src/shader/glass_texture_space.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -3347,8 +3347,8 @@ import '../core/glass_shape.dart';
 import '../group/glass_entry.dart';
 import '../group/glass_registry.dart';
 import 'glass_program.dart';
-import 'glass_uniforms.dart';
-import 'texture_space.dart';
+import 'glass_frame_uniforms.dart';
+import 'glass_texture_space.dart';
 
 /// Per-group drawing parameters.
 @immutable
@@ -3666,7 +3666,7 @@ import '../core/glass_constants.dart';
 import '../core/glass_render_mode.dart';
 import '../core/render_mode_resolver.dart';
 import '../core/shape_border.dart';
-import '../core/theme.dart';
+import '../core/liquid_glass_theme.dart';
 import '../platform/glass_platform.dart';
 import '../shader/glass_program.dart';
 import '../shader/render_glass_backdrop.dart';
@@ -3878,7 +3878,7 @@ import 'package:flutter/widgets.dart';
 import 'core/glass.dart';
 import 'core/glass_render_mode.dart';
 import 'core/glass_shape.dart';
-import 'core/theme.dart';
+import 'core/liquid_glass_theme.dart';
 import 'degraded/degraded_glass.dart';
 import 'group/glass_entry.dart';
 import 'group/glass_group.dart';
@@ -4154,7 +4154,7 @@ Library exports (`lib/adaptive_liquid_glass.dart`):
 export 'src/core/glass.dart';
 export 'src/core/glass_render_mode.dart' show GlassRenderMode;
 export 'src/core/glass_shape.dart';
-export 'src/core/theme.dart';
+export 'src/core/liquid_glass_theme.dart';
 export 'src/group/glass_group.dart' show GlassGroup;
 export 'src/liquid_glass.dart' show LiquidGlass;
 ```
@@ -4184,7 +4184,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ### Task 11: `.interactive()` press response
 
 **Files:**
-- Create: `lib/src/interaction/press_controller.dart`, `test/interaction/press_controller_test.dart`
+- Create: `lib/src/interaction/glass_press_controller.dart`, `test/interaction/press_controller_test.dart`
 - Modify: `lib/src/liquid_glass.dart` (`GlassMemberState` gains a ticker and `buildContent` override), `test/liquid_glass_test.dart` (press tests)
 
 **Interfaces:**
@@ -4195,7 +4195,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ```dart
 import 'package:adaptive_liquid_glass/src/group/glass_entry.dart';
-import 'package:adaptive_liquid_glass/src/interaction/press_controller.dart';
+import 'package:adaptive_liquid_glass/src/interaction/glass_press_controller.dart';
 import 'package:adaptive_liquid_glass/testing.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -4259,7 +4259,7 @@ void main() {
 Run: `flutter test test/interaction`
 Expected: FAIL — file missing.
 
-- [ ] **Step 3: Implement** — `lib/src/interaction/press_controller.dart`
+- [ ] **Step 3: Implement** — `lib/src/interaction/glass_press_controller.dart`
 
 ```dart
 import 'package:flutter/physics.dart';
@@ -4410,7 +4410,7 @@ Dispose it in `dispose()` (`_press?.dispose();`). Replace `buildContent`:
   }
 ```
 
-Add imports for `interaction/press_controller.dart`.
+Add imports for `interaction/glass_press_controller.dart`.
 
 - [ ] **Step 5: Add widget tests** — append to `test/liquid_glass_test.dart`
 
@@ -4469,7 +4469,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ### Task 12: `glassId` morphs
 
 **Files:**
-- Create: `lib/src/group/morph_controller.dart`, `test/group/morph_test.dart`
+- Create: `lib/src/group/glass_morph_controller.dart`, `test/group/morph_test.dart`
 - Modify: `lib/src/group/glass_entry.dart` (`lastDrawnLocal`, `contentOpacity`, `isGhost`), `lib/src/group/glass_registry.dart` (`onAdded` / `onRemoved` hooks), `lib/src/shader/render_glass_backdrop.dart` (draw ghosts, record `lastDrawnLocal`), `lib/src/group/glass_group.dart` (own the controller; `TickerProviderStateMixin`), `lib/src/liquid_glass.dart` (content fade)
 
 **Behaviour (the rules the tests pin):**
@@ -4650,7 +4650,7 @@ and after computing `final pressed = e.press.apply(base);` record
 `e.lastDrawnLocal = MatrixUtils.transformRect(fromGlobal, pressed);` (add it
 to `drawn` as before). The touch loop must skip ghosts (`e.box == null`).
 
-- [ ] **Step 5: Implement** — `lib/src/group/morph_controller.dart`
+- [ ] **Step 5: Implement** — `lib/src/group/glass_morph_controller.dart`
 
 ```dart
 import 'package:flutter/physics.dart';

@@ -2,7 +2,7 @@
 #include <flutter/runtime_effect.glsl>
 precision highp float;
 
-// Float layout must match lib/src/shader/glass_uniforms.dart.
+// Float layout must match lib/src/shader/glass_frame_uniforms.dart.
 uniform vec2 uSize;        // engine: texture size
 uniform vec4 uGlobal;      // count, dpr, lightAngle, opaque
 uniform vec4 uGlobal2;     // smoothing px, cornerExponent, highContrast, cornerZone

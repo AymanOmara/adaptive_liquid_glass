@@ -7,5 +7,5 @@ the example for the simulator, install it, capture `buttons.png` and
 `navbar_<y>.png` into `build/reference/` (Task 1, Step 2 of
 `docs/superpowers/plans/2026-10-05-phase2a-button-navbar.md`), then run
 `tool/fidelity/.venv/bin/python tool/reference/measure_controls.py build/reference`.
-`lib/src/button/button_metrics.dart` and
+`lib/src/button/glass_button_metrics.dart` and
 `lib/src/navigation/nav_bar_metrics.dart` are tested against this file.

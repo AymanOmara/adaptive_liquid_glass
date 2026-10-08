@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/glass_render_mode.dart';
-import '../core/theme.dart';
+import '../core/liquid_glass_theme.dart';
 import '../foreground/glass_backdrop_source.dart';
 import '../platform/glass_platform.dart';
 import '../tab_bar/glass_tab_bar.dart';

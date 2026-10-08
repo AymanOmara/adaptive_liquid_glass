@@ -6,9 +6,9 @@ import 'package:flutter/rendering.dart'
 
 import '../core/glass_colors.dart';
 import 'clip_below.dart';
+import 'glass_scroll_edge.dart';
 import 'nav_bar_content.dart';
 import 'nav_bar_metrics.dart';
-import 'scroll_edge.dart';
 import 'sliver_glass_navigation_bar.dart';
 
 /// The pinned header of a [SliverGlassNavigationBar]: the bar, and the

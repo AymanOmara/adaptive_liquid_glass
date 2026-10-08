@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import '../core/effective_glass_mode.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
+import 'glass_scroll_edge.dart';
 import 'glass_scroll_edge_style.dart';
 import 'nav_bar_content.dart';
 import 'nav_bar_metrics.dart';
-import 'scroll_edge.dart';
 
 /// iOS 26's navigation bar with an inline title: no bar background, a glass
 /// back button when the route can pop, a centred title and the actions

@@ -10,7 +10,7 @@ import '../core/glass_system_colors.dart';
 import '../foreground/glass_foreground.dart';
 import '../foreground/glass_label_style.dart';
 import '../liquid_glass.dart';
-import 'button_metrics.dart';
+import 'glass_button_metrics.dart';
 import 'glass_button_metrics_scope.dart';
 import 'glass_button_role.dart';
 import 'glass_button_shape.dart';

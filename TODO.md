@@ -73,5 +73,4 @@ and CHANGELOG.md.
   transitions, TipKit tips; then re-check the gap list for anything new.
 
 9- refactor backlog P3 items (docs/superpowers/notes/refactor-backlog.md),
-  opportunistic; optional rename of 8 files whose name differs from their
-  class (git log 699c4ab..6bd738c).
+  opportunistic (P3-1 constants split only).

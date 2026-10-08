@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../core/effective_glass_mode.dart';
 import '../core/glass_render_mode.dart';
+import '../core/liquid_glass_theme.dart';
 import '../core/render_mode_resolver.dart';
-import '../core/theme.dart';
 import '../platform/glass_platform.dart';
-import 'full_screen_cover_drag.dart';
+import 'full_screen_cover_drag_dismiss.dart';
 import 'glass_full_screen_cover_handle.dart';
 import 'glass_full_screen_cover_route.dart';
 

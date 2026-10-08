@@ -1,4 +1,4 @@
-import 'package:adaptive_liquid_glass/src/shader/texture_space.dart';
+import 'package:adaptive_liquid_glass/src/shader/glass_texture_space.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 

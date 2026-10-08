@@ -113,7 +113,7 @@ The 17c flat captures (`measure-v3`, flats v000-v255) already measure glass's in
 - Create: `tool/fidelity/tone_curve.py` (decoder: `tone_lut(frost_json, variant_set) -> (knots_in, knots_out)` from the `tone` arrays `measure_frost.py` already emits)
 - Modify: `tool/fidelity/glass_model.py` (apply LUT to `col` after the fill mix, before rim; parameters `toneKnots` in constants json: monotonically-clamped cubic sampled at 9 knots, input 0..1)
 - Modify: `shaders/liquid_glass.frag` (same 9-knot piecewise-linear LUT, packed in `uVar` extension or a `uTone[9]` uniform block; must be identity when knots are identity)
-- Modify: `lib/src/shader/glass_uniforms.dart`, `lib/src/core/glass_constants.dart` (9-knot constants, default identity)
+- Modify: `lib/src/shader/glass_frame_uniforms.dart`, `lib/src/core/glass_constants.dart` (9-knot constants, default identity)
 - Modify: `tool/fidelity/fit.py` (`tone*` keys, bounds identity-centred)
 
 - [ ] Decode: knots from `build/fidelity/measure-v3/an/frost-swiftui.json` tone arrays for regular/clear × light/dark; assert monotone and identity-at-extremes within measured noise; write `tool/fidelity/floors/tone-<set>.json` for reference.

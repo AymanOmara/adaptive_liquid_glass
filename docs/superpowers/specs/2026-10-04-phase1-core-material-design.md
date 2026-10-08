@@ -84,9 +84,9 @@ circular arcs.
 ```
 lib/
   adaptive_liquid_glass.dart   exports only
-  src/core/      glass.dart, glass_shape.dart, theme.dart, render_mode_resolver.dart
+  src/core/      glass.dart, glass_shape.dart, liquid_glass_theme.dart, render_mode_resolver.dart
   src/shader/    glass_render_box.dart, shader_cache.dart, uniforms.dart
-  src/group/     glass_group.dart, glass_registry.dart, morph_controller.dart
+  src/group/     glass_group.dart, glass_registry.dart, glass_morph_controller.dart
   src/native/    native_glass_view.dart, platform_channel.dart
   src/material/  material_glass.dart
   src/a11y/      accessibility_flags.dart   (Reduce Transparency via channel)

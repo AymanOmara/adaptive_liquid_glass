@@ -4,8 +4,8 @@ import '../platform/glass_platform.dart';
 import 'effective_glass_mode.dart';
 import 'glass_environment.dart';
 import 'glass_render_mode.dart';
+import 'liquid_glass_theme.dart';
 import 'render_mode_resolver.dart';
-import 'theme.dart';
 
 /// Builds with the rendering path [mode] resolves to here (the theme's
 /// default when null), rebuilding when the platform environment changes.

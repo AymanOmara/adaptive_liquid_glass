@@ -31,7 +31,7 @@
 
 ## Global Constraints
 
-- Regular and clear glass outside the tab bar render bit-identically: no edits to `shaders/liquid_glass.frag`, `glass_uniforms.dart`, or `tool/fidelity/glass_model.py` for lens work. Lens tuning edits only `tab_lens.dart` numbers.
+- Regular and clear glass outside the tab bar render bit-identically: no edits to `shaders/liquid_glass.frag`, `glass_frame_uniforms.dart`, or `tool/fidelity/glass_model.py` for lens work. Lens tuning edits only `tab_lens.dart` numbers.
 - No new package dependencies.
 - The Material (Android) path keeps `NavigationBar` in a capsule; the lens never forces shader there.
 - Kept comparison material: `~/Downloads/edge_zoom.png`, `spike_zoom.png`, and `WhatsApp Video 2026-10-02 at 18.17.00.mp4` (384×848, ~59 fps).

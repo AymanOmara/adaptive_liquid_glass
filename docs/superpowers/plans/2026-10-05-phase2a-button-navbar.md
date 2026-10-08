@@ -36,12 +36,12 @@
 ```
 lib/src/core/glass_mode_builder.dart          resolves EffectiveGlassMode for a subtree (Task 2)
 lib/src/group/glass_union_scope.dart          default unionId for LiquidGlass below (Task 6)
-lib/src/button/button_metrics.dart            per-size metrics (measured) (Task 2)
+lib/src/button/glass_button_metrics.dart            per-size metrics (measured) (Task 2)
 lib/src/button/glass_button.dart              GlassButton + enums + GlassControlSizeScope (Tasks 2-3)
 lib/src/button/material_glass_button.dart     Material 3 mapping (Task 4)
 lib/src/navigation/nav_bar_metrics.dart       bar metrics (measured) (Task 6)
 lib/src/navigation/glass_back_button.dart     (Task 5)
-lib/src/navigation/scroll_edge.dart           scroll edge gradient (Task 6)
+lib/src/navigation/glass_scroll_edge.dart           scroll edge gradient (Task 6)
 lib/src/navigation/nav_bar_content.dart       leading/title/actions row shared by both bars (Task 6)
 lib/src/navigation/glass_navigation_bar.dart  inline bar (Tasks 6-7)
 lib/src/navigation/sliver_glass_navigation_bar.dart  large title (Task 8)
@@ -317,7 +317,7 @@ SwiftUI on iPhone 17 Pro / iOS 26.4. Re-measure: build the example, run
 the capture commands in `docs/superpowers/plans/2026-10-05-phase2a-button-navbar.md`
 (Task 1, Step 2), then `tool/fidelity/.venv/bin/python
 tool/reference/measure_controls.py build/reference`. The Dart constants in
-`lib/src/button/button_metrics.dart` and
+`lib/src/button/glass_button_metrics.dart` and
 `lib/src/navigation/nav_bar_metrics.dart` are tested against this file.
 ```
 
@@ -332,7 +332,7 @@ git commit -m "tool: SwiftUI reference screens and measured Phase 2a metrics"
 
 **Files:**
 - Create: `lib/src/core/glass_mode_builder.dart`
-- Create: `lib/src/button/button_metrics.dart`
+- Create: `lib/src/button/glass_button_metrics.dart`
 - Create: `lib/src/button/glass_button.dart`
 - Modify: `lib/adaptive_liquid_glass.dart` (export)
 - Test: `test/button/glass_button_test.dart`, `test/button/button_metrics_test.dart`
@@ -358,7 +358,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
-import 'package:adaptive_liquid_glass/src/button/button_metrics.dart';
+import 'package:adaptive_liquid_glass/src/button/glass_button_metrics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -389,11 +389,11 @@ void main() {
 - [ ] **Step 2: Run to verify it fails**
 
 Run: `flutter test test/button/button_metrics_test.dart`
-Expected: compilation error, `button_metrics.dart` not found.
+Expected: compilation error, `glass_button_metrics.dart` not found.
 
 - [ ] **Step 3: Write the metrics**
 
-`lib/src/button/button_metrics.dart` (values below are iOS 26 estimates; replace each with `controls.json` until Step 4 passes — the test is the source of truth):
+`lib/src/button/glass_button_metrics.dart` (values below are iOS 26 estimates; replace each with `controls.json` until Step 4 passes — the test is the source of truth):
 
 ```dart
 import '../button/glass_button.dart' show GlassControlSize;
@@ -460,7 +460,7 @@ import '../platform/glass_platform.dart';
 import 'glass_environment.dart';
 import 'glass_render_mode.dart';
 import 'render_mode_resolver.dart';
-import 'theme.dart';
+import 'liquid_glass_theme.dart';
 
 /// Builds with the rendering path [mode] resolves to here (the theme's
 /// default when null), rebuilding when the platform environment changes.
@@ -495,7 +495,7 @@ Run: `flutter test test/button/button_metrics_test.dart` — edit the numbers in
 
 ```dart
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
-import 'package:adaptive_liquid_glass/src/button/button_metrics.dart';
+import 'package:adaptive_liquid_glass/src/button/glass_button_metrics.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/cupertino.dart';
@@ -649,7 +649,7 @@ import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
 import '../core/render_mode_resolver.dart';
 import '../liquid_glass.dart';
-import 'button_metrics.dart';
+import 'glass_button_metrics.dart';
 import 'material_glass_button.dart';
 
 /// SwiftUI's glass button styles.
@@ -1342,7 +1342,7 @@ git commit -m "feat: GlassBackButton"
 - Create: `lib/src/group/glass_union_scope.dart`
 - Modify: `lib/src/liquid_glass.dart` (default `unionId` from the scope)
 - Create: `lib/src/navigation/nav_bar_metrics.dart`
-- Create: `lib/src/navigation/scroll_edge.dart`
+- Create: `lib/src/navigation/glass_scroll_edge.dart`
 - Create: `lib/src/navigation/nav_bar_content.dart`
 - Create: `lib/src/navigation/glass_navigation_bar.dart`
 - Modify: `lib/adaptive_liquid_glass.dart`
@@ -1448,7 +1448,7 @@ Run: `flutter test test/api/union_scope_test.dart` → PASS. Run `flutter test` 
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:adaptive_liquid_glass/src/button/button_metrics.dart';
+import 'package:adaptive_liquid_glass/src/button/glass_button_metrics.dart';
 import 'package:adaptive_liquid_glass/src/navigation/nav_bar_metrics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -1507,7 +1507,7 @@ Run: `flutter test test/navigation/nav_bar_metrics_test.dart` → edit until PAS
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/group/glass_member.dart';
 import 'package:adaptive_liquid_glass/src/navigation/nav_bar_metrics.dart';
-import 'package:adaptive_liquid_glass/src/navigation/scroll_edge.dart';
+import 'package:adaptive_liquid_glass/src/navigation/glass_scroll_edge.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/cupertino.dart';
@@ -1627,7 +1627,7 @@ Expected: compile errors.
 
 - [ ] **Step 8: Implement scroll edge, content and bar**
 
-`lib/src/navigation/scroll_edge.dart`:
+`lib/src/navigation/glass_scroll_edge.dart`:
 
 ```dart
 import 'package:flutter/cupertino.dart';
@@ -1761,7 +1761,7 @@ import '../core/glass_render_mode.dart';
 import '../core/render_mode_resolver.dart';
 import 'nav_bar_content.dart';
 import 'nav_bar_metrics.dart';
-import 'scroll_edge.dart';
+import 'glass_scroll_edge.dart';
 
 /// iOS 26's navigation bar with an inline title: no bar background, a
 /// glass back button, a centred title and trailing actions merged into
@@ -1965,7 +1965,7 @@ git commit -m "test: GlassNavigationBar Material path"
 ```dart
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/navigation/nav_bar_metrics.dart';
-import 'package:adaptive_liquid_glass/src/navigation/scroll_edge.dart';
+import 'package:adaptive_liquid_glass/src/navigation/glass_scroll_edge.dart';
 import 'package:adaptive_liquid_glass/src/navigation/sliver_glass_navigation_bar.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
@@ -2086,7 +2086,7 @@ import '../core/glass_render_mode.dart';
 import '../core/render_mode_resolver.dart';
 import 'nav_bar_content.dart';
 import 'nav_bar_metrics.dart';
-import 'scroll_edge.dart';
+import 'glass_scroll_edge.dart';
 
 /// Inline title opacity at [shrinkOffset] (measured fade range).
 double inlineTitleOpacity(double shrinkOffset) => ((shrinkOffset -

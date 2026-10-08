@@ -7,9 +7,9 @@ import '../core/effective_glass_mode.dart';
 import '../core/glass_brightness.dart';
 import '../core/glass_constants.dart';
 import '../core/glass_render_mode.dart';
+import '../core/liquid_glass_theme.dart';
 import '../core/render_mode_resolver.dart';
 import '../core/shape_border.dart';
-import '../core/theme.dart';
 import '../foreground/foreground_brightness.dart';
 import '../foreground/glass_backdrop_source.dart';
 import '../foreground/glass_backdrop_sources.dart';
@@ -21,8 +21,8 @@ import '../shader/glass_backdrop_config.dart';
 import '../shader/glass_program.dart';
 import 'glass_group_scope.dart';
 import 'glass_member_rendering.dart';
+import 'glass_morph_controller.dart';
 import 'glass_registry.dart';
-import 'morph_controller.dart';
 import 'scroll_chain.dart';
 
 /// Merges nearby `LiquidGlass` descendants into one shape, like SwiftUI's

@@ -8,7 +8,7 @@ import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_system_colors.dart';
 import '../core/ios_text.dart';
-import '../core/theme.dart';
+import '../core/liquid_glass_theme.dart';
 import '../liquid_glass.dart';
 import 'chip_metrics.dart';
 

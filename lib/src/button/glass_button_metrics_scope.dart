@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 
-import 'button_metrics.dart';
+import 'glass_button_metrics.dart';
 
 /// Exact metrics for glass buttons below, overriding their control size.
 /// Internal: bars use it for their item metrics.

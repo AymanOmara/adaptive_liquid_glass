@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import 'glass_uniforms.dart';
+import 'glass_frame_uniforms.dart';
 
 /// What the last paint computed; for tests.
 @immutable

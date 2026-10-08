@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'glass.dart';
 import 'glass_constants.dart';
 import 'glass_render_mode.dart';
-import 'theme.dart';
+import 'liquid_glass_theme.dart';
 
 /// App-wide defaults for Liquid Glass. See [LiquidGlassTheme].
 @immutable

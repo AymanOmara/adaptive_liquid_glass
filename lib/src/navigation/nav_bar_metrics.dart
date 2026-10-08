@@ -1,4 +1,4 @@
-import '../button/button_metrics.dart';
+import '../button/glass_button_metrics.dart';
 
 /// iOS 26.4 navigation bar, measured from SwiftUI's `NavigationStack` on
 /// iPhone 17 Pro (`tool/reference/controls.json`).

@@ -1,3 +1,9 @@
+## 0.1.2 (2026-10-08)
+
+- Internal: nine `lib/src` files renamed to match the class they hold;
+  the shader test seam moved onto `GlassProgram`. No public API change
+  (code importing `src/` paths directly must update them).
+
 ## 0.1.1 (2026-10-08)
 
 - README: demo GIF and dark-mode component screenshots, served from GitHub
