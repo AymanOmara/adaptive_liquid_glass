@@ -436,6 +436,28 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                           ],
                         ),
                         const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Expanded(child: Text('Time')),
+                            GlassDatePicker(
+                              pickerMode: GlassDatePickerMode.time,
+                              minuteInterval: 5,
+                              value: _date,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2030),
+                              onChanged: (d) => setState(() => _date = d),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        GlassDatePicker(
+                          style: GlassDatePickerStyle.wheel,
+                          value: _date,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2030),
+                          onChanged: (d) => setState(() => _date = d),
+                        ),
+                        const SizedBox(height: 12),
                         GlassColorPicker(
                           label: const Text('Accent'),
                           value: _accent,
