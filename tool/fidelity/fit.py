@@ -147,7 +147,8 @@ def _load(scene_ids):
             bgs[sc["background"]] = load(ROOT / f"example/assets/backgrounds/{sc['background']}.png")
         ref = load(REF / f"{sid}.swiftui.png")
         x0, y0, x1, y1 = region_for(sc, SCALE, ref.shape[1], ref.shape[0])
-        r = ref[y0:y1, x0:x1]
+        # Keep just the scored region in the worker cache, not the full screenshot.
+        r = ref[y0:y1, x0:x1].copy()
         _DATA[sid] = (sc, bgs[sc["background"]], r, rgb2lab(r), (x0, y0, x1, y1))
 
 

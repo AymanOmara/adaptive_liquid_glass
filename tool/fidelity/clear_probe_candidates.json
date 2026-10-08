@@ -1,0 +1,9 @@
+[
+  ["consistent-lens-field", {"_lensDepthField": true}],
+  ["post-isotropic", {"_postIsotropic": 1}],
+  ["post-second-order", {"_postSecondOrder": true}],
+  ["destination-depth-half", {"_frostDepthMix": 0.5}],
+  ["wide-hermite-5", {"_wideGH": 5}],
+  ["wide-dense-diagnostic", {"_wideExact": true}],
+  ["continuous-lens-zone", {"_lensZone": 1.25}]
+]

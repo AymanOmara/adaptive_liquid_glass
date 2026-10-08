@@ -570,7 +570,10 @@ def render_window(background, scene, constants, scale=3.0, blur_scale=None,
     spacing = scene.get("spacing")
     merge_factor = float(constants["mergeFactor"])
     br_ = "Dark" if brightness == "dark" else ""
-    g = _geometry(json.dumps(scene, sort_keys=True), float(constants["cornerExponent"]),
+    # Background, ID and appearance do not affect geometry. Excluding them
+    # lets the scene matrix share its large field arrays across backdrops.
+    geometry_scene = {"shapes": scene["shapes"], "spacing": scene.get("spacing")}
+    g = _geometry(json.dumps(geometry_scene, sort_keys=True), float(constants["cornerExponent"]),
                   merge_factor, float(scale), W, H, float(pad_pt),
                   float(constants["regular" + br_]["normalRadiusScale"]),
                   float(constants["clear" + br_]["normalRadiusScale"]),
