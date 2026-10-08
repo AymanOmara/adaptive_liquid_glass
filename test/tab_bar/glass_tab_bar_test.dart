@@ -764,7 +764,7 @@ void main() {
     t,
   ) async {
     shaderEnv();
-    expect(TabBarMetrics.tapHold, const Duration(milliseconds: 200));
+    expect(TabBarMetrics.tapHold, const Duration(milliseconds: 150));
     final picks = <int>[];
     await t.pumpWidget(plainHost(_Harness(picks)));
     // A tap on the selected tab: the lens has nowhere to travel, so
@@ -772,13 +772,13 @@ void main() {
     final g = await t.startGesture(t.getCenter(find.text('History')));
     await t.pump(const Duration(milliseconds: 16));
     await g.up();
-    // 192 ms after touch-down, still inside tapHold: the lens stays up.
-    for (var i = 0; i < 11; i++) {
+    // 144 ms after touch-down, still inside tapHold: the lens stays up.
+    for (var i = 0; i < 8; i++) {
       await t.pump(const Duration(milliseconds: 16));
     }
     expect(_lens, findsOneWidget);
     // iOS has settled it into the pill by ~330 ms; so do we.
-    for (var i = 0; i < 9; i++) {
+    for (var i = 0; i < 12; i++) {
       await t.pump(const Duration(milliseconds: 16));
     }
     expect(_lens, findsNothing);
@@ -788,6 +788,49 @@ void main() {
       moreOrLessEquals(t.getCenter(find.text('History')).dx, epsilon: 1),
     );
     await t.pumpAndSettle();
+  }, variant: ios);
+
+  testWidgets('a lens travelling to a tab is narrower than a held one', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    // Held on Settings, two tabs over: the lens springs across.
+    final g = await t.startGesture(t.getCenter(find.text('Settings')));
+    for (var i = 0; i < 6; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    final travelling = t.getSize(_lens).width;
+    for (var i = 0; i < 60; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    final held = t.getSize(_lens).width;
+    expect(held - travelling, greaterThan(TabBarMetrics.lensTravelNarrow));
+    await g.up();
+    await t.pumpAndSettle();
+  }, variant: ios);
+
+  testWidgets('a quick tap on a far tab settles its lens before arriving', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_Harness(_picks())));
+    final settings = t.getCenter(find.text('Settings')).dx;
+    final g = await t.startGesture(t.getCenter(find.text('Settings')));
+    await t.pump(const Duration(milliseconds: 16));
+    await g.up();
+    for (var i = 0; i < 8; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    final up = t.getSize(_lens).height;
+    // Past tapHold the lens shrinks, still on its way.
+    for (var i = 0; i < 4; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    expect(t.getSize(_lens).height, lessThan(up - 2));
+    expect(t.getCenter(_lens).dx, lessThan(settings - 1));
+    await t.pumpAndSettle();
+    expect(_lens, findsNothing);
   }, variant: ios);
 
   testWidgets('a press held past tapHold releases at once', (t) async {

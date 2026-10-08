@@ -1,4 +1,5 @@
 import 'dart:async' show Timer;
+import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/cupertino.dart';
@@ -212,6 +213,22 @@ class _GlassTabBarState extends State<GlassTabBar>
 
   bool get _xMoving => _followTicker.isActive || _x.isAnimating;
 
+  /// 1 while the lens springs across to a tab (not following a finger),
+  /// easing to 0 over its last tenth of a slot.
+  double get _travelling {
+    if (_followTicker.isActive || !_x.isAnimating) return 0;
+    final left = (_xTarget - _x.value).abs();
+    // A longer hop travels narrower: 1 for one tab, about 1.5 for two.
+    final hop = math.pow(_xHop.clamp(0.0, 2.0), 0.6);
+    return hop * (left / 0.1).clamp(0.0, 1.0);
+  }
+
+  /// Where [_x]'s spring is heading.
+  double _xTarget = 0;
+
+  /// How far (slots) [_x]'s spring set out to go.
+  double _xHop = 0;
+
   /// The light on the bar: 0 at rest, 1 while the lens is held (lit around
   /// it, see BarGlow), 2 while it is dragged (evenly lit), as on iOS.
   late final AnimationController _light = AnimationController.unbounded(
@@ -313,6 +330,8 @@ class _GlassTabBarState extends State<GlassTabBar>
     if (_reduceMotion) {
       _x.value = target;
     } else {
+      _xTarget = target;
+      _xHop = (target - _x.value).abs();
       _x.animateWith(SpringSimulation(spring, _x.value, target, velocity));
     }
   }
@@ -513,8 +532,9 @@ class _GlassTabBarState extends State<GlassTabBar>
       travelling ? TabBarMetrics.travel : TabBarMetrics.slide,
       slot.toDouble(),
     );
-    if (travelling && !_reduceMotion) {
-      // iOS keeps the lens until it arrives, then settles it into the pill.
+    if (travelling && !_reduceMotion && _holdTimer == null) {
+      // iOS keeps a held lens until it arrives, then settles it into the
+      // pill. A quick tap's lens settles at tapHold, still travelling.
       _arrival = slot.toDouble();
       _x.addListener(_settleOnArrival);
     } else {
@@ -786,10 +806,17 @@ class _GlassTabBarState extends State<GlassTabBar>
     // The wobble belongs to the held lens: it fades with it and never
     // reaches the pill.
     final wobble = _wobble.value * t;
+    // 0 held, 1 dragged (the bar's light goes from 1 to 2).
+    final dragged = (_light.value - 1).clamp(0.0, 1.0);
+    final lensGrowY =
+        TabBarMetrics.lensGrowY - TabBarMetrics.lensDragDropY * dragged;
     final lens = Rect.fromCenter(
       center: Offset(x, _contentHeight / 2),
-      width: _pillWidth + TabBarMetrics.lensGrowX * p,
-      height: _contentHeight + TabBarMetrics.lensGrowY * p + wobble * 2,
+      width:
+          _pillWidth +
+          TabBarMetrics.lensGrowX * p -
+          TabBarMetrics.lensTravelNarrow * _travelling * t,
+      height: _contentHeight + lensGrowY * p + wobble * 2,
     );
     // The bar grows on its own spring, not the lens's (see _grow).
     final g = _grow.value;

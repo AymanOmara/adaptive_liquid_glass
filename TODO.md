@@ -5,14 +5,6 @@ and CHANGELOG.md.
   PLAIN_BACKGROUND=true, example/lib/components_demo.dart):
   - Period picker: the first tap after launch/restart does not open the
     menu; the second does (seen twice, 2026-10-08).
-  - GlassTabBar lens while DRAGGING shows refracted fragments of the
-    accessory above it ("Now Playing" text) plus colour fringing along the
-    lens's top edge; gone once the drag settles. Lens samples outside the
-    bar's rect: clamp the lens backdrop to the bar bounds, or exclude
-    GlassBottomAccessory from the lens backdrop. The fringe is RGB-split
-    (per-channel displacement at the lens edge) and the "Settings" label
-    smears at the bottom-right edge; native shows neither. Frames:
-    build/tabbar-drag-leak-1.png, -2.png.
 
 2- release readiness: 0.1.0 shipped 2026-10-08. 1.0 only after:
   - usability pass: audit the 94 barrel exports for what should be public
@@ -56,8 +48,8 @@ and CHANGELOG.md.
   dark 1.23/1.60, dark photo 2.27/3.95, badge 1.65/1.77, searchtab
   1.97/2.06, accessory 2.04/2.44
   Open: label offsets beside the search tab (~1 pt, UIKit pixel rounding);
-  tap lens wider than iOS's, press lens peaks lower; drag lag unresolved
-  (debug-build stalls)
+  lens size: press, tap, drag and the idle pill match iOS within ~1 pt
+  (tabbar_motion.py, 2026-10-09; a tap's lens rides ~0.7 pt high)
   Hard:
   - selected blue shifting with the colours behind it, as native's does
   - retune the shader-mode glass over photos (5.14 light, 3.95 dark)

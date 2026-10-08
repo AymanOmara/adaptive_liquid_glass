@@ -31,8 +31,22 @@ abstract final class TabBarMetrics {
   /// The held lens over the pill: 114.3 by 74 against 93.7 by 54.
   static const double lensGrowX = 20.6;
 
-  /// See [lensGrowX].
-  static const double lensGrowY = 20;
+  /// See [lensGrowX]. 22.6 rather than Kept's 20: SwiftUI's `TabView`
+  /// (iOS 26.4) holds its lens 6.0 pt over the grown bar, ours stood 4.7
+  /// at 20 (`tool/fidelity/tabbar_motion.py`, press).
+  static const double lensGrowY = 22.6;
+
+  /// A dragged lens stands lower than a held one: SwiftUI's `TabView`
+  /// (iOS 26.4) holds it 6.0 pt over the grown bar and drags it at 4.0, so
+  /// the drag takes this much off [lensGrowY] (blended in with the bar's
+  /// dragged light).
+  static const double lensDragDropY = 2.6;
+
+  /// A lens springing one tab across is this much narrower than a held
+  /// one, a longer hop more (x hop^0.6: SwiftUI's `TabView`, iOS 26.4,
+  /// travels a press's one-tab hop about 11 pt narrower and a tap's
+  /// two-tab hop about 17; a dragged lens is not; tabbar_motion.py).
+  static const double lensTravelNarrow = 11;
 
   /// The lens sits 1.06 times as far from the bar's centre as the finger,
   /// up to this far past the outermost tab.
@@ -199,10 +213,10 @@ abstract final class TabBarMetrics {
   /// See [shadowOffset].
   static const double shadowOpacity = 0.07;
 
-  /// After a quick tap the lens stays up at least this long from
-  /// touch-down before it shrinks into the pill (measured from SwiftUI
-  /// `TabView`, iOS 26.4: a ~0 ms tap keeps the lens ~230 ms, settled by
-  /// ~330 ms). With our release spring, 200 ms puts the lens away at
-  /// ~320 ms. A longer press releases at once; Reduce Motion skips it.
-  static const Duration tapHold = Duration(milliseconds: 200);
+  /// After a quick tap the lens stays up this long from touch-down, then
+  /// shrinks into the pill wherever it is: SwiftUI's `TabView` (iOS 26.4,
+  /// Home to Settings) drops it ~150 ms in, before it arrives, so it never
+  /// reaches the held lens's full width or height (tabbar_motion.py, tap).
+  /// A longer press releases at once; Reduce Motion skips it.
+  static const Duration tapHold = Duration(milliseconds: 150);
 }
