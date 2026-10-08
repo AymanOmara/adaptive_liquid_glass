@@ -1,4 +1,6 @@
-## Unreleased
+## 0.1.0 (2026-10-08)
+
+First stable release. The 0.1.0-dev.x series is folded in below.
 
 - `GlassEmptyState` sits where SwiftUI's `ContentUnavailableView` does
   (measured; it was 2.5-10 pt low): a fitted bottom inset, and a taller
