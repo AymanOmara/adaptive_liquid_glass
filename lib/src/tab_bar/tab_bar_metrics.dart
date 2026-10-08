@@ -79,12 +79,14 @@ abstract final class TabBarMetrics {
 
   /// How much of [glow] a drag takes away (SwiftUI's `TabView`, iOS 26.4:
   /// the bar keeps a softer glow around a dragged lens).
-  static const double dragGlowDrop = 0.4;
+  static const double dragGlowDrop = 0.5;
 
   /// The bar's light coming on (press, drag) and fading after release
-  /// (Kept: about a third left 16 frames after letting go).
+  /// (Kept: about a third left 16 frames after letting go; 0.18 on, as
+  /// SwiftUI's `TabView` lights the far bar within ~4 frames of a press,
+  /// tabbar_light.py).
   static final SpringDescription light = swiftUISpring(
-    response: 0.3,
+    response: 0.18,
     dampingFraction: 1,
   );
 

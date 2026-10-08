@@ -206,11 +206,12 @@ const _tabBarDarkOverrides = <String, Object?>{
 const _barPressedFillOpacity = 0.35;
 
 /// [child] with regular glass drawn as the tab bar. [light] blends the dark
-/// bar from rest (0) to its held look (1, kept while dragged).
+/// bar from rest (0) to its held look (1) and its dragged look (2).
 Widget withTabBarGlass(BuildContext context, Widget child, {double light = 0}) {
   final theme = LiquidGlassTheme.of(context);
   final c = theme.constants;
   final p = light.clamp(0.0, 1.0);
+  final m = (light - 1).clamp(0.0, 1.0);
   final rest = GlassVariantConstants.fromJson(
     _tabBarDarkOverrides,
     c.regularDark,
@@ -220,7 +221,15 @@ Widget withTabBarGlass(BuildContext context, Widget child, {double light = 0}) {
       : GlassVariantConstants.fromJson({
           ..._tabBarDarkOverrides,
           'fillColor': _hex(
-            Color.lerp(rest.fillColor, GlassColors.tabBarPressedFill, p)!,
+            Color.lerp(
+              rest.fillColor,
+              Color.lerp(
+                GlassColors.tabBarPressedFill,
+                GlassColors.tabBarDraggedFill,
+                m,
+              ),
+              p,
+            )!,
           ),
           'fillOpacity': lerpDouble(
             rest.fillOpacity,
