@@ -1,3 +1,10 @@
+## Unreleased
+
+* `GlassRefresh` and `SliverGlassRefresh`: iOS 26's pull to refresh
+  (SwiftUI `.refreshable`) with a glass spinner, haptic on trigger and a
+  spring snap-back; `RefreshIndicator` on Android. Geometry estimated, not
+  yet measured.
+
 ## 0.1.0-dev.7
 
 * New components (Material 3 counterparts on Android):
