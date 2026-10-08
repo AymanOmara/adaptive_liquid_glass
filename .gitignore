@@ -40,3 +40,4 @@ build/fidelity/
 tool/fidelity/.venv/
 __pycache__/
 .pytest_cache/
+.superpowers/
