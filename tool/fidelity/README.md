@@ -99,6 +99,7 @@ can never score well.
 | `build/fidelity/g2-1` (group 2) | A1 + merge-neck lens blend (`lensBlend`; no constants change) | 47/75 | 0.9830 | 1.09 | 0.9799 | 1.322 |
 | `build/fidelity/g13-2` (g13) | g2 + colour refit: fitted regular/regularDark tone LUTs, small-shape tone curve (`smallToneKnots`, ≤ 32 pt half shorter side), fill/saturation/tint refit | 55/75 | 0.9830 | 1.29 | 0.9803 | 1.270 |
 | `build/fidelity/g4-1` (group 4) | g13 + clear post-lens Jacobian clamp (`postJacobianMax` 1.15, clear sets only) + clear lens/frost/rim refit | 58/75 | 0.9830 | 1.28 | 0.9809 | 1.255 |
+| `build/fidelity/g8-1` (item 8, not shipped) | g4-1 + ambient backdrop term (`ambientMix` 0.18, `ambientReach` 60 pt, regular light only) + regular tone/saturation refit, via `-constants` | 58/75 (0 gains, 0 losses) | 0.9831 | 1.12 | 0.9810 | 1.195 |
 
 In v2, 65 of the 75 scenes improved in SSIM and 62 in ΔE. Regular glass now
 sits at a median SSIM of 0.939 and ΔE of 7.0. Clear glass in dark mode got

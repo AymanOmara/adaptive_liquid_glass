@@ -496,3 +496,40 @@ regions (light: dL −2.1, da −1.3; dark: dL −1.9 with 1.28x L contrast),
 absent on gradient/text backdrops, so it is a backdrop-dependent colour
 response the grey tone LUT + single saturation gain cannot express (a
 chroma-dependent vibrancy term is the next candidate).
+
+### Item 8 round 2 (2026-10-08): ambient backdrop term, measured, off by default
+
+New shader/model term (`ambientMix`, `ambientReach`, uniform block P): the
+glass adds `ambientMix x (avg - luma(avg))`, `avg` = 5x5 taps of the blurred
+backdrop over the shape's (blended) rect inflated by `ambientReach`; off for
+the small-shape class. Model parity with the term at 0 still holds on all 75
+scenes (`test_model_matches_flutter_output`).
+
+- Predicted-device descents (`build/g8/cd4.py`, light regular set, 27 scenes)
+  never beat 22/22 base passes. The LS fit that fixes the rect photo ΔE
+  (`build/g8/p1.json` L40: rect16/28-photo-light 2.65 -> 1.95) loses 5:
+  tinted-rect16/28-photo-light (1.91 -> 2.2) and all three merge-gap photo
+  scenes (1.5 -> 2.1), plus capsule-photo-light (1.90 -> 2.40). Raising
+  `ambientReach` to 60 recovers 2 of the 5 but drops the gains; the
+  zero-loss end of that frontier is `cdL2` (mix 0.18, reach 60, saturation
+  1.44, retuned tone knots) with 0 gains.
+- Dark set: the LS fit (`build/g8/large40lab.log`) gets rect16-photo-dark
+  only to ΔE 2.94 (bar 2.0); not pursued.
+- Device check, `build/fidelity/g8-1` (cdL2 via `-constants`): **58/75, 0
+  gains, 0 losses**, min SSIM 0.9525 (unchanged), median ΔE 1.28 -> 1.12,
+  mean ΔE 1.255 -> 1.195. Device matched the prediction to ~0.0003 SSIM /
+  0.1 ΔE. Nearest miss: regular-capsule-photo-light 0.9694/1.53 (ΔE now
+  passes, SSIM 0.0006 short); rect photo-light still 2.74/2.67.
+- A follow-up SSIM descent from cdL2 (blur, frost tail, rim, lens, shadow)
+  only drifted `frostWideSigma` with no pass change; stopped.
+- Capture note: the first g8-1 pass had three blank (all-white) Flutter
+  screenshots (regular-capsule-photo-light/dark, regular-circle-photo-light);
+  a `RENDERERS=flutter SKIP_BUILD=1` recapture of those prefixes fixed them.
+  Check for SSIM < 0.7 outliers before trusting a run.
+
+Verdict: zero gains, so per the rule nothing ships; the term stays in the
+shader and model with `ambientMix` 0 (behaviour identical to g4-1). The
+residual is a frontier between the rect photo scenes and tinted/merge photo
+scenes that a single global chroma term cannot split: SwiftUI appears to
+treat tinted and merged glass differently from plain large rects.
+

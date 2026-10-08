@@ -63,6 +63,9 @@
   (8 gains, 0 losses), min SSIM 0.9525 (build/fidelity/g13-2)
   Remaining failures (2026-10-07 refit over 46 regular keys: SSIM up, 0 gains,
   not shipped; needs a chroma-dependent colour term, see fidelity-status.md):
+  2026-10-08 ambient backdrop term (shader + model, off by default): device
+  build/fidelity/g8-1 58/75, 0 gains 0 losses, mean dE 1.255 -> 1.195; not
+  shipped (trades rect photo vs tinted/merge photo, see fidelity-status.md)
   - regular rect photo-dark (deltaE ~3.4)
   - regular rect photo-light (deltaE ~2.6)
   - capsule and tinted-capsule photo scenes
