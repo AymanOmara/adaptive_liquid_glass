@@ -245,10 +245,11 @@ class _GlassSearchableState extends State<GlassSearchable>
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Below the status bar and Dynamic Island.
           Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(
+            padding: EdgeInsetsDirectional.fromSTEB(
               SearchMetrics.inset,
-              SearchMetrics.verticalInset,
+              MediaQuery.paddingOf(context).top + SearchMetrics.verticalInset,
               SearchMetrics.inset,
               SearchMetrics.verticalInset,
             ),
@@ -256,18 +257,23 @@ class _GlassSearchableState extends State<GlassSearchable>
           ),
           if (scopes != null) _scopeBar(inset: true),
           Expanded(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                widget.child,
-                if (suggestions.isNotEmpty)
-                  PositionedDirectional(
-                    top: 0,
-                    start: SearchMetrics.inset,
-                    end: SearchMetrics.inset,
-                    child: _platter(context, suggestions),
-                  ),
-              ],
+            // The field above has taken the top inset.
+            child: MediaQuery.removePadding(
+              context: context,
+              removeTop: true,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  widget.child,
+                  if (suggestions.isNotEmpty)
+                    PositionedDirectional(
+                      top: 0,
+                      start: SearchMetrics.inset,
+                      end: SearchMetrics.inset,
+                      child: _platter(context, suggestions),
+                    ),
+                ],
+              ),
             ),
           ),
         ],

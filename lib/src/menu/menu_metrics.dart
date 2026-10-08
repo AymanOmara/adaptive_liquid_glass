@@ -43,6 +43,10 @@ abstract final class MenuMetrics {
   /// centre.
   static const double pickerOffset = 19;
 
+  /// The least space between a centred menu and the screen's sides
+  /// (estimated, not measured).
+  static const double screenMargin = 16;
+
   /// The space between the label and the menu's trailing edge.
   static const double trailingPadding = 16;
 

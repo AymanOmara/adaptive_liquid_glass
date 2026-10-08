@@ -58,6 +58,25 @@ void main() {
     expect(find.text('Month'), findsOneWidget);
   }, variant: ios);
 
+  testWidgets('a picker at the screen edge keeps its menu on screen', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(
+      appHost(
+        const Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: _Harness(),
+        ),
+      ),
+    );
+    await t.tap(find.text('Week'));
+    await t.pumpAndSettle();
+    final panel = t.getRect(find.byType(GlassMenuPanel));
+    final screen = t.view.physicalSize / t.view.devicePixelRatio;
+    expect(panel.right, moreOrLessEquals(screen.width - 16, epsilon: 1));
+  }, variant: ios);
+
   testWidgets('Material: a dropdown', (t) async {
     shaderEnv();
     await t.pumpWidget(appHost(const _Harness()));

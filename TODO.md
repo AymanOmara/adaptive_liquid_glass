@@ -3,12 +3,8 @@ and CHANGELOG.md.
 
 1- components demo bugs seen on the simulator (2026-10-08, dark,
   PLAIN_BACKGROUND=true, example/lib/components_demo.dart):
-  - GlassPicker (Period row) menu renders UNDER the bottom accessory ("Now
-    Playing") and the tab bar: "Day" / "Month" show through them. Open the
-    menu on the root overlay above GlassBottomAccessory / GlassTabBar.
-  - GlassSearchable with navigationBar placement draws the search field in
-    the status-bar area, over the Dynamic Island. Respect the top safe-area
-    inset.
+  - Period picker: the first tap after launch/restart does not open the
+    menu; the second does (seen twice, 2026-10-08).
   - GlassTabBar lens while DRAGGING shows refracted fragments of the
     accessory above it ("Now Playing" text) plus colour fringing along the
     lens's top edge; gone once the drag settles. Lens samples outside the

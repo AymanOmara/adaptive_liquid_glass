@@ -76,6 +76,9 @@ class _GlassMenuAnchorState extends State<GlassMenuAnchor>
   /// The opener's size, kept while the menu stands in for it.
   Size _openerSize = Size.zero;
 
+  /// How far a centred menu moves sideways to stay on screen.
+  double _shift = 0;
+
   @override
   void initState() {
     super.initState();
@@ -105,12 +108,20 @@ class _GlassMenuAnchorState extends State<GlassMenuAnchor>
   void _show() {
     final box = context.findRenderObject()! as RenderBox;
     _openerSize = box.size;
+    final centre = box.localToGlobal(box.size.center(Offset.zero));
+    final screen = MediaQuery.sizeOf(context);
+    _shift = 0;
     if (widget.placement == GlassMenuPlacement.centred) {
       _target = Alignment.center;
       _follower = Alignment.topCenter;
+      // An opener near a side would push the menu off screen.
+      const half = MenuMetrics.width / 2;
+      const margin = MenuMetrics.screenMargin;
+      if (screen.width >= MenuMetrics.width + 2 * margin) {
+        final x = centre.dx.clamp(margin + half, screen.width - margin - half);
+        _shift = x - centre.dx;
+      }
     } else {
-      final centre = box.localToGlobal(box.size.center(Offset.zero));
-      final screen = MediaQuery.sizeOf(context);
       final below = centre.dy < screen.height * 0.6;
       final x = centre.dx > screen.width / 2 ? 1.0 : -1.0;
       // The menu opens over the button, from the button's own corner.
@@ -229,7 +240,7 @@ class _GlassMenuAnchorState extends State<GlassMenuAnchor>
           targetAnchor: _target,
           followerAnchor: _follower,
           offset: widget.placement == GlassMenuPlacement.centred
-              ? const Offset(0, -MenuMetrics.pickerOffset)
+              ? Offset(_shift, -MenuMetrics.pickerOffset)
               : Offset.zero,
           child: AnimatedBuilder(
             animation: _open,

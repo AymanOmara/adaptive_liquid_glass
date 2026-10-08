@@ -16,6 +16,7 @@ Widget _app({
   GlassSearchablePlacement placement = GlassSearchablePlacement.bottom,
   TextDirection direction = TextDirection.ltr,
   bool reduceMotion = false,
+  double topPadding = 0,
   ValueChanged<String>? onChanged,
   ValueChanged<int>? onScopeChanged,
 }) => MaterialApp(
@@ -24,9 +25,10 @@ Widget _app({
       textDirection: direction,
       child: Builder(
         builder: (context) => MediaQuery(
-          data: MediaQuery.of(
-            context,
-          ).copyWith(disableAnimations: reduceMotion),
+          data: MediaQuery.of(context).copyWith(
+            disableAnimations: reduceMotion,
+            padding: EdgeInsets.only(top: topPadding),
+          ),
           child: GlassSearchable(
             controller: controller,
             onChanged: onChanged,
@@ -69,6 +71,19 @@ void main() {
     expect(controller.isActive, false);
     expect(find.byType(SearchCancelButton), findsNothing);
     expect(changes.last, '');
+  }, variant: ios);
+
+  testWidgets('navigation bar placement: the field clears the status bar', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(
+      _app(placement: GlassSearchablePlacement.navigationBar, topPadding: 59),
+    );
+    expect(
+      t.getTopLeft(find.byType(CupertinoTextField)).dy,
+      greaterThanOrEqualTo(59),
+    );
   }, variant: ios);
 
   testWidgets('activating the controller from outside reveals Cancel', (
