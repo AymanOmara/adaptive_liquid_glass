@@ -49,4 +49,6 @@ __pycache__/
 # Demo media is linked from GitHub, not shipped in the package.
 /screenshots/demo.gif
 /screenshots/demo.mp4
+/screenshots/tabbar.gif
+/screenshots/tabbar.mp4
 /screenshots/0*-dark.png

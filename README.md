@@ -14,6 +14,10 @@ counterparts on Android, behind one API. App code never branches on platform.
   <img src="https://raw.githubusercontent.com/AymanOmara/adaptive_liquid_glass/main/screenshots/demo.gif" width="300" alt="Adaptive Liquid Glass demo on iOS 26" />
 </p>
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/AymanOmara/adaptive_liquid_glass/main/screenshots/tabbar.gif" width="400" alt="GlassTabBar: press, tap and drag the lens across three tabs" />
+</p>
+
 ## Screenshots
 
 The screenshot gallery shows the example app on iOS 26.4 in light and dark
