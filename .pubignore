@@ -45,3 +45,8 @@ __pycache__/
 /.claude/
 /.superpowers/
 /TODO.md
+
+# Demo media is linked from GitHub, not shipped in the package.
+/screenshots/demo.gif
+/screenshots/demo.mp4
+/screenshots/0*-dark.png

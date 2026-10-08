@@ -10,11 +10,19 @@ counterparts on Android, behind one API. App code never branches on platform.
 - **RTL-safe:** directional insets throughout; the light angle is not
   mirrored, matching iOS.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/AymanOmara/adaptive_liquid_glass/main/screenshots/demo.gif" width="300" alt="Adaptive Liquid Glass demo on iOS 26" />
+</p>
+
 ## Screenshots
 
 The screenshot gallery shows the example app on iOS 26.4 in light and dark
 modes. Plain backgrounds make the controls easier to inspect; photo backgrounds
 show the glass effect over imagery.
+
+<p>
+  <img src="https://raw.githubusercontent.com/AymanOmara/adaptive_liquid_glass/main/screenshots/01-controls-dark.png" width="160" alt="controls" /> <img src="https://raw.githubusercontent.com/AymanOmara/adaptive_liquid_glass/main/screenshots/02-alert-toolbar-dark.png" width="160" alt="alert toolbar" /> <img src="https://raw.githubusercontent.com/AymanOmara/adaptive_liquid_glass/main/screenshots/03-sheet-dark.png" width="160" alt="sheet" /> <img src="https://raw.githubusercontent.com/AymanOmara/adaptive_liquid_glass/main/screenshots/04-pickers-fields-dark.png" width="160" alt="pickers fields" /> <img src="https://raw.githubusercontent.com/AymanOmara/adaptive_liquid_glass/main/screenshots/05-lists-chips-progress-dark.png" width="160" alt="lists chips progress" /> <img src="https://raw.githubusercontent.com/AymanOmara/adaptive_liquid_glass/main/screenshots/06-gauges-badges-empty-dark.png" width="160" alt="gauges badges empty" /> 
+</p>
 
 ## Fidelity
 

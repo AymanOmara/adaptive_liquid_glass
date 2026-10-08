@@ -1,3 +1,8 @@
+## 0.1.1 (2026-10-08)
+
+- README: demo GIF and dark-mode component screenshots, served from GitHub
+  so they render on pub.dev.
+
 ## 0.1.0 (2026-10-08)
 
 First stable release. The 0.1.0-dev.x series is folded in below.
