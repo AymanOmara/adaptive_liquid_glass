@@ -162,577 +162,587 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                   ),
                 ],
           child: Builder(
-            builder: (context) => ListView(
-              padding: const EdgeInsetsDirectional.fromSTEB(
-                20,
-                16,
-                20,
-                24,
-              ).add(MediaQuery.paddingOf(context)),
-              children: [
-                GlassSegmentedControl<_Period>(
-                  segments: const [
-                    GlassSegment(value: _Period.day, label: Text('Day')),
-                    GlassSegment(value: _Period.week, label: Text('Week')),
-                    GlassSegment(value: _Period.month, label: Text('Month')),
-                  ],
-                  selected: _period,
-                  onChanged: (p) => setState(() => _period = p),
-                ),
-                const SizedBox(height: 24),
-                LiquidGlass(
-                  shape: const GlassShape.rect(26),
-                  padding: const EdgeInsetsDirectional.all(16),
-                  child: Column(
+            builder: (context) => GlassRefresh(
+              onRefresh: () => Future<void>.delayed(const Duration(seconds: 2)),
+              child: ListView(
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  20,
+                  16,
+                  20,
+                  24,
+                ).add(MediaQuery.paddingOf(context)),
+                children: [
+                  GlassSegmentedControl<_Period>(
+                    segments: const [
+                      GlassSegment(value: _Period.day, label: Text('Day')),
+                      GlassSegment(value: _Period.week, label: Text('Week')),
+                      GlassSegment(value: _Period.month, label: Text('Month')),
+                    ],
+                    selected: _period,
+                    onChanged: (p) => setState(() => _period = p),
+                  ),
+                  const SizedBox(height: 24),
+                  LiquidGlass(
+                    shape: const GlassShape.rect(26),
+                    padding: const EdgeInsetsDirectional.all(16),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            const Expanded(child: Text('Wi-Fi')),
+                            GlassToggle(
+                              value: _wifi,
+                              onChanged: (v) => setState(() => _wifi = v),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Icon(CupertinoIcons.speaker_fill, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: GlassSlider(
+                                value: _volume,
+                                onChanged: (v) => setState(() => _volume = v),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(CupertinoIcons.speaker_3_fill, size: 18),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Expanded(
+                              child: Text('Toolbar instead of tabs'),
+                            ),
+                            GlassToggle(
+                              value: _toolbar,
+                              onChanged: (v) => setState(() => _toolbar = v),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    runSpacing: 12,
                     children: [
-                      Row(
-                        children: [
-                          const Expanded(child: Text('Wi-Fi')),
-                          GlassToggle(
-                            value: _wifi,
-                            onChanged: (v) => setState(() => _wifi = v),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          const Icon(CupertinoIcons.speaker_fill, size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: GlassSlider(
-                              value: _volume,
-                              onChanged: (v) => setState(() => _volume = v),
+                      GlassButton(
+                        onPressed: () => showGlassSheet<void>(
+                          context: context,
+                          detents: const [
+                            GlassSheetDetent.medium,
+                            GlassSheetDetent.large,
+                          ],
+                          builder: (context) => const Padding(
+                            padding: EdgeInsetsDirectional.fromSTEB(
+                              24,
+                              16,
+                              24,
+                              32,
+                            ),
+                            child: Text(
+                              'Drag up for the large sheet, down to close.',
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          const Icon(CupertinoIcons.speaker_3_fill, size: 18),
-                        ],
+                        ),
+                        child: const Text('Sheet'),
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          const Expanded(
-                            child: Text('Toolbar instead of tabs'),
+                      GlassButton(
+                        onPressed: () => showGlassAlert(
+                          context: context,
+                          title: 'Delete photo?',
+                          message:
+                              'This photo will be deleted from all your '
+                              'devices.',
+                          actions: const [
+                            GlassDialogAction(
+                              label: 'Cancel',
+                              role: GlassButtonRole.cancel,
+                            ),
+                            GlassDialogAction(
+                              label: 'Delete',
+                              role: GlassButtonRole.destructive,
+                            ),
+                          ],
+                        ),
+                        child: const Text('Alert'),
+                      ),
+                      GlassButton(
+                        onPressed: () => showGlassConfirmationDialog(
+                          context: context,
+                          title: 'Photo',
+                          actions: const [
+                            GlassDialogAction(label: 'Share'),
+                            GlassDialogAction(
+                              label: 'Delete',
+                              role: GlassButtonRole.destructive,
+                            ),
+                            GlassDialogAction(
+                              label: 'Cancel',
+                              role: GlassButtonRole.cancel,
+                            ),
+                          ],
+                        ),
+                        child: const Text('Dialog'),
+                      ),
+                      GlassButton(
+                        onPressed: () => showGlassToast(
+                          context,
+                          message: 'Photo saved',
+                          icon: CupertinoIcons.checkmark_circle_fill,
+                          action: GlassToastAction(
+                            label: 'Undo',
+                            onPressed: () => _snack('Undone'),
                           ),
-                          GlassToggle(
-                            value: _toolbar,
-                            onChanged: (v) => setState(() => _toolbar = v),
+                        ),
+                        child: const Text('Toast'),
+                      ),
+                      GlassButton(
+                        onPressed: () => showGlassActionSheet(
+                          context: context,
+                          title: 'Photo',
+                          actions: [
+                            GlassDialogAction(
+                              label: 'Share',
+                              onPressed: () => _snack('Share'),
+                            ),
+                            const GlassDialogAction(
+                              label: 'Delete',
+                              role: GlassButtonRole.destructive,
+                            ),
+                          ],
+                          cancel: const GlassDialogAction(
+                            label: 'Cancel',
+                            role: GlassButtonRole.cancel,
                           ),
+                        ),
+                        child: const Text('Action sheet'),
+                      ),
+                      GlassButton(
+                        onPressed: () => showGlassFullScreenCover<void>(
+                          context: context,
+                          builder: (context) => Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsetsDirectional.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Spacer(),
+                                    GlassButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('Done'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Spacer(),
+                              const Text(
+                                'Cover',
+                                style: TextStyle(
+                                  fontSize: 34,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const Spacer(),
+                            ],
+                          ),
+                        ),
+                        child: const Text('Full screen'),
+                      ),
+                      GlassPopoverAnchor(
+                        popoverBuilder: (_) => const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Text('Liquid Glass popover'),
+                        ),
+                        builder: (context, open) => GlassButton(
+                          onPressed: open,
+                          child: const Text('Popover'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  LiquidGlass(
+                    shape: const GlassShape.rect(26),
+                    padding: const EdgeInsetsDirectional.all(16),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(child: Text('Count ${_count.toInt()}')),
+                            GlassStepper(
+                              value: _count,
+                              max: 10,
+                              onChanged: (v) => setState(() => _count = v),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Expanded(child: Text('Period')),
+                            GlassPicker<_Period>(
+                              items: const [
+                                GlassPickerItem(
+                                  value: _Period.day,
+                                  label: 'Day',
+                                ),
+                                GlassPickerItem(
+                                  value: _Period.week,
+                                  label: 'Week',
+                                ),
+                                GlassPickerItem(
+                                  value: _Period.month,
+                                  label: 'Month',
+                                ),
+                              ],
+                              selected: _period,
+                              onChanged: (p) => setState(() => _period = p),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        GlassWheelPicker<_Period>(
+                          items: const [
+                            GlassPickerItem(value: _Period.day, label: 'Day'),
+                            GlassPickerItem(value: _Period.week, label: 'Week'),
+                            GlassPickerItem(
+                              value: _Period.month,
+                              label: 'Month',
+                            ),
+                          ],
+                          selected: _period,
+                          height: 128,
+                          onChanged: (p) => setState(() => _period = p),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Expanded(child: Text('Date')),
+                            GlassDatePicker(
+                              value: _date,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2030),
+                              onChanged: (d) => setState(() => _date = d),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        GlassColorPicker(
+                          label: const Text('Accent'),
+                          value: _accent,
+                          onChanged: (c) => setState(() => _accent = c),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  GlassTextField(
+                    placeholder: 'Email',
+                    prefix: const Icon(CupertinoIcons.mail),
+                    clearButton: true,
+                    keyboardType: TextInputType.emailAddress,
+                    errorText: _emailError,
+                    onChanged: (v) => setState(
+                      () => _emailError = v.isEmpty || v.contains('@')
+                          ? null
+                          : 'Enter a valid email',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const GlassTextField.password(
+                    placeholder: 'Password',
+                    prefix: Icon(CupertinoIcons.lock),
+                  ),
+                  const SizedBox(height: 12),
+                  const GlassTextField(placeholder: 'Notes', maxLines: 4),
+                  const SizedBox(height: 24),
+                  Center(
+                    child: GlassContextMenu(
+                      items: [
+                        GlassMenuItem(
+                          label: 'Copy',
+                          icon: CupertinoIcons.doc_on_doc,
+                          onSelected: () => _snack('Copy'),
+                        ),
+                        GlassMenuItem(
+                          label: 'Delete',
+                          icon: CupertinoIcons.trash,
+                          destructive: true,
+                          onSelected: () => _snack('Delete'),
+                        ),
+                      ],
+                      child: const LiquidGlass(
+                        shape: GlassShape.rect(20),
+                        padding: EdgeInsets.all(24),
+                        child: Text('Long-press me'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  GlassListSection(
+                    glass: Glass.regular,
+                    margin: EdgeInsets.zero,
+                    header: const Text('Settings'),
+                    footer: const Text(
+                      'A glass platter; omit glass for iOS cells.',
+                    ),
+                    children: [
+                      GlassListTile(
+                        leading: const Icon(CupertinoIcons.wifi),
+                        title: const Text('Wi-Fi'),
+                        trailing: GlassToggle(
+                          value: _wifi,
+                          onChanged: (v) => setState(() => _wifi = v),
+                        ),
+                      ),
+                      GlassListTile(
+                        leading: const Icon(CupertinoIcons.bluetooth),
+                        title: const Text('Bluetooth'),
+                        value: 'On',
+                        chevron: true,
+                        onTap: () => _snack('Bluetooth'),
+                      ),
+                      GlassListTile(
+                        title: const Text('General'),
+                        subtitle: const Text('About, storage, updates'),
+                        chevron: true,
+                        onTap: () => _snack('General'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  GlassListSection(
+                    header: const Text('Advanced'),
+                    children: [
+                      GlassDisclosureGroup(
+                        leading: const Icon(CupertinoIcons.gear),
+                        label: const Text('Advanced'),
+                        isExpanded: _advanced,
+                        onExpansionChanged: (v) =>
+                            setState(() => _advanced = v),
+                        children: const [
+                          GlassListTile(title: Text('Proxy'), value: 'Off'),
+                          GlassListTile(title: Text('DNS'), value: 'Automatic'),
                         ],
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 24),
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    GlassButton(
-                      onPressed: () => showGlassSheet<void>(
-                        context: context,
-                        detents: const [
-                          GlassSheetDetent.medium,
-                          GlassSheetDetent.large,
-                        ],
-                        builder: (context) => const Padding(
-                          padding: EdgeInsetsDirectional.fromSTEB(
-                            24,
-                            16,
-                            24,
-                            32,
-                          ),
-                          child: Text(
-                            'Drag up for the large sheet, down to close.',
-                          ),
+                  const SizedBox(height: 24),
+                  GlassListSection(
+                    header: const Text('Picker styles'),
+                    children: [
+                      GlassPicker<_Period>(
+                        style: GlassPickerStyle.navigationLink,
+                        label: const Text('Period'),
+                        items: _periods,
+                        selected: _period,
+                        onChanged: (p) => setState(() => _period = p),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  GlassListSection(
+                    header: const Text('Period'),
+                    children: [
+                      GlassPicker<_Period>(
+                        style: GlassPickerStyle.inline,
+                        items: _periods,
+                        selected: _period,
+                        onChanged: (p) => setState(() => _period = p),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final tag in _tags.keys)
+                        GlassChip(
+                          label: tag,
+                          icon: CupertinoIcons.tag,
+                          selected: _tags[tag]!,
+                          onSelected: (v) => setState(() => _tags[tag] = v),
+                          onDeleted: () => setState(() => _tags.remove(tag)),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      GlassLink(
+                        destination: Uri.parse('https://flutter.dev'),
+                        label: 'flutter.dev',
+                        onOpen: (_) {},
+                      ),
+                      const SizedBox(width: 12),
+                      GlassShareLink(onShare: () {}),
+                      const SizedBox(width: 12),
+                      GlassShareLink(label: 'Share', onShare: () {}),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Center(
+                    child: GlassPageControl(
+                      count: 4,
+                      currentPage: _page,
+                      onPageChanged: (p) => setState(() => _page = p),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(child: GlassProgressIndicator(value: _volume)),
+                      const SizedBox(width: 16),
+                      GlassProgressIndicator.circular(value: _volume),
+                      const SizedBox(width: 16),
+                      const GlassProgressIndicator.circular(),
+                      const SizedBox(width: 16),
+                      const GlassActivityIndicator(),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  GlassGauge(
+                    value: _volume,
+                    label: const Text('Battery'),
+                    currentValueLabel: Text('${(_volume * 100).round()}%'),
+                    minimumValueLabel: const Text('0'),
+                    maximumValueLabel: const Text('100'),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      GlassGauge(
+                        value: _volume * 40,
+                        min: 0,
+                        max: 40,
+                        style: GlassGaugeStyle.accessoryCircular,
+                        label: const Text('Temp'),
+                        currentValueLabel: Text('${(_volume * 40).round()}'),
+                        minimumValueLabel: const Text('0'),
+                        maximumValueLabel: const Text('40'),
+                        tint: GlassSystemColors.orange,
+                      ),
+                      const SizedBox(width: 48),
+                      GlassGauge(
+                        value: _volume,
+                        style: GlassGaugeStyle.accessoryCircularCapacity,
+                        label: const Text('Battery'),
+                        currentValueLabel: Text('${(_volume * 100).round()}'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      GlassBadge(
+                        label: '3',
+                        child: Icon(CupertinoIcons.mail, size: 28),
+                      ),
+                      SizedBox(width: 32),
+                      GlassBadge(child: Icon(CupertinoIcons.bell, size: 28)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      GlassLabel.text(
+                        text: 'Favourites',
+                        icon: CupertinoIcons.heart,
+                      ).glassEffect(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
                         ),
                       ),
-                      child: const Text('Sheet'),
-                    ),
-                    GlassButton(
-                      onPressed: () => showGlassAlert(
-                        context: context,
-                        title: 'Delete photo?',
-                        message:
-                            'This photo will be deleted from all your '
-                            'devices.',
-                        actions: const [
-                          GlassDialogAction(
-                            label: 'Cancel',
-                            role: GlassButtonRole.cancel,
-                          ),
-                          GlassDialogAction(
-                            label: 'Delete',
-                            role: GlassButtonRole.destructive,
-                          ),
-                        ],
-                      ),
-                      child: const Text('Alert'),
-                    ),
-                    GlassButton(
-                      onPressed: () => showGlassConfirmationDialog(
-                        context: context,
-                        title: 'Photo',
-                        actions: const [
-                          GlassDialogAction(label: 'Share'),
-                          GlassDialogAction(
-                            label: 'Delete',
-                            role: GlassButtonRole.destructive,
-                          ),
-                          GlassDialogAction(
-                            label: 'Cancel',
-                            role: GlassButtonRole.cancel,
-                          ),
-                        ],
-                      ),
-                      child: const Text('Dialog'),
-                    ),
-                    GlassButton(
-                      onPressed: () => showGlassToast(
-                        context,
-                        message: 'Photo saved',
-                        icon: CupertinoIcons.checkmark_circle_fill,
-                        action: GlassToastAction(
-                          label: 'Undo',
-                          onPressed: () => _snack('Undone'),
+                      GlassLabel.text(
+                        text: 'Share',
+                        icon: CupertinoIcons.share,
+                        layout: GlassLabelLayout.iconOnly,
+                      ).glassEffect(padding: const EdgeInsets.all(10)),
+                      GlassLabel.text(
+                        text: 'Title only',
+                        icon: CupertinoIcons.textformat,
+                        layout: GlassLabelLayout.titleOnly,
+                      ).glassEffect(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
                         ),
                       ),
-                      child: const Text('Toast'),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  GlassEmptyState(
+                    icon: const Icon(CupertinoIcons.tray),
+                    title: const Text('No Mail'),
+                    description: const Text(
+                      'New messages you receive will appear here.',
                     ),
-                    GlassButton(
-                      onPressed: () => showGlassActionSheet(
-                        context: context,
-                        title: 'Photo',
-                        actions: [
-                          GlassDialogAction(
-                            label: 'Share',
-                            onPressed: () => _snack('Share'),
-                          ),
-                          const GlassDialogAction(
-                            label: 'Delete',
-                            role: GlassButtonRole.destructive,
-                          ),
-                        ],
-                        cancel: const GlassDialogAction(
-                          label: 'Cancel',
-                          role: GlassButtonRole.cancel,
-                        ),
+                    actions: [
+                      GlassButton(
+                        onPressed: () => _snack('Refresh'),
+                        child: const Text('Refresh'),
                       ),
-                      child: const Text('Action sheet'),
-                    ),
-                    GlassButton(
-                      onPressed: () => showGlassFullScreenCover<void>(
-                        context: context,
-                        builder: (context) => Column(
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  for (final name in _rows)
+                    GlassSwipeActions(
+                      key: ValueKey(name),
+                      leading: [
+                        GlassSwipeAction(
+                          icon: CupertinoIcons.pin_fill,
+                          label: 'Pin',
+                          color: CupertinoColors.systemOrange,
+                          onPressed: () => _snack('Pinned $name'),
+                        ),
+                      ],
+                      trailing: [
+                        GlassSwipeAction(
+                          icon: CupertinoIcons.trash,
+                          label: 'Delete',
+                          color: CupertinoColors.systemRed,
+                          onPressed: () => setState(() => _rows.remove(name)),
+                        ),
+                        GlassSwipeAction(
+                          icon: CupertinoIcons.share,
+                          label: 'Share',
+                          color: CupertinoColors.systemBlue,
+                          onPressed: () => _snack('Share $name'),
+                        ),
+                      ],
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        child: Row(
                           children: [
-                            Padding(
-                              padding: const EdgeInsetsDirectional.symmetric(
-                                horizontal: 16,
-                              ),
-                              child: Row(
-                                children: [
-                                  const Spacer(),
-                                  GlassButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text('Done'),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Spacer(),
-                            const Text(
-                              'Cover',
-                              style: TextStyle(
-                                fontSize: 34,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const Spacer(),
+                            const Icon(CupertinoIcons.doc_text, size: 22),
+                            const SizedBox(width: 12),
+                            Expanded(child: Text(name)),
                           ],
                         ),
                       ),
-                      child: const Text('Full screen'),
                     ),
-                    GlassPopoverAnchor(
-                      popoverBuilder: (_) => const Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text('Liquid Glass popover'),
-                      ),
-                      builder: (context, open) => GlassButton(
-                        onPressed: open,
-                        child: const Text('Popover'),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                LiquidGlass(
-                  shape: const GlassShape.rect(26),
-                  padding: const EdgeInsetsDirectional.all(16),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(child: Text('Count ${_count.toInt()}')),
-                          GlassStepper(
-                            value: _count,
-                            max: 10,
-                            onChanged: (v) => setState(() => _count = v),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          const Expanded(child: Text('Period')),
-                          GlassPicker<_Period>(
-                            items: const [
-                              GlassPickerItem(value: _Period.day, label: 'Day'),
-                              GlassPickerItem(
-                                value: _Period.week,
-                                label: 'Week',
-                              ),
-                              GlassPickerItem(
-                                value: _Period.month,
-                                label: 'Month',
-                              ),
-                            ],
-                            selected: _period,
-                            onChanged: (p) => setState(() => _period = p),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      GlassWheelPicker<_Period>(
-                        items: const [
-                          GlassPickerItem(value: _Period.day, label: 'Day'),
-                          GlassPickerItem(value: _Period.week, label: 'Week'),
-                          GlassPickerItem(value: _Period.month, label: 'Month'),
-                        ],
-                        selected: _period,
-                        height: 128,
-                        onChanged: (p) => setState(() => _period = p),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          const Expanded(child: Text('Date')),
-                          GlassDatePicker(
-                            value: _date,
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime(2030),
-                            onChanged: (d) => setState(() => _date = d),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      GlassColorPicker(
-                        label: const Text('Accent'),
-                        value: _accent,
-                        onChanged: (c) => setState(() => _accent = c),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                GlassTextField(
-                  placeholder: 'Email',
-                  prefix: const Icon(CupertinoIcons.mail),
-                  clearButton: true,
-                  keyboardType: TextInputType.emailAddress,
-                  errorText: _emailError,
-                  onChanged: (v) => setState(
-                    () => _emailError = v.isEmpty || v.contains('@')
-                        ? null
-                        : 'Enter a valid email',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const GlassTextField.password(
-                  placeholder: 'Password',
-                  prefix: Icon(CupertinoIcons.lock),
-                ),
-                const SizedBox(height: 12),
-                const GlassTextField(placeholder: 'Notes', maxLines: 4),
-                const SizedBox(height: 24),
-                Center(
-                  child: GlassContextMenu(
-                    items: [
-                      GlassMenuItem(
-                        label: 'Copy',
-                        icon: CupertinoIcons.doc_on_doc,
-                        onSelected: () => _snack('Copy'),
-                      ),
-                      GlassMenuItem(
-                        label: 'Delete',
-                        icon: CupertinoIcons.trash,
-                        destructive: true,
-                        onSelected: () => _snack('Delete'),
-                      ),
-                    ],
-                    child: const LiquidGlass(
-                      shape: GlassShape.rect(20),
-                      padding: EdgeInsets.all(24),
-                      child: Text('Long-press me'),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                GlassListSection(
-                  glass: Glass.regular,
-                  margin: EdgeInsets.zero,
-                  header: const Text('Settings'),
-                  footer: const Text(
-                    'A glass platter; omit glass for iOS cells.',
-                  ),
-                  children: [
-                    GlassListTile(
-                      leading: const Icon(CupertinoIcons.wifi),
-                      title: const Text('Wi-Fi'),
-                      trailing: GlassToggle(
-                        value: _wifi,
-                        onChanged: (v) => setState(() => _wifi = v),
-                      ),
-                    ),
-                    GlassListTile(
-                      leading: const Icon(CupertinoIcons.bluetooth),
-                      title: const Text('Bluetooth'),
-                      value: 'On',
-                      chevron: true,
-                      onTap: () => _snack('Bluetooth'),
-                    ),
-                    GlassListTile(
-                      title: const Text('General'),
-                      subtitle: const Text('About, storage, updates'),
-                      chevron: true,
-                      onTap: () => _snack('General'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                GlassListSection(
-                  header: const Text('Advanced'),
-                  children: [
-                    GlassDisclosureGroup(
-                      leading: const Icon(CupertinoIcons.gear),
-                      label: const Text('Advanced'),
-                      isExpanded: _advanced,
-                      onExpansionChanged: (v) => setState(() => _advanced = v),
-                      children: const [
-                        GlassListTile(title: Text('Proxy'), value: 'Off'),
-                        GlassListTile(title: Text('DNS'), value: 'Automatic'),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                GlassListSection(
-                  header: const Text('Picker styles'),
-                  children: [
-                    GlassPicker<_Period>(
-                      style: GlassPickerStyle.navigationLink,
-                      label: const Text('Period'),
-                      items: _periods,
-                      selected: _period,
-                      onChanged: (p) => setState(() => _period = p),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                GlassListSection(
-                  header: const Text('Period'),
-                  children: [
-                    GlassPicker<_Period>(
-                      style: GlassPickerStyle.inline,
-                      items: _periods,
-                      selected: _period,
-                      onChanged: (p) => setState(() => _period = p),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final tag in _tags.keys)
-                      GlassChip(
-                        label: tag,
-                        icon: CupertinoIcons.tag,
-                        selected: _tags[tag]!,
-                        onSelected: (v) => setState(() => _tags[tag] = v),
-                        onDeleted: () => setState(() => _tags.remove(tag)),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    GlassLink(
-                      destination: Uri.parse('https://flutter.dev'),
-                      label: 'flutter.dev',
-                      onOpen: (_) {},
-                    ),
-                    const SizedBox(width: 12),
-                    GlassShareLink(onShare: () {}),
-                    const SizedBox(width: 12),
-                    GlassShareLink(label: 'Share', onShare: () {}),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Center(
-                  child: GlassPageControl(
-                    count: 4,
-                    currentPage: _page,
-                    onPageChanged: (p) => setState(() => _page = p),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(child: GlassProgressIndicator(value: _volume)),
-                    const SizedBox(width: 16),
-                    GlassProgressIndicator.circular(value: _volume),
-                    const SizedBox(width: 16),
-                    const GlassProgressIndicator.circular(),
-                    const SizedBox(width: 16),
-                    const GlassActivityIndicator(),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                GlassGauge(
-                  value: _volume,
-                  label: const Text('Battery'),
-                  currentValueLabel: Text('${(_volume * 100).round()}%'),
-                  minimumValueLabel: const Text('0'),
-                  maximumValueLabel: const Text('100'),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    GlassGauge(
-                      value: _volume * 40,
-                      min: 0,
-                      max: 40,
-                      style: GlassGaugeStyle.accessoryCircular,
-                      label: const Text('Temp'),
-                      currentValueLabel: Text('${(_volume * 40).round()}'),
-                      minimumValueLabel: const Text('0'),
-                      maximumValueLabel: const Text('40'),
-                      tint: GlassSystemColors.orange,
-                    ),
-                    const SizedBox(width: 48),
-                    GlassGauge(
-                      value: _volume,
-                      style: GlassGaugeStyle.accessoryCircularCapacity,
-                      label: const Text('Battery'),
-                      currentValueLabel: Text('${(_volume * 100).round()}'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    GlassBadge(
-                      label: '3',
-                      child: Icon(CupertinoIcons.mail, size: 28),
-                    ),
-                    SizedBox(width: 32),
-                    GlassBadge(child: Icon(CupertinoIcons.bell, size: 28)),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 8,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    GlassLabel.text(
-                      text: 'Favourites',
-                      icon: CupertinoIcons.heart,
-                    ).glassEffect(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                    ),
-                    GlassLabel.text(
-                      text: 'Share',
-                      icon: CupertinoIcons.share,
-                      layout: GlassLabelLayout.iconOnly,
-                    ).glassEffect(padding: const EdgeInsets.all(10)),
-                    GlassLabel.text(
-                      text: 'Title only',
-                      icon: CupertinoIcons.textformat,
-                      layout: GlassLabelLayout.titleOnly,
-                    ).glassEffect(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                GlassEmptyState(
-                  icon: const Icon(CupertinoIcons.tray),
-                  title: const Text('No Mail'),
-                  description: const Text(
-                    'New messages you receive will appear here.',
-                  ),
-                  actions: [
-                    GlassButton(
-                      onPressed: () => _snack('Refresh'),
-                      child: const Text('Refresh'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                for (final name in _rows)
-                  GlassSwipeActions(
-                    key: ValueKey(name),
-                    leading: [
-                      GlassSwipeAction(
-                        icon: CupertinoIcons.pin_fill,
-                        label: 'Pin',
-                        color: CupertinoColors.systemOrange,
-                        onPressed: () => _snack('Pinned $name'),
-                      ),
-                    ],
-                    trailing: [
-                      GlassSwipeAction(
-                        icon: CupertinoIcons.trash,
-                        label: 'Delete',
-                        color: CupertinoColors.systemRed,
-                        onPressed: () => setState(() => _rows.remove(name)),
-                      ),
-                      GlassSwipeAction(
-                        icon: CupertinoIcons.share,
-                        label: 'Share',
-                        color: CupertinoColors.systemBlue,
-                        onPressed: () => _snack('Share $name'),
-                      ),
-                    ],
-                    child: Padding(
-                      padding: const EdgeInsetsDirectional.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(CupertinoIcons.doc_text, size: 22),
-                          const SizedBox(width: 12),
-                          Expanded(child: Text(name)),
-                        ],
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 400),
-              ],
+                  const SizedBox(height: 400),
+                ],
+              ),
             ),
           ),
         ),
