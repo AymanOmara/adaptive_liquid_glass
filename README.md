@@ -236,6 +236,7 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `showGlassToast`, `GlassToastAction`, `GlassToastHandle` | Glass capsule toast from the top, queued, swipe to dismiss | `SnackBar` |
 | `GlassTextField` (`+ .password`) | Text field in a glass capsule; password with an eye button | `TextField` |
 | `GlassSearchField` | Search capsule with magnifier and clear button | `SearchBar` |
+| `GlassSearchable`, `GlassSearchController`, `GlassSearchSuggestion` | `.searchable`: field with a springing Cancel, suggestions on a glass platter, scopes; bottom or navigation-bar placement | `SearchAnchor` |
 | `GlassListSection`, `GlassListTile` | Inset-grouped list, like Settings; rows with leading/title/value/trailing | `Card` of `ListTile`s |
 | `GlassDisclosureGroup` | SwiftUI's DisclosureGroup: a list row with a rotating chevron that expands its rows | `ExpansionTile` |
 | `GlassEmptyState` (`+ .search`) | ContentUnavailableView: icon, title, description, actions | plain centred column |
@@ -547,6 +548,26 @@ field, and a `semanticLabel` for screen readers. `.password` obscures the
 text and adds an eye button that shows and hides it. Put the search field
 in a `GlassBottomAccessory` slot or a toolbar for iOS 26's bottom search.
 On Android they are Material 3's `TextField` and `SearchBar`.
+
+For SwiftUI's `.searchable` presentation wrap the screen's content (a
+`GlassScaffold` body) in `GlassSearchable`: tapping the field springs a
+Cancel button out of its end, `suggestionsBuilder` rows show on a glass
+platter and `scopes` become a `GlassSegmentedControl` while search is
+active. `placement` picks iPhone's floating bottom field or the
+navigation-bar one; a `GlassSearchController` reads or drives the text,
+activation and scope. On Android it is Material 3's `SearchAnchor`.
+
+```dart
+GlassSearchable(
+  controller: search,
+  scopes: const ['All', 'Recent'],
+  suggestionsBuilder: (context, search) => [
+    for (final hit in hits(search.text))
+      GlassSearchSuggestion(title: Text(hit), onSelected: () => open(hit)),
+  ],
+  child: const MailList(),
+)
+```
 
 ### List section
 

@@ -29,6 +29,11 @@
   a glass sheet with a preset grid, a spectrum square and hue bar, an
   opacity slider and a hex field; a Material 3 list tile and bottom sheet
   on Android. Geometry estimated, not yet measured.
+* `GlassSearchable`: iOS 26's `.searchable` presentation around
+  `GlassSearchField` — Cancel button with a spring, suggestion rows on a
+  glass platter, scopes as a `GlassSegmentedControl`, `navigationBar` or
+  `bottom` placement, driven by `GlassSearchController`. Material:
+  `SearchAnchor`. Geometry estimated, not measured.
 
 ## 0.1.0-dev.10
 
