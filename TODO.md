@@ -45,8 +45,15 @@
     RTL (close button placement and drag thresholds follow the sheet /
     toolbar, estimated: SwiftUI's cover has neither)
   - [done] GlassButton label black like SwiftUI (was 85% black)
-  Next (medium): pull to refresh (refreshable), searchable presentation,
-  date picker upgrades (graphical, time, wheel); GlassWheelPicker [done, 8973f94]
+  [done 2026-10-08] Next (medium), GLM-assisted, merged on feat/borrow-lgw:
+  GlassRefresh + SliverGlassRefresh (refreshable), GlassSearchable +
+  GlassSearchController (+ suggestions, scopes, navigationBar/bottom
+  placement; no GlassScaffold slot, composition documented),
+  GlassDatePicker.style graphical/wheel + pickerMode time/dateAndTime
+  (GlassCalendar and GlassDateWheel public, showWeekNumbers,
+  minuteInterval, use24HourFormat); GlassWheelPicker [8973f94].
+  All geometry estimated, not measured. Not done: arrow->spinner morph on
+  refresh; Material searchable keeps scopes always visible.
   [done 2026-10-08] small wins (S) from the gap table, each in its own
   worktree, merged on feat/borrow-lgw: GlassLink + GlassShareLink (callbacks
   only, no url_launcher/share_plus by decision), GlassPicker.style inline /
@@ -56,7 +63,8 @@
   measured. +49 tests.
   Later: keyboard toolbar, tabBarMinimizeBehavior, sidebarAdaptable,
   zoom transitions, TipKit tips
-  Measure later: GlassLabel, GlassLink/ShareLink, GlassColorPicker sheet vs
+  Measure later: GlassLabel, GlassLink/ShareLink, GlassColorPicker sheet,
+  GlassRefresh, GlassSearchable, date wheel/time picker vs
   SwiftUI (all shipped with estimated metrics)
 
 8-fidelity groups 1+3 colour refit [done 2026-10-07]: device 47/75 -> 55/75
