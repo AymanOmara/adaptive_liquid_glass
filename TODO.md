@@ -78,3 +78,11 @@
   - regular rect photo-light (deltaE ~2.6)
   - capsule and tinted-capsule photo scenes
   - clear family = item 6
+
+9-components demo bugs seen on the simulator (2026-10-08, dark, PLAIN_BACKGROUND=true,
+  example/lib/components_demo.dart):
+  - GlassPicker (Period row) menu renders UNDER the bottom accessory ("Now Playing")
+    and the tab bar: "Day" / "Month" show through them. Open the menu on the root
+    overlay above GlassBottomAccessory / GlassTabBar.
+  - GlassSearchable with navigationBar placement draws the search field in the
+    status-bar area, over the Dynamic Island. Respect the top safe-area inset.
