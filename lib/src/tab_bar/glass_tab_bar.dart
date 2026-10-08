@@ -230,7 +230,7 @@ class _GlassTabBarState extends State<GlassTabBar>
   double _xHop = 0;
 
   /// The light on the bar: 0 at rest, 1 while the lens is held (lit around
-  /// it, see BarGlow), 2 while it is dragged (evenly lit), as on iOS.
+  /// it, see BarGlow), 2 while it is dragged (a softer glow), as on iOS.
   late final AnimationController _light = AnimationController.unbounded(
     vsync: this,
   );
@@ -826,9 +826,13 @@ class _GlassTabBarState extends State<GlassTabBar>
     // The bar's glass reaches past the row by the inset plus its growth.
     final glowInsetX = TabBarMetrics.inset + growX;
     final glowInsetY = TabBarMetrics.inset + growY;
-    // The glow belongs to a held lens; dragging lights the bar evenly.
+    // The glow follows the lens, held or dragged; a drag softens it
+    // (SwiftUI's `TabView`, iOS 26.4, over black: about 50 by the lens and
+    // 30 away while held, 45 and 35 mid-drag).
     final light = _light.value;
-    final glow = light.clamp(0.0, 1.0) * (2 - light).clamp(0.0, 1.0);
+    final glow =
+        light.clamp(0.0, 1.0) *
+        (1 - TabBarMetrics.dragGlowDrop * (light - 1).clamp(0.0, 1.0));
     final baseRow = ClipPath(
       clipper: HoleClipper(lensShown ? lens : null),
       child: _row(

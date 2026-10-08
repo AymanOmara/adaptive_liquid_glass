@@ -43,10 +43,6 @@ abstract final class GlassColors {
   /// and the page behind it gains contrast.
   static const Color tabBarPressedFill = Color(0xFF5C5C5C);
 
-  /// The dark tab bar's fill while the lens is dragged: evenly lit, about
-  /// 45 over black (Kept).
-  static const Color tabBarDraggedFill = Color(0xFF7A7A7A);
-
   /// A control thumb's shadow at rest (black at 12%).
   static const Color thumbShadow = Color(0x1F000000);
 
