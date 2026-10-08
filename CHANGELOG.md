@@ -1,3 +1,9 @@
+## 0.1.3 (2026-10-08)
+
+- README: fidelity numbers from the latest device run (59/75 strict
+  passes, median ΔE 1.19) and the install snippet points at the current
+  version.
+
 ## 0.1.2 (2026-10-08)
 
 - Internal: nine `lib/src` files renamed to match the class they hold;
