@@ -128,6 +128,11 @@ abstract final class TabBarMetrics {
   /// The gap between a tab's icon slot and its label.
   static const double labelGap = 2;
 
+  /// Beside the search tab iOS 26.4 sets every label this much further
+  /// towards the end than in a bar without one (2 px at 3x on all three
+  /// tabs, against the plain and accessory bars; icons do not move).
+  static const double searchLabelShift = 2 / 3;
+
   /// A tab's label: 10 pt semibold (measured from SwiftUI `TabView`,
   /// iOS 26.4: "Settings" 39.7 pt of ink).
   static const TextStyle label = TextStyle(

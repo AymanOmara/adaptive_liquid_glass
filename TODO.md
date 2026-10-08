@@ -46,13 +46,21 @@ and CHANGELOG.md.
 6- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
   Bar-region mean |diff| native/shader: white 1.24/1.35, photo 1.93/5.14,
   dark 1.23/1.60, dark photo 2.27/3.95, badge 1.65/1.77, searchtab
-  1.97/2.06, accessory 2.04/2.44
-  Open: label offsets beside the search tab (~1 pt, UIKit pixel rounding);
-  lens size: press, tap, drag and the idle pill match iOS within ~1 pt
-  (tabbar_motion.py, 2026-10-09; a tap's lens rides ~0.7 pt high)
+  1.47/1.56, accessory 2.04/2.44
+  Done 2026-10-09: lens size (press, tap, drag, idle pill within ~1 pt);
+  tapped lens travel, lift (7.0 pt peak) and late pill fade-in; labels
+  beside the search tab (searchLabelShift).
+  Open (small):
+  - tap brightness frames 0-10 still ~7 levels off: glyphs magnified under
+    the travelling lens sit/brighten differently (tabbar_light.py, tap)
+  - icons beside the search tab ~0.4 pt right of iOS's on Music/Settings
   Hard:
+  - retune the shader-mode glass over photos (5.14 light, 3.95 dark): the
+    biggest visible gap left
   - selected blue shifting with the colours behind it, as native's does
-  - retune the shader-mode glass over photos (5.14 light, 3.95 dark)
+  Features (see also 8):
+  - tabBarMinimizeBehavior: the bar shrinking to its selected tab on scroll
+  - sidebarAdaptable: the tab bar becoming a sidebar on wide screens
 
 7- match the flutter shader with the native navigation bar
 

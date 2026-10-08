@@ -1087,6 +1087,9 @@ class _GlassTabBarState extends State<GlassTabBar>
     required bool semantics,
     Offset scale = const Offset(1, 1),
   }) {
+    final labelShift = widget.onSearch == null
+        ? 0.0
+        : (_rtl ? -1 : 1) * TabBarMetrics.searchLabelShift;
     final row = Row(
       children: [
         SizedBox(width: _pillExtra / 2),
@@ -1134,15 +1137,19 @@ class _GlassTabBarState extends State<GlassTabBar>
                           const SizedBox(height: TabBarMetrics.labelGap),
                           // UIKit sizes a label to whole points and sets
                           // its text at the start, so the ink sits a little
-                          // towards the start of the tab.
-                          IntrinsicWidth(
-                            stepWidth: 1,
-                            child: Text(
-                              widget.items[i].label,
-                              maxLines: 1,
-                              overflow: TextOverflow.fade,
-                              softWrap: false,
-                              style: TabBarMetrics.label.copyWith(color: c),
+                          // towards the start of the tab. Beside the search
+                          // tab it sets them further towards the end.
+                          Transform.translate(
+                            offset: Offset(labelShift, 0),
+                            child: IntrinsicWidth(
+                              stepWidth: 1,
+                              child: Text(
+                                widget.items[i].label,
+                                maxLines: 1,
+                                overflow: TextOverflow.fade,
+                                softWrap: false,
+                                style: TabBarMetrics.label.copyWith(color: c),
+                              ),
                             ),
                           ),
                         ],
