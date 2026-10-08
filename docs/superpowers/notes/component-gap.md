@@ -88,7 +88,7 @@ entrypoint (fidelity constants, not stable API).
 | TextField | `TextField` | **yes** — `GlassTextField` | high | — | prefix/suffix, clear, error, autofill |
 | SecureField | `SecureField` | **yes** — `GlassTextField.password` | med | — | eye reveal |
 | TextEditor | `TextEditor` | **partial** — `GlassTextField` multiline | med | S | multiline field exists; no dedicated scrollable editor with inset glass chrome |
-| Searchable | `.searchable` + scopes/suggestions | **partial** — `GlassSearchField` | high | M | plain capsule field; no presentation (collapse/expand, cancel button, suggestions, scopes, toolbar/bottom placement) |
+| Searchable | `.searchable` + scopes/suggestions | **yes** — `GlassSearchable` + `GlassSearchController` | high | — | Cancel spring, suggestion platter, scopes, `navigationBar`/`bottom` placement; geometry estimated, not measured |
 | Tab search | `Tab(role: .search)` | **yes** — `GlassTabBar.onSearch` | med | — | circle lens tab |
 | Text input on glass | `GlassForeground` vibrant labels | **yes** — `GlassForeground` | high | — | brightness-sampled label colors |
 

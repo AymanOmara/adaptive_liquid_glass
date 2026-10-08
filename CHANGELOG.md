@@ -1,3 +1,11 @@
+## Unreleased
+
+* `GlassSearchable`: iOS 26's `.searchable` presentation around
+  `GlassSearchField` — Cancel button with a spring, suggestion rows on a
+  glass platter, scopes as a `GlassSegmentedControl`, `navigationBar` or
+  `bottom` placement, driven by `GlassSearchController`. Material:
+  `SearchAnchor`. Geometry estimated, not measured.
+
 ## 0.1.0-dev.7
 
 * New components (Material 3 counterparts on Android):
