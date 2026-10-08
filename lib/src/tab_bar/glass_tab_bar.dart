@@ -899,10 +899,17 @@ class _GlassTabBarState extends State<GlassTabBar>
                             // with the bar's light, so the young lens reads
                             // as bright as the pill, evenly (iOS 26.4: no
                             // pill inside it, no flash as the light comes).
+                            // A lens sent across (tap, press on another tab)
+                            // leaves its pill faster, as it grows.
                             Positioned.fromRect(
                               rect: lens,
                               child: Opacity(
-                                opacity: 1 - light.clamp(0.0, 1.0),
+                                opacity:
+                                    1 -
+                                    math.max(
+                                      light.clamp(0.0, 1.0),
+                                      t * _travelling.clamp(0.0, 1.0),
+                                    ),
                                 child: DecoratedBox(
                                   decoration: ShapeDecoration(
                                     shape: const StadiumBorder(),
