@@ -34,3 +34,39 @@ abstract final class DatePickerMetrics {
   /// The month header's size (semibold).
   static const double headerFontSize = 17;
 }
+
+/// The date picker's wheel style, time capsule and week numbers. Estimated
+/// from iOS 26's `.wheel` date picker and compact time capsule, not
+/// measured.
+abstract final class DatePickerWheelMetrics {
+  /// The day column's width (estimated).
+  static const double dayWidth = 64;
+
+  /// The month column's width (estimated; fits "September").
+  static const double monthWidth = 132;
+
+  /// The year column's width (estimated).
+  static const double yearWidth = 88;
+
+  /// The combined weekday-and-date column's width in date-and-time mode
+  /// (estimated; fits "Wed Sep 30").
+  static const double dateTimeWidth = 150;
+
+  /// The hour, minute and AM/PM columns' width (estimated).
+  static const double timeColumnWidth = 60;
+
+  /// The gap between the date and time capsules in date-and-time mode
+  /// (estimated).
+  static const double capsuleGap = 8;
+
+  /// The gap between an inline calendar and the time row under it
+  /// (estimated).
+  static const double timeRowGap = 8;
+
+  /// The week-number column's width in a calendar showing them
+  /// (estimated).
+  static const double weekNumberWidth = 28;
+
+  /// The inset of the time wheel inside its popover (estimated).
+  static const double popoverPadding = 8;
+}

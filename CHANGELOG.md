@@ -29,6 +29,15 @@
   a glass sheet with a preset grid, a spectrum square and hue bar, an
   opacity slider and a hex field; a Material 3 list tile and bottom sheet
   on Android. Geometry estimated, not yet measured.
+* `GlassDatePicker.style` (`GlassDatePickerStyle`): `graphical` renders the
+  calendar inline (`GlassCalendar` is now public, with `showWeekNumbers`),
+  `wheel` renders day/month/year columns on one glass surface
+  (`GlassDateWheel`). `GlassDatePicker.pickerMode` (`GlassDatePickerMode`):
+  `time` is an hour:minute capsule opening a wheel time picker (12/24-hour
+  per `MediaQuery.alwaysUse24HourFormat` or `use24HourFormat`,
+  `minuteInterval` respected); `dateAndTime` shows both capsules.
+  Material: `CalendarDatePicker`, `showTimePicker`. Wheel geometry
+  estimated, not yet measured.
 
 ## 0.1.0-dev.10
 
