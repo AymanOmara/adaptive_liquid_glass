@@ -1,3 +1,9 @@
+## 0.1.7 (2026-10-09)
+
+- pub.dev metadata: a searchable description, topics `glassmorphism`,
+  `ios` and `widget`, and a `repository` link.
+- README: links the Medium write-up on how the glass was measured.
+
 ## 0.1.6 (2026-10-09)
 
 - pub.dev's Example tab shows the quick start (`example/example.md`);

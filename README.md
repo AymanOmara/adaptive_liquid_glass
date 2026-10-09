@@ -1,7 +1,7 @@
 # adaptive_liquid_glass
 
-iOS 26 **Liquid Glass** for Flutter, measured against SwiftUI, with Material 3
-counterparts on Android, behind one API. App code never branches on platform.
+**Flutter Liquid Glass**: iOS 26 Liquid Glass for Flutter, measured against
+SwiftUI, with Material 3 counterparts on Android, behind one API. App code never branches on platform.
 
 - **iOS 26+:** SwiftUI's own Liquid Glass, pixel-identical to a SwiftUI app.
 - **Older iOS:** a fragment-shader glass tuned to SwiftUI's.
@@ -9,6 +9,10 @@ counterparts on Android, behind one API. App code never branches on platform.
   for interactive glass). No glass code runs.
 - **RTL-safe:** directional insets throughout; the light angle is not
   mirrored, matching iOS.
+
+How it was built and measured:
+[I Measured Apple's Liquid Glass Against SwiftUI, Pixel by Pixel — and Brought It to Flutter](https://medium.com/@aymanomara55/i-measured-apples-liquid-glass-against-swiftui-pixel-by-pixel-and-brought-it-to-flutter-3ba425455f63)
+on Medium.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/AymanOmara/adaptive_liquid_glass/main/screenshots/demo.gif" width="300" alt="Adaptive Liquid Glass demo on iOS 26" />

@@ -1,11 +1,13 @@
 name: adaptive_liquid_glass
 description: >-
-  iOS 26 Liquid Glass for Flutter, measured against SwiftUI, with Material 3
-  counterparts on Android behind one API.
+  Flutter Liquid Glass widgets: iOS 26 Liquid Glass buttons, tab bar, sheets,
+  sliders and toggles matched to SwiftUI, with Material 3 fallbacks on
+  Android. One adaptive API.
 
-version: 0.1.6
+version: 0.1.7
 
 homepage: https://pub.dev/packages/adaptive_liquid_glass
+repository: https://github.com/AymanOmara/adaptive_liquid_glass
 
 screenshots:
   - description: Components on a plain background in light mode (iOS 26.4).
@@ -19,10 +21,10 @@ screenshots:
 
 topics:
   - liquid-glass
+  - glassmorphism
+  - ios
+  - widget
   - cupertino
-  - material
-  - ui
-  - shader
 
 environment:
   sdk: ">=3.9.0 <4.0.0"
