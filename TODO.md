@@ -83,10 +83,17 @@ and CHANGELOG.md.
   opportunistic (P3-1 constants split only).
 
 10- Android options (requested 2026-10-09):
-  - iOS look on Android: `defaultMode: GlassRenderMode.shader` already
-    routes glass to the shader off iOS (render_mode_resolver.dart). Make it
-    a documented app-wide switch, check every component honours it on
-    Android (tab bar, nav bar, sheets, pickers, menus), run on an emulator
+  - iOS look on Android (~1 h, later): already wired. Components choose by
+    render mode, not platform, and `initialize(mode: shader)` loads the
+    shaders on Android; `LiquidGlassThemeData(defaultMode:
+    GlassRenderMode.shader)` should give the iOS glass app-wide. To do: run
+    the gallery and components demo in shader mode on an emulator, fix what
+    breaks, document with caveats:
+    - shader needs Impeller; on GLES `isShaderFilterSupported` may be false
+      (falls back to a plain blur)
+    - shader speed on mid-range phones
+    - still Android: Roboto not SF, scroll physics, back gesture, haptics
+      (making those iOS-like is a separate, bigger job)
   - custom Android fallback: let apps pass their own builder in place of
     the Material 3 widget, per component and/or via the theme
   - then: example app toggle for both; README Android section + Known
