@@ -70,6 +70,12 @@ and CHANGELOG.md.
     biggest visible gap left
   - selected blue shifting with the colours behind it, as native's does
   Features (see also 8):
+  - widget icons (~30 min + tests): `GlassTabBarItem` takes only
+    `IconData`. Add e.g. `GlassTabBarItem.custom(iconWidget:,
+    activeIconWidget:)` for SVGs/images; draw it in `_icon`
+    (glass_tab_bar.dart ~1182) and the Material path (~767) inside an
+    `IconTheme` (bar's size + colour) so Icon/SVG widgets tint, images
+    keep their colours. Lens and badge work unchanged
   - tabBarMinimizeBehavior: the bar shrinking to its selected tab on scroll
   - sidebarAdaptable: the tab bar becoming a sidebar on wide screens
 
