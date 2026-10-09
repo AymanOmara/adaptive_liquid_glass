@@ -1074,6 +1074,18 @@ Stack(
 - **Native interactive glass:** pressing native glass gets this package's
   stretch and growth, but not SwiftUI's own touch glow.
 - **Shader glow:** the shader's touch glow is brighter than SwiftUI's.
+- **Tab bar:** close to iOS 26.4's `TabView`, not identical. Over photos
+  the shader-drawn bar differs most from native; the tapped lens runs about
+  a frame ahead of iOS's and is a little brighter early on; icons are
+  CupertinoIcons, not SF Symbols. `tabBarMinimizeBehavior` and
+  `sidebarAdaptable` are not implemented.
+- **Unmeasured geometry:** `GlassLabel`, `GlassLink`/`GlassShareLink`, the
+  `GlassColorPicker` sheet, `GlassRefresh`, `GlassSearchable`, the
+  `GlassDatePicker` wheel and time styles, `GlassWheelPicker` and the
+  full-screen cover's close button and drag thresholds follow iOS by eye,
+  not by measurement. `GlassRefresh` has no arrow-to-spinner morph.
+- **Picker menu, first tap:** on the simulator, the first tap on a picker
+  after launch has been seen not to open its menu; the second does.
 
 ## License
 

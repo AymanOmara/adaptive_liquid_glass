@@ -94,7 +94,14 @@ and CHANGELOG.md.
     - shader speed on mid-range phones
     - still Android: Roboto not SF, scroll physics, back gesture, haptics
       (making those iOS-like is a separate, bigger job)
-  - custom Android fallback: let apps pass their own builder in place of
-    the Material 3 widget, per component and/or via the theme
+  - custom Android widget: the code side is easy (each of ~33 components
+    has one point where it picks the Material widget); the API is the work.
+    - option 1, now (~1 h): a generic switch, e.g. `GlassAdaptive(glass:
+      ..., material: (context) => MyAndroidWidget())`, following the
+      render mode so app code never checks the platform; wraps anything
+    - option 2, on request only (several days): typed builders per
+      component (e.g. tab bar gets items, selected index, tap callback);
+      ~33 parameter classes of public API to freeze at 1.0. Tab bar and
+      navigation bar first if asked for
   - then: example app toggle for both; README Android section + Known
     limitations (re-check every entry is still true); CHANGELOG

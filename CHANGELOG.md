@@ -3,6 +3,8 @@
 - Example: `example/lib/quick_start.dart`, a small app with the main
   widgets, replaces the Flutter template on pub.dev's Example tab
   (`example/README.md`); the README's quick start links to it.
+- README: Known limitations list the tab bar gaps, the components with
+  unmeasured geometry and the picker menu's first-tap issue.
 
 ## 0.1.4 (2026-10-09)
 
