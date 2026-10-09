@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.5 (2026-10-09)
 
 - Example: `example/lib/quick_start.dart`, a small app with the main
   widgets, replaces the Flutter template on pub.dev's Example tab
