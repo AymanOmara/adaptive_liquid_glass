@@ -81,3 +81,13 @@ and CHANGELOG.md.
 
 9- refactor backlog P3 items (docs/superpowers/notes/refactor-backlog.md),
   opportunistic (P3-1 constants split only).
+
+10- Android options (requested 2026-10-09):
+  - iOS look on Android: `defaultMode: GlassRenderMode.shader` already
+    routes glass to the shader off iOS (render_mode_resolver.dart). Make it
+    a documented app-wide switch, check every component honours it on
+    Android (tab bar, nav bar, sheets, pickers, menus), run on an emulator
+  - custom Android fallback: let apps pass their own builder in place of
+    the Material 3 widget, per component and/or via the theme
+  - then: example app toggle for both; README Android section + Known
+    limitations (re-check every entry is still true); CHANGELOG

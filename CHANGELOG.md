@@ -1,3 +1,9 @@
+## Unreleased
+
+- Example: `example/lib/quick_start.dart`, a small app with the main
+  widgets, replaces the Flutter template on pub.dev's Example tab
+  (`example/README.md`); the README's quick start links to it.
+
 ## 0.1.4 (2026-10-09)
 
 - `GlassTabBar` motion, measured frame by frame against SwiftUI's

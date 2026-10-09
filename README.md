@@ -68,6 +68,9 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 ```
 
 No setup is needed: no theme, no initialisation call, no platform checks.
+A complete small app (navigation bar, tab bar, controls, sheet, toast) is
+in [`example/lib/quick_start.dart`](example/lib/quick_start.dart); run it
+with `flutter run -t lib/quick_start.dart` from `example/`.
 
 ### Setup (optional)
 

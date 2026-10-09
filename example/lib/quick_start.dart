@@ -1,27 +1,3 @@
-# adaptive_liquid_glass example
-
-A small app built from the package's main widgets: a navigation bar, a
-floating tab bar with a badge, glass text, a merged pair of glass buttons,
-a toggle, a slider, a sheet and a toast. On iOS 26+ it is SwiftUI's own
-Liquid Glass, on older iOS the shader glass, and on Android Material 3, with
-no platform checks in the code.
-
-Run it from `example/`:
-
-```sh
-flutter run -t lib/quick_start.dart
-```
-
-More entry points:
-
-- `flutter run`: a demo screen and a gallery with one recipe per README
-  cookbook section (`lib/gallery.dart`).
-- `flutter run -t lib/components_demo.dart`: every component on one screen.
-- `flutter run -t lib/native_demo.dart`: SwiftUI's own glass (iOS 26+).
-
-## `lib/quick_start.dart`
-
-```dart
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
@@ -163,4 +139,3 @@ class _QuickStartScreenState extends State<QuickStartScreen> {
     );
   }
 }
-```
