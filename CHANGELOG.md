@@ -1,3 +1,8 @@
+## 0.1.6 (2026-10-09)
+
+- pub.dev's Example tab shows the quick start (`example/example.md`);
+  0.1.5 still showed the test harness's `example/lib/main.dart`.
+
 ## 0.1.5 (2026-10-09)
 
 - Example: `example/lib/quick_start.dart`, a small app with the main
