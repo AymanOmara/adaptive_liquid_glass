@@ -12,7 +12,8 @@ class GlassTabBarItem {
     this.activeIcon,
     this.badge,
   }) : iconWidget = null,
-       activeIconWidget = null;
+       activeIconWidget = null,
+       isSpacer = false;
 
   /// Creates a tab with widget icons, e.g. an SVG or an image.
   ///
@@ -26,7 +27,25 @@ class GlassTabBarItem {
     this.activeIconWidget,
     this.badge,
   }) : icon = null,
-       activeIcon = null;
+       activeIcon = null,
+       isSpacer = false;
+
+  /// An empty slot, e.g. under a floating action centred over the bar.
+  ///
+  /// It draws nothing, takes no taps and has no accessibility node: a
+  /// press released over it leaves the lens on the selected tab. It must
+  /// not be the selected tab.
+  const GlassTabBarItem.spacer()
+    : icon = null,
+      label = '',
+      activeIcon = null,
+      iconWidget = null,
+      activeIconWidget = null,
+      badge = null,
+      isSpacer = true;
+
+  /// Whether this is a [GlassTabBarItem.spacer].
+  final bool isSpacer;
 
   /// The tab's icon; null for [GlassTabBarItem.custom].
   final IconData? icon;

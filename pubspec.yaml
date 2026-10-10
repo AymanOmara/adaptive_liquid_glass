@@ -33,6 +33,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # The package draws CupertinoIcons; this bundles their font.
+  cupertino_icons: ^1.0.9
 
 dev_dependencies:
   flutter_test:

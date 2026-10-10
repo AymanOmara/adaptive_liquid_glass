@@ -11,7 +11,9 @@ import 'package:adaptive_liquid_glass/src/tab_bar/search_glyph.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/tab_bar_fill_scope.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/tab_bar_metrics.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Badge, NavigationBar;
+import 'package:flutter/material.dart'
+    show Badge, NavigationBar, NavigationDestination;
+import 'package:flutter/semantics.dart' show SemanticsFlag;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -1182,4 +1184,68 @@ void main() {
       await t.pumpAndSettle();
     }, variant: ios);
   });
+
+  const spaced = [
+    GlassTabBarItem(icon: CupertinoIcons.clock_fill, label: 'History'),
+    GlassTabBarItem.spacer(),
+    GlassTabBarItem(icon: CupertinoIcons.gear_solid, label: 'Settings'),
+  ];
+
+  Offset spacerCentre(WidgetTester t) => Offset.lerp(
+    t.getCenter(find.text('History')),
+    t.getCenter(find.text('Settings')),
+    0.5,
+  )!;
+
+  testWidgets('a spacer takes no tap and has no semantics node', (t) async {
+    shaderEnv();
+    final semantics = t.ensureSemantics();
+    final picks = <int>[];
+    await t.pumpWidget(plainHost(_Harness(picks, items: spaced)));
+    await t.tapAt(spacerCentre(t));
+    await t.pumpAndSettle();
+    expect(picks, isEmpty);
+    expect(_lens, findsNothing);
+    expect(
+      find.semantics.byPredicate((n) => n.hasFlag(SemanticsFlag.isButton)),
+      findsExactly(2),
+    );
+    await t.tap(find.text('Settings'));
+    await t.pumpAndSettle();
+    expect(picks, [2]);
+    semantics.dispose();
+  }, variant: ios);
+
+  testWidgets('a drag released over a spacer keeps the selection', (t) async {
+    shaderEnv();
+    final picks = <int>[];
+    await t.pumpWidget(plainHost(_Harness(picks, items: spaced)));
+    final from = t.getCenter(find.text('History'));
+    final to = spacerCentre(t);
+    final gesture = await t.startGesture(from);
+    await t.pump(const Duration(milliseconds: 200));
+    for (var i = 1; i <= 10; i++) {
+      await gesture.moveTo(Offset.lerp(from, to, i / 10)!);
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    await gesture.up();
+    await t.pumpAndSettle();
+    expect(picks, isEmpty);
+    expect(_lens, findsNothing);
+  }, variant: ios);
+
+  testWidgets('Material: a spacer is an empty, untappable slot', (t) async {
+    shaderEnv();
+    final semantics = t.ensureSemantics();
+    final picks = <int>[];
+    await t.pumpWidget(appHost(_Harness(picks, items: spaced)));
+    expect(find.byType(NavigationDestination), findsNWidgets(2));
+    await t.tapAt(spacerCentre(t));
+    await t.pumpAndSettle();
+    expect(picks, isEmpty);
+    await t.tap(find.text('Settings'));
+    await t.pumpAndSettle();
+    expect(picks, [2]);
+    semantics.dispose();
+  }, variant: android);
 }

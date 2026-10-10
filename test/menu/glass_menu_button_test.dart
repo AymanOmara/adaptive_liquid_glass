@@ -141,4 +141,31 @@ void main() {
     );
     expect(t.element(menuGroup.first), isNot(t.element(barGroup.first)));
   }, variant: ios);
+
+  testWidgets('Material: a destructive item takes the error colour', (t) async {
+    shaderEnv();
+    await t.pumpWidget(_app([]));
+    await t.tap(find.byType(IconButton));
+    await t.pumpAndSettle();
+    final error = Theme.of(t.element(find.text('Delete'))).colorScheme.error;
+    expect(
+      DefaultTextStyle.of(t.element(find.text('Delete'))).style.color,
+      error,
+    );
+    expect(
+      DefaultTextStyle.of(t.element(find.text('Copy'))).style.color,
+      isNot(error),
+    );
+    expect(
+      IconTheme.of(t.element(find.byIcon(CupertinoIcons.trash))).color,
+      error,
+    );
+  }, variant: android);
+
+  testWidgets('a menu that was never opened disposes cleanly', (t) async {
+    shaderEnv();
+    await t.pumpWidget(_app([]));
+    await t.pumpWidget(const SizedBox());
+    expect(t.takeException(), isNull);
+  }, variant: ios);
 }

@@ -42,7 +42,7 @@ void main() {
         home: Scaffold(body: Center(child: GlassBackButton())),
       ),
     );
-    expect(find.byIcon(CupertinoIcons.chevron_back), findsOneWidget);
+    expect(find.byIcon(CupertinoIcons.back), findsOneWidget);
     expect(
       t.widget<LiquidGlass>(find.byType(LiquidGlass)).shape,
       const GlassShape.circle(),
@@ -61,4 +61,18 @@ void main() {
     expect(find.byType(BackButton), findsOneWidget);
     expect(find.byType(LiquidGlass), findsNothing);
   }, variant: android);
+
+  testWidgets('the chevron mirrors right to left', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      const MaterialApp(
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Scaffold(body: Center(child: GlassBackButton())),
+        ),
+      ),
+    );
+    final icon = t.widget<Icon>(find.byType(Icon));
+    expect(icon.icon!.matchTextDirection, isTrue);
+  }, variant: ios);
 }

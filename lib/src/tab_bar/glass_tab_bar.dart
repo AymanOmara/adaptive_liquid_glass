@@ -551,8 +551,13 @@ class _GlassTabBarState extends State<GlassTabBar>
     // The bar stays as grown as it is until the lens settles.
     _grow.stop();
     _springLight(TabBarMetrics.lightOff, 0);
-    final slot = _nearestSlot;
-    final index = _rtl ? _count - 1 - slot : slot;
+    var slot = _nearestSlot;
+    var index = _rtl ? _count - 1 - slot : slot;
+    // A spacer takes no selection: the lens goes back to the selected tab.
+    if (widget.items[index].isSpacer) {
+      index = widget.selectedIndex;
+      slot = _slot(index);
+    }
     final travelling = (_x.value - slot).abs() > 0.15;
     _springX(
       travelling ? TabBarMetrics.travel : TabBarMetrics.slide,
@@ -653,13 +658,18 @@ class _GlassTabBarState extends State<GlassTabBar>
   }
 
   @override
-  Widget build(BuildContext context) =>
-      ValueListenableBuilder<GlassEnvironment>(
-        valueListenable: GlassPlatform.instance.environment,
-        builder: (context, _, _) => tabBarEdgeToEdge(context, widget)
-            ? _materialBar(context)
-            : _floatingBar(context),
-      );
+  Widget build(BuildContext context) {
+    assert(
+      !widget.items[widget.selectedIndex].isSpacer,
+      'A spacer cannot be the selected tab.',
+    );
+    return ValueListenableBuilder<GlassEnvironment>(
+      valueListenable: GlassPlatform.instance.environment,
+      builder: (context, _, _) => tabBarEdgeToEdge(context, widget)
+          ? _materialBar(context)
+          : _floatingBar(context),
+    );
+  }
 
   Widget _floatingBar(BuildContext context) {
     final onSearch = widget.onSearch;
@@ -778,19 +788,22 @@ class _GlassTabBarState extends State<GlassTabBar>
             ),
       destinations: [
         for (final item in widget.items)
-          NavigationDestination(
-            icon: _materialBadge(item, item.iconFor(selected: false)),
-            selectedIcon: _materialBadge(
-              item,
-              selected == null
-                  ? item.iconFor(selected: true)
-                  : IconTheme.merge(
-                      data: IconThemeData(color: selected),
-                      child: item.iconFor(selected: true),
-                    ),
+          if (item.isSpacer)
+            const ExcludeSemantics(child: SizedBox.shrink())
+          else
+            NavigationDestination(
+              icon: _materialBadge(item, item.iconFor(selected: false)),
+              selectedIcon: _materialBadge(
+                item,
+                selected == null
+                    ? item.iconFor(selected: true)
+                    : IconTheme.merge(
+                        data: IconThemeData(color: selected),
+                        child: item.iconFor(selected: true),
+                      ),
+              ),
+              label: item.label,
             ),
-            label: item.label,
-          ),
         if (edgeToEdge && onSearch != null)
           NavigationDestination(
             icon: const Icon(CupertinoIcons.search),
@@ -1140,72 +1153,75 @@ class _GlassTabBarState extends State<GlassTabBar>
       children: [
         SizedBox(width: _pillExtra / 2),
         for (var i = 0; i < _count; i++)
-          Semantics(
-            button: true,
-            inMutuallyExclusiveGroup: true,
-            selected: i == widget.selectedIndex,
-            label: widget.items[i].label,
-            value: widget.items[i].badge,
-            onTap: () => widget.onSelected(i),
-            child: ExcludeSemantics(
-              child: SizedBox(
-                width: _itemWidth,
-                height: _contentHeight,
-                child: _scaled(
-                  scale,
-                  Builder(
-                    builder: (context) {
-                      final c = colorOf(i) ?? _labelColor(context);
-                      return Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // The glyph overhangs the bottom of its slot: iOS sets
-                          // the icon and label closer than a 28 pt box allows.
-                          SizedBox(
-                            height: TabBarMetrics.iconSlot,
-                            child: OverflowBox(
-                              maxHeight:
-                                  TabBarMetrics.iconSize +
-                                  TabBarMetrics.iconDrop,
-                              alignment: Alignment.topCenter,
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                  top: TabBarMetrics.iconDrop,
-                                ),
-                                child: _icon(
-                                  widget.items[i],
-                                  i == widget.selectedIndex,
-                                  c,
+          if (widget.items[i].isSpacer)
+            SizedBox(width: _itemWidth)
+          else
+            Semantics(
+              button: true,
+              inMutuallyExclusiveGroup: true,
+              selected: i == widget.selectedIndex,
+              label: widget.items[i].label,
+              value: widget.items[i].badge,
+              onTap: () => widget.onSelected(i),
+              child: ExcludeSemantics(
+                child: SizedBox(
+                  width: _itemWidth,
+                  height: _contentHeight,
+                  child: _scaled(
+                    scale,
+                    Builder(
+                      builder: (context) {
+                        final c = colorOf(i) ?? _labelColor(context);
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // The glyph overhangs the bottom of its slot: iOS sets
+                            // the icon and label closer than a 28 pt box allows.
+                            SizedBox(
+                              height: TabBarMetrics.iconSlot,
+                              child: OverflowBox(
+                                maxHeight:
+                                    TabBarMetrics.iconSize +
+                                    TabBarMetrics.iconDrop,
+                                alignment: Alignment.topCenter,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: TabBarMetrics.iconDrop,
+                                  ),
+                                  child: _icon(
+                                    widget.items[i],
+                                    i == widget.selectedIndex,
+                                    c,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: TabBarMetrics.labelGap),
-                          // UIKit sizes a label to whole points and sets
-                          // its text at the start, so the ink sits a little
-                          // towards the start of the tab. Beside the search
-                          // tab it sets them further towards the end.
-                          Transform.translate(
-                            offset: Offset(labelShift, 0),
-                            child: IntrinsicWidth(
-                              stepWidth: 1,
-                              child: Text(
-                                widget.items[i].label,
-                                maxLines: 1,
-                                overflow: TextOverflow.fade,
-                                softWrap: false,
-                                style: TabBarMetrics.label.copyWith(color: c),
+                            const SizedBox(height: TabBarMetrics.labelGap),
+                            // UIKit sizes a label to whole points and sets
+                            // its text at the start, so the ink sits a little
+                            // towards the start of the tab. Beside the search
+                            // tab it sets them further towards the end.
+                            Transform.translate(
+                              offset: Offset(labelShift, 0),
+                              child: IntrinsicWidth(
+                                stepWidth: 1,
+                                child: Text(
+                                  widget.items[i].label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.fade,
+                                  softWrap: false,
+                                  style: TabBarMetrics.label.copyWith(color: c),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      );
-                    },
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
       ],
     );
     return semantics ? row : ExcludeSemantics(child: row);

@@ -1,3 +1,18 @@
+## Unreleased
+
+- Tab bar: `GlassTabBarItem.spacer()`, an empty slot (e.g. under a
+  floating action centred over the bar) with no tap target and no
+  accessibility node, on both paths. A press released over it leaves the
+  lens on the selected tab.
+- Fix: `GlassBackButton`'s chevron now mirrors in right-to-left layouts.
+- Fix: Material `GlassMenuButton` draws destructive items in the theme's
+  error colour.
+- Fix: `GlassMenuAnchor` no longer creates its animation controller in
+  `dispose()` when the menu was never opened (threw "Looking up a
+  deactivated widget's ancestor is unsafe" in debug before Flutter 3.47).
+- Depends on `cupertino_icons`, so the icons the package draws render
+  without the app adding it.
+
 ## 0.1.8 (2026-10-10)
 
 - Sheets: `showGlassSheet` and `GlassSheet` take an optional `cornerRadius`

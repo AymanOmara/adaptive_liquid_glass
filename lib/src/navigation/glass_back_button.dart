@@ -39,7 +39,8 @@ class GlassBackButton extends StatelessWidget {
           'Back';
       return GlassButton.icon(
         onPressed: pop,
-        icon: CupertinoIcons.chevron_back,
+        // chevron_back's glyph, declared to mirror in RTL.
+        icon: CupertinoIcons.back,
         shape: GlassButtonShape.circle,
         mode: mode,
         semanticLabel: label,

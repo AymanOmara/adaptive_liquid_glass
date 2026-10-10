@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
-    show IconButton, MenuAnchor, MenuController, MenuItemButton;
+    show IconButton, MenuAnchor, MenuController, MenuItemButton, Theme;
 
 import '../button/glass_button.dart';
 import '../core/effective_glass_mode.dart';
@@ -153,6 +153,12 @@ class _MaterialMenuState extends State<_MaterialMenu>
         MenuItemButton(
           onPressed: item.onSelected,
           leadingIcon: item.icon == null ? null : Icon(item.icon),
+          style: item.destructive
+              ? MenuItemButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                  iconColor: Theme.of(context).colorScheme.error,
+                )
+              : null,
           child: Semantics(
             label: item.semanticLabel,
             excludeSemantics: item.semanticLabel != null,

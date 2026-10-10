@@ -63,9 +63,9 @@ class _GlassMenuAnchorState extends State<GlassMenuAnchor>
   /// Whether a close is animating: gliding stops for it.
   bool _closing = false;
 
-  late final AnimationController _open = AnimationController.unbounded(
-    vsync: this,
-  );
+  // Created in initState: a lazy one first read in dispose would create
+  // its ticker on a deactivated element.
+  late final AnimationController _open;
 
   /// The opener's corner (or centre) the menu hangs from.
   Alignment _target = Alignment.topRight;
@@ -82,6 +82,7 @@ class _GlassMenuAnchorState extends State<GlassMenuAnchor>
   @override
   void initState() {
     super.initState();
+    _open = AnimationController.unbounded(vsync: this);
     widget.controller?.attach(this);
   }
 
