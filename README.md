@@ -20,6 +20,7 @@ on Medium.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/AymanOmara/adaptive_liquid_glass/main/screenshots/tabbar.gif" width="400" alt="GlassTabBar: press, tap and drag the lens across three tabs" />
+  <img src="https://raw.githubusercontent.com/AymanOmara/adaptive_liquid_glass/main/screenshots/tabbar-light.gif" width="400" alt="GlassTabBar in light mode: white glass bar with a blue tint on a white page" />
 </p>
 
 ## Screenshots
