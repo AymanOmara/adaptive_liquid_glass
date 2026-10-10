@@ -23,6 +23,8 @@ class GlassSheet extends StatelessWidget {
     super.key,
     required this.child,
     this.showGrabber = true,
+    this.cornerRadius,
+    this.grabberSize,
     this.expansion = 0,
     this.glass,
     this.mode,
@@ -33,6 +35,13 @@ class GlassSheet extends StatelessWidget {
 
   /// Whether to draw the grabber at the top.
   final bool showGrabber;
+
+  /// The floating sheet's corner radius. Defaults to iOS 26's (38). The
+  /// large detent keeps iOS's own corners.
+  final double? cornerRadius;
+
+  /// The grabber's size. Defaults to iOS 26's (34.67 x 5).
+  final Size? grabberSize;
 
   /// 0 floating (a partial detent), 1 edge to edge (the large detent).
   final double expansion;
@@ -46,23 +55,16 @@ class GlassSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = expansion.clamp(0.0, 1.0);
+    final radius = cornerRadius ?? SheetMetrics.cornerRadius;
     final inset = lerpDouble(SheetMetrics.inset, 0, t)!;
     // The glass keeps one radius: it ends at the large sheet's bottom
     // radius, so the opaque surface (top 42, bottom 62) always covers it.
-    final glassRadius = lerpDouble(
-      SheetMetrics.cornerRadius,
-      SheetMetrics.largeBottomRadius,
-      t,
-    )!;
+    final glassRadius = lerpDouble(radius, SheetMetrics.largeBottomRadius, t)!;
     final opaque = (t * 2).clamp(0.0, 1.0);
     final opaqueShape = RoundedSuperellipseBorder(
       borderRadius: BorderRadius.vertical(
         top: Radius.circular(
-          lerpDouble(
-            SheetMetrics.cornerRadius,
-            SheetMetrics.largeTopRadius,
-            t,
-          )!,
+          lerpDouble(radius, SheetMetrics.largeTopRadius, t)!,
         ),
         bottom: Radius.circular(glassRadius),
       ),
@@ -76,8 +78,8 @@ class GlassSheet extends StatelessWidget {
             padding: const EdgeInsets.only(top: SheetMetrics.grabberTop),
             child: Center(
               child: Container(
-                width: SheetMetrics.grabberWidth,
-                height: SheetMetrics.grabberHeight,
+                width: grabberSize?.width ?? SheetMetrics.grabberWidth,
+                height: grabberSize?.height ?? SheetMetrics.grabberHeight,
                 decoration: ShapeDecoration(
                   shape: const StadiumBorder(),
                   color: CupertinoDynamicColor.resolve(

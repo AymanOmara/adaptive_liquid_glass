@@ -764,10 +764,15 @@ class _GlassTabBarState extends State<GlassTabBar>
             destinations: [
               for (final item in widget.items)
                 NavigationDestination(
-                  icon: _materialBadge(item, Icon(item.icon)),
+                  icon: _materialBadge(item, item.iconFor(selected: false)),
                   selectedIcon: _materialBadge(
                     item,
-                    Icon(item.activeIcon ?? item.icon, color: selected),
+                    selected == null
+                        ? item.iconFor(selected: true)
+                        : IconTheme.merge(
+                            data: IconThemeData(color: selected),
+                            child: item.iconFor(selected: true),
+                          ),
                   ),
                   label: item.label,
                 ),
@@ -1180,10 +1185,14 @@ class _GlassTabBarState extends State<GlassTabBar>
 
   /// The tab's icon, with its badge at the top trailing corner.
   Widget _icon(GlassTabBarItem item, bool isSelected, Color? color) {
-    final icon = Icon(
-      isSelected ? item.activeIcon ?? item.icon : item.icon,
-      size: TabBarMetrics.iconSize,
-      color: color,
+    final icon = IconTheme.merge(
+      data: IconThemeData(size: TabBarMetrics.iconSize, color: color),
+      // A square of the icon's size, so a custom widget keeps the badge
+      // and lens in place.
+      child: SizedBox.square(
+        dimension: TabBarMetrics.iconSize,
+        child: Center(child: item.iconFor(selected: isSelected)),
+      ),
     );
     final badge = item.badge;
     if (badge == null) return icon;

@@ -1,3 +1,12 @@
+## Unreleased
+
+- Sheets: `showGlassSheet` and `GlassSheet` take an optional `cornerRadius`
+  and `grabberSize` (defaults stay iOS 26's 38 and 34.67 x 5). On the
+  Material path `cornerRadius` rounds the bottom sheet's top corners.
+- Tab bar: `GlassTabBarItem.custom(iconWidget:, activeIconWidget:)` for
+  SVG or image icons, drawn in the bar's icon size and colour. Breaking:
+  `GlassTabBarItem.icon` is now nullable (null for custom items).
+
 ## 0.1.7 (2026-10-09)
 
 - pub.dev metadata: a searchable description, topics `glassmorphism`,

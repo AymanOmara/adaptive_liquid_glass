@@ -421,6 +421,70 @@ void main() {
     expect(find.byIcon(CupertinoIcons.person_fill), findsOneWidget);
   }, variant: ios);
 
+  testWidgets('custom icons: widgets in the bar\'s icon theme', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      plainHost(
+        _Harness(
+          _picks(),
+          items: const [
+            GlassTabBarItem.custom(
+              iconWidget: SizedBox(key: Key('home')),
+              activeIconWidget: SizedBox(key: Key('home-on')),
+              label: 'Home',
+              badge: '2',
+            ),
+            GlassTabBarItem.custom(
+              iconWidget: SizedBox(key: Key('me')),
+              label: 'Me',
+            ),
+          ],
+        ),
+      ),
+    );
+    expect(find.byKey(const Key('home-on')), findsOneWidget);
+    expect(find.byKey(const Key('home')), findsNothing);
+    expect(find.text('2'), findsOneWidget);
+    final theme = IconTheme.of(t.element(find.byKey(const Key('me'))));
+    expect(theme.size, TabBarMetrics.iconSize);
+    expect(theme.color, isNot(_blue));
+    expect(
+      IconTheme.of(t.element(find.byKey(const Key('home-on')))).color,
+      _blue,
+    );
+    await t.tap(find.text('Me'));
+    await t.pumpAndSettle();
+    expect(find.byKey(const Key('home')), findsOneWidget);
+    // No active widget: the selected tab keeps its icon, tinted.
+    expect(IconTheme.of(t.element(find.byKey(const Key('me')))).color, _blue);
+  }, variant: ios);
+
+  testWidgets('Material: custom icons in the navigation bar', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      appHost(
+        _Harness(
+          _picks(),
+          items: const [
+            GlassTabBarItem.custom(
+              iconWidget: SizedBox(key: Key('a')),
+              activeIconWidget: SizedBox(key: Key('a-on')),
+              label: 'A',
+            ),
+            GlassTabBarItem.custom(
+              iconWidget: SizedBox(key: Key('b')),
+              label: 'B',
+            ),
+          ],
+        ),
+      ),
+    );
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byKey(const Key('a-on')), findsOneWidget);
+    expect(IconTheme.of(t.element(find.byKey(const Key('a-on')))).color, _blue);
+    expect(find.byKey(const Key('b')), findsOneWidget);
+  }, variant: android);
+
   testWidgets('a badge shows its text and is read with the tab', (t) async {
     shaderEnv();
     final semantics = t.ensureSemantics();

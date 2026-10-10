@@ -23,6 +23,8 @@ class GlassSheetFrame extends StatefulWidget {
     required this.onDismiss,
     required this.showGrabber,
     required this.isDismissible,
+    this.cornerRadius,
+    this.grabberSize,
     this.glass,
     this.mode,
   });
@@ -45,6 +47,12 @@ class GlassSheetFrame extends StatefulWidget {
 
   /// Whether a drag down may dismiss the sheet.
   final bool isDismissible;
+
+  /// See [GlassSheet.cornerRadius].
+  final double? cornerRadius;
+
+  /// See [GlassSheet.grabberSize].
+  final Size? grabberSize;
 
   /// The sheet's glass.
   final Glass? glass;
@@ -171,6 +179,8 @@ class _GlassSheetFrameState extends State<GlassSheetFrame>
                 onHeight: (h) => _contentHeight = h,
                 child: GlassSheet(
                   showGrabber: widget.showGrabber,
+                  cornerRadius: widget.cornerRadius,
+                  grabberSize: widget.grabberSize,
                   glass: widget.glass,
                   mode: widget.mode,
                   child: widget.child,
@@ -205,6 +215,8 @@ class _GlassSheetFrameState extends State<GlassSheetFrame>
               behavior: HitTestBehavior.opaque,
               child: GlassSheet(
                 showGrabber: widget.showGrabber,
+                cornerRadius: widget.cornerRadius,
+                grabberSize: widget.grabberSize,
                 expansion: expansion,
                 glass: widget.glass,
                 mode: widget.mode,

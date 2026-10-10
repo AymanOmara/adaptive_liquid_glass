@@ -32,8 +32,14 @@ import 'glass_sheet_route.dart';
 /// [initialDetent] (an index into [detents]). Completes with the value the
 /// sheet is popped with.
 ///
+/// [cornerRadius] and [grabberSize] change the floating sheet's corners
+/// and grabber (iOS 26's 38 and 34.67 x 5 by default).
+///
 /// On the Material path it is a Material 3 modal bottom sheet (scroll
-/// controlled when [detents] has more than one height).
+/// controlled when [detents] has more than one height). [cornerRadius]
+/// rounds its top corners; its drag handle follows
+/// `BottomSheetThemeData.dragHandleSize` (Material 3's 32 x 4), so
+/// [grabberSize] does not apply there.
 Future<T?> showGlassSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
@@ -41,6 +47,8 @@ Future<T?> showGlassSheet<T>({
   int initialDetent = 0,
   bool isDismissible = true,
   bool showGrabber = true,
+  double? cornerRadius,
+  Size? grabberSize,
   GlassRenderMode? mode,
 }) {
   final effective = resolveGlassMode(
@@ -55,6 +63,13 @@ Future<T?> showGlassSheet<T>({
           detents.length > 1 || detents.contains(GlassSheetDetent.large),
       isDismissible: isDismissible,
       showDragHandle: showGrabber,
+      shape: cornerRadius == null
+          ? null
+          : RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(cornerRadius),
+              ),
+            ),
       useSafeArea: true,
     );
   }
@@ -65,6 +80,8 @@ Future<T?> showGlassSheet<T>({
       detents: detents,
       initialDetent: initialDetent,
       showGrabber: showGrabber,
+      cornerRadius: cornerRadius,
+      grabberSize: grabberSize,
       isDismissible: isDismissible,
       mode: mode,
       capturedThemes: InheritedTheme.capture(

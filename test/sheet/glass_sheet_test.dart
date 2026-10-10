@@ -53,6 +53,72 @@ void main() {
     expect(find.byType(GlassSheet), findsNothing);
   }, variant: ios);
 
+  testWidgets('cornerRadius and grabberSize change the floating sheet', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showGlassSheet<void>(
+              context: context,
+              cornerRadius: 20,
+              grabberSize: const Size(36, 5),
+              builder: (_) => const SizedBox(height: 100),
+            ),
+            child: const Text('Open'),
+          ),
+        ),
+      ),
+    );
+    await t.tap(find.text('Open'));
+    await t.pumpAndSettle();
+    final glass = t.widget<LiquidGlass>(
+      find.descendant(
+        of: find.byType(GlassSheet),
+        matching: find.byType(LiquidGlass),
+      ),
+    );
+    expect(glass.shape, const GlassShape.rect(20));
+    final grabber = find.descendant(
+      of: find.byType(GlassSheet),
+      matching: find.byWidgetPredicate(
+        (w) =>
+            w is Container &&
+            w.decoration is ShapeDecoration &&
+            (w.decoration! as ShapeDecoration).shape is StadiumBorder,
+      ),
+    );
+    expect(t.getSize(grabber), const Size(36, 5));
+  }, variant: ios);
+
+  testWidgets('Material: cornerRadius rounds the bottom sheet', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showGlassSheet<void>(
+              context: context,
+              cornerRadius: 20,
+              builder: (_) => const SizedBox(height: 100),
+            ),
+            child: const Text('Open'),
+          ),
+        ),
+      ),
+    );
+    await t.tap(find.text('Open'));
+    await t.pumpAndSettle();
+    expect(
+      t.widget<BottomSheet>(find.byType(BottomSheet)).shape,
+      const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+    );
+  }, variant: android);
+
   testWidgets('tapping outside dismisses it', (t) async {
     shaderEnv();
     await t.pumpWidget(_app((_) {}));

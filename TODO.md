@@ -1,21 +1,59 @@
 Open items, highest priority first. Done items are dropped; history is in git
 and CHANGELOG.md.
 
-1- components demo bugs seen on the simulator (2026-10-08, dark,
+1- bugs. Components demo, seen on the simulator (2026-10-08, dark,
   PLAIN_BACKGROUND=true, example/lib/components_demo.dart):
   - Period picker: the first tap after launch/restart does not open the
     menu; the second does (seen twice, 2026-10-08).
+  - Large titles do not collapse when the list sits in
+    `SliverFillRemaining` (reported from app use 2026-10-10: Directory,
+    Services and other paged lists).
 
-2- release readiness: 0.1.0 shipped 2026-10-08. 1.0 only after:
+2- API gaps from real app use (reported 2026-10-10, v0.1.7), quick wins
+  first:
+  - public Reduce Transparency override (e.g. on LiquidGlassThemeData):
+    applied internally on iOS only, so apps cannot test opaque fallbacks
+  - extended FAB: an optional label on the floating button; on Android use
+    a real M3 FloatingActionButton(.extended), not IconButton.filled
+    (material_glass_button.dart ~111)
+  - Android tab bar: an edge-to-edge option (plain M3 NavigationBar with
+    safe-area padding) beside today's floating capsule
+    (glass_tab_bar.dart _materialBar ~740)
+
+3- Android options (requested 2026-10-09):
+  - iOS look on Android (~1 h, later): already wired. Components choose by
+    render mode, not platform, and `initialize(mode: shader)` loads the
+    shaders on Android; `LiquidGlassThemeData(defaultMode:
+    GlassRenderMode.shader)` should give the iOS glass app-wide. To do: run
+    the gallery and components demo in shader mode on an emulator, fix what
+    breaks, document with caveats:
+    - shader needs Impeller; on GLES `isShaderFilterSupported` may be false
+      (falls back to a plain blur)
+    - shader speed on mid-range phones
+    - still Android: Roboto not SF, scroll physics, back gesture, haptics
+      (making those iOS-like is a separate, bigger job)
+  - custom Android widget: the code side is easy (each of ~33 components
+    has one point where it picks the Material widget); the API is the work.
+    - option 1, now (~1 h): a generic switch, e.g. `GlassAdaptive(glass:
+      ..., material: (context) => MyAndroidWidget())`, following the
+      render mode so app code never checks the platform; wraps anything
+    - option 2, on request only (several days): typed builders per
+      component (e.g. tab bar gets items, selected index, tap callback);
+      ~33 parameter classes of public API to freeze at 1.0. Tab bar and
+      navigation bar first if asked for
+  - then: example app toggle for both; README Android section + Known
+    limitations (re-check every entry is still true); CHANGELOG
+
+4- release readiness: 0.1.0 shipped 2026-10-08. 1.0 only after:
   - usability pass: audit the 94 barrel exports for what should be public
     (e.g. GlassForeground helpers, refactor-backlog P3-6), simplest
     defaults, naming review (1.0 freezes names; renames after cost
     deprecation cycles)
-  - item 5 "measure later" components measured vs SwiftUI
-  - fidelity items 3 and 4 at a plateau (59/75 today)
+  - item 7 "measure later" components measured vs SwiftUI
+  - fidelity items 5 and 6 at a plateau (59/75 today)
   - API unchanged for a release or two
 
-3- fidelity, regular/tinted photo scenes (item 8 history in
+5- fidelity, regular/tinted photo scenes (item 8 history in
   docs/superpowers/notes/fidelity-status.md): device 59/75,
   build/fidelity/g8-3, min SSIM 0.9525. Luma-keyed tone LUT shipped; linear
   light, vibrancy, gated ambient, union sizing, clear sharp edge measured
@@ -28,13 +66,13 @@ and CHANGELOG.md.
   - untried in full: linear-light refit of all fill/tone keys (> 2 h LS);
     clear sharp edge needs a sharp-backdrop texture in the shader
 
-4- fidelity, clear glass edges (group 4 history in fidelity-status.md):
+6- fidelity, clear glass edges (group 4 history in fidelity-status.md):
   shipped postJacobianMax (clear 1.15) + clear lens/frost/rim refit.
   - remaining: clear-rect28-photo light/dark (0.970/0.969, dE 2.04),
     clear capsule/rect16/rect28 text light+dark (SSIM 0.958-0.964, the
     edge band over sharp text; SSIM on text lines is a phase match)
 
-5- components shipped with estimated, unmeasured geometry (measure vs
+7- components shipped with estimated, unmeasured geometry (measure vs
   SwiftUI): GlassLabel, GlassLink/GlassShareLink, GlassColorPicker sheet,
   GlassRefresh, GlassSearchable, GlassDatePicker wheel/time, GlassWheelPicker,
   full-screen cover close button and drag thresholds, context menu (synthetic
@@ -43,7 +81,7 @@ and CHANGELOG.md.
   Not done: arrow->spinner morph on refresh; Material searchable keeps
   scopes always visible.
 
-6- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
+8- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
   Bar-region mean |diff| native/shader: white 1.24/1.35, photo 1.93/5.14,
   dark 1.23/1.60, dark photo 2.27/3.95, badge 1.65/1.77, searchtab
   1.47/1.56, accessory 2.04/2.44
@@ -69,45 +107,19 @@ and CHANGELOG.md.
   - retune the shader-mode glass over photos (5.14 light, 3.95 dark): the
     biggest visible gap left
   - selected blue shifting with the colours behind it, as native's does
-  Features (see also 8):
-  - widget icons (~30 min + tests): `GlassTabBarItem` takes only
-    `IconData`. Add e.g. `GlassTabBarItem.custom(iconWidget:,
-    activeIconWidget:)` for SVGs/images; draw it in `_icon`
-    (glass_tab_bar.dart ~1182) and the Material path (~767) inside an
-    `IconTheme` (bar's size + colour) so Icon/SVG widgets tint, images
-    keep their colours. Lens and badge work unchanged
+  Features (see also 10):
   - tabBarMinimizeBehavior: the bar shrinking to its selected tab on scroll
   - sidebarAdaptable: the tab bar becoming a sidebar on wide screens
 
-7- match the flutter shader with the native navigation bar
+9- match the flutter shader with the native navigation bar
 
-8- more SwiftUI components (docs/superpowers/notes/component-gap.md):
+10- more SwiftUI components (docs/superpowers/notes/component-gap.md):
   keyboard toolbar, tabBarMinimizeBehavior, sidebarAdaptable, zoom
   transitions, TipKit tips; then re-check the gap list for anything new.
+  Candidate from app use (2026-10-10): a sliver pinned under the nav bar
+  (the app's PinnedBelowBarSliver). Kept app-side for now: sticky bottom
+  action bar, stage tab strip with counts, hiding the tab bar with the
+  keyboard.
 
-9- refactor backlog P3 items (docs/superpowers/notes/refactor-backlog.md),
+11- refactor backlog P3 items (docs/superpowers/notes/refactor-backlog.md),
   opportunistic (P3-1 constants split only).
-
-10- Android options (requested 2026-10-09):
-  - iOS look on Android (~1 h, later): already wired. Components choose by
-    render mode, not platform, and `initialize(mode: shader)` loads the
-    shaders on Android; `LiquidGlassThemeData(defaultMode:
-    GlassRenderMode.shader)` should give the iOS glass app-wide. To do: run
-    the gallery and components demo in shader mode on an emulator, fix what
-    breaks, document with caveats:
-    - shader needs Impeller; on GLES `isShaderFilterSupported` may be false
-      (falls back to a plain blur)
-    - shader speed on mid-range phones
-    - still Android: Roboto not SF, scroll physics, back gesture, haptics
-      (making those iOS-like is a separate, bigger job)
-  - custom Android widget: the code side is easy (each of ~33 components
-    has one point where it picks the Material widget); the API is the work.
-    - option 1, now (~1 h): a generic switch, e.g. `GlassAdaptive(glass:
-      ..., material: (context) => MyAndroidWidget())`, following the
-      render mode so app code never checks the platform; wraps anything
-    - option 2, on request only (several days): typed builders per
-      component (e.g. tab bar gets items, selected index, tap callback);
-      ~33 parameter classes of public API to freeze at 1.0. Tab bar and
-      navigation bar first if asked for
-  - then: example app toggle for both; README Android section + Known
-    limitations (re-check every entry is still true); CHANGELOG

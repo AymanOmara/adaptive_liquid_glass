@@ -17,6 +17,8 @@ class GlassSheetRoute<T> extends PopupRoute<T> {
     required this.initialDetent,
     required this.showGrabber,
     required this.isDismissible,
+    this.cornerRadius,
+    this.grabberSize,
     this.glass,
     this.mode,
     this.capturedThemes,
@@ -38,6 +40,12 @@ class GlassSheetRoute<T> extends PopupRoute<T> {
 
   /// Whether a tap outside or a drag down dismisses the sheet.
   final bool isDismissible;
+
+  /// See [GlassSheet.cornerRadius].
+  final double? cornerRadius;
+
+  /// See [GlassSheet.grabberSize].
+  final Size? grabberSize;
 
   /// The sheet's glass.
   final Glass? glass;
@@ -76,6 +84,8 @@ class GlassSheetRoute<T> extends PopupRoute<T> {
         initialDetent: initialDetent,
         showGrabber: showGrabber,
         isDismissible: isDismissible,
+        cornerRadius: cornerRadius,
+        grabberSize: grabberSize,
         glass: glass,
         mode: mode,
         onDismiss: () => Navigator.of(context).pop(),
