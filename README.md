@@ -233,9 +233,10 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `GlassButton` (`+ .icon`), `GlassButtonRole`, `GlassButtonStyle`, `GlassButtonShape`, `GlassControlSize`, `GlassControlSizeScope` | SwiftUI's glass and prominent buttons, roles, sizes, shapes, loading | `FilledButton` / `IconButton` / `TextButton` |
 | `GlassBackButton` | Circular glass chevron that pops the route | `BackButton` |
 | `GlassNavigationBar`, `SliverGlassNavigationBar`, `GlassScrollEdgeStyle` | Inline and large-title nav bars, no bar background; `scrollEdgeStyle` blurs content scrolled under | `AppBar` / `SliverAppBar.large` |
+| `GlassLargeTitleScrollView` | Large-title bar over a body that scrolls itself (`ListView`, paged list), so the title still collapses | `SliverAppBar.large` in a `NestedScrollView` |
 | `GlassScaffold`, `GlassBottomAccessory` | An iOS 26 screen in one widget; the Music-style mini-player slot | Same layout, Material bars |
 | `GlassToolbar`, `GlassToolbarSpacer` | The floating bottom toolbar, merged capsules | Material buttons |
-| `GlassTabBar`, `GlassTabBarItem` | iOS 26's floating tab bar, draggable lens, `onSearch` tab | `NavigationBar` |
+| `GlassTabBar`, `GlassTabBarItem`, `GlassMaterialTabBarStyle` | iOS 26's floating tab bar, draggable lens, `onSearch` tab | `NavigationBar`, floating or edge to edge |
 | `GlassToggle` | iOS 26's switch, glass lens thumb | `Switch` |
 | `GlassSlider` | Slider with a glass lens thumb, optional `divisions` | `Slider` |
 | `GlassSegmentedControl`, `GlassSegment` | Segmented control, sliding lens | `SegmentedButton` |

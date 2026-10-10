@@ -5,18 +5,12 @@ and CHANGELOG.md.
   PLAIN_BACKGROUND=true, example/lib/components_demo.dart):
   - Period picker: the first tap after launch/restart does not open the
     menu; the second does (seen twice, 2026-10-08).
-  - Large titles do not collapse when the list sits in
-    `SliverFillRemaining` (reported from app use 2026-10-10: Directory,
-    Services and other paged lists).
 
 2- API gaps from real app use (reported 2026-10-10, v0.1.7), quick wins
   first:
   - extended FAB: an optional label on the floating button; on Android use
     a real M3 FloatingActionButton(.extended), not IconButton.filled
     (material_glass_button.dart ~111)
-  - Android tab bar: an edge-to-edge option (plain M3 NavigationBar with
-    safe-area padding) beside today's floating capsule
-    (glass_tab_bar.dart _materialBar ~740)
 
 3- Android options (requested 2026-10-09):
   - iOS look on Android (~1 h, later): already wired. Components choose by

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' show SliverAppBar;
 import '../core/effective_glass_mode.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
+import 'glass_large_title_scroll_view.dart';
 import 'glass_scroll_edge_style.dart';
 import 'large_title_delegate.dart';
 import 'nav_bar_metrics.dart';
@@ -21,6 +22,10 @@ import 'nav_bar_metrics.dart';
 ///   SliverList(...),
 /// ])
 /// ```
+///
+/// The bar collapses as its scroll view scrolls. A scrollable placed in
+/// `SliverFillRemaining` scrolls on its own, so the title never collapses;
+/// use slivers, or [GlassLargeTitleScrollView] for such a body.
 class SliverGlassNavigationBar extends StatelessWidget {
   /// Creates a large-title bar.
   const SliverGlassNavigationBar({

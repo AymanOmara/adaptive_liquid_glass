@@ -32,11 +32,13 @@ import '../platform/glass_platform.dart';
 import 'bar_glow.dart';
 import 'bar_shadow.dart';
 import 'capsule_clipper.dart';
+import 'glass_material_tab_bar_style.dart';
 import 'glass_search_tab_button.dart';
 import 'glass_tab_bar_item.dart';
 import 'hole_clipper.dart';
 import 'lens_ends_clipper.dart';
 import 'rim_fade.dart';
+import 'tab_bar_edge_to_edge.dart';
 import 'tab_bar_fill_scope.dart';
 import 'tab_bar_metrics.dart';
 import 'tab_lens.dart';
@@ -71,7 +73,8 @@ import 'tab_lens_program.dart';
 /// without animating.
 ///
 /// On the Material path (Android by default) it is a Material 3
-/// [NavigationBar] in the same floating capsule.
+/// [NavigationBar] in the same floating capsule, or edge to edge with
+/// [materialStyle].
 class GlassTabBar extends StatefulWidget {
   /// Creates a glass tab bar.
   const GlassTabBar({
@@ -88,6 +91,7 @@ class GlassTabBar extends StatefulWidget {
     this.enableFeedback = true,
     this.onSearch,
     this.searchLabel,
+    this.materialStyle = GlassMaterialTabBarStyle.floating,
   }) : assert(items.length >= 2, 'A tab bar needs at least two tabs.');
 
   /// The tabs, in reading order.
@@ -136,6 +140,12 @@ class GlassTabBar extends StatefulWidget {
   /// What assistive tech reads for the search tab. Defaults to the
   /// localized "Search".
   final String? searchLabel;
+
+  /// How the bar sits on the Material path: in the floating capsule, or as
+  /// Material 3's full-width bar. [GlassMaterialTabBarStyle.edgeToEdge]
+  /// shows the search tab ([onSearch]) as a last destination. No effect on
+  /// the glass paths.
+  final GlassMaterialTabBarStyle materialStyle;
 
   @override
   State<GlassTabBar> createState() => _GlassTabBarState();
@@ -643,7 +653,15 @@ class _GlassTabBarState extends State<GlassTabBar>
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      ValueListenableBuilder<GlassEnvironment>(
+        valueListenable: GlassPlatform.instance.environment,
+        builder: (context, _, _) => tabBarEdgeToEdge(context, widget)
+            ? _materialBar(context)
+            : _floatingBar(context),
+      );
+
+  Widget _floatingBar(BuildContext context) {
     final onSearch = widget.onSearch;
     if (onSearch == null) return _sizedBar();
     // The search tab: the bar fills what the circle leaves.
@@ -736,10 +754,54 @@ class _GlassTabBarState extends State<GlassTabBar>
     },
   );
 
-  /// Material 3's navigation bar, floating in the same capsule.
+  /// Material 3's navigation bar, floating in the same capsule or edge to
+  /// edge.
   Widget _materialBar(BuildContext context) {
     final selected = widget.selectedColor;
     final label = Theme.of(context).textTheme.labelMedium;
+    final onSearch = widget.onSearch;
+    final edgeToEdge =
+        widget.materialStyle == GlassMaterialTabBarStyle.edgeToEdge;
+    final bar = NavigationBar(
+      height: widget.height,
+      selectedIndex: widget.selectedIndex,
+      onDestinationSelected: (i) =>
+          i < _count || onSearch == null ? widget.onSelected(i) : onSearch(),
+      indicatorColor: widget.indicatorColor,
+      labelTextStyle: selected == null
+          ? null
+          : WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.selected)
+                  ? label?.copyWith(color: selected) ??
+                        TextStyle(color: selected)
+                  : null,
+            ),
+      destinations: [
+        for (final item in widget.items)
+          NavigationDestination(
+            icon: _materialBadge(item, item.iconFor(selected: false)),
+            selectedIcon: _materialBadge(
+              item,
+              selected == null
+                  ? item.iconFor(selected: true)
+                  : IconTheme.merge(
+                      data: IconThemeData(color: selected),
+                      child: item.iconFor(selected: true),
+                    ),
+            ),
+            label: item.label,
+          ),
+        if (edgeToEdge && onSearch != null)
+          NavigationDestination(
+            icon: const Icon(CupertinoIcons.search),
+            label:
+                widget.searchLabel ??
+                cupertinoL10n(context).searchTextFieldPlaceholderLabel,
+          ),
+      ],
+    );
+    // Material's own bar keeps the bottom safe area inside it.
+    if (edgeToEdge) return bar;
     return SizedBox(
       width: _rowWidth + TabBarMetrics.inset * 2,
       child: ClipPath(
@@ -748,36 +810,7 @@ class _GlassTabBarState extends State<GlassTabBar>
         child: MediaQuery.removePadding(
           context: context,
           removeBottom: true,
-          child: NavigationBar(
-            height: widget.height,
-            selectedIndex: widget.selectedIndex,
-            onDestinationSelected: widget.onSelected,
-            indicatorColor: widget.indicatorColor,
-            labelTextStyle: selected == null
-                ? null
-                : WidgetStateProperty.resolveWith(
-                    (states) => states.contains(WidgetState.selected)
-                        ? label?.copyWith(color: selected) ??
-                              TextStyle(color: selected)
-                        : null,
-                  ),
-            destinations: [
-              for (final item in widget.items)
-                NavigationDestination(
-                  icon: _materialBadge(item, item.iconFor(selected: false)),
-                  selectedIcon: _materialBadge(
-                    item,
-                    selected == null
-                        ? item.iconFor(selected: true)
-                        : IconTheme.merge(
-                            data: IconThemeData(color: selected),
-                            child: item.iconFor(selected: true),
-                          ),
-                  ),
-                  label: item.label,
-                ),
-            ],
-          ),
+          child: bar,
         ),
       ),
     );

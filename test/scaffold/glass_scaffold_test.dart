@@ -164,6 +164,59 @@ void main() {
     expect(_bodyPadding(t).bottom, 21 + 62);
   }, variant: android);
 
+  testWidgets('Material edge to edge: full width on the bottom edge', (
+    t,
+  ) async {
+    shaderEnv();
+    var searched = 0;
+    await _pump(
+      t,
+      GlassScaffold(
+        tabBar: GlassTabBar(
+          items: _items,
+          selectedIndex: 0,
+          onSelected: (_) {},
+          onSearch: () => searched++,
+          materialStyle: GlassMaterialTabBarStyle.edgeToEdge,
+        ),
+        body: const SizedBox(key: Key('body')),
+      ),
+    );
+    final bar = t.getRect(find.byType(NavigationBar));
+    expect(bar.left, 0);
+    expect(bar.right, 402);
+    expect(bar.bottom, 874);
+    // The safe area is inside the bar, and the body clears both.
+    expect(bar.height, 62 + 34);
+    expect(_bodyPadding(t).bottom, 62 + 34);
+    expect(find.byType(ClipPath), findsNothing);
+    // The search tab is a last destination.
+    expect(find.byType(NavigationDestination), findsNWidgets(3));
+    await t.tap(find.text('Search'));
+    expect(searched, 1);
+  }, variant: android);
+
+  testWidgets('edge to edge leaves the glass bar floating', (t) async {
+    shaderEnv();
+    await _pump(
+      t,
+      GlassScaffold(
+        tabBar: GlassTabBar(
+          items: _items,
+          selectedIndex: 0,
+          onSelected: (_) {},
+          materialStyle: GlassMaterialTabBarStyle.edgeToEdge,
+        ),
+        body: const SizedBox(key: Key('body')),
+      ),
+    );
+    expect(
+      t.getRect(find.byType(GlassTabBar)).bottom,
+      moreOrLessEquals(874 - 21),
+    );
+    expect(_bodyPadding(t).bottom, 21 + 62);
+  }, variant: ios);
+
   testWidgets('the sampled backdrop includes the page colour', (t) async {
     shaderEnv();
     await _pump(

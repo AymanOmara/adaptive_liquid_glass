@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../core/glass_environment.dart';
 import '../core/glass_render_mode.dart';
 import '../core/liquid_glass_theme.dart';
 import '../foreground/glass_backdrop_source.dart';
 import '../platform/glass_platform.dart';
 import '../tab_bar/glass_tab_bar.dart';
+import '../tab_bar/tab_bar_edge_to_edge.dart';
 import '../tab_bar/tab_bar_fill_scope.dart';
 import '../tab_bar/tab_lens.dart';
 import '../toolbar/toolbar_metrics.dart';
@@ -93,13 +95,23 @@ class GlassScaffold extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      ValueListenableBuilder<GlassEnvironment>(
+        valueListenable: GlassPlatform.instance.environment,
+        builder: (context, _, _) => _build(context),
+      );
+
+  Widget _build(BuildContext context) {
     final media = MediaQuery.of(context);
     final safeBottom = media.padding.bottom;
     final tabBar = this.tabBar;
     final toolbar = this.toolbar;
     final accessory = bottomAccessory;
-    final gap = safeBottom <= 0
+    // Material's full-width bar sits on the bottom edge, safe area inside.
+    final edgeToEdge = tabBar != null && tabBarEdgeToEdge(context, tabBar);
+    final gap = edgeToEdge
+        ? 0.0
+        : safeBottom <= 0
         ? ScaffoldMetrics.tabBarBottomFlat
         : toolbar != null
         ? ToolbarMetrics.bottom
@@ -107,6 +119,7 @@ class GlassScaffold extends StatelessWidget {
     var bars = 0.0;
     final bottomBar = tabBar != null || toolbar != null;
     if (tabBar != null) bars += tabBar.height;
+    if (edgeToEdge) bars += safeBottom;
     if (toolbar != null) bars += toolbar.preferredSize.height;
     if (accessory != null) {
       bars += accessory.preferredSize.height;
@@ -167,7 +180,15 @@ class GlassScaffold extends StatelessWidget {
                         if (accessory != null && bottomBar)
                           const SizedBox(height: ScaffoldMetrics.accessoryGap),
                         if (tabBar != null)
-                          accessory == null && tabBar.onSearch == null
+                          edgeToEdge
+                              ? MediaQuery(
+                                  data: media.removePadding(removeTop: true),
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    child: tabBar,
+                                  ),
+                                )
+                              : accessory == null && tabBar.onSearch == null
                               ? Center(child: tabBar)
                               : tabBar.onSearch != null
                               // The search tab spreads the bar across.

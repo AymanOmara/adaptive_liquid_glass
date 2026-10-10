@@ -10,6 +10,14 @@
   Transparency (null follows it). `true` draws every glass widget as its
   opaque fallback, native glass included, on any platform, to test those
   fallbacks or back an in-app setting.
+- Tab bar: `materialStyle: GlassMaterialTabBarStyle.edgeToEdge` draws
+  Material 3's full-width `NavigationBar` on the Material path, safe area
+  inside; `GlassScaffold` drops its gap and pads the body to match.
+  `onSearch` becomes a last destination there.
+- `GlassLargeTitleScrollView`: a `SliverGlassNavigationBar` over a body
+  that scrolls itself (a `ListView`, a paged list). A list in
+  `SliverFillRemaining` took every drag, so the large title never
+  collapsed.
 
 ## 0.1.7 (2026-10-09)
 

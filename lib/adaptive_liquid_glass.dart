@@ -69,6 +69,7 @@ export 'src/menu/glass_menu_button.dart';
 export 'src/menu/glass_menu_controller.dart' show GlassMenuController;
 export 'src/menu/glass_menu_item.dart';
 export 'src/navigation/glass_back_button.dart' show GlassBackButton;
+export 'src/navigation/glass_large_title_scroll_view.dart';
 export 'src/navigation/glass_navigation_bar.dart';
 export 'src/navigation/glass_scroll_edge_style.dart';
 export 'src/navigation/sliver_glass_navigation_bar.dart'
@@ -99,6 +100,7 @@ export 'src/sheet/show_glass_sheet.dart';
 export 'src/stepper/glass_stepper.dart';
 export 'src/swipe/glass_swipe_action.dart';
 export 'src/swipe/glass_swipe_actions.dart';
+export 'src/tab_bar/glass_material_tab_bar_style.dart';
 export 'src/tab_bar/glass_tab_bar.dart';
 export 'src/tab_bar/glass_tab_bar_item.dart';
 export 'src/text_field/glass_text_field.dart';
