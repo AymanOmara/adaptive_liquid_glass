@@ -205,11 +205,84 @@ void main() {
     semantics.dispose();
   }, variant: ios);
 
-  testWidgets('Material: a search anchor with a scope button', (t) async {
+  testWidgets('Material: a search anchor, scopes hidden until active', (
+    t,
+  ) async {
     shaderEnv();
     await t.pumpWidget(_app(scopes: const ['All', 'Mine']));
     // SearchAnchor.bar builds a private SearchAnchor subclass.
     expect(find.bySubtype<SearchAnchor>(), findsOneWidget);
+    expect(find.byType(SegmentedButton<int>), findsNothing);
+  }, variant: android);
+
+  testWidgets('Material: scopes show only while search is active', (t) async {
+    shaderEnv();
+    final controller = GlassSearchController();
+    addTearDown(controller.dispose);
+    var scope = -1;
+    await t.pumpWidget(
+      _app(
+        controller: controller,
+        scopes: const ['All', 'Mine'],
+        onScopeChanged: (i) => scope = i,
+      ),
+    );
+    expect(controller.isActive, false);
+    expect(find.byType(SegmentedButton<int>), findsNothing);
+    await t.tap(find.byType(SearchBar));
+    await t.pumpAndSettle();
+    expect(controller.isActive, true);
     expect(find.byType(SegmentedButton<int>), findsOneWidget);
+    await t.tap(find.text('Mine'));
+    await t.pumpAndSettle();
+    expect(scope, 1);
+    expect(controller.scopeIndex, 1);
+    // Closing the view with an empty field ends search.
+    await t.tap(find.byType(BackButton));
+    await t.pumpAndSettle();
+    expect(controller.isActive, false);
+    expect(find.byType(SegmentedButton<int>), findsNothing);
+  }, variant: android);
+
+  testWidgets('Material: a query keeps scopes under the bar until cancel', (
+    t,
+  ) async {
+    shaderEnv();
+    final controller = GlassSearchController();
+    addTearDown(controller.dispose);
+    await t.pumpWidget(
+      _app(controller: controller, scopes: const ['All', 'Mine']),
+    );
+    await t.tap(find.byType(SearchBar));
+    await t.pumpAndSettle();
+    await t.enterText(find.byType(TextField).last, 'glass');
+    await t.pump();
+    await t.tap(find.byType(BackButton));
+    await t.pumpAndSettle();
+    expect(controller.text, 'glass');
+    expect(controller.isActive, true);
+    expect(find.byType(SegmentedButton<int>), findsOneWidget);
+    controller.cancel();
+    await t.pumpAndSettle();
+    expect(find.byType(SegmentedButton<int>), findsNothing);
+  }, variant: android);
+
+  testWidgets('Material: cancelling from outside closes the open view', (
+    t,
+  ) async {
+    shaderEnv();
+    final controller = GlassSearchController();
+    addTearDown(controller.dispose);
+    await t.pumpWidget(
+      _app(controller: controller, scopes: const ['All', 'Mine']),
+    );
+    await t.tap(find.byType(SearchBar));
+    await t.pumpAndSettle();
+    expect(find.byType(SegmentedButton<int>), findsOneWidget);
+    controller.cancel();
+    await t.pumpAndSettle();
+    expect(controller.textController.isOpen, false);
+    expect(controller.isActive, false);
+    expect(find.byType(SegmentedButton<int>), findsNothing);
   }, variant: android);
 }

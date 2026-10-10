@@ -2,7 +2,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
-    show ButtonSegment, ListTile, SearchAnchor, SegmentedButton;
+    show
+        ButtonSegment,
+        Durations,
+        Easing,
+        ListTile,
+        SearchAnchor,
+        SegmentedButton;
 import 'package:flutter/physics.dart';
 
 import '../controls/glass_segment.dart';
@@ -143,6 +149,10 @@ class _GlassSearchableState extends State<GlassSearchable>
   /// hidden.
   bool _cancelMounted = false;
 
+  /// Whether the Material path's search view is open; its scopes then sit
+  /// in the view rather than under the bar it covers.
+  bool _viewOpen = false;
+
   @override
   void initState() {
     super.initState();
@@ -190,7 +200,12 @@ class _GlassSearchableState extends State<GlassSearchable>
     if (_controller.isActive != _wasActive) {
       _wasActive = _controller.isActive;
       _spring(_reveal, SearchMetrics.activation, _wasActive ? 1 : 0);
-      if (!_wasActive) _focusNode.unfocus();
+      if (!_wasActive) {
+        _focusNode.unfocus();
+        // An outside cancel ends the Material path's open view too.
+        final text = _controller.textController;
+        if (_viewOpen && text.isAttached && text.isOpen) text.closeView(null);
+      }
     }
     setState(() {});
   }
@@ -430,61 +445,119 @@ class _GlassSearchableState extends State<GlassSearchable>
     },
   );
 
-  Widget _material(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          SearchMetrics.inset,
-          SearchMetrics.verticalInset,
-          SearchMetrics.inset,
-          SearchMetrics.verticalInset,
-        ),
-        child: SearchAnchor.bar(
-          searchController: _controller.textController,
-          barHintText:
-              widget.placeholder ??
-              cupertinoL10n(context).searchTextFieldPlaceholderLabel,
-          onChanged: widget.onChanged,
-          onSubmitted: widget.onSubmitted,
-          onTap: _controller.activate,
-          suggestionsBuilder: (context, controller) => [
-            for (final suggestion
-                in widget.suggestionsBuilder?.call(context, _controller) ??
-                    const <GlassSearchSuggestion>[])
-              ListTile(
-                title: suggestion.title,
-                subtitle: suggestion.subtitle,
-                leading: suggestion.leading,
-                onTap: () {
-                  final title = suggestion.title;
-                  final text = title is Text ? title.data : null;
-                  if (text != null) controller.closeView(text);
-                  _controller.text = text ?? _controller.text;
-                  suggestion.onSelected?.call();
-                },
-              ),
-          ],
-        ),
-      ),
-      if (widget.scopes != null)
+  /// The Material view opening is activation, as focus is on the glass
+  /// path.
+  void _viewOpened() {
+    _viewOpen = true;
+    _controller.activate();
+  }
+
+  /// Closing the view with an empty field ends search; with a query it
+  /// stays active, its scopes under the bar, until the field is cleared.
+  void _viewClosed() {
+    setState(() => _viewOpen = false);
+    if (_controller.isActive && _controller.text.isEmpty) _controller.cancel();
+  }
+
+  /// The Material scope buttons, following the controller so the copy in
+  /// the search view's route updates too.
+  Widget _scopeButtons() => ListenableBuilder(
+    listenable: _controller,
+    builder: (context, _) => SegmentedButton<int>(
+      segments: [
+        for (final (i, scope) in widget.scopes!.indexed)
+          ButtonSegment(value: i, label: Text(scope)),
+      ],
+      selected: {_controller.scopeIndex},
+      onSelectionChanged: (selection) => _scopeChanged(selection.first),
+    ),
+  );
+
+  Widget _material(BuildContext context) {
+    final scopes = widget.scopes;
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         Padding(
           padding: const EdgeInsetsDirectional.fromSTEB(
             SearchMetrics.inset,
-            0,
+            SearchMetrics.verticalInset,
             SearchMetrics.inset,
             SearchMetrics.verticalInset,
           ),
-          child: SegmentedButton<int>(
-            segments: [
-              for (final (i, scope) in widget.scopes!.indexed)
-                ButtonSegment(value: i, label: Text(scope)),
+          child: SearchAnchor.bar(
+            searchController: _controller.textController,
+            barHintText:
+                widget.placeholder ??
+                cupertinoL10n(context).searchTextFieldPlaceholderLabel,
+            onChanged: widget.onChanged,
+            onSubmitted: widget.onSubmitted,
+            onOpen: _viewOpened,
+            onClose: _viewClosed,
+            viewBuilder: scopes == null
+                ? null
+                : (suggestions) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsetsDirectional.all(
+                          SearchMetrics.inset,
+                        ),
+                        child: _scopeButtons(),
+                      ),
+                      Expanded(
+                        child: MediaQuery.removePadding(
+                          context: context,
+                          removeTop: true,
+                          child: ListView(
+                            padding: EdgeInsets.only(
+                              bottom: MediaQuery.viewInsetsOf(context).bottom,
+                            ),
+                            children: suggestions.toList(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+            suggestionsBuilder: (context, controller) => [
+              for (final suggestion
+                  in widget.suggestionsBuilder?.call(context, _controller) ??
+                      const <GlassSearchSuggestion>[])
+                ListTile(
+                  title: suggestion.title,
+                  subtitle: suggestion.subtitle,
+                  leading: suggestion.leading,
+                  onTap: () {
+                    final title = suggestion.title;
+                    final text = title is Text ? title.data : null;
+                    if (text != null) controller.closeView(text);
+                    _controller.text = text ?? _controller.text;
+                    suggestion.onSelected?.call();
+                  },
+                ),
             ],
-            selected: {_controller.scopeIndex},
-            onSelectionChanged: (selection) => _scopeChanged(selection.first),
           ),
         ),
-      Expanded(child: widget.child),
-    ],
-  );
+        // Like the glass path, scopes show only while search is active.
+        AnimatedSize(
+          duration: reduceMotion ? Duration.zero : Durations.medium2,
+          curve: Easing.standard,
+          alignment: AlignmentDirectional.topCenter,
+          child: scopes != null && _wasActive && !_viewOpen
+              ? Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(
+                    SearchMetrics.inset,
+                    0,
+                    SearchMetrics.inset,
+                    SearchMetrics.verticalInset,
+                  ),
+                  child: _scopeButtons(),
+                )
+              : const SizedBox(width: double.infinity),
+        ),
+        Expanded(child: widget.child),
+      ],
+    );
+  }
 }

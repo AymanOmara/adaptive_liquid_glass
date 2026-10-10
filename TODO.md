@@ -62,8 +62,7 @@ and CHANGELOG.md.
   full-screen cover close button and drag thresholds, context menu (synthetic
   touches cannot open SwiftUI's), springs and press animations of the newer
   components.
-  Not done: arrow->spinner morph on refresh; Material searchable keeps
-  scopes always visible.
+  Not done: arrow->spinner morph on refresh.
 
 7- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
   Bar-region mean |diff| native/shader: white 1.24/1.35, photo 1.93/5.14,

@@ -18,6 +18,9 @@
 - `GlassAdaptive(glass:, material: (context) => ...)`: your own widget on
   the Material path, the glass one elsewhere; follows the render mode, so
   app code never checks the platform.
+- Material `GlassSearchable`: scopes show only while search is active, as
+  on iOS (in the open search view, then under the bar while a query
+  remains); they were always visible.
 - Tab bar: `materialStyle: GlassMaterialTabBarStyle.edgeToEdge` draws
   Material 3's full-width `NavigationBar` on the Material path, safe area
   inside; `GlassScaffold` drops its gap and pads the body to match.
