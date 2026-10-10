@@ -371,4 +371,112 @@ void main() {
       GlassColors.label.color,
     );
   }, variant: ios);
+
+  group('with the keyboard open', () {
+    Future<void> pumpKeyboard(WidgetTester t, Widget scaffold) async {
+      await _pump(t, scaffold);
+      t.view.viewInsets = const FakeViewPadding(bottom: 300);
+      await t.pump();
+    }
+
+    testWidgets('the bars and the button hide', (t) async {
+      shaderEnv();
+      await pumpKeyboard(
+        t,
+        GlassScaffold(
+          tabBar: _tabBar(),
+          bottomAccessory: const GlassBottomAccessory(child: Text('Playing')),
+          floatingActionButton: const SizedBox.square(
+            key: Key('fab'),
+            dimension: 56,
+          ),
+          body: const SizedBox(key: Key('body')),
+        ),
+      );
+      expect(find.byType(GlassTabBar), findsNothing);
+      expect(find.byType(GlassBottomAccessory), findsNothing);
+      expect(find.byKey(const Key('fab')), findsNothing);
+      // Kept mounted, so they keep their state.
+      expect(find.byType(GlassTabBar, skipOffstage: false), findsOneWidget);
+      // Only the safe area pads the body.
+      expect(_bodyPadding(t).bottom, 34);
+    }, variant: ios);
+
+    testWidgets('the toolbar hides too', (t) async {
+      shaderEnv();
+      await pumpKeyboard(
+        t,
+        const GlassScaffold(
+          toolbar: PreferredSize(
+            preferredSize: Size.fromHeight(48),
+            child: SizedBox(key: Key('toolbar'), height: 48),
+          ),
+          body: SizedBox(key: Key('body')),
+        ),
+      );
+      expect(find.byKey(const Key('toolbar')), findsNothing);
+      expect(_bodyPadding(t).bottom, 34);
+    }, variant: ios);
+
+    testWidgets('they come back when it closes', (t) async {
+      shaderEnv();
+      await pumpKeyboard(
+        t,
+        GlassScaffold(
+          tabBar: _tabBar(),
+          body: const SizedBox(key: Key('body')),
+        ),
+      );
+      expect(find.byType(GlassTabBar), findsNothing);
+      t.view.resetViewInsets();
+      await t.pump();
+      expect(
+        t.getRect(find.byType(GlassTabBar)).bottom,
+        moreOrLessEquals(874 - 21),
+      );
+      expect(_bodyPadding(t).bottom, 21 + 62);
+    }, variant: ios);
+
+    testWidgets('turned off, the bars stay', (t) async {
+      shaderEnv();
+      await pumpKeyboard(
+        t,
+        GlassScaffold(
+          hideBottomBarsWithKeyboard: false,
+          tabBar: _tabBar(),
+          floatingActionButton: const SizedBox.square(
+            key: Key('fab'),
+            dimension: 56,
+          ),
+          body: const SizedBox(key: Key('body')),
+        ),
+      );
+      expect(find.byType(GlassTabBar), findsOneWidget);
+      expect(find.byKey(const Key('fab')), findsOneWidget);
+      expect(_bodyPadding(t).bottom, 21 + 62);
+    }, variant: ios);
+
+    testWidgets('a toolbar typing into the keyboard stays', (t) async {
+      shaderEnv();
+      await _pump(
+        t,
+        const GlassScaffold(
+          toolbar: PreferredSize(
+            preferredSize: Size.fromHeight(48),
+            child: Material(child: TextField(key: Key('field'))),
+          ),
+          body: SizedBox(key: Key('body')),
+        ),
+      );
+      await t.showKeyboard(find.byKey(const Key('field')));
+      t.view.viewInsets = const FakeViewPadding(bottom: 300);
+      await t.pump();
+      expect(find.byKey(const Key('field')), findsOneWidget);
+      // Above the keyboard, not under it.
+      expect(
+        t.getRect(find.byKey(const Key('field'))).bottom,
+        lessThanOrEqualTo(874 - 300),
+      );
+    }, variant: ios);
+  });
 }

@@ -34,8 +34,11 @@ import 'scaffold_metrics.dart';
 /// in it keep their content clear of them, as iOS's safe area does. The
 /// body is a [GlassBackdropSource] unless [sampleBackdrop] is false.
 ///
+/// While the software keyboard is open the bottom bars and the
+/// [floatingActionButton] step aside (see [hideBottomBarsWithKeyboard]).
+///
 /// On the Material path the same layout holds Material's bars.
-class GlassScaffold extends StatelessWidget {
+class GlassScaffold extends StatefulWidget {
   /// Creates a scaffold.
   const GlassScaffold({
     super.key,
@@ -47,6 +50,7 @@ class GlassScaffold extends StatelessWidget {
     this.floatingActionButton,
     this.backgroundColor,
     this.sampleBackdrop = true,
+    this.hideBottomBarsWithKeyboard = true,
   }) : assert(
          tabBar == null || toolbar == null,
          'A screen has a tab bar or a toolbar at the bottom, not both.',
@@ -80,6 +84,21 @@ class GlassScaffold extends StatelessWidget {
   /// [GlassBackdropSource]); costs a small GPU readback every 250 ms.
   final bool sampleBackdrop;
 
+  /// Whether the [tabBar], [toolbar], [bottomAccessory] and
+  /// [floatingActionButton] hide while the software keyboard is open
+  /// (`MediaQuery.viewInsetsOf(context).bottom > 0`).
+  ///
+  /// On by default: iOS leaves its tab bar behind the keyboard, covered,
+  /// while Flutter's scaffold lifts its body above the keyboard, which
+  /// would carry the floating bars up onto it. Hidden, the bars keep their
+  /// state and the body is padded only by the safe area, so it scrolls a
+  /// focused field into view right above the keyboard.
+  ///
+  /// The bars stay while focus is inside them, so a text field in the
+  /// toolbar or accessory rides on the keyboard as an input bar would.
+  /// Turn it off to keep the bars above the keyboard always.
+  final bool hideBottomBarsWithKeyboard;
+
   /// The tab bar draws shader glass wherever shaders run (so its lens can
   /// refract it); native glass next to it leaves the shader a band it
   /// cannot sample. The accessory takes the same path, unless the app
@@ -102,6 +121,24 @@ class GlassScaffold extends StatelessWidget {
   }
 
   @override
+  State<GlassScaffold> createState() => _GlassScaffoldState();
+}
+
+class _GlassScaffoldState extends State<GlassScaffold> {
+  /// Holds no focus itself; tells whether focus is in the bottom bars.
+  final _barsFocus = FocusNode(
+    debugLabel: 'GlassScaffold bars',
+    canRequestFocus: false,
+    skipTraversal: true,
+  );
+
+  @override
+  void dispose() {
+    _barsFocus.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) =>
       ValueListenableBuilder<GlassEnvironment>(
         valueListenable: GlassPlatform.instance.environment,
@@ -109,11 +146,17 @@ class GlassScaffold extends StatelessWidget {
       );
 
   Widget _build(BuildContext context) {
+    final widget = this.widget;
     final media = MediaQuery.of(context);
     final safeBottom = media.padding.bottom;
-    final tabBar = this.tabBar;
-    final toolbar = this.toolbar;
-    final accessory = bottomAccessory;
+    // The bars step aside for the keyboard, unless it is typing into them.
+    final hidden =
+        widget.hideBottomBarsWithKeyboard &&
+        media.viewInsets.bottom > 0 &&
+        !_barsFocus.hasFocus;
+    final tabBar = widget.tabBar;
+    final toolbar = widget.toolbar;
+    final accessory = widget.bottomAccessory;
     // Material's full-width bar sits on the bottom edge, safe area inside.
     final edgeToEdge = tabBar != null && tabBarEdgeToEdge(context, tabBar);
     final gap = edgeToEdge
@@ -132,25 +175,27 @@ class GlassScaffold extends StatelessWidget {
       bars += accessory.preferredSize.height;
       if (bottomBar) bars += ScaffoldMetrics.accessoryGap;
     }
-    final bottomInset = bars > 0 ? gap + bars : safeBottom;
-    final fab = floatingActionButton;
-    Widget content = body;
-    if (sampleBackdrop) {
+    final bottomInset = bars > 0 && !hidden ? gap + bars : safeBottom;
+    final fab = widget.floatingActionButton;
+    Widget content = widget.body;
+    if (widget.sampleBackdrop) {
       // The page colour is part of what glass floats over: without it the
       // sampler reads a transparent body as dark, and labels on glass over
       // a light page turn white.
       content = GlassBackdropSource(
         child: ColoredBox(
-          color: backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
+          color:
+              widget.backgroundColor ??
+              Theme.of(context).scaffoldBackgroundColor,
           child: content,
         ),
       );
     }
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: widget.backgroundColor,
       extendBody: true,
       extendBodyBehindAppBar: true,
-      appBar: navigationBar,
+      appBar: widget.navigationBar,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -171,67 +216,85 @@ class GlassScaffold extends StatelessWidget {
               start: 0,
               end: 0,
               bottom: gap,
-              child: MediaQuery.removePadding(
-                context: context,
-                removeBottom: true,
-                // The accessory paints after the bars, so the tab lens's
-                // backdrop (what was painted before it) holds the page but
-                // not the accessory: iOS's lens never bends the accessory's
-                // content into its rim.
-                child: Stack(
-                  children: [
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
+              // Hidden, the bars stay mounted (keeping their state) but
+              // neither paint, hit test nor tick.
+              child: Visibility(
+                visible: !hidden,
+                maintainState: true,
+                child: Focus(
+                  focusNode: _barsFocus,
+                  onFocusChange: (_) => setState(() {}),
+                  child: MediaQuery.removePadding(
+                    context: context,
+                    removeBottom: true,
+                    // The accessory paints after the bars, so the tab lens's
+                    // backdrop (what was painted before it) holds the page but
+                    // not the accessory: iOS's lens never bends the accessory's
+                    // content into its rim.
+                    child: Stack(
                       children: [
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (accessory != null)
+                              SizedBox(height: accessory.preferredSize.height),
+                            if (accessory != null && bottomBar)
+                              const SizedBox(
+                                height: ScaffoldMetrics.accessoryGap,
+                              ),
+                            if (tabBar != null)
+                              edgeToEdge
+                                  ? MediaQuery(
+                                      data: media.removePadding(
+                                        removeTop: true,
+                                      ),
+                                      child: SizedBox(
+                                        width: double.infinity,
+                                        child: tabBar,
+                                      ),
+                                    )
+                                  : accessory == null && tabBar.onSearch == null
+                                  ? Center(child: tabBar)
+                                  : tabBar.onSearch != null
+                                  // The search tab spreads the bar across.
+                                  ? Padding(
+                                      padding:
+                                          const EdgeInsetsDirectional.symmetric(
+                                            horizontal:
+                                                ScaffoldMetrics.accessoryInset,
+                                          ),
+                                      child: tabBar,
+                                    )
+                                  // As iOS 26: with an accessory the tab bar
+                                  // widens to the accessory's width.
+                                  : Padding(
+                                      padding:
+                                          const EdgeInsetsDirectional.symmetric(
+                                            horizontal:
+                                                ScaffoldMetrics.accessoryInset,
+                                          ),
+                                      child: TabBarFillScope(child: tabBar),
+                                    ),
+                            ?toolbar,
+                          ],
+                        ),
                         if (accessory != null)
-                          SizedBox(height: accessory.preferredSize.height),
-                        if (accessory != null && bottomBar)
-                          const SizedBox(height: ScaffoldMetrics.accessoryGap),
-                        if (tabBar != null)
-                          edgeToEdge
-                              ? MediaQuery(
-                                  data: media.removePadding(removeTop: true),
-                                  child: SizedBox(
-                                    width: double.infinity,
-                                    child: tabBar,
+                          PositionedDirectional(
+                            top: 0,
+                            start: ScaffoldMetrics.accessoryInset,
+                            end: ScaffoldMetrics.accessoryInset,
+                            height: accessory.preferredSize.height,
+                            child: tabBar == null
+                                ? accessory
+                                : GlassScaffold._sameGlassAsTabBar(
+                                    context,
+                                    tabBar,
+                                    accessory,
                                   ),
-                                )
-                              : accessory == null && tabBar.onSearch == null
-                              ? Center(child: tabBar)
-                              : tabBar.onSearch != null
-                              // The search tab spreads the bar across.
-                              ? Padding(
-                                  padding:
-                                      const EdgeInsetsDirectional.symmetric(
-                                        horizontal:
-                                            ScaffoldMetrics.accessoryInset,
-                                      ),
-                                  child: tabBar,
-                                )
-                              // As iOS 26: with an accessory the tab bar
-                              // widens to the accessory's width.
-                              : Padding(
-                                  padding:
-                                      const EdgeInsetsDirectional.symmetric(
-                                        horizontal:
-                                            ScaffoldMetrics.accessoryInset,
-                                      ),
-                                  child: TabBarFillScope(child: tabBar),
-                                ),
-                        ?toolbar,
+                          ),
                       ],
                     ),
-                    if (accessory != null)
-                      PositionedDirectional(
-                        top: 0,
-                        start: ScaffoldMetrics.accessoryInset,
-                        end: ScaffoldMetrics.accessoryInset,
-                        height: accessory.preferredSize.height,
-                        child: tabBar == null
-                            ? accessory
-                            : _sameGlassAsTabBar(context, tabBar, accessory),
-                      ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -239,7 +302,11 @@ class GlassScaffold extends StatelessWidget {
             PositionedDirectional(
               end: ScaffoldMetrics.floatingActionButtonMargin,
               bottom: bottomInset + ScaffoldMetrics.floatingActionButtonMargin,
-              child: fab,
+              child: Visibility(
+                visible: !hidden,
+                maintainState: true,
+                child: fab,
+              ),
             ),
         ],
       ),

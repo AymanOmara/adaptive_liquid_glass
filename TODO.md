@@ -101,8 +101,7 @@ and CHANGELOG.md.
   transitions, TipKit tips; then re-check the gap list for anything new.
   Candidate from app use (2026-10-10): a sliver pinned under the nav bar
   (the app's PinnedBelowBarSliver). Kept app-side for now: sticky bottom
-  action bar, stage tab strip with counts, hiding the tab bar with the
-  keyboard.
+  action bar, stage tab strip with counts.
 
 10- refactor backlog P3 items (docs/superpowers/notes/refactor-backlog.md),
   opportunistic (P3-1 constants split only).

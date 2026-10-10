@@ -21,6 +21,10 @@
 - Material `GlassSearchable`: scopes show only while search is active, as
   on iOS (in the open search view, then under the bar while a query
   remains); they were always visible.
+- `GlassScaffold.hideBottomBarsWithKeyboard` (default true): the tab bar,
+  toolbar, accessory and floating action button step aside while the
+  keyboard is open, instead of riding up onto it; they stay while focus
+  is inside them. `GlassScaffold` is now a `StatefulWidget`.
 - Tab bar: `materialStyle: GlassMaterialTabBarStyle.edgeToEdge` draws
   Material 3's full-width `NavigationBar` on the Material path, safe area
   inside; `GlassScaffold` drops its gap and pads the body to match.
