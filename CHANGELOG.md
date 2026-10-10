@@ -10,6 +10,9 @@
   Transparency (null follows it). `true` draws every glass widget as its
   opaque fallback, native glass included, on any platform, to test those
   fallbacks or back an in-app setting.
+- `GlassFloatingActionButton` and `.extended(label:)`: a real Material 3
+  `FloatingActionButton` on the Material path, a large prominent glass
+  button (circle, or capsule with the label) elsewhere.
 - Tab bar: `materialStyle: GlassMaterialTabBarStyle.edgeToEdge` draws
   Material 3's full-width `NavigationBar` on the Material path, safe area
   inside; `GlassScaffold` drops its gap and pads the body to match.
