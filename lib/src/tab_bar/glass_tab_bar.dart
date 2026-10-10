@@ -800,8 +800,15 @@ class _GlassTabBarState extends State<GlassTabBar>
           ),
       ],
     );
-    // Material's own bar keeps the bottom safe area inside it.
-    if (edgeToEdge) return bar;
+    // NavigationBar pads itself by the whole safe area; a bottom bar never
+    // takes the status bar's. Edge to edge keeps the bottom inset inside.
+    if (edgeToEdge) {
+      return MediaQuery.removePadding(
+        context: context,
+        removeTop: true,
+        child: bar,
+      );
+    }
     return SizedBox(
       width: _rowWidth + TabBarMetrics.inset * 2,
       child: ClipPath(
@@ -809,6 +816,7 @@ class _GlassTabBarState extends State<GlassTabBar>
         // Floating above the bottom edge, so no safe-area padding.
         child: MediaQuery.removePadding(
           context: context,
+          removeTop: true,
           removeBottom: true,
           child: bar,
         ),

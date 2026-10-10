@@ -33,6 +33,8 @@
   that scrolls itself (a `ListView`, a paged list). A list in
   `SliverFillRemaining` took every drag, so the large title never
   collapsed.
+- Fix: the Material tab bar's floating capsule no longer grows by the
+  status bar's height (NavigationBar padded itself by the top inset).
 
 ## 0.1.7 (2026-10-09)
 

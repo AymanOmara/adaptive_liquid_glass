@@ -16,7 +16,8 @@ import 'sliver_glass_navigation_bar.dart';
 /// )
 /// ```
 ///
-/// The body sits below the bar rather than under it. When the content can
+/// The body sits below the bar rather than under it, and pulling down at
+/// the top bounces the body instead of stretching the large title. When the content can
 /// be slivers (`SliverList`, a paged sliver list), put them in a
 /// `CustomScrollView` after the bar instead, so they scroll under its
 /// glass.
