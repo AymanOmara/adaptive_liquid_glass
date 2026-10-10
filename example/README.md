@@ -1,10 +1,11 @@
 # adaptive_liquid_glass example
 
 A small app built from the package's main widgets: a navigation bar, a
-floating tab bar with a badge, glass text, a merged pair of glass buttons,
-a toggle, a slider, a sheet and a toast. On iOS 26+ it is SwiftUI's own
-Liquid Glass, on older iOS the shader glass, and on Android Material 3, with
-no platform checks in the code.
+floating tab bar with a badge, glass text, a merged pair of glass buttons, a
+toggle, a slider, a sheet, a toast, an extended floating action button and a
+`GlassAdaptive` that swaps in a plain Material card on Android. On iOS 26+
+it is SwiftUI's own Liquid Glass, on older iOS the shader glass, and on
+Android Material 3, with no platform checks in the code.
 
 Run it from `example/`:
 
@@ -18,6 +19,8 @@ More entry points:
   cookbook section (`lib/gallery.dart`).
 - `flutter run -t lib/components_demo.dart`: every component on one screen.
 - `flutter run -t lib/native_demo.dart`: SwiftUI's own glass (iOS 26+).
+- `flutter run -t lib/edge_to_edge_demo.dart`: the edge-to-edge Material
+  tab bar and `GlassLargeTitleScrollView`.
 
 ## `lib/quick_start.dart`
 
@@ -94,6 +97,16 @@ class _QuickStartScreenState extends State<QuickStartScreen> {
         selectedIndex: _tab,
         onSelected: (i) => setState(() => _tab = i),
       ),
+      // A Material 3 extended FAB on Android, prominent glass on iOS.
+      floatingActionButton: GlassFloatingActionButton.extended(
+        onPressed: () => showGlassToast(
+          context,
+          message: 'New note',
+          icon: CupertinoIcons.square_pencil,
+        ),
+        icon: CupertinoIcons.add,
+        label: const Text('New'),
+      ),
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -105,8 +118,17 @@ class _QuickStartScreenState extends State<QuickStartScreen> {
               padding: MediaQuery.paddingOf(context)
                   .add(const EdgeInsetsDirectional.all(20)),
               children: [
-                const Text('Hello, glass')
-                    .glassEffect(padding: const EdgeInsets.all(16)),
+                // Your own widget on the Material path, glass elsewhere.
+                GlassAdaptive(
+                  glass: const Text('Hello, glass')
+                      .glassEffect(padding: const EdgeInsets.all(16)),
+                  material: (context) => const Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('Hello, Material'),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 20),
                 GlassGroup(
                   spacing: 12,

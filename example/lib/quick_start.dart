@@ -70,6 +70,16 @@ class _QuickStartScreenState extends State<QuickStartScreen> {
         selectedIndex: _tab,
         onSelected: (i) => setState(() => _tab = i),
       ),
+      // A Material 3 extended FAB on Android, prominent glass on iOS.
+      floatingActionButton: GlassFloatingActionButton.extended(
+        onPressed: () => showGlassToast(
+          context,
+          message: 'New note',
+          icon: CupertinoIcons.square_pencil,
+        ),
+        icon: CupertinoIcons.add,
+        label: const Text('New'),
+      ),
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -81,8 +91,17 @@ class _QuickStartScreenState extends State<QuickStartScreen> {
               padding: MediaQuery.paddingOf(context)
                   .add(const EdgeInsetsDirectional.all(20)),
               children: [
-                const Text('Hello, glass')
-                    .glassEffect(padding: const EdgeInsets.all(16)),
+                // Your own widget on the Material path, glass elsewhere.
+                GlassAdaptive(
+                  glass: const Text('Hello, glass')
+                      .glassEffect(padding: const EdgeInsets.all(16)),
+                  material: (context) => const Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('Hello, Material'),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 20),
                 GlassGroup(
                   spacing: 12,

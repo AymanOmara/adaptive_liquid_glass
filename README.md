@@ -65,7 +65,7 @@ documented there), then score with
 
 ```yaml
 dependencies:
-  adaptive_liquid_glass: ^0.1.6
+  adaptive_liquid_glass: ^0.2.0
 ```
 
 ```dart
@@ -214,6 +214,24 @@ On Android, and any platform other than iOS, `auto` renders Material 3:
 Text and icons on the surface use its matching "on" colour (`onSurface`, or
 the tint's `onPrimaryContainer`).
 
+For a Material widget of your own, `GlassAdaptive` picks by render mode,
+so app code never checks the platform:
+
+```dart
+GlassAdaptive(
+  glass: GlassTabBar(items: items, selectedIndex: tab, onSelected: pick),
+  material: (context) => NavigationBar(
+    selectedIndex: tab,
+    onDestinationSelected: pick,
+    destinations: destinations,
+  ),
+)
+```
+
+The tab bar floats in a capsule on Android too. For Material 3's own
+full-width bar, pass `materialStyle: GlassMaterialTabBarStyle.edgeToEdge`
+(see [Tab bar](#tab-bar)).
+
 ## Which widget?
 
 Every component is iOS 26's own on iOS and gets a Material 3 counterpart on
@@ -229,9 +247,12 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `LiquidGlassTheme`, `LiquidGlassThemeData` | Optional app-wide defaults (`defaultGlass`, `defaultMode`, `lightAngle`) | — |
 | `GlassRenderMode` | Force `auto`, `shader`, `native` or `material` for a subtree | — |
 | `AdaptiveLiquidGlass.initialize` | Optional: preload the shaders in `main()` | no-op |
+| `AdaptiveLiquidGlass.reduceTransparency` | Override the system's Reduce Transparency (null follows it) | already opaque |
+| `GlassAdaptive` | Your own widget on the Material path, the glass one elsewhere | your `material` builder |
 | `GlassBackdropSource`, `GlassForeground` | Adaptive label colour over busy content | — |
 | `GlassSystemColors` | iOS 26's red, blue, orange and green | — |
 | `GlassButton` (`+ .icon`), `GlassButtonRole`, `GlassButtonStyle`, `GlassButtonShape`, `GlassControlSize`, `GlassControlSizeScope` | SwiftUI's glass and prominent buttons, roles, sizes, shapes, loading | `FilledButton` / `IconButton` / `TextButton` |
+| `GlassFloatingActionButton` (`+ .extended`) | The screen's primary action: a large prominent glass circle, or capsule with a label | `FloatingActionButton` |
 | `GlassBackButton` | Circular glass chevron that pops the route | `BackButton` |
 | `GlassNavigationBar`, `SliverGlassNavigationBar`, `GlassScrollEdgeStyle` | Inline and large-title nav bars, no bar background; `scrollEdgeStyle` blurs content scrolled under | `AppBar` / `SliverAppBar.large` |
 | `GlassLargeTitleScrollView` | Large-title bar over a body that scrolls itself (`ListView`, paged list), so the title still collapses | `SliverAppBar.large` in a `NestedScrollView` |
@@ -302,6 +323,25 @@ GlassButton(onPressed: upload, loading: uploading, child: const Text('Upload'))
 Sizes are measured from SwiftUI on iOS 26.4 (iOS 26 draws mini as small and
 extraLarge as large; icon-only buttons are capsules 12 pt wider than tall).
 Set a default with `GlassControlSizeScope(size: GlassControlSize.small, ...)`.
+
+`GlassFloatingActionButton` is the screen's primary action. iOS 26 has
+none, so the glass path draws a large prominent glass circle, or a capsule
+with `.extended`'s label. On Android it is Material 3's
+`FloatingActionButton`. Put it in `GlassScaffold.floatingActionButton`
+(see [Screen layout](#screen-layout)):
+
+```dart
+GlassFloatingActionButton(
+  onPressed: compose,
+  icon: CupertinoIcons.add,
+  semanticLabel: 'New event',
+)
+GlassFloatingActionButton.extended(
+  onPressed: compose,
+  icon: CupertinoIcons.add,
+  label: const Text('New event'),
+)
+```
 
 ### Card with padding
 
@@ -449,10 +489,28 @@ another path). Give a tab an `activeIcon` for its selected
 state. The selected tab takes `selectedColor` (default: iOS 26's tab bar
 blue, measured from SwiftUI's `TabView`); the others take glass's readable
 colour. `onSearch` adds iOS 26's search tab, a glass circle beside the bar.
-On Android it is a Material 3 `NavigationBar` in the same floating capsule.
+On Android it is a Material 3 `NavigationBar` in the same floating capsule;
+`materialStyle: GlassMaterialTabBarStyle.edgeToEdge` draws Material 3's
+full-width bar instead, safe area inside, with `onSearch` as a last
+destination (`GlassScaffold` pads the body to match).
 Each tab is a selectable button for VoiceOver and TalkBack, the order follows
 the reading direction, and with Reduce Motion the pill moves without
 animating.
+
+For SVG or image icons, use `GlassTabBarItem.custom`. The bar draws the
+widget inside an `IconTheme` with its icon size and colour, so widgets that
+read it (`ImageIcon`, a theme-tinted SVG) follow the selection; plain images
+keep their own colours.
+
+```dart
+const GlassTabBarItem.custom(
+  iconWidget: ImageIcon(AssetImage('assets/home.png')),
+  activeIconWidget: ImageIcon(AssetImage('assets/home_fill.png')),
+  label: 'Home',
+)
+```
+
+`GlassTabBarItem.icon` is null for custom items.
 
 ### Navigation bar
 
@@ -486,6 +544,20 @@ down stretches the large title. Metrics are measured from SwiftUI's
 `NavigationStack` (`tool/reference/`). On Android these are `AppBar` and
 `SliverAppBar.large`.
 
+A list in `SliverFillRemaining` takes every drag, so the large title never
+collapses. When the body scrolls itself (a `ListView`, a paged list), use
+`GlassLargeTitleScrollView`: scrolling the body collapses the title first.
+
+```dart
+GlassLargeTitleScrollView(
+  navigationBar: const SliverGlassNavigationBar(largeTitle: Text('Inbox')),
+  body: ListView.builder(itemCount: mails.length, itemBuilder: buildRow),
+)
+```
+
+The body sits below the bar, not under it. Content that can be slivers
+belongs in a `CustomScrollView` after the bar, so it scrolls under the glass.
+
 ### Screen layout
 
 ```dart
@@ -493,6 +565,11 @@ GlassScaffold(
   navigationBar: const GlassNavigationBar(title: Text('Inbox')),
   tabBar: GlassTabBar(items: tabs, selectedIndex: tab, onSelected: pick),
   bottomAccessory: GlassBottomAccessory(child: nowPlaying), // optional
+  floatingActionButton: GlassFloatingActionButton( // optional
+    onPressed: compose,
+    icon: CupertinoIcons.add,
+    semanticLabel: 'Compose',
+  ),
   body: ListView(children: rows),
 )
 ```
@@ -504,6 +581,12 @@ padding grows by the bars, so scroll views keep their content clear of
 them. Read that padding inside the body, not with a context from above
 the scaffold. The body is a `GlassBackdropSource` unless
 `sampleBackdrop: false`.
+
+A `floatingActionButton` floats at the end, 16 above the bottom bars (or
+the safe area); it does not pad the body. While the keyboard is open the
+tab bar, toolbar, accessory and floating button step aside, as on iOS,
+instead of riding up onto it; they stay while focus is inside them. Pass
+`hideBottomBarsWithKeyboard: false` to keep them above the keyboard.
 
 ### Toolbar
 
@@ -576,7 +659,9 @@ Cancel button out of its end, `suggestionsBuilder` rows show on a glass
 platter and `scopes` become a `GlassSegmentedControl` while search is
 active. `placement` picks iPhone's floating bottom field or the
 navigation-bar one; a `GlassSearchController` reads or drives the text,
-activation and scope. On Android it is Material 3's `SearchAnchor`.
+activation and scope. On Android it is Material 3's `SearchAnchor`; scopes
+show there only while search is active too (in the open search view, then
+under the bar while a query remains).
 
 ```dart
 GlassSearchable(
@@ -753,6 +838,9 @@ The sheet works like SwiftUI's `presentationDetents`:
 - At a partial detent it is floating glass.
 - At `large` it runs edge to edge, opaque, with the screen's own corners.
 - `GlassSheetDetent.fraction(0.6)` and `.height(400)` make custom detents.
+- `cornerRadius` and `grabberSize` change the floating sheet's corners and
+  grabber (iOS 26's 38 and 34.67 x 5 by default). On Android
+  `cornerRadius` rounds the bottom sheet's top corners.
 
 ### Full-screen cover
 
@@ -1061,7 +1149,10 @@ Stack(
 - **Keyboard:** interactive glass takes focus and shows a focus ring;
   `onPressed` glass and buttons answer Enter and Space.
 - **Reduce Transparency** (iOS) turns glass into an opaque surface, as iOS
-  does (on iOS 26+ SwiftUI's glass does this itself).
+  does (on iOS 26+ SwiftUI's glass does this itself). Set
+  `AdaptiveLiquidGlass.reduceTransparency = true` to force the opaque
+  fallback on any platform, native glass included (to test it, or for an
+  in-app setting); `null` follows the system.
 - **Increase Contrast** strengthens the rim and reduces lensing on the shader
   path; on iOS 26+ it is whatever SwiftUI's own glass does.
 
@@ -1083,7 +1174,7 @@ Stack(
 - **Tab bar:** close to iOS 26.4's `TabView`, not identical. Over photos
   the shader-drawn bar differs most from native; the tapped lens runs about
   a frame ahead of iOS's and is a little brighter early on; icons are
-  CupertinoIcons, not SF Symbols. `tabBarMinimizeBehavior` and
+  CupertinoIcons, not SF Symbols (`GlassTabBarItem.custom` takes your own). `tabBarMinimizeBehavior` and
   `sidebarAdaptable` are not implemented.
 - **Unmeasured geometry:** `GlassLabel`, `GlassLink`/`GlassShareLink`, the
   `GlassColorPicker` sheet, `GlassRefresh`, `GlassSearchable`, the
