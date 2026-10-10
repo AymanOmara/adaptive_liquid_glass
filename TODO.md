@@ -20,9 +20,7 @@ and CHANGELOG.md.
       (making those iOS-like is a separate, bigger job)
   - custom Android widget: the code side is easy (each of ~33 components
     has one point where it picks the Material widget); the API is the work.
-    - option 1, now (~1 h): a generic switch, e.g. `GlassAdaptive(glass:
-      ..., material: (context) => MyAndroidWidget())`, following the
-      render mode so app code never checks the platform; wraps anything
+    - option 1: done (`GlassAdaptive`, 2026-10-10)
     - option 2, on request only (several days): typed builders per
       component (e.g. tab bar gets items, selected index, tap callback);
       ~33 parameter classes of public API to freeze at 1.0. Tab bar and

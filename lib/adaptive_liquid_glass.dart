@@ -15,6 +15,7 @@ library;
 
 export 'src/action_sheet/show_glass_action_sheet.dart';
 export 'src/activity_indicator/glass_activity_indicator.dart';
+export 'src/adaptive/glass_adaptive.dart';
 export 'src/adaptive_liquid_glass_setup.dart';
 export 'src/badge/glass_badge.dart';
 export 'src/button/glass_button.dart';

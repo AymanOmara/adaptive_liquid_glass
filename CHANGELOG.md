@@ -15,6 +15,9 @@
   button (circle, or capsule with the label) elsewhere.
 - `GlassScaffold.floatingActionButton`: floats at the end, 16 above the
   bottom bars (or the safe area); the body keeps its padding.
+- `GlassAdaptive(glass:, material: (context) => ...)`: your own widget on
+  the Material path, the glass one elsewhere; follows the render mode, so
+  app code never checks the platform.
 - Tab bar: `materialStyle: GlassMaterialTabBarStyle.edgeToEdge` draws
   Material 3's full-width `NavigationBar` on the Material path, safe area
   inside; `GlassScaffold` drops its gap and pads the body to match.
