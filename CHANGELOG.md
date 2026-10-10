@@ -1,4 +1,4 @@
-## 0.2.0 (2026-10-10)
+## 0.1.8 (2026-10-10)
 
 - Sheets: `showGlassSheet` and `GlassSheet` take an optional `cornerRadius`
   and `grabberSize` (defaults stay iOS 26's 38 and 34.67 x 5). On the

@@ -4,7 +4,7 @@ description: >-
   sliders and toggles matched to SwiftUI, with Material 3 fallbacks on
   Android. One adaptive API.
 
-version: 0.2.0
+version: 0.1.8
 
 homepage: https://pub.dev/packages/adaptive_liquid_glass
 repository: https://github.com/AymanOmara/adaptive_liquid_glass
