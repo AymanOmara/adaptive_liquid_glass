@@ -13,6 +13,7 @@ class GlassEnvironment {
     required this.iosMajorVersion,
     required this.reduceTransparency,
     required this.shaderSupported,
+    this.reduceTransparencyForced = false,
   });
 
   /// Environment known synchronously at startup (no channel data yet).
@@ -42,17 +43,25 @@ class GlassEnvironment {
   /// Whether `ImageFilter.shader` is available (Impeller).
   final bool shaderSupported;
 
+  /// Whether the app turned Reduce Transparency on itself
+  /// (`AdaptiveLiquidGlass.reduceTransparency`) rather than iOS: native
+  /// glass does not see that, so it is drawn opaque by Flutter too.
+  final bool reduceTransparencyForced;
+
   /// Returns a copy with the given fields replaced.
   GlassEnvironment copyWith({
     TargetPlatform? platform,
     int? iosMajorVersion,
     bool? reduceTransparency,
     bool? shaderSupported,
+    bool? reduceTransparencyForced,
   }) => GlassEnvironment(
     platform: platform ?? this.platform,
     iosMajorVersion: iosMajorVersion ?? this.iosMajorVersion,
     reduceTransparency: reduceTransparency ?? this.reduceTransparency,
     shaderSupported: shaderSupported ?? this.shaderSupported,
+    reduceTransparencyForced:
+        reduceTransparencyForced ?? this.reduceTransparencyForced,
   );
 
   @override
@@ -61,7 +70,8 @@ class GlassEnvironment {
       other.platform == platform &&
       other.iosMajorVersion == iosMajorVersion &&
       other.reduceTransparency == reduceTransparency &&
-      other.shaderSupported == shaderSupported;
+      other.shaderSupported == shaderSupported &&
+      other.reduceTransparencyForced == reduceTransparencyForced;
 
   @override
   int get hashCode => Object.hash(
@@ -69,6 +79,7 @@ class GlassEnvironment {
     iosMajorVersion,
     reduceTransparency,
     shaderSupported,
+    reduceTransparencyForced,
   );
 }
 

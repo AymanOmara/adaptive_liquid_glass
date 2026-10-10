@@ -89,4 +89,11 @@ void main() {
       EffectiveGlassMode.material,
     );
   });
+
+  test('a forced Reduce Transparency makes native glass opaque too', () {
+    final forced = env(rt: true).copyWith(reduceTransparencyForced: true);
+    expect(r(auto, forced), EffectiveGlassMode.opaque);
+    expect(r(GlassRenderMode.native, forced), EffectiveGlassMode.opaque);
+    expect(r(GlassRenderMode.material, forced), EffectiveGlassMode.material);
+  });
 }

@@ -11,8 +11,6 @@ and CHANGELOG.md.
 
 2- API gaps from real app use (reported 2026-10-10, v0.1.7), quick wins
   first:
-  - public Reduce Transparency override (e.g. on LiquidGlassThemeData):
-    applied internally on iOS only, so apps cannot test opaque fallbacks
   - extended FAB: an optional label on the floating button; on Android use
     a real M3 FloatingActionButton(.extended), not IconButton.filled
     (material_glass_button.dart ~111)

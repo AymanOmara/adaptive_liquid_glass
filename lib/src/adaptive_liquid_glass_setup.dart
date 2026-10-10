@@ -20,6 +20,26 @@ import 'tab_bar/tab_lens_program.dart';
 /// }
 /// ```
 abstract final class AdaptiveLiquidGlass {
+  /// Overrides the system's Reduce Transparency setting for every glass
+  /// widget; null (the default) follows the system.
+  ///
+  /// `true` draws all glass as its opaque fallback, native glass included,
+  /// on any platform: use it to test those fallbacks, or to offer an
+  /// in-app setting. `false` keeps the Flutter-drawn glass translucent
+  /// while iOS's setting is on; native glass still follows iOS. The
+  /// Material path is opaque already and does not change. Widgets update
+  /// at once.
+  ///
+  /// Flutter does not expose the setting itself; the package reads it from
+  /// iOS (on other platforms the system value is always off).
+  static bool? get reduceTransparency =>
+      GlassPlatform.instance.reduceTransparencyOverride;
+
+  static set reduceTransparency(bool? value) {
+    GlassPlatform.instance.ensureStarted();
+    GlassPlatform.instance.reduceTransparencyOverride = value;
+  }
+
   /// Loads every shader the package may need, before the first frame.
   ///
   /// Without this, each shader loads on first use: glass draws as a plain

@@ -10,7 +10,8 @@ import 'glass_render_mode.dart';
 /// `auto` is SwiftUI's own glass on iOS 26 and later, the shader below
 /// (degraded without shader support) and Material elsewhere. Reduce
 /// Transparency makes the Flutter-drawn paths opaque; native glass handles
-/// it itself, as SwiftUI does.
+/// the system setting itself, as SwiftUI does, but is drawn opaque too when
+/// the app forces the setting on (SwiftUI cannot see that).
 EffectiveGlassMode resolveGlassMode({
   required GlassRenderMode requested,
   required GlassEnvironment environment,
@@ -36,7 +37,9 @@ EffectiveGlassMode resolveGlassMode({
 
   if (environment.reduceTransparency &&
       (mode == EffectiveGlassMode.shader ||
-          mode == EffectiveGlassMode.degraded)) {
+          mode == EffectiveGlassMode.degraded ||
+          (mode == EffectiveGlassMode.native &&
+              environment.reduceTransparencyForced))) {
     return EffectiveGlassMode.opaque;
   }
   return mode;

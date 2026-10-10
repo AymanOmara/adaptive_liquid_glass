@@ -433,6 +433,28 @@ void main() {
     );
   }, variant: ios);
 
+  testWidgets('AdaptiveLiquidGlass.reduceTransparency forces opaque glass', (
+    t,
+  ) async {
+    env();
+    await t.pumpWidget(
+      at(
+        const Rect.fromLTWH(0, 0, 100, 40),
+        const LiquidGlass(child: SizedBox.expand()),
+      ),
+    );
+    expect(backdropOf(t).debugLastFrame!.uniforms.opaqueColor, isNull);
+    AdaptiveLiquidGlass.reduceTransparency = true;
+    await t.pump();
+    expect(
+      backdropOf(t).debugLastFrame!.uniforms.opaqueColor,
+      opaqueGlassColor(Brightness.light),
+    );
+    AdaptiveLiquidGlass.reduceTransparency = null;
+    await t.pump();
+    expect(backdropOf(t).debugLastFrame!.uniforms.opaqueColor, isNull);
+  }, variant: ios);
+
   testWidgets('no shader support uses the degraded renderer', (t) async {
     env(shader: false);
     await t.pumpWidget(

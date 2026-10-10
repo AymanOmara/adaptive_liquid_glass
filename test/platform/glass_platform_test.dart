@@ -65,4 +65,36 @@ void main() {
     await pumpEventQueue();
     expect(GlassPlatform.instance.environment.value.iosMajorVersion, isNull);
   });
+
+  test('the override replaces the system setting; null follows it', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    messenger.setMockMethodCallHandler(
+      method,
+      (_) async => {'iosMajorVersion': 26, 'reduceTransparency': false},
+    );
+    late MockStreamHandlerEventSink sink;
+    messenger.setMockStreamHandler(
+      const EventChannel(events),
+      MockStreamHandler.inline(onListen: (_, s) => sink = s),
+    );
+    GlassPlatform.instance.ensureStarted();
+    await pumpEventQueue();
+    final env = GlassPlatform.instance.environment;
+
+    GlassPlatform.instance.reduceTransparencyOverride = true;
+    expect(env.value.reduceTransparency, isTrue);
+    expect(env.value.reduceTransparencyForced, isTrue);
+    expect(env.value.iosMajorVersion, 26);
+
+    // iOS turning the setting on and off does not undo the override.
+    sink.success(true);
+    await pumpEventQueue();
+    GlassPlatform.instance.reduceTransparencyOverride = false;
+    expect(env.value.reduceTransparency, isFalse);
+    expect(env.value.reduceTransparencyForced, isFalse);
+
+    GlassPlatform.instance.reduceTransparencyOverride = null;
+    expect(env.value.reduceTransparency, isTrue);
+    expect(env.value.reduceTransparencyForced, isFalse);
+  });
 }

@@ -6,6 +6,10 @@
 - Tab bar: `GlassTabBarItem.custom(iconWidget:, activeIconWidget:)` for
   SVG or image icons, drawn in the bar's icon size and colour. Breaking:
   `GlassTabBarItem.icon` is now nullable (null for custom items).
+- `AdaptiveLiquidGlass.reduceTransparency`: overrides the system's Reduce
+  Transparency (null follows it). `true` draws every glass widget as its
+  opaque fallback, native glass included, on any platform, to test those
+  fallbacks or back an in-app setting.
 
 ## 0.1.7 (2026-10-09)
 
