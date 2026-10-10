@@ -13,6 +13,8 @@
 - `GlassFloatingActionButton` and `.extended(label:)`: a real Material 3
   `FloatingActionButton` on the Material path, a large prominent glass
   button (circle, or capsule with the label) elsewhere.
+- `GlassScaffold.floatingActionButton`: floats at the end, 16 above the
+  bottom bars (or the safe area); the body keeps its padding.
 - Tab bar: `materialStyle: GlassMaterialTabBarStyle.edgeToEdge` draws
   Material 3's full-width `NavigationBar` on the Material path, safe area
   inside; `GlassScaffold` drops its gap and pads the body to match.

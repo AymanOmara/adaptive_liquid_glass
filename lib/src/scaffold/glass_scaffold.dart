@@ -14,7 +14,8 @@ import 'scaffold_metrics.dart';
 
 /// An iOS 26 screen in one widget: content running under a
 /// [navigationBar] at the top and a floating [tabBar] or [toolbar] (with an
-/// optional [bottomAccessory]) at the bottom.
+/// optional [bottomAccessory]) at the bottom, and an optional
+/// [floatingActionButton] above them.
 ///
 /// ```dart
 /// GlassScaffold(
@@ -43,6 +44,7 @@ class GlassScaffold extends StatelessWidget {
     this.tabBar,
     this.toolbar,
     this.bottomAccessory,
+    this.floatingActionButton,
     this.backgroundColor,
     this.sampleBackdrop = true,
   }) : assert(
@@ -65,6 +67,11 @@ class GlassScaffold extends StatelessWidget {
 
   /// A bar floating just above [tabBar], usually a [GlassBottomAccessory].
   final PreferredSizeWidget? bottomAccessory;
+
+  /// A button floating at the end of the screen, just above the bottom
+  /// bars (or the safe area without them), usually a
+  /// `GlassFloatingActionButton`. It does not pad the body.
+  final Widget? floatingActionButton;
 
   /// The page colour. Defaults to the theme's scaffold background.
   final Color? backgroundColor;
@@ -126,6 +133,7 @@ class GlassScaffold extends StatelessWidget {
       if (bottomBar) bars += ScaffoldMetrics.accessoryGap;
     }
     final bottomInset = bars > 0 ? gap + bars : safeBottom;
+    final fab = floatingActionButton;
     Widget content = body;
     if (sampleBackdrop) {
       // The page colour is part of what glass floats over: without it the
@@ -226,6 +234,12 @@ class GlassScaffold extends StatelessWidget {
                   ],
                 ),
               ),
+            ),
+          if (fab != null)
+            PositionedDirectional(
+              end: ScaffoldMetrics.floatingActionButtonMargin,
+              bottom: bottomInset + ScaffoldMetrics.floatingActionButtonMargin,
+              child: fab,
             ),
         ],
       ),

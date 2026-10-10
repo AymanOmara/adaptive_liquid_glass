@@ -59,6 +59,68 @@ void main() {
     expect(_bodyPadding(t).bottom, 21 + 62);
   }, variant: ios);
 
+  testWidgets('a floating action button sits 16 above the bars, at the end', (
+    t,
+  ) async {
+    shaderEnv();
+    await _pump(
+      t,
+      GlassScaffold(
+        tabBar: _tabBar(),
+        floatingActionButton: const SizedBox.square(
+          key: Key('fab'),
+          dimension: 46,
+        ),
+        body: const SizedBox(key: Key('body')),
+      ),
+    );
+    final fab = t.getRect(find.byKey(const Key('fab')));
+    final bar = t.getRect(find.byType(GlassTabBar));
+    expect(fab.bottom, moreOrLessEquals(bar.top - 16));
+    expect(fab.right, 402 - 16);
+    // The body keeps its padding: the button floats over it.
+    expect(_bodyPadding(t).bottom, 21 + 62);
+  }, variant: ios);
+
+  testWidgets('without bars the button clears the safe area', (t) async {
+    shaderEnv();
+    await _pump(
+      t,
+      const GlassScaffold(
+        floatingActionButton: SizedBox.square(key: Key('fab'), dimension: 56),
+        body: SizedBox(key: Key('body')),
+      ),
+    );
+    expect(t.getRect(find.byKey(const Key('fab'))).bottom, 874 - 34 - 16);
+  }, variant: ios);
+
+  testWidgets('Material edge to edge: the button sits 16 above the bar', (
+    t,
+  ) async {
+    shaderEnv();
+    await _pump(
+      t,
+      GlassScaffold(
+        tabBar: GlassTabBar(
+          items: _items,
+          selectedIndex: 0,
+          onSelected: (_) {},
+          materialStyle: GlassMaterialTabBarStyle.edgeToEdge,
+        ),
+        floatingActionButton: GlassFloatingActionButton.extended(
+          onPressed: () {},
+          icon: CupertinoIcons.add,
+          label: const Text('New event'),
+        ),
+        body: const SizedBox(key: Key('body')),
+      ),
+    );
+    final fab = t.getRect(find.byType(FloatingActionButton));
+    final bar = t.getRect(find.byType(NavigationBar));
+    expect(fab.bottom, bar.top - 16);
+    expect(fab.right, 402 - 16);
+  }, variant: android);
+
   testWidgets('the body fills the screen behind the bars', (t) async {
     shaderEnv();
     await _pump(

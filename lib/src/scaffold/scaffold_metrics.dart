@@ -17,4 +17,8 @@ abstract final class ScaffoldMetrics {
 
   /// The bottom accessory's inset from the screen's sides.
   static const double accessoryInset = 21;
+
+  /// The floating action button's margin from the screen's end and from
+  /// the bars below it (Material 3's 16; iOS has no such button).
+  static const double floatingActionButtonMargin = 16;
 }
