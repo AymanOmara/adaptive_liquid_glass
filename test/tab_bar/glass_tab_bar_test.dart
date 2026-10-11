@@ -13,7 +13,6 @@ import 'package:adaptive_liquid_glass/src/tab_bar/tab_bar_metrics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show Badge, NavigationBar, NavigationDestination;
-import 'package:flutter/semantics.dart' show SemanticsFlag;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -1207,7 +1206,9 @@ void main() {
     expect(picks, isEmpty);
     expect(_lens, findsNothing);
     expect(
-      find.semantics.byPredicate((n) => n.hasFlag(SemanticsFlag.isButton)),
+      find.semantics.byPredicate(
+        (n) => n.getSemanticsData().flagsCollection.isButton,
+      ),
       findsExactly(2),
     );
     await t.tap(find.text('Settings'));
