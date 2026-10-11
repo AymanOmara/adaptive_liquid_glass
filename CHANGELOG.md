@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.9 (2026-10-11)
 
 - Tab bar: `GlassTabBarItem.spacer()`, an empty slot (e.g. under a
   floating action centred over the bar) with no tap target and no
