@@ -9,6 +9,8 @@
 - `GlassRefresh` / `SliverGlassRefresh`: pulling reveals the spinner's
   spokes one by one, as `UIRefreshControl` does, instead of filling a
   ring that then jumps to the spinner. `color` now tints the spinner.
+- `GlassRefresh`: no tiny disk is left over the content after a refresh
+  (the snap-back now ends at exactly 0).
 
 ## 0.1.9 (2026-10-11)
 

@@ -160,17 +160,21 @@ class _GlassRefreshState extends State<GlassRefresh>
       return;
     }
     setState(() => _refreshing = false);
-    _controller.animateWith(
-      SpringSimulation(
-        swiftUISpring(
-          response: RefreshMetrics.snapResponse,
-          dampingFraction: RefreshMetrics.snapDamping,
-        ),
-        _controller.value,
-        0,
-        0,
-      ),
-    );
+    _controller
+        .animateWith(
+          SpringSimulation(
+            swiftUISpring(
+              response: RefreshMetrics.snapResponse,
+              dampingFraction: RefreshMetrics.snapDamping,
+            ),
+            _controller.value,
+            0,
+            0,
+          ),
+        )
+        // The spring settles within its tolerance, not at 0; a value just
+        // above 0 would leave the disk showing at its smallest scale.
+        .then((_) => _controller.value = 0);
   }
 
   @override

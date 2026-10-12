@@ -115,7 +115,8 @@ void main() {
       find.byType(GlassRefreshIndicator),
     );
     expect(done.refreshing, isFalse);
-    expect(done.progress, moreOrLessEquals(0, epsilon: 0.01));
+    // Exactly 0: a spring stopping just above it left a tiny disk shown.
+    expect(done.progress, 0);
   }, variant: ios);
 
   testWidgets('Android uses Material RefreshIndicator', (t) async {
