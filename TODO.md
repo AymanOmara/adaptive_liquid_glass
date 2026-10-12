@@ -86,6 +86,12 @@ and CHANGELOG.md.
     +0.4..+3.1); native 2-7, -1.3 (-0.3..-1.6). Below what onset-aligned
     debug-build takes resolve (the same code reads +3.5 or -1.2 between
     batches); before the lens fix shader read +3.5 (-1.0..+9.8)
+  - native lens over the black page (dark, tap): 21 grey levels where iOS
+    shows 3-17 (over the bar 21-29, iOS 19-32). UIKit's clear glass reads
+    as one flat grey over both (overhang = interior every frame), so a
+    tint cannot darken one without the other: nativeLensShade 0.7 gave
+    overhang 14 but tap 0-10 4.56 vs 3.97 (kept 0.5). Would need a
+    Flutter fill over the lens's bar band with a darker tint
   - tapped lens at its end: 47 pt wide on its last visible frame (was 35;
     iOS 51)
   - selected pill over black: 54 grey levels against iOS's 50-51
