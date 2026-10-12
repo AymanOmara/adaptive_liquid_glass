@@ -110,6 +110,16 @@ Tap timing (2026-10-13): per take, the first frame the lens shows (30 pt wide or
 
 Native lens over the black page (2026-10-13, dark, tap, `v2d*`): per frame the native lens reads the same grey above the bar as over it (29 → 21 as the light fades; iOS 17 → 3 above, 32 → 19 over), i.e. UIKit's clear glass is a flat veil that shows neither the bar nor the page through it. `nativeLensShade` 0.7 darkened both (above and over: 16 → 14) and tap 0-10 went 3.97 → 4.56 (median, 8 / 5 takes), so 0.5 stays. A fix would tint the lens darker and paint the bar's grey over its bar band from Flutter; the overhang is about 1.5 % of the crop, so it is worth ≤ 0.3 of the tap's mean |diff|.
 
+Light mode (2026-10-13, `SCENE=tabbar tool/fidelity/record_tabbar_motion.sh`, runs `lt*` (4 tap takes), `ltp*` (3 press/drag); geometry tracking assumes the black page, so brightness only):
+
+| Mean \|diff\| 0-10 / 10-60 | Native | Shader |
+|---|---|---|
+| Tap | 4.8–5.7 / 1.8 | 3.7–4.0 / 1.7–1.8 |
+| Press | 5.6–5.9 / 6.8–6.9 | 5.1–5.4 / 6.0–6.1 |
+| Drag | 5.3–5.7 / 8.0–8.2 | 4.7–5.0 / 6.9–7.1 |
+
+Seen side by side (`light_tap.png`): iOS's travelling lens over the white bar is a light-grey glass, a little darker than the bar, with a soft shadow below and a colour fringe at its ends; the shader lens is almost invisible (a faint cyan rim), the native one a white blob whose glass smears the blue copy into a halo. Today's dark-only changes (`nativeLensShade`, the dark rim) do not reach light mode; the shared ones (magnification spring, `tapHold`, `tapLift`) apply as in dark. `tabbar_light.py` updated for `track()`'s new return value.
+
 Measurement limits: the example is a debug (JIT) build, and on a loaded host its first frames after a touch can stall (a spring then jumps 2–3 frames, and fits give response ≈ 0.05); about half the takes of the shader path show it, so read the fits of clean takes (`newa`). The drag's lens lag (mean centre over frames 20–50: iOS 207–215 pt, native 204–212, shader 189–228) varies more between takes than between renderers; `follow` is unchanged. Open: the lens over a tap is wider than iOS's (81 vs 65 pt where it overhangs) and peaks lower on a press (4.7 vs 6.0–7.3 pt).
 
 ## Hard

@@ -92,6 +92,13 @@ and CHANGELOG.md.
     tint cannot darken one without the other: nativeLensShade 0.7 gave
     overhang 14 but tap 0-10 4.56 vs 3.97 (kept 0.5). Would need a
     Flutter fill over the lens's bar band with a darker tint
+  - light mode (2026-10-13, white page, `SCENE=tabbar`): mean |diff|
+    0-10 / 10-60, native / shader: tap 5.1 / 1.8 and 3.9 / 1.7, press
+    5.8 / 6.9 and 5.2 / 6.1, drag 5.4 / 8.1 and 4.8 / 7.0. iOS's lens
+    over white is a visible light-grey glass with a soft shadow and a
+    coloured edge; ours (shader) is nearly invisible with a faint cyan
+    rim, the native one a white blob with a blue halo. No leak of the
+    dark-only fixes (nativeLensShade, dark rim)
   - tapped lens at its end: 47 pt wide on its last visible frame (was 35;
     iOS 51)
   - selected pill over black: 54 grey levels against iOS's 50-51
