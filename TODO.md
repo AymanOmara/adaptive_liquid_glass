@@ -1,10 +1,16 @@
 Open items, highest priority first. Done items are dropped; history is in git
 and CHANGELOG.md.
 
-1- bugs. Components demo, seen on the simulator (2026-10-08, dark,
-  PLAIN_BACKGROUND=true, example/lib/components_demo.dart):
-  - Period picker: the first tap after launch/restart does not open the
-    menu; the second does (seen twice, 2026-10-08).
+1- native menu open latency (investigated 2026-10-12; was "Period picker:
+  first tap does not open the menu"). Not a lost tap: on the iOS 26.4
+  simulator (debug) every first tap reached the picker and opened the
+  menu, but the frame adding the panel's native glass view stalls in the
+  engine (raster ~700 ms first open, ~500 ms later; cold launch, hot
+  restart, after scrolling all the same). A second tap during the stall
+  hits the menu once shown. Documented in README Known limitations. To
+  do, if it matters on a device: measure in profile on hardware; if still
+  slow, consider a pre-created panel view or a shader panel while native
+  glass settles.
 
 2- Android options (requested 2026-10-09):
   - iOS look on Android (~1 h, later): already wired. Components choose by
