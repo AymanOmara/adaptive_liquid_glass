@@ -94,6 +94,18 @@ Tap brightness (2026-10-12, runs `tapb0*` before, `tapx1*` after; `tabbar_motion
 
 The shader lens (unchanged) is already within ~1 level of iOS's at matched positions; its tap 0-10 (4.1–5.7) is the tinted glyphs under the lens, bent and placed unlike iOS's. Timing: shifting ours a frame later lowers native tap 0-10 by ~0.15 only (3.95 → 3.79), below the take-to-take spread, so the springs stay. The static scenes are untouched (the lens is drawn only while up).
 
+Tapped lens look (2026-10-13; side-by-side sheets of a clean take, iOS | native | shader, before `sbs1b` and after `v2d2`). Before, in shader mode the tabs under the lens jumped to 1.18–1.20× at once (iOS: 1.02–1.09× while crossing Music, 1.14× on arrival, 1.22× held), the rim was a bright teal ring (155 grey levels, teal; iOS: about 83, neutral), the tinted Settings gear smeared into a blue crescent at the lens's end, and the lens stood up 1–2 frames early and settled 1–2 frames early. Changes: the magnification has its own spring from touch-down (`TabBarMetrics.magnify` 0.35 / 1.0, heading for `tapMagnify` 0.65 of the extra after a quick tap's touch-up) instead of following the lens's size; `tabLensDark` rim `rimMix` 0.85 → 0.46, `rimTint` 0.2 → 0 (peak now 83, neutral); `tabLensContentStrength` −0.8 → −0.4; `tapHold` 130 → 165 ms with the travelling lens heading for `tapLift` 0.93 from touch-up.
+
+Lens per frame, tap (centre x / overhang pt; iOS take `v2c2`/`sbs1b`, ours shader `v2d2`):
+
+| | 175–180 | 194–198 | 212–215 | 240–242 | 251–261 | 267–273 | 276–280 |
+|---|---|---|---|---|---|---|---|
+| iOS | 2.3–2.7 | 4.3 | 5.7–6.0 | 7.0 | 5.7–6.7 | 3.0–4.3 | 1.7–2.0 |
+| shader before | 6.0 | 7.0 | 7.0 | 6.3 | 5.3 | 2.3 | 1.0 (272) |
+| shader now | 2.3 | 4.0 | 5.3 | 6.7 | 6.7 | 4.7–5.7 | 1.7–3.0 |
+
+Mean |diff| medians (takes): shader tap 0-10 5.2 (8) → 3.7 (4), 10-60 2.3 → 2.1; native tap 0-10 4.05 (5) → 3.97 (4); shader press 6.3 / 7.3 (2) → 5.9 / 5.7 (3); shader drag 6.6 / 8.6 → 5.6 / 7.6; native drag 6.7 / 8.9 → 7.0 / 9.1 (within the spread). Native press 0-10 reads 8.1–10.4 against 7.4–8.6 before, but in those takes the native lens appears 5–9 frames after the onset (debug stalls: 3–7 repeated frames in frames 0–14); nothing in these changes reaches the native lens's timing. Nearly every take on this host (load ~14) has repeated frames, so medians, not single takes. Left: magnification while crossing Music (1.14 vs 1.02–1.09), iOS's horizontal motion blur on the tabs, iOS's slightly wider settling pill at frame 20, and the native lens's blue halo.
+
 Measurement limits: the example is a debug (JIT) build, and on a loaded host its first frames after a touch can stall (a spring then jumps 2–3 frames, and fits give response ≈ 0.05); about half the takes of the shader path show it, so read the fits of clean takes (`newa`). The drag's lens lag (mean centre over frames 20–50: iOS 207–215 pt, native 204–212, shader 189–228) varies more between takes than between renderers; `follow` is unchanged. Open: the lens over a tap is wider than iOS's (81 vs 65 pt where it overhangs) and peaks lower on a press (4.7 vs 6.0–7.3 pt).
 
 ## Hard

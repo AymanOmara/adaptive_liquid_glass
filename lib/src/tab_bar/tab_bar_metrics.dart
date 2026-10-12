@@ -74,6 +74,19 @@ abstract final class TabBarMetrics {
   /// See [magnifyX].
   static const double magnifyY = 1.19;
 
+  /// The tabs' magnification under the lens rising from a touch-down,
+  /// whatever the lens's size does: SwiftUI's `TabView` (iOS 26.4) holds
+  /// 1.22 through a press's settle and relift, while a quick tap's
+  /// travelling lens magnifies 1.02-1.09 early and 1.14 on arrival.
+  static final SpringDescription magnify = swiftUISpring(
+    response: 0.35,
+    dampingFraction: 1,
+  );
+
+  /// Where [magnify] heads after a quick tap's touch-up (a share of
+  /// [magnifyX]/[magnifyY]'s extra): iOS's tapped lens reaches about 1.14.
+  static const double tapMagnify = 0.65;
+
   /// Peak white of the light a held lens casts on the bar (see BarGlow).
   static const double glow = 0.095;
 
@@ -237,11 +250,16 @@ abstract final class TabBarMetrics {
 
   /// After a quick tap the lens stays up this long from touch-down, then
   /// shrinks into the pill wherever it is: SwiftUI's `TabView` (iOS 26.4,
-  /// Home to Settings) drops it ~130 ms in, before it arrives, so it never
+  /// Home to Settings) drops it ~165 ms in, before it arrives, so it never
   /// reaches the held lens's full width or height (tabbar_motion.py, tap:
   /// 7.0 pt above the bar at most). A longer press releases at once;
   /// Reduce Motion skips it.
-  static const Duration tapHold = Duration(milliseconds: 130);
+  static const Duration tapHold = Duration(milliseconds: 165);
+
+  /// A quick tap's travelling lens heads for this share of the held
+  /// lens's size from touch-up until it settles (SwiftUI's `TabView`, iOS
+  /// 26.4: 7.0 pt over the bar at most).
+  static const double tapLift = 0.93;
 
   /// After a quick tap on another tab the new pill fades in over this,
   /// from the lens starting to settle: SwiftUI's `TabView` (iOS 26.4)

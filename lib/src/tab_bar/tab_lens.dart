@@ -80,10 +80,11 @@ const tabLensDark = GlassVariantConstants(
   // ends bend half as much (Kept: clear mid-bar, a rainbow crescent past
   // the bar's end).
   lensVertical: 0.5,
-  // Kept's rim: teal-cyan (hue ~180), about 0.2 saturated.
-  rimTint: 0.2,
+  // SwiftUI's `TabView` (iOS 26.4) over black: a thin neutral grey rim,
+  // about 83 grey levels at its peak (the teal 0.85 mix read 155).
+  rimTint: 0,
   rimHue: 180,
-  rimMix: 0.85,
+  rimMix: 0.46,
   rimMixWidth: 1.4,
   rimMixCut: 3,
   rimMixLumaFloor: 1,
@@ -117,7 +118,7 @@ const tabLensContentBand = 20.0;
 const tabLensContentDecay = 6.0;
 
 /// See [tabLensContentBand].
-const tabLensContentStrength = -0.8;
+const tabLensContentStrength = -0.4;
 
 /// Blur radius of the tinted tabs at the lens's rim (logical px), easing
 /// to none inside: iOS's bent tabs are soft.

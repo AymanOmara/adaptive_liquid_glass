@@ -165,6 +165,14 @@ class _GlassTabBarState extends State<GlassTabBar>
     vsync: this,
   );
 
+  /// How magnified the tabs under the lens are: 0 none, 1
+  /// TabBarMetrics.magnifyX/Y. Springs up from each touch-down on its own
+  /// (see TabBarMetrics.magnify), not with the lens's size, and stays up
+  /// until the lens is gone.
+  late final AnimationController _magnify = AnimationController.unbounded(
+    vsync: this,
+  );
+
   /// The pill fading in at a quick tap's new tab once its lens is gone
   /// (see TabBarMetrics.tapPillIn); 1 otherwise.
   late final AnimationController _pillIn = AnimationController(
@@ -491,6 +499,7 @@ class _GlassTabBarState extends State<GlassTabBar>
     _followTicker.dispose();
     _grow.dispose();
     _light.dispose();
+    _magnify.dispose();
     _wobbleTicker.dispose();
     _wobble.dispose();
     _x.dispose();
@@ -514,6 +523,20 @@ class _GlassTabBarState extends State<GlassTabBar>
       if (mounted && !_held) settle?.call();
     });
     _dragging = false;
+    // A lens already up keeps its magnification; a new one starts flat.
+    if (!_lensUp && _press.value <= 0.05) _magnify.value = 0;
+    if (_reduceMotion) {
+      _magnify.value = 1;
+    } else {
+      _magnify.animateWith(
+        SpringSimulation(
+          TabBarMetrics.magnify,
+          _magnify.value,
+          1,
+          _magnify.velocity,
+        ),
+      );
+    }
     _springLight(TabBarMetrics.light, 1);
     _springGrow(1);
     // The lens grows at the current selection and travels to the finger,
@@ -552,6 +575,17 @@ class _GlassTabBarState extends State<GlassTabBar>
     // The bar stays as grown as it is until the lens settles.
     _grow.stop();
     _springLight(TabBarMetrics.lightOff, 0);
+    // A quick tap's lens magnifies less (iOS: 1.14 on arrival, not 1.22).
+    if (_holdTimer != null && !_reduceMotion) {
+      _magnify.animateWith(
+        SpringSimulation(
+          TabBarMetrics.magnify,
+          _magnify.value,
+          TabBarMetrics.tapMagnify,
+          _magnify.velocity,
+        ),
+      );
+    }
     var slot = _nearestSlot;
     var index = _rtl ? _count - 1 - slot : slot;
     // A spacer takes no selection: the lens goes back to the selected tab.
@@ -570,6 +604,10 @@ class _GlassTabBarState extends State<GlassTabBar>
       _arrival = slot.toDouble();
       _x.addListener(_settleOnArrival);
     } else if (_holdTimer != null) {
+      // A quick tap's travelling lens lifts less than a held one.
+      if (travelling && !_reduceMotion) {
+        _springPress(TabBarMetrics.pop, TabBarMetrics.tapLift);
+      }
       _shrink(() {
         _settle(TabBarMetrics.tapSettle);
         if (travelling && !_reduceMotion) _pillIn.forward(from: 0);
@@ -882,6 +920,7 @@ class _GlassTabBarState extends State<GlassTabBar>
             _grow,
             _wobble,
             _light,
+            _magnify,
             _pillIn,
           ]),
           builder: (context, _) => _bar(_press.value, selected, indicator),
@@ -941,9 +980,10 @@ class _GlassTabBarState extends State<GlassTabBar>
         semantics: true,
       ),
     );
+    final m = _magnify.value.clamp(0.0, 1.0);
     final magnify = Offset(
-      lerpDouble(1, TabBarMetrics.magnifyX, t)!,
-      lerpDouble(1, TabBarMetrics.magnifyY, t)!,
+      lerpDouble(1, TabBarMetrics.magnifyX, m)!,
+      lerpDouble(1, TabBarMetrics.magnifyY, m)!,
     );
     return SizedBox(
       width: _rowWidth + TabBarMetrics.inset * 2,

@@ -829,7 +829,7 @@ void main() {
     t,
   ) async {
     shaderEnv();
-    expect(TabBarMetrics.tapHold, const Duration(milliseconds: 130));
+    expect(TabBarMetrics.tapHold, const Duration(milliseconds: 165));
     final picks = <int>[];
     await t.pumpWidget(plainHost(_Harness(picks)));
     // A tap on the selected tab: the lens has nowhere to travel, so
@@ -837,12 +837,12 @@ void main() {
     final g = await t.startGesture(t.getCenter(find.text('History')));
     await t.pump(const Duration(milliseconds: 16));
     await g.up();
-    // 128 ms after touch-down, still inside tapHold: the lens stays up.
-    for (var i = 0; i < 7; i++) {
+    // 160 ms after touch-down, still inside tapHold: the lens stays up.
+    for (var i = 0; i < 9; i++) {
       await t.pump(const Duration(milliseconds: 16));
     }
     expect(_lens, findsOneWidget);
-    // iOS has settled it into the pill by ~330 ms; so do we.
+    // iOS has settled it into the pill by ~370 ms; so do we.
     for (var i = 0; i < 13; i++) {
       await t.pump(const Duration(milliseconds: 16));
     }
@@ -884,12 +884,12 @@ void main() {
     final g = await t.startGesture(t.getCenter(find.text('Settings')));
     await t.pump(const Duration(milliseconds: 16));
     await g.up();
-    for (var i = 0; i < 8; i++) {
+    for (var i = 0; i < 9; i++) {
       await t.pump(const Duration(milliseconds: 16));
     }
     final up = t.getSize(_lens).height;
     // Past tapHold the lens shrinks, still on its way.
-    for (var i = 0; i < 4; i++) {
+    for (var i = 0; i < 6; i++) {
       await t.pump(const Duration(milliseconds: 16));
     }
     expect(t.getSize(_lens).height, lessThan(up - 2));

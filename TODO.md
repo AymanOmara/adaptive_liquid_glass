@@ -73,17 +73,19 @@ and CHANGELOG.md.
   tapped lens travel, lift (7.0 pt peak) and late pill fade-in; labels
   beside the search tab (searchLabelShift).
   Open (small), measured 2026-10-09 against SwiftUI TabView (tabbardark):
-  - tap brightness (2026-10-12, tabbar_motion.py's brightness line):
-    native 0-10 mean |diff| 4.9 -> 4.0 (10-60 2.0), the native lens's
-    grey veil shaded off with the bar's light (nativeLensShade); shader
-    4.1-5.7 (10-60 2.1-2.5), its lens as bright as iOS's (+1 level at
-    matched positions) but the tinted glyphs under it bent and placed
-    differently (Music's icon, Settings' glyph)
-  - tap timing: our lens shows ~1 frame before iOS's (frame 1-2 vs 3-4);
-    delaying ours a frame would gain only ~0.15 |diff|, below the
-    debug-build stall noise, so left
-  - tapped lens at its end narrows faster than iOS's (35 vs 51 pt wide on
-    its last visible frame)
+  - tap brightness (2026-10-13, tabbar_motion.py's brightness line,
+    medians): native 0-10 4.4 -> 4.0 (veil shaded, nativeLensShade);
+    shader 5.2 -> 3.7 (10-60 2.3 -> 2.1): tabs magnified on their own
+    spring (1.14 on a tap, was 1.18-1.20 at once), thin grey rim in dark,
+    tapHold 165 ms + tapLift 0.93 (lens height per frame within ~0.5 pt
+    of iOS's), content bend -0.4. Left: magnification while crossing
+    Music 1.14 vs iOS's 1.02-1.09; iOS's motion blur on the tabs; the
+    native lens's blue halo (UIKit glass refracting the tinted copy)
+  - tap timing: our lens showed ~1-2 frames before iOS's; with tapHold
+    165 / tapLift 0.93 the shader lens now first shows at frame 3-5 (iOS
+    4-5) and its centre per frame matches; native not yet re-checked
+  - tapped lens at its end: 47 pt wide on its last visible frame (was 35;
+    iOS 51)
   - selected pill over black: 54 grey levels against iOS's 50-51
   - press brightness: frames 0-10 mean |diff| ~4.5
   - drag brightness: mean |diff| ~3-4 (mid-drag within +-4)

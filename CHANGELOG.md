@@ -1,5 +1,14 @@
 ## Unreleased
 
+- `GlassTabBar`: a quick tap's travelling lens looks closer to iOS 26's.
+  The tabs under it magnify on their own spring from touch-down
+  (`TabBarMetrics.magnify`), up to about 1.14 for a tap instead of 1.2
+  at once. The lens stays up a little longer (`tapHold` 130 -> 165 ms)
+  and lifts a little less (`tapLift`), so its height follows iOS's frame
+  by frame. In shader mode, dark, the lens rim is a thin neutral grey
+  (about 83 grey levels, as iOS's) instead of a bright teal ring, and the
+  tinted tabs bend less at the lens's ends. Shader tap frames 0-10 mean
+  |diff| against SwiftUI's `TabView`: 5.2 -> 3.7.
 - `GlassTabBar`, native mode, dark: a quick tap's travelling lens no
   longer shows a grey veil. UIKit's clear glass lifted black to about 40
   grey levels under the lens; it is now shaded as the bar's light fades,
