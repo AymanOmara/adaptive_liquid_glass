@@ -39,6 +39,8 @@ Future<GlassDialogAction?> showGlassConfirmationDialog({
     chosen = await showDialog<GlassDialogAction>(
       context: context,
       builder: (context) => AlertDialog(
+        // Larger text scrolls rather than overflowing the screen.
+        scrollable: MediaQuery.textScalerOf(context).scale(1) > 1,
         title: title == null ? null : Text(title),
         actionsOverflowDirection: VerticalDirection.down,
         actionsOverflowButtonSpacing: 8,

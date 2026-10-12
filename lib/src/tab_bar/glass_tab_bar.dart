@@ -667,7 +667,11 @@ class _GlassTabBarState extends State<GlassTabBar>
       valueListenable: GlassPlatform.instance.environment,
       builder: (context, _, _) => tabBarEdgeToEdge(context, widget)
           ? _materialBar(context)
-          : _floatingBar(context),
+          // iOS tab bar labels keep their size at any Dynamic Type setting.
+          : MediaQuery.withClampedTextScaling(
+              maxScaleFactor: TabBarMetrics.maxTextScale,
+              child: Builder(builder: _floatingBar),
+            ),
     );
   }
 

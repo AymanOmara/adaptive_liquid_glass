@@ -119,7 +119,13 @@ class _GlassSearchFieldState extends State<GlassSearchField> {
     Color resolve(Color c) => CupertinoDynamicColor.resolve(c, context);
     final secondary = resolve(GlassColors.secondaryLabel);
     return SizedBox(
-      height: SearchMetrics.height,
+      // The capsule grows with Dynamic Type (never below its height).
+      height:
+          SearchMetrics.height *
+          IOSText.growth(
+            MediaQuery.textScalerOf(context),
+            SearchMetrics.fontSize,
+          ),
       child: LiquidGlass(
         glass: widget.glass,
         mode: widget.mode,

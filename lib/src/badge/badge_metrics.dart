@@ -37,4 +37,8 @@ abstract final class BadgeMetrics {
     fontWeight: FontWeight.w600,
     height: 1,
   );
+
+  /// The largest text scale a text badge takes: like iOS's badges it keeps
+  /// its size at any Dynamic Type setting, sitting on a fixed-size icon.
+  static const double maxTextScale = 1;
 }

@@ -192,6 +192,9 @@ class _GlassToastViewState extends State<GlassToastView>
   Widget _glassToast(BuildContext context) {
     final request = widget.request;
     final action = request.action;
+    final enlarged =
+        MediaQuery.textScalerOf(context).scale(ToastMetrics.fontSize) >
+        ToastMetrics.fontSize;
     return DefaultTextStyle(
       style: IOSText.style(ToastMetrics.fontSize),
       child: Semantics(
@@ -224,8 +227,10 @@ class _GlassToastViewState extends State<GlassToastView>
                 Flexible(
                   child: Text(
                     request.message,
-                    maxLines: ToastMetrics.maxLines,
-                    overflow: TextOverflow.ellipsis,
+                    // Two lines at the default size; larger Dynamic Type
+                    // shows the whole message.
+                    maxLines: enlarged ? null : ToastMetrics.maxLines,
+                    overflow: enlarged ? null : TextOverflow.ellipsis,
                     style: IOSText.style(
                       ToastMetrics.fontSize,
                       weight: FontWeight.w500,

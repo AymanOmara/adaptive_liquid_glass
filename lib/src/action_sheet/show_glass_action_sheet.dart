@@ -64,39 +64,42 @@ Future<GlassDialogAction?> showGlassActionSheet({
       context: context,
       showDragHandle: true,
       useSafeArea: true,
+      // Scrolls when larger text outgrows the sheet.
       builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (title != null || message != null)
-              ListTile(
-                title: title == null
-                    ? null
-                    : Text(
-                        title,
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                subtitle: message == null ? null : Text(message),
-              ),
-            for (final a in actions)
-              ListTile(
-                title: Text(
-                  a.label,
-                  style: a.role == GlassButtonRole.destructive
-                      ? TextStyle(color: Theme.of(context).colorScheme.error)
-                      : null,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (title != null || message != null)
+                ListTile(
+                  title: title == null
+                      ? null
+                      : Text(
+                          title,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                  subtitle: message == null ? null : Text(message),
                 ),
-                onTap: () => Navigator.of(context).pop(a),
-              ),
-            if (cancel != null) ...[
-              const Divider(),
-              ListTile(
-                title: Text(cancel.label),
-                onTap: () => Navigator.of(context).pop(cancel),
-              ),
+              for (final a in actions)
+                ListTile(
+                  title: Text(
+                    a.label,
+                    style: a.role == GlassButtonRole.destructive
+                        ? TextStyle(color: Theme.of(context).colorScheme.error)
+                        : null,
+                  ),
+                  onTap: () => Navigator.of(context).pop(a),
+                ),
+              if (cancel != null) ...[
+                const Divider(),
+                ListTile(
+                  title: Text(cancel.label),
+                  onTap: () => Navigator.of(context).pop(cancel),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

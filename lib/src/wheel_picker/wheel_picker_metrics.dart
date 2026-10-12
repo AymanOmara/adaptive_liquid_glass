@@ -39,4 +39,9 @@ abstract final class WheelPickerMetrics {
 
   /// How long a programmatic step takes.
   static const Duration stepDuration = Duration(milliseconds: 200);
+
+  /// The largest text scale a wheel's rows take: like UIPickerView's they
+  /// keep their size at any Dynamic Type setting, as the rows have a fixed
+  /// height.
+  static const double maxTextScale = 1;
 }

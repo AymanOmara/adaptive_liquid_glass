@@ -36,25 +36,38 @@ class GlassDialogButton extends StatelessWidget {
       destructive ? GlassSystemColors.red : GlassColors.label,
       context,
     );
+    // At larger Dynamic Type the button grows and its label wraps.
+    final wraps =
+        MediaQuery.textScalerOf(context).scale(DialogMetrics.buttonSize) >
+        DialogMetrics.buttonSize;
     return Semantics(
       button: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: SizedBox(
-          height: DialogMetrics.buttonHeight,
+        child: ConstrainedBox(
+          constraints: wraps
+              ? const BoxConstraints(minHeight: DialogMetrics.buttonHeight)
+              : const BoxConstraints.tightFor(
+                  height: DialogMetrics.buttonHeight,
+                ),
           child: DecoratedBox(
             decoration: const ShapeDecoration(
               shape: StadiumBorder(),
               color: GlassColors.dialogButtonFill,
             ),
             child: Center(
+              heightFactor: wraps ? 1 : null,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: wraps ? DialogMetrics.wrappedButtonPadding : 0,
+                ),
                 child: Text(
                   action.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  maxLines: wraps ? null : 1,
+                  overflow: wraps ? null : TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
                   style: IOSText.style(
                     DialogMetrics.buttonSize,
                     weight: switch ((emphasised, destructive)) {

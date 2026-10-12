@@ -51,6 +51,8 @@ Future<GlassDialogAction?> showGlassAlert({
     chosen = await showDialog<GlassDialogAction>(
       context: context,
       builder: (context) => AlertDialog(
+        // Larger text scrolls rather than overflowing the screen.
+        scrollable: MediaQuery.textScalerOf(context).scale(1) > 1,
         title: Text(title),
         content: message == null ? null : Text(message),
         actions: [

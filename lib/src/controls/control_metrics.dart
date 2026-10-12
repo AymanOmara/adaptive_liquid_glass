@@ -70,4 +70,9 @@ abstract final class ControlMetrics {
     response: 0.3,
     dampingFraction: 0.78,
   );
+
+  /// The largest text scale a segmented control's labels take: like
+  /// UISegmentedControl's they keep their size at any Dynamic Type setting
+  /// in the fixed-height track (iOS offers the Large Content Viewer).
+  static const double segmentedMaxTextScale = 1;
 }

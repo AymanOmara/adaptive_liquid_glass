@@ -1146,6 +1146,12 @@ Stack(
 - **Reduce Motion:** springs are dropped — the tab bar's lens and pill, the
   toggle thumb, the sheet, the toast (fades instead of sliding) and the
   progress indicator's easing all move or appear without animating.
+- **Large text** (Dynamic Type / `MediaQuery.textScaler`): content grows
+  and wraps — buttons, chips, fields, pickers, menus, alerts (buttons
+  stacked at the accessibility sizes, scrolling when tall), action sheets
+  and toasts. Fixed-height chrome keeps its default text size, as iOS's:
+  the floating tab bar, the inline navigation title, segmented controls,
+  wheels, badges and accessory gauges (the large title still scales).
 - **Keyboard:** interactive glass takes focus and shows a focus ring;
   `onPressed` glass and buttons answer Enter and Space.
 - **Reduce Transparency** (iOS) turns glass into an opaque surface, as iOS

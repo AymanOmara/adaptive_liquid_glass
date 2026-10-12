@@ -247,23 +247,28 @@ class _GlassSegmentedControlState<T> extends State<GlassSegmentedControl<T>>
                 ? () => widget.onChanged!(widget.segments[i].value)
                 : null,
             child: Center(
-              child: DefaultTextStyle(
-                style: IOSText.style(
-                  ControlMetrics.segmentedFontSize,
-                  // As SwiftUI: medium, the selected segment semibold.
-                  weight: i == _selectedIndex
-                      ? FontWeight.w600
-                      : FontWeight.w500,
-                  color: color,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                child: IconTheme.merge(
-                  data: IconThemeData(color: color, size: 18),
-                  // A semantic label replaces the visible one.
-                  child: ExcludeSemantics(
-                    excluding: widget.segments[i].semanticLabel != null,
-                    child: widget.segments[i].label,
+              // UISegmentedControl's labels keep their size at any text
+              // size in the fixed-height track.
+              child: MediaQuery.withClampedTextScaling(
+                maxScaleFactor: ControlMetrics.segmentedMaxTextScale,
+                child: DefaultTextStyle(
+                  style: IOSText.style(
+                    ControlMetrics.segmentedFontSize,
+                    // As SwiftUI: medium, the selected segment semibold.
+                    weight: i == _selectedIndex
+                        ? FontWeight.w600
+                        : FontWeight.w500,
+                    color: color,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  child: IconTheme.merge(
+                    data: IconThemeData(color: color, size: 18),
+                    // A semantic label replaces the visible one.
+                    child: ExcludeSemantics(
+                      excluding: widget.segments[i].semanticLabel != null,
+                      child: widget.segments[i].label,
+                    ),
                   ),
                 ),
               ),

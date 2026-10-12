@@ -196,7 +196,10 @@ class GlassButton extends StatelessWidget {
             : FontWeight.w400,
         color: labelColor,
       ),
-      maxLines: 1,
+      // One line at the default size; larger Dynamic Type wraps the label,
+      // as SwiftUI's buttons do, rather than cutting it off.
+      maxLines: scale > 1 ? null : 1,
+      textAlign: scale > 1 ? TextAlign.center : null,
       child: IconTheme.merge(
         data: IconThemeData(size: m.iconSize, color: labelColor),
         child: content,
@@ -259,7 +262,7 @@ class GlassButton extends StatelessWidget {
       children: [
         i,
         SizedBox(width: m.iconGap),
-        label!,
+        Flexible(child: label!),
       ],
     );
   }

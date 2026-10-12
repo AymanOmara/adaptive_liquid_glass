@@ -68,4 +68,9 @@ abstract final class GaugeMetrics {
 
   /// The Material path's linear track corner radius (estimated).
   static const double materialTrackRadius = 2;
+
+  /// The largest text scale the accessory rings' text takes: their circle
+  /// has a fixed size, as WidgetKit's accessory gauges, so the text inside
+  /// keeps its size at any Dynamic Type setting.
+  static const double circularMaxTextScale = 1;
 }

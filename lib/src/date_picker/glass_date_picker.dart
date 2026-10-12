@@ -229,13 +229,13 @@ class _GlassDatePickerState extends State<GlassDatePicker> {
   Widget _compact() => switch (widget.pickerMode) {
     GlassDatePickerMode.date => _dateCapsule(),
     GlassDatePickerMode.time => _timeCapsule(),
-    GlassDatePickerMode.dateAndTime => Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _dateCapsule(),
-        const SizedBox(width: DatePickerWheelMetrics.capsuleGap),
-        _timeCapsule(),
-      ],
+    // Side by side; at larger text the time wraps below the date rather
+    // than overflowing.
+    GlassDatePickerMode.dateAndTime => Wrap(
+      spacing: DatePickerWheelMetrics.capsuleGap,
+      runSpacing: DatePickerWheelMetrics.capsuleGap,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [_dateCapsule(), _timeCapsule()],
     ),
   };
 
@@ -301,8 +301,8 @@ class _GlassDatePickerState extends State<GlassDatePicker> {
     GlassDatePickerStyle.compact => switch (widget.pickerMode) {
       GlassDatePickerMode.date => _materialDateButton(),
       GlassDatePickerMode.time => _materialTimeButton(),
-      GlassDatePickerMode.dateAndTime => Row(
-        mainAxisSize: MainAxisSize.min,
+      GlassDatePickerMode.dateAndTime => Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [_materialDateButton(), _materialTimeButton()],
       ),
     },
@@ -392,7 +392,13 @@ class _Capsule extends StatelessWidget {
           behavior: HitTestBehavior.opaque,
           onTap: onTap == null ? null : () => onTap!(anchor),
           child: Container(
-            height: DatePickerMetrics.height,
+            // The capsule grows with Dynamic Type (never below its height).
+            height:
+                DatePickerMetrics.height *
+                IOSText.growth(
+                  MediaQuery.textScalerOf(context),
+                  DatePickerMetrics.fontSize,
+                ),
             padding: const EdgeInsets.symmetric(
               horizontal: DatePickerMetrics.padding,
             ),
@@ -409,6 +415,7 @@ class _Capsule extends StatelessWidget {
               child: Text(
                 text,
                 maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: IOSText.style(DatePickerMetrics.fontSize, color: colour),
               ),
             ),

@@ -308,7 +308,16 @@ class _GlassTextFieldState extends State<GlassTextField> {
             ),
             child: glass,
           )
-        : SizedBox(height: TextFieldMetrics.height, child: glass);
+        // The capsule grows with Dynamic Type (never below its height).
+        : SizedBox(
+            height:
+                TextFieldMetrics.height *
+                IOSText.growth(
+                  MediaQuery.textScalerOf(context),
+                  TextFieldMetrics.fontSize,
+                ),
+            child: glass,
+          );
   }
 
   Widget _cupertinoField(Color secondary) {

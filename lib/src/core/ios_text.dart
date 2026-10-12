@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/painting.dart';
 
 /// Text as iOS sets it: SF Pro's tracking depends on the point size, which
@@ -29,6 +31,11 @@ abstract final class IOSText {
     }
     return _tracking[best]!;
   }
+
+  /// How much [scaler] (Dynamic Type) grows text of [size]; never below 1,
+  /// so a control sized by it keeps its geometry at and under the default.
+  static double growth(TextScaler scaler, double size) =>
+      math.max(1, scaler.scale(size) / size);
 
   /// A style of [size] and [weight] with iOS's tracking.
   static TextStyle style(

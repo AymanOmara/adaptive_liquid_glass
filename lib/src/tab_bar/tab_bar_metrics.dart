@@ -141,6 +141,11 @@ abstract final class TabBarMetrics {
     letterSpacing: 0,
   );
 
+  /// The largest text scale the floating bar's labels take: iOS tab bar
+  /// labels do not grow with Dynamic Type (UIKit shows the Large Content
+  /// Viewer on a long press instead).
+  static const double maxTextScale = 1;
+
   /// The bar growing by [growX] when touched and back once the lens has
   /// settled (SwiftUI `TabView`, iOS 26.4: half grown 3.5 frames after the
   /// touch, peak 7.7 of 7.0 at frame 12; shrinking over 8 frames with a

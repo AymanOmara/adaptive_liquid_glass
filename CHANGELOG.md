@@ -14,6 +14,14 @@
   ring that then jumps to the spinner. `color` now tints the spinner.
 - `GlassRefresh`: no tiny disk is left over the content after a refresh
   (the snap-back now ends at exactly 0).
+- Accessibility: large text (Dynamic Type / `MediaQuery.textScaler`) no
+  longer overflows or cuts text off. Buttons, chips, links, pickers, the
+  compact date picker, text and search fields, menus, alerts, action
+  sheets and toasts grow and wrap (alerts stack their buttons at the
+  accessibility sizes and scroll); fixed-height chrome (the floating tab
+  bar, the inline navigation title, segmented controls, wheels, badges and
+  accessory gauges) keeps its default text size, as iOS's. Nothing changes
+  at the default text size.
 
 ## 0.1.9 (2026-10-11)
 

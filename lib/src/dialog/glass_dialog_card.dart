@@ -63,7 +63,14 @@ class GlassDialogCard extends StatelessWidget {
           onTap: () => onAction(a),
         ),
     ];
-    final side = !confirmation && buttons.length == 2;
+    final scale =
+        MediaQuery.textScalerOf(context).scale(DialogMetrics.titleSize) /
+        DialogMetrics.titleSize;
+    // At the accessibility sizes an alert stacks its buttons, as iOS's.
+    final side =
+        !confirmation &&
+        buttons.length == 2 &&
+        scale < DialogMetrics.stackedButtonsTextScale;
     final alertText = !confirmation || message != null;
     final text = Padding(
       padding: EdgeInsetsDirectional.symmetric(
@@ -115,32 +122,36 @@ class GlassDialogCard extends StatelessWidget {
           DialogMetrics.padding,
           DialogMetrics.padding,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (title != null || message != null) ...[
-              text,
-              SizedBox(
-                height: message != null
-                    ? DialogMetrics.messageButtonsGap
-                    : DialogMetrics.buttonsGap,
-              ),
-            ],
-            if (side)
-              Row(
-                children: [
-                  Expanded(child: buttons[0]),
-                  const SizedBox(width: DialogMetrics.buttonSpacing),
-                  Expanded(child: buttons[1]),
-                ],
-              )
-            else
-              for (var i = 0; i < buttons.length; i++) ...[
-                if (i > 0) const SizedBox(height: DialogMetrics.buttonSpacing),
-                buttons[i],
+        child: _scrollable(
+          scale > 1,
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (title != null || message != null) ...[
+                text,
+                SizedBox(
+                  height: message != null
+                      ? DialogMetrics.messageButtonsGap
+                      : DialogMetrics.buttonsGap,
+                ),
               ],
-          ],
+              if (side)
+                Row(
+                  children: [
+                    Expanded(child: buttons[0]),
+                    const SizedBox(width: DialogMetrics.buttonSpacing),
+                    Expanded(child: buttons[1]),
+                  ],
+                )
+              else
+                for (var i = 0; i < buttons.length; i++) ...[
+                  if (i > 0)
+                    const SizedBox(height: DialogMetrics.buttonSpacing),
+                  buttons[i],
+                ],
+            ],
+          ),
         ),
       ),
     );
@@ -170,4 +181,9 @@ class GlassDialogCard extends StatelessWidget {
           : card,
     );
   }
+
+  /// At larger Dynamic Type the card's text and buttons scroll when they
+  /// outgrow the screen, as an iOS alert's do.
+  static Widget _scrollable(bool scrolls, Widget child) =>
+      scrolls ? SingleChildScrollView(child: child) : child;
 }

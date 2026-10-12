@@ -139,13 +139,16 @@ class _GlassWheelPickerState<T> extends State<GlassWheelPicker<T>> {
   }
 
   @override
-  Widget build(BuildContext context) => GlassModeBuilder(
-    mode: widget.mode,
-    builder: (context, effective) => _semantics(
-      _sized(
-        effective == EffectiveGlassMode.material
-            ? _material(context)
-            : _glass(context),
+  Widget build(BuildContext context) => MediaQuery.withClampedTextScaling(
+    maxScaleFactor: WheelPickerMetrics.maxTextScale,
+    child: GlassModeBuilder(
+      mode: widget.mode,
+      builder: (context, effective) => _semantics(
+        _sized(
+          effective == EffectiveGlassMode.material
+              ? _material(context)
+              : _glass(context),
+        ),
       ),
     ),
   );

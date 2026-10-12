@@ -133,7 +133,7 @@ class GlassBadge extends StatelessWidget {
         ),
       );
     }
-    return ConstrainedBox(
+    final badge = ConstrainedBox(
       constraints: const BoxConstraints(
         minWidth: BadgeMetrics.height,
         minHeight: BadgeMetrics.height,
@@ -157,6 +157,10 @@ class GlassBadge extends StatelessWidget {
           ),
         ),
       ),
+    );
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: BadgeMetrics.maxTextScale,
+      child: badge,
     );
   }
 

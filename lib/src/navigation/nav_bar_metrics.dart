@@ -61,4 +61,8 @@ abstract final class NavBarMetrics {
   /// The progressive blur's gradient gamma: it eases to sharp at the
   /// edge's bottom.
   static const double edgeProgressiveFalloff = 1.2;
+
+  /// The largest text scale the inline title takes: iOS's inline title
+  /// keeps its size at any Dynamic Type setting in the fixed-height bar.
+  static const double titleMaxTextScale = 1;
 }

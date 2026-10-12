@@ -1,6 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
-    show DropdownButton, DropdownMenuItem, MaterialPageRoute;
+    show
+        DropdownButton,
+        DropdownMenuItem,
+        MaterialPageRoute,
+        kMinInteractiveDimension;
 
 import '../core/effective_glass_mode.dart';
 import '../core/glass_colors.dart';
@@ -133,7 +137,7 @@ class GlassPicker<T> extends StatelessWidget {
     builder: (context, effective) => switch (style) {
       GlassPickerStyle.menu =>
         effective == EffectiveGlassMode.material
-            ? _materialMenu()
+            ? _materialMenu(context)
             : _glassMenu(context),
       GlassPickerStyle.inline => PickerInlineRows<T>(
         items: items,
@@ -147,17 +151,29 @@ class GlassPicker<T> extends StatelessWidget {
     },
   );
 
-  Widget _materialMenu() => Semantics(
-    label: semanticLabel,
-    child: DropdownButton<T>(
-      value: selected,
-      onChanged: onChanged == null ? null : (v) => onChanged!(v as T),
-      items: [
-        for (final i in items)
-          DropdownMenuItem(value: i.value, child: Text(i.label)),
-      ],
-    ),
-  );
+  // At larger text the dropdown takes the width it is given (and its
+  // choice wraps) rather than overflowing; at the default size it keeps
+  // its natural width.
+  Widget _materialMenu(BuildContext context) {
+    final enlarged =
+        MediaQuery.textScalerOf(context).scale(fontSize) > fontSize;
+    return LayoutBuilder(
+      builder: (context, constraints) => Semantics(
+        label: semanticLabel,
+        child: DropdownButton<T>(
+          value: selected,
+          onChanged: onChanged == null ? null : (v) => onChanged!(v as T),
+          isExpanded: enlarged && constraints.hasBoundedWidth,
+          // Rows as tall as their (wrapped) text.
+          itemHeight: enlarged ? null : kMinInteractiveDimension,
+          items: [
+            for (final i in items)
+              DropdownMenuItem(value: i.value, child: Text(i.label)),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _glassMenu(BuildContext context) {
     final enabled = onChanged != null;
@@ -197,10 +213,18 @@ class GlassPicker<T> extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  _label,
-                  maxLines: 1,
-                  style: IOSText.style(fontSize, color: tint),
+                // Larger Dynamic Type wraps the choice rather than
+                // overflowing.
+                Flexible(
+                  child: Text(
+                    _label,
+                    maxLines:
+                        MediaQuery.textScalerOf(context).scale(fontSize) >
+                            fontSize
+                        ? null
+                        : 1,
+                    style: IOSText.style(fontSize, color: tint),
+                  ),
                 ),
                 const SizedBox(width: PickerMetrics.chevronGap),
                 Icon(

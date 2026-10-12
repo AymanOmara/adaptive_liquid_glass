@@ -116,14 +116,16 @@ class GlassChip extends StatelessWidget {
             Icon(icon, size: ChipMetrics.iconSize),
             const SizedBox(width: ChipMetrics.iconGap),
           ],
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: IOSText.style(
-              ChipMetrics.labelSize,
-              weight: FontWeight.w500,
-              color: selected ? GlassColors.white : null,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: IOSText.style(
+                ChipMetrics.labelSize,
+                weight: FontWeight.w500,
+                color: selected ? GlassColors.white : null,
+              ),
             ),
           ),
           if (onDeleted != null) ...[
@@ -158,8 +160,13 @@ class GlassChip extends StatelessWidget {
         ],
       ),
     );
+    // The capsule grows with Dynamic Type (never below its 32 pt).
+    final scale = IOSText.growth(
+      MediaQuery.textScalerOf(context),
+      ChipMetrics.labelSize,
+    );
     return SizedBox(
-      height: ChipMetrics.height,
+      height: ChipMetrics.height * scale,
       child: LiquidGlass(
         glass: selected
             ? (glass ?? LiquidGlassTheme.of(context).defaultGlass).tint(

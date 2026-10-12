@@ -59,4 +59,12 @@ abstract final class DialogMetrics {
 
   /// A button's label size.
   static const double buttonSize = 17;
+
+  /// The text scale from which an alert stacks its two buttons, as iOS
+  /// does at the accessibility sizes (AX1 sets 17 pt body text at 28 pt).
+  static const double stackedButtonsTextScale = 28 / 17;
+
+  /// Above and below a button label that wraps at larger Dynamic Type
+  /// (the 48 pt button less a 22 pt line, halved).
+  static const double wrappedButtonPadding = 13;
 }

@@ -130,7 +130,11 @@ class MaterialGlassButton extends StatelessWidget {
         b.child ??
             Row(
               mainAxisSize: MainAxisSize.min,
-              children: [Icon(b.icon), const SizedBox(width: 8), b.label!],
+              children: [
+                Icon(b.icon),
+                const SizedBox(width: 8),
+                Flexible(child: b.label!),
+              ],
             ),
       );
       result = switch ((b.role, b.style)) {

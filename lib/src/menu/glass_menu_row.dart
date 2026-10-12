@@ -41,6 +41,42 @@ class GlassMenuRow extends StatelessWidget {
           : GlassColors.label,
       context,
     );
+    final style = IOSText.style(MenuMetrics.fontSize, color: color);
+    final scale =
+        MediaQuery.textScalerOf(context).scale(MenuMetrics.fontSize) /
+        MenuMetrics.fontSize;
+    final labelStart = choices
+        ? MenuMetrics.checkLabelStart
+        : MenuMetrics.labelStart;
+    final marks = [
+      if (highlighted)
+        Positioned.fill(
+          child: ColoredBox(
+            color: CupertinoDynamicColor.resolve(
+              GlassColors.menuHighlight,
+              context,
+            ),
+          ),
+        ),
+      if (choices && (item.checked ?? false))
+        PositionedDirectional(
+          start: MenuMetrics.checkCentre - MenuMetrics.checkSize / 2,
+          top: 0,
+          bottom: 0,
+          child: Icon(
+            CupertinoIcons.checkmark_alt,
+            size: MenuMetrics.checkSize,
+            color: color,
+          ),
+        ),
+      if (item.icon != null && !choices)
+        PositionedDirectional(
+          start: MenuMetrics.iconCentre - MenuMetrics.iconSize / 2,
+          top: 0,
+          bottom: 0,
+          child: Icon(item.icon, size: MenuMetrics.iconSize, color: color),
+        ),
+    ];
     return Semantics(
       container: true,
       button: true,
@@ -53,61 +89,53 @@ class GlassMenuRow extends StatelessWidget {
         excludeFromSemantics: true,
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: SizedBox(
-          height: MenuMetrics.rowHeight,
-          child: Stack(
-            children: [
-              if (highlighted)
-                Positioned.fill(
-                  child: ColoredBox(
-                    color: CupertinoDynamicColor.resolve(
-                      GlassColors.menuHighlight,
-                      context,
-                    ),
-                  ),
+        child: scale > 1
+            // Larger Dynamic Type: the row grows and its label wraps, as
+            // iOS menus do, instead of cutting the label off.
+            ? ConstrainedBox(
+                constraints: BoxConstraints(
+                  minWidth: double.infinity,
+                  minHeight: MenuMetrics.rowHeight * scale,
                 ),
-              if (choices && (item.checked ?? false))
-                PositionedDirectional(
-                  start: MenuMetrics.checkCentre - MenuMetrics.checkSize / 2,
-                  top: 0,
-                  bottom: 0,
-                  child: Icon(
-                    CupertinoIcons.checkmark_alt,
-                    size: MenuMetrics.checkSize,
-                    color: color,
-                  ),
-                ),
-              if (item.icon != null && !choices)
-                PositionedDirectional(
-                  start: MenuMetrics.iconCentre - MenuMetrics.iconSize / 2,
-                  top: 0,
-                  bottom: 0,
-                  child: Icon(
-                    item.icon,
-                    size: MenuMetrics.iconSize,
-                    color: color,
-                  ),
-                ),
-              PositionedDirectional(
-                start: choices
-                    ? MenuMetrics.checkLabelStart
-                    : MenuMetrics.labelStart,
-                end: MenuMetrics.trailingPadding,
-                top: 0,
-                bottom: 0,
-                child: Align(
+                child: Stack(
                   alignment: AlignmentDirectional.centerStart,
-                  child: Text(
-                    item.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: IOSText.style(MenuMetrics.fontSize, color: color),
-                  ),
+                  children: [
+                    ...marks,
+                    Padding(
+                      padding: EdgeInsetsDirectional.only(
+                        start: labelStart,
+                        end: MenuMetrics.trailingPadding,
+                        top: MenuMetrics.wrappedLabelPadding,
+                        bottom: MenuMetrics.wrappedLabelPadding,
+                      ),
+                      child: Text(item.label, style: style),
+                    ),
+                  ],
+                ),
+              )
+            : SizedBox(
+                height: MenuMetrics.rowHeight,
+                child: Stack(
+                  children: [
+                    ...marks,
+                    PositionedDirectional(
+                      start: labelStart,
+                      end: MenuMetrics.trailingPadding,
+                      top: 0,
+                      bottom: 0,
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          item.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: style,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
       ),
     );
   }

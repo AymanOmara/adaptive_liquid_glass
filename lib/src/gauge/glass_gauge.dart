@@ -123,8 +123,15 @@ class GlassGauge extends StatelessWidget {
     child: ExcludeSemantics(
       child: switch (style) {
         GlassGaugeStyle.linearCapacity => _linear(context),
-        GlassGaugeStyle.accessoryCircular => _accessoryCircular(context),
-        GlassGaugeStyle.accessoryCircularCapacity => _capacityCircular(context),
+        GlassGaugeStyle.accessoryCircular => MediaQuery.withClampedTextScaling(
+          maxScaleFactor: GaugeMetrics.circularMaxTextScale,
+          child: Builder(builder: _accessoryCircular),
+        ),
+        GlassGaugeStyle.accessoryCircularCapacity =>
+          MediaQuery.withClampedTextScaling(
+            maxScaleFactor: GaugeMetrics.circularMaxTextScale,
+            child: Builder(builder: _capacityCircular),
+          ),
       },
     ),
   );
@@ -365,9 +372,13 @@ class GlassGauge extends StatelessWidget {
           if (current != null)
             Positioned.fill(
               child: Center(
-                child: DefaultTextStyle.merge(
-                  style: text.bodyMedium,
-                  child: current,
+                // The ring has a fixed size; its value keeps its size.
+                child: MediaQuery.withClampedTextScaling(
+                  maxScaleFactor: GaugeMetrics.circularMaxTextScale,
+                  child: DefaultTextStyle.merge(
+                    style: text.bodyMedium,
+                    child: current,
+                  ),
                 ),
               ),
             ),

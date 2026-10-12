@@ -327,16 +327,20 @@ class _GlassDateWheelState extends State<GlassDateWheel> {
         DatePickerWheelMetrics.dateTimeWidth +
             timeColumns * DatePickerWheelMetrics.timeColumnWidth,
     };
-    return GlassModeBuilder(
-      mode: widget.mode,
-      builder: (context, effective) => Semantics(
-        container: true,
-        child: SizedBox(
-          height: WheelPickerMetrics.height,
-          width: width,
-          child: effective == EffectiveGlassMode.material
-              ? _material(context, columns)
-              : _glass(columns),
+    // The rows keep their size at any text size, as UIDatePicker's.
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: WheelPickerMetrics.maxTextScale,
+      child: GlassModeBuilder(
+        mode: widget.mode,
+        builder: (context, effective) => Semantics(
+          container: true,
+          child: SizedBox(
+            height: WheelPickerMetrics.height,
+            width: width,
+            child: effective == EffectiveGlassMode.material
+                ? _material(context, columns)
+                : _glass(columns),
+          ),
         ),
       ),
     );

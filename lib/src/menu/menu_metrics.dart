@@ -50,6 +50,10 @@ abstract final class MenuMetrics {
   /// The space between the label and the menu's trailing edge.
   static const double trailingPadding = 16;
 
+  /// Above and below a label that wraps at larger Dynamic Type (the 42 pt
+  /// row less a 17 pt line, halved).
+  static const double wrappedLabelPadding = 10;
+
   /// The menu's padding above its first row and below its last.
   static const double verticalPadding = 10.17;
 
