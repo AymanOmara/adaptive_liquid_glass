@@ -1153,8 +1153,18 @@ Stack(
   `AdaptiveLiquidGlass.reduceTransparency = true` to force the opaque
   fallback on any platform, native glass included (to test it, or for an
   in-app setting); `null` follows the system.
-- **Increase Contrast** strengthens the rim and reduces lensing on the shader
-  path; on iOS 26+ it is whatever SwiftUI's own glass does.
+- **Increase Contrast / high contrast** (`MediaQuery.highContrastOf`) turns
+  the Flutter-drawn glass into an opaque surface, so text over it keeps its
+  contrast; on iOS 26+ SwiftUI's own glass follows the setting itself, and
+  Material is unchanged. Nothing to call — it follows the system. To try it
+  without changing device settings, override the `MediaQuery`:
+
+  ```dart
+  MediaQuery(
+    data: MediaQuery.of(context).copyWith(highContrast: true),
+    child: const LiquidGlass(child: Text('Readable on a solid surface')),
+  )
+  ```
 
 ## Known limitations
 

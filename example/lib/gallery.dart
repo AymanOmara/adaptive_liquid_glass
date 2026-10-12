@@ -33,6 +33,7 @@ class Gallery extends StatelessWidget {
                 _Recipe('Five tabs, badges, active icons', _FiveTabs()),
                 _Recipe('Buttons (GlassButton)', _Buttons()),
                 _Recipe('Navigation bar', _NavBarDemo()),
+                _Recipe('High contrast (solid fallback)', _HighContrast()),
               ],
             ),
           ),
@@ -188,6 +189,55 @@ class _ClearOverMedia extends StatelessWidget {
         ],
       ),
     ),
+  );
+}
+
+/// Forces `MediaQuery.highContrast` on the card below the toggle, as the
+/// system's Increase Contrast does: the Flutter-drawn glass turns solid so
+/// its text keeps its contrast (native iOS 26 glass adjusts itself).
+class _HighContrast extends StatefulWidget {
+  const _HighContrast();
+
+  @override
+  State<_HighContrast> createState() => _HighContrastState();
+}
+
+class _HighContrastState extends State<_HighContrast> {
+  bool _on = false;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'High contrast',
+            style: TextStyle(
+              color: Colors.white,
+              shadows: [Shadow(blurRadius: 4)],
+            ),
+          ),
+          const SizedBox(width: 12),
+          GlassToggle(value: _on, onChanged: (v) => setState(() => _on = v)),
+        ],
+      ),
+      const SizedBox(height: 12),
+      MediaQuery(
+        data: MediaQuery.of(context).copyWith(highContrast: _on),
+        child: const LiquidGlass(
+          shape: GlassShape.rect(20),
+          padding: EdgeInsetsDirectional.symmetric(
+            horizontal: 24,
+            vertical: 18,
+          ),
+          child: Text(
+            'Text over glass',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+          ),
+        ),
+      ),
+    ],
   );
 }
 
