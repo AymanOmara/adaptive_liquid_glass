@@ -4,6 +4,8 @@
   the shader and degraded glass as a solid surface, as Reduce
   Transparency does, so text over glass keeps its contrast. Native iOS 26
   glass follows Increase Contrast itself; Material is unchanged.
+- Accessibility: `GlassToggle` draws iOS's "I" and "O" marks on its track
+  when On/Off Labels is on (`MediaQuery.onOffSwitchLabelsOf`).
 
 ## 0.1.9 (2026-10-11)
 

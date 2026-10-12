@@ -1,5 +1,6 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/controls/glass_thumb.dart';
+import 'package:adaptive_liquid_glass/src/controls/glass_toggle_labels.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/material.dart';
@@ -190,5 +191,37 @@ void main() {
     await t.pumpAndSettle();
     expect(_value(t), isTrue);
     expect(t.getCenter(find.byType(GlassThumb)).dx, greaterThan(start + 15));
+  }, variant: ios);
+
+  testWidgets('On/Off Labels draws the I and O marks', (t) async {
+    shaderEnv();
+    Widget host(bool labels) => plainHost(
+      Builder(
+        builder: (context) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(onOffSwitchLabels: labels),
+          child: const _Harness(),
+        ),
+      ),
+    );
+    await t.pumpWidget(host(false));
+    expect(find.byType(GlassToggleLabels), findsNothing);
+    await t.pumpWidget(host(true));
+    expect(find.byType(GlassToggleLabels), findsOneWidget);
+    double opacity(int i) => t
+        .widgetList<Opacity>(
+          find.descendant(
+            of: find.byType(GlassToggleLabels),
+            matching: find.byType(Opacity),
+          ),
+        )
+        .elementAt(i)
+        .opacity;
+    // Off: only the O shows.
+    expect(opacity(0), 0);
+    expect(opacity(1), 1);
+    await t.tap(find.byType(GlassToggle));
+    await t.pumpAndSettle();
+    expect(opacity(0), 1);
+    expect(opacity(1), 0);
   }, variant: ios);
 }

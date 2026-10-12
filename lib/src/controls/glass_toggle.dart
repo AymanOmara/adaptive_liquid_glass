@@ -11,6 +11,7 @@ import '../core/glass_system_colors.dart';
 import '../interaction/glass_focus_ring.dart';
 import 'control_metrics.dart';
 import 'glass_thumb.dart';
+import 'glass_toggle_labels.dart';
 
 /// iOS 26's switch: a capsule track whose thumb turns into a clear glass
 /// lens while pressed or dragged.
@@ -21,7 +22,8 @@ import 'glass_thumb.dart';
 ///
 /// Tap to flip it, or drag the thumb across. Null [onChanged] disables
 /// it. Follows the reading direction; with Reduce Motion the thumb moves
-/// without animating. On the Material path it is a Material 3 [Switch].
+/// without animating; with On/Off Labels the track shows iOS's "I" and
+/// "O" marks. On the Material path it is a Material 3 [Switch].
 class GlassToggle extends StatefulWidget {
   /// Creates a toggle.
   const GlassToggle({
@@ -165,6 +167,7 @@ class _GlassToggleState extends State<GlassToggle>
       context,
     );
     final off = CupertinoDynamicColor.resolve(GlassColors.toggleOff, context);
+    final labels = MediaQuery.onOffSwitchLabelsOf(context);
     return Semantics(
       toggled: widget.value,
       enabled: _enabled,
@@ -211,6 +214,13 @@ class _GlassToggleState extends State<GlassToggle>
                               ),
                             ),
                           ),
+                          if (labels)
+                            Positioned.fill(
+                              child: GlassToggleLabels(
+                                position: p,
+                                pressed: _press.value,
+                              ),
+                            ),
                           PositionedDirectional(
                             start: x,
                             top: ControlMetrics.thumbInset,

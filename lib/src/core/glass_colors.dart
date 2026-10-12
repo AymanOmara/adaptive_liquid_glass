@@ -63,6 +63,19 @@ abstract final class GlassColors {
         darkColor: Color(0xFF464649),
       );
 
+  /// The toggle's "I" mark (On/Off Labels), over the on track.
+  static const Color toggleOnLabel = white;
+
+  /// The toggle's "O" mark (On/Off Labels), over the off track; UIKit's
+  /// value, as `CupertinoSwitch` uses it.
+  static const CupertinoDynamicColor toggleOffLabel =
+      CupertinoDynamicColor.withBrightnessAndContrast(
+        color: Color(0xFFB3B3B3),
+        darkColor: Color(0xFFB3B3B3),
+        highContrastColor: Color(0xFFFFFFFF),
+        darkHighContrastColor: Color(0xFFFFFFFF),
+      );
+
   /// The slider's filled track: iOS 26's default accent.
   static const CupertinoDynamicColor sliderFill =
       CupertinoDynamicColor.withBrightness(

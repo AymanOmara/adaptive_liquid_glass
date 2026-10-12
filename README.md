@@ -1153,6 +1153,9 @@ Stack(
   `AdaptiveLiquidGlass.reduceTransparency = true` to force the opaque
   fallback on any platform, native glass included (to test it, or for an
   in-app setting); `null` follows the system.
+- **On/Off Labels** (iOS, `MediaQuery.onOffSwitchLabelsOf`) draws the "I"
+  and "O" marks on `GlassToggle`'s track, as iOS does, so its state does not
+  rest on colour alone. The Material path keeps Material 3's `Switch`.
 - **Increase Contrast / high contrast** (`MediaQuery.highContrastOf`) turns
   the Flutter-drawn glass into an opaque surface, so text over it keeps its
   contrast; on iOS 26+ SwiftUI's own glass follows the setting itself, and

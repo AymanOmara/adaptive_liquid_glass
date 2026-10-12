@@ -1,4 +1,5 @@
 import 'package:flutter/physics.dart';
+import 'package:flutter/widgets.dart' show Size;
 
 import '../core/swiftui_spring.dart';
 
@@ -19,6 +20,19 @@ abstract final class ControlMetrics {
 
   /// The toggle's thumb at rest, a capsule.
   static const double toggleThumbWidth = 37;
+
+  /// The On/Off Labels setting's "I" mark, centred this far from the
+  /// track's start (UIKit's switch, as `CupertinoSwitch` measures it).
+  static const double toggleOnLabelInset = 11;
+
+  /// The "I" mark's size.
+  static const Size toggleOnLabel = Size(1, 10);
+
+  /// The "O" mark, centred this far from the track's end.
+  static const double toggleOffLabelInset = 12;
+
+  /// The "O" mark's radius; its stroke is 1 pt.
+  static const double toggleOffLabelRadius = 5;
 
   /// The slider's track thickness.
   static const double sliderTrack = 6;
