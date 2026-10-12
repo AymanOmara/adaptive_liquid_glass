@@ -144,7 +144,9 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
     body: Stack(
       fit: StackFit.expand,
       children: [
-        if (const bool.fromEnvironment('PLAIN_BACKGROUND'))
+        if (const bool.fromEnvironment('BLACK_BACKGROUND'))
+          const ColoredBox(color: Colors.black)
+        else if (const bool.fromEnvironment('PLAIN_BACKGROUND'))
           ColoredBox(color: Theme.of(context).scaffoldBackgroundColor)
         else
           Image.asset('assets/backgrounds/photo.png', fit: BoxFit.cover),
