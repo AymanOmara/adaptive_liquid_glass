@@ -103,7 +103,12 @@ and CHANGELOG.md.
     iOS 51)
   - selected pill over black: 54 grey levels against iOS's 50-51
   - press brightness: frames 0-10 mean |diff| ~4.5
-  - drag brightness: mean |diff| ~3-4 (mid-drag within +-4)
+  - drag brightness (2026-10-13, dark, medians of 3 takes, 0-10 /
+    10-60): native 7.0 / 9.1 -> 6.4 / 8.2 (bar glow now drawn in native
+    too, cut out under the lens; nativeLensDragShade 0.2), shader 5.6 /
+    7.6 unchanged. At matched lens positions what is left is the glyphs
+    beside the lens (Home/Settings columns read |diff| 22-26: shapes and
+    placement, see glyph shapes) and the native lens itself (|d| 10)
   - icons beside the search tab ~0.4 pt right of iOS's on Music/Settings
     (Home matches); plain-bar labels +0.4 px, Home +1.1-1.3 px
   - glyph shapes: CupertinoIcons stand-ins vs SF Symbols (house, gear)

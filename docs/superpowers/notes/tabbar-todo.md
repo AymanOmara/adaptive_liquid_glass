@@ -120,6 +120,18 @@ Light mode (2026-10-13, `SCENE=tabbar tool/fidelity/record_tabbar_motion.sh`, ru
 
 Seen side by side (`light_tap.png`): iOS's travelling lens over the white bar is a light-grey glass, a little darker than the bar, with a soft shadow below and a colour fringe at its ends; the shader lens is almost invisible (a faint cyan rim), the native one a white blob whose glass smears the blue copy into a halo. Today's dark-only changes (`nativeLensShade`, the dark rim) do not reach light mode; the shared ones (magnification spring, `tapHold`, `tapLift`) apply as in dark. `tabbar_light.py` updated for `track()`'s new return value.
 
+Drag brightness (2026-10-13, dark; each iOS frame against our frame of the same take with the nearest lens centre, within 4 pt, so the drag's varying lag drops out). Before (`v2dp*`, 3 takes, ~140 matched frames): native lens region |diff| 11.1 (signed +6.6), rest 7.7 (−2.6); shader lens 9.6 (−0.7), rest 5.8 (−1.0). The rest is mostly the glyphs beside the lens (the Home and Settings columns read 22–26 in both modes) and, in native, an unlit bar: iOS lights the bar around a dragged or held lens and only shader mode drew that glow. Drawing `BarGlow` in native mode too brightened the outside but lifted the native lens (+12.5: UIKit's glass takes up the glow under it), so the glow is cut out under a native lens (`HoleClipper`), and a dragged native lens gets `nativeLensDragShade` 0.2 (a held one stays unshaded: 0.2 there read −2.5 instead of +3.0).
+
+| Native, dark | Before | After (`gd*`) |
+|---|---|---|
+| Drag, matched: lens / rest \|diff\| | 11.1 (+6.6) / 7.7 (−2.6) | 10.1 (+0.9) / 6.9 (−2.4) |
+| Drag 0-10 / 10-60 (median) | 7.0 / 9.1 | 6.4 / 8.2 |
+| Press, matched: lens / rest | 7.0 (+2.9) / 7.6 (−2.9) | 7.3 (+3.2) / 6.2 (−1.2) |
+| Press 0-10 / 10-60 | 10.1 / 7.6 (stalled takes; 7.4–8.6 / 7.7–8.6 earlier) | 7.4 / 6.3 |
+| Tap 0-10 / 10-60 | 3.97 / 1.86 | 3.85 / 1.85 |
+
+Shader drag is unchanged (5.6 / 7.6). Static scenes are untouched (the glow shows only while the bar is lit).
+
 Measurement limits: the example is a debug (JIT) build, and on a loaded host its first frames after a touch can stall (a spring then jumps 2–3 frames, and fits give response ≈ 0.05); about half the takes of the shader path show it, so read the fits of clean takes (`newa`). The drag's lens lag (mean centre over frames 20–50: iOS 207–215 pt, native 204–212, shader 189–228) varies more between takes than between renderers; `follow` is unchanged. Open: the lens over a tap is wider than iOS's (81 vs 65 pt where it overhangs) and peaks lower on a press (4.7 vs 6.0–7.3 pt).
 
 ## Hard

@@ -1013,7 +1013,7 @@ class _GlassTabBarState extends State<GlassTabBar>
                         child: Stack(
                           clipBehavior: Clip.none,
                           children: [
-                            if (_shaderLens && glow > 0)
+                            if (glow > 0)
                               Positioned(
                                 left: -glowInsetX,
                                 top: -glowInsetY,
@@ -1023,13 +1023,26 @@ class _GlassTabBarState extends State<GlassTabBar>
                                   borderRadius: BorderRadius.circular(
                                     _contentHeight / 2 + glowInsetY,
                                   ),
-                                  child: CustomPaint(
-                                    painter: BarGlow(
-                                      centre: Offset(
-                                        x + glowInsetX,
-                                        _contentHeight / 2 + glowInsetY,
+                                  // Native glass is a flat veil that takes
+                                  // up what lies under it: the glow stops at
+                                  // the lens, or the lens reads far too
+                                  // bright.
+                                  child: ClipPath(
+                                    clipper: HoleClipper(
+                                      _shaderLens || !lensShown
+                                          ? null
+                                          : lens.shift(
+                                              Offset(glowInsetX, glowInsetY),
+                                            ),
+                                    ),
+                                    child: CustomPaint(
+                                      painter: BarGlow(
+                                        centre: Offset(
+                                          x + glowInsetX,
+                                          _contentHeight / 2 + glowInsetY,
+                                        ),
+                                        opacity: TabBarMetrics.glow * glow,
                                       ),
-                                      opacity: TabBarMetrics.glow * glow,
                                     ),
                                   ),
                                 ),
@@ -1193,9 +1206,13 @@ class _GlassTabBarState extends State<GlassTabBar>
   }
 
   /// The native lens's glass: clear, shaded in dark mode as the bar's
-  /// [light] fades (see TabBarMetrics.nativeLensShade).
+  /// [light] fades and while dragged (see TabBarMetrics.nativeLensShade,
+  /// TabBarMetrics.nativeLensDragShade).
   Glass _nativeLensGlass(double light) {
-    final shade = TabBarMetrics.nativeLensShade * (1 - light.clamp(0.0, 1.0));
+    final shade = math.max(
+      TabBarMetrics.nativeLensShade * (1 - light.clamp(0.0, 1.0)),
+      TabBarMetrics.nativeLensDragShade * (light - 1).clamp(0.0, 1.0),
+    );
     if (shade < 0.01 ||
         GlassGroupScope.brightnessOf(context) != Brightness.dark) {
       return Glass.clear;

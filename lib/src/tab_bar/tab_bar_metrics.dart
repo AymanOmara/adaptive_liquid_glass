@@ -115,6 +115,12 @@ abstract final class TabBarMetrics {
   /// shows the bar and page through it.
   static const double nativeLensShade = 0.5;
 
+  /// Shade on the native lens (dark) while dragged: SwiftUI's `TabView`
+  /// (iOS 26.4) dims its dragged lens with the bar's softer light; at
+  /// matched lens positions ours read +6.5 grey levels without it (+0.8
+  /// with). A held lens keeps none (it read 3 levels darker with it).
+  static const double nativeLensDragShade = 0.2;
+
   /// The band at the lens's edge where content is refracted, not sharp.
   static const double lensRim = 9;
 
