@@ -134,6 +134,18 @@ Native blue halo: the native lens also refracted a tinted copy of the tabs laid 
 
 Shader drag is unchanged (5.6 / 7.6). Static scenes are untouched (the glow shows only while the bar is lit).
 
+Press (2026-10-13, dark, `pr*` before / `rg*` after, 4 takes each). Over time the press's mean |diff| sat at ~6 through the whole hold (frames 15–50), so the held state itself differed; at frame 36 the lens region read only 4–7, and the Home and Settings columns 27–29. iOS scales the whole tab row with the bar's growth: held, Home's icon centre moves 344 → 331 px and Settings' 860 → 874 px (distance from the bar's centre ×1.051, the bar's width 274 → 288 pt ×1.051), and the icons grow with it. The row (and the tinted copies) now scale about the bar's centre by the bar's growth (`_rowGrow`). A quick tap's bar does not grow, so taps are unchanged.
+
+| Dark, median 0-10 / 10-60 | Before | After |
+|---|---|---|
+| Press, shader | 6.16 / 5.79 | 5.10 / 4.43 |
+| Press, native | 7.55 / 6.25 | 6.25 / 4.21 |
+| Drag, shader | 5.6 / 7.6 | 4.62 / 5.21 |
+| Drag, native | 6.62 / 7.65 | 6.30 / 6.25 |
+| Press, matched: lens / rest (shader) | 5.1 / 6.1 | 5.5 / 3.1 |
+
+Lens geometry on the press: travelling peak 5.3–5.7 pt over the bar (iOS 6.3–7.3), held 6.0 (iOS 6.0), relift 2–4 frames after iOS's.
+
 Measurement limits: the example is a debug (JIT) build, and on a loaded host its first frames after a touch can stall (a spring then jumps 2–3 frames, and fits give response ≈ 0.05); about half the takes of the shader path show it, so read the fits of clean takes (`newa`). The drag's lens lag (mean centre over frames 20–50: iOS 207–215 pt, native 204–212, shader 189–228) varies more between takes than between renderers; `follow` is unchanged. Open: the lens over a tap is wider than iOS's (81 vs 65 pt where it overhangs) and peaks lower on a press (4.7 vs 6.0–7.3 pt).
 
 ## Hard

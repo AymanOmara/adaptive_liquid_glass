@@ -1,5 +1,10 @@
 ## Unreleased
 
+- `GlassTabBar`: the tabs grow with the bar around a held or dragged
+  lens, as iOS 26's do (Home and Settings move out about 4 pt). Against
+  SwiftUI's `TabView` (dark, frames 0-10 / 10-60): press shader 6.2 /
+  5.8 -> 5.1 / 4.4, native 7.6 / 6.3 -> 6.3 / 4.2; drag shader 5.6 / 7.6
+  -> 4.6 / 5.2, native 6.6 / 7.7 -> 6.3 / 6.3.
 - `GlassTabBar`, native mode: the bar now lights up around a held or
   dragged lens as iOS's does (the glow shader mode already drew), and in
   dark mode the dragged lens is dimmed a little. Against SwiftUI's

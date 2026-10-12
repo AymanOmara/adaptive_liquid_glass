@@ -102,7 +102,13 @@ and CHANGELOG.md.
   - tapped lens at its end: 47 pt wide on its last visible frame (was 35;
     iOS 51)
   - selected pill over black: 54 grey levels against iOS's 50-51
-  - press brightness: frames 0-10 mean |diff| ~4.5
+  - press brightness (2026-10-13, dark, medians of 4 takes): the held
+    gap was the tabs beside the lens: iOS scales the tab row with the
+    bar's growth (Home 344 -> 331 px, Settings 860 -> 874 px, x1.05 as
+    the bar), ours stayed put. Row now scales with the bar: press shader
+    6.2 / 5.8 -> 5.1 / 4.4, native 7.6 / 6.3 -> 6.3 / 4.2; matched-lens
+    rest |diff| 6.1 -> 3.1. Lens geometry: peak while travelling 5.3-5.7
+    pt vs iOS 6.3-7.3, relift 2-4 frames later than iOS
   - drag brightness (2026-10-13, dark, medians of 3 takes, 0-10 /
     10-60): native 7.0 / 9.1 -> 6.4 / 8.2 (bar glow now drawn in native
     too, cut out under the lens; nativeLensDragShade 0.2), shader 5.6 /

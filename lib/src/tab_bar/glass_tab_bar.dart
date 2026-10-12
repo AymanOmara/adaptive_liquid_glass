@@ -960,6 +960,10 @@ class _GlassTabBarState extends State<GlassTabBar>
     final lean = TabBarMetrics.growLean * (x - _rowWidth / 2) * g;
     final growX = TabBarMetrics.growX * g;
     final growY = TabBarMetrics.growY * g;
+    _rowGrow = Offset(
+      1 + 2 * growX / (_rowWidth + 2 * TabBarMetrics.inset),
+      1 + 2 * growY / (_contentHeight + 2 * TabBarMetrics.inset),
+    );
     // The bar's glass reaches past the row by the inset plus its growth.
     final glowInsetX = TabBarMetrics.inset + growX;
     final glowInsetY = TabBarMetrics.inset + growY;
@@ -1302,8 +1306,16 @@ class _GlassTabBarState extends State<GlassTabBar>
             ),
       ],
     );
-    return semantics ? row : ExcludeSemantics(child: row);
+    // The tabs grow with the bar (SwiftUI's `TabView`, iOS 26.4: held,
+    // Home and Settings move out 4.4 pt as the bar grows 7 pt a side).
+    final grown = _rowGrow == const Offset(1, 1)
+        ? row
+        : Transform.scale(scaleX: _rowGrow.dx, scaleY: _rowGrow.dy, child: row);
+    return semantics ? grown : ExcludeSemantics(child: grown);
   }
+
+  /// The tabs' scale with the bar's growth, set by [_bar].
+  Offset _rowGrow = const Offset(1, 1);
 
   /// Unselected tabs: iOS's tab bar label, dark over light content and
   /// light over dark (GlassForeground's sampled brightness).
