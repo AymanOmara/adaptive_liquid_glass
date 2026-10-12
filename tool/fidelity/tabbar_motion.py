@@ -9,7 +9,9 @@ Per frame (60 fps, frame 0 = the first frame that changed after the touch):
   tint  centroid x of the selected blue (pt).
 Prints the per-frame table and a summary per take: SwiftUI spring fits
 (response, damping, start) of the lens's travel and the bar's growth, and
-for a drag the lens's mean position mid-drag (its lag behind the finger).
+for a drag the lens's mean position mid-drag (its lag behind the finger);
+and each take's mean |diff| against the reference (grey levels, frames
+aligned on their onsets) over frames 0-10 and 10-60.
 """
 import argparse
 import glob
@@ -70,7 +72,16 @@ def track(d):
     fr = load(d)
     out = [(*geometry(f), *tint(f)) for f in fr]
     onset = next((i for i, f in enumerate(fr) if np.abs(f - fr[0]).mean() > ONSET), None)
-    return out, onset
+    return out, onset, fr
+
+
+def brightness(ref, ur, fr, u):
+    """Mean |diff| and signed diff (ours - ref, grey levels) against the
+    reference over frames 0-10 and 10-60 after each take's onset."""
+    rows = [(k, np.abs(fr[u + k] - ref[ur + k]).mean(), (fr[u + k] - ref[ur + k]).mean())
+            for k in range(0, 61) if ur + k < len(ref) and u + k < len(fr)]
+    a = np.array(rows)
+    return [(a[(a[:, 0] >= lo) & (a[:, 0] <= hi)][:, 1:]).mean(axis=0) for lo, hi in ((0, 10), (10, 60))]
 
 
 def fit(ts, xs, x0, x1):
@@ -132,6 +143,8 @@ def main():
             p = pathlib.Path(a.run) / f"{g}.{t}"
             if p.exists():
                 tr[t] = track(p)
+        frames = {t: v[2] for t, v in tr.items()}
+        tr = {t: v[:2] for t, v in tr.items()}
         print(f"== {g}: frame (0 = first changed frame) | bar left right top | lens centre width overhang | tint x (pt)")
         print("     " + "".join(f"{t:^47s}" for t in tr))
         n = max(len(o) - u for o, u in tr.values() if u is not None)
@@ -153,6 +166,10 @@ def main():
                   f"max overhang {h:.1f}, bar grows {grow:.1f} pt at the start")
             for name, (r, z, t0, rms) in fits(g, o, u):
                 print(f"    {name}: response {r:.3f} damping {z:.2f} t0 {t0:+.1f} fr (rms {rms:.2f} pt)")
+            if t != "ref" and "ref" in tr and tr["ref"][1] is not None:
+                (e, es), (l, ls) = brightness(frames["ref"], tr["ref"][1], frames[t], u)
+                print(f"    brightness vs ref: frames 0-10 |diff| {e:.2f} (signed {es:+.2f}), "
+                      f"10-60 |diff| {l:.2f} (signed {ls:+.2f})")
             if g == "drag":
                 mid = [x[1][0] for i, x in enumerate(o) if x[1] and 20 <= i - u <= 50]
                 print(f"    lens centre over frames 20-50: mean {np.mean(mid):.1f} pt")

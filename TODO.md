@@ -77,12 +77,15 @@ and CHANGELOG.md.
   tapped lens travel, lift (7.0 pt peak) and late pill fade-in; labels
   beside the search tab (searchLabelShift).
   Open (small), measured 2026-10-09 against SwiftUI TabView (tabbardark):
-  - tap brightness: frames 0-10 mean |diff| ~7 levels (10-60: 2.4). The
-    icons and labels magnified under the travelling lens come out brighter
-    and in other places than iOS's (e.g. Music's icon top white under our
-    lens, Settings' glyph appearing later); mean +3.3 brighter early
-  - tap timing: our lens shows ~1 frame before iOS's (frame 1-2 vs 3-4)
-    and stays ~1 frame ahead throughout
+  - tap brightness (2026-10-12, tabbar_motion.py's brightness line):
+    native 0-10 mean |diff| 4.9 -> 4.0 (10-60 2.0), the native lens's
+    grey veil shaded off with the bar's light (nativeLensShade); shader
+    4.1-5.7 (10-60 2.1-2.5), its lens as bright as iOS's (+1 level at
+    matched positions) but the tinted glyphs under it bent and placed
+    differently (Music's icon, Settings' glyph)
+  - tap timing: our lens shows ~1 frame before iOS's (frame 1-2 vs 3-4);
+    delaying ours a frame would gain only ~0.15 |diff|, below the
+    debug-build stall noise, so left
   - tapped lens at its end narrows faster than iOS's (35 vs 51 pt wide on
     its last visible frame)
   - selected pill over black: 54 grey levels against iOS's 50-51

@@ -83,6 +83,17 @@ Per frame, press (ref | ours shader, run `newa`; frame 0 = first changed frame; 
 | ours lens (before) | — | — | — | — | 202 / 2.3 | 201 / 5.7 | 201 / 6.3 | 201 / 6.3 | 201 / 1.3 | — | — |
 | ours lens (now) | 155 / 2.3 | 171 / 4.0 | 183 / 4.7 | 191 / 4.7 | 196 / 2.3 | — | 201 / 3.3 | 201 / 4.7 | 201 / 2.3 | — | — |
 
+Tap brightness (2026-10-12, runs `tapb0*` before, `tapx1*` after; `tabbar_motion.py` now prints each take's mean |diff| against the reference over frames 0-10 and 10-60, onsets aligned). Native mode's travelling lens was the gap: UIKit's clear glass veils black at about 40 grey levels (lens over the bar 38-47, over the page 38-47), while iOS's lens, once the finger lifts, shows the bar through it (33 falling to the bar's 19, page 19 falling to 3). At matched lens positions our lens region was +10 levels brighter (|diff| 15). The native lens is now tinted black at `nativeLensShade` 0.5 × (1 − the bar's light), dark mode only: held and dragged lenses (light 1–2) are untouched, a tap's fades in as the light goes. Lens region at matched positions: signed +10 → 0, |diff| 15 → 8.5.
+
+| Native, mean \|diff\| | Before (4 takes / 2 for press, drag) | After (5 / 2) |
+|---|---|---|
+| Tap, frames 0-10 | 4.6–5.2 (mean 4.9) | 3.5–4.4 (mean 4.0) |
+| Tap, frames 10-60 | 1.9–2.1 | 1.7–2.7 (mean 2.0) |
+| Press, 0-10 / 10-60 | 7.7–8.6 / 8.2–8.6 | 7.4–7.8 / 7.7–7.9 |
+| Drag, 0-10 / 10-60 | 6.1–6.7 / 8.9 | 6.7–6.8 / 8.6–9.8 |
+
+The shader lens (unchanged) is already within ~1 level of iOS's at matched positions; its tap 0-10 (4.1–5.7) is the tinted glyphs under the lens, bent and placed unlike iOS's. Timing: shifting ours a frame later lowers native tap 0-10 by ~0.15 only (3.95 → 3.79), below the take-to-take spread, so the springs stay. The static scenes are untouched (the lens is drawn only while up).
+
 Measurement limits: the example is a debug (JIT) build, and on a loaded host its first frames after a touch can stall (a spring then jumps 2–3 frames, and fits give response ≈ 0.05); about half the takes of the shader path show it, so read the fits of clean takes (`newa`). The drag's lens lag (mean centre over frames 20–50: iOS 207–215 pt, native 204–212, shader 189–228) varies more between takes than between renderers; `follow` is unchanged. Open: the lens over a tap is wider than iOS's (81 vs 65 pt where it overhangs) and peaks lower on a press (4.7 vs 6.0–7.3 pt).
 
 ## Hard

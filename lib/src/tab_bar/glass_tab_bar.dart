@@ -27,6 +27,7 @@ import '../core/liquid_glass_theme.dart';
 import '../core/render_mode_resolver.dart';
 import '../foreground/glass_foreground.dart';
 import '../group/glass_group.dart';
+import '../group/glass_group_scope.dart';
 import '../liquid_glass.dart';
 import '../platform/glass_platform.dart';
 import 'bar_glow.dart';
@@ -1065,7 +1066,7 @@ class _GlassTabBarState extends State<GlassTabBar>
                   : GlassGroup(
                       mode: widget.mode,
                       child: LiquidGlass(
-                        glass: Glass.clear,
+                        glass: _nativeLensGlass(light),
                         mode: widget.mode,
                         child: const SizedBox.expand(),
                       ),
@@ -1149,6 +1150,17 @@ class _GlassTabBarState extends State<GlassTabBar>
         ],
       ),
     );
+  }
+
+  /// The native lens's glass: clear, shaded in dark mode as the bar's
+  /// [light] fades (see TabBarMetrics.nativeLensShade).
+  Glass _nativeLensGlass(double light) {
+    final shade = TabBarMetrics.nativeLensShade * (1 - light.clamp(0.0, 1.0));
+    if (shade < 0.01 ||
+        GlassGroupScope.brightnessOf(context) != Brightness.dark) {
+      return Glass.clear;
+    }
+    return Glass.clear.tint(GlassColors.black.withValues(alpha: shade));
   }
 
   /// The tabs; [colorOf] null leaves a tab to the tab bar's label colour.

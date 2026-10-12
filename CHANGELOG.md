@@ -1,5 +1,11 @@
 ## Unreleased
 
+- `GlassTabBar`, native mode, dark: a quick tap's travelling lens no
+  longer shows a grey veil. UIKit's clear glass lifted black to about 40
+  grey levels under the lens; it is now shaded as the bar's light fades,
+  as iOS's lens lets the bar show through (tap frames 0-10 mean |diff|
+  against SwiftUI's `TabView` 4.9 -> 4.0; held and dragged lenses keep
+  their look).
 - Accessibility: high contrast (`MediaQuery.highContrastOf`) now draws
   the shader and degraded glass as a solid surface, as Reduce
   Transparency does, so text over glass keeps its contrast. Native iOS 26

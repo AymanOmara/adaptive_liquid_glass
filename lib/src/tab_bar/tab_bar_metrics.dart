@@ -96,6 +96,12 @@ abstract final class TabBarMetrics {
     dampingFraction: 1,
   );
 
+  /// Native mode, dark: black tint on the lens's clear glass while the
+  /// bar's light is off (scaled by 1 - light). UIKit's clear glass veils
+  /// black at about 40 grey levels; iOS's tab lens, once the finger lifts,
+  /// shows the bar and page through it.
+  static const double nativeLensShade = 0.5;
+
   /// The band at the lens's edge where content is refracted, not sharp.
   static const double lensRim = 9;
 
