@@ -1074,9 +1074,11 @@ class _GlassTabBarState extends State<GlassTabBar>
                             // Under a held lens the row has a hole filled by a
                             // magnified, tinted copy. Without the content
                             // shader both lie beneath the lens, so its glass
-                            // refracts them (bending them at its rim).
+                            // refracts them (bending them at its rim). Native
+                            // glass smeared that copy into a blue halo, so a
+                            // native lens shows only the sharp copy above it.
                             if (!lensContent) baseRow,
-                            if (lensShown && !lensContent)
+                            if (lensShown && !lensContent && _shaderLens)
                               ClipPath(
                                 // The shader lens bends the whole copy; native
                                 // glass only gets the ends (see LensEndsClipper).

@@ -130,6 +130,8 @@ Drag brightness (2026-10-13, dark; each iOS frame against our frame of the same 
 | Press 0-10 / 10-60 | 10.1 / 7.6 (stalled takes; 7.4–8.6 / 7.7–8.6 earlier) | 7.4 / 6.3 |
 | Tap 0-10 / 10-60 | 3.97 / 1.86 | 3.85 / 1.85 |
 
+Native blue halo: the native lens also refracted a tinted copy of the tabs laid under it (`LensEndsClipper`), which UIKit's glass smeared into a blue halo at its rim. That copy is now drawn only under a shader lens; the native lens keeps the sharp copy above it (`RimFade`). Native, 4 takes (`nh*`) against `gt*`/`gd*`: tap 0-10 3.85 → 3.64 (10-60 1.85 → 1.78), matched tap lens |diff| 8.3 → 7.7; drag 6.4 / 8.2 → 6.6 / 7.7 (matched lens 10.1 → 9.9); press 7.4 / 6.3 → 7.3 / 6.3. iOS also blurs the moving tabs sideways; not reproduced (it would need a velocity blur in `tab_lens_content.frag`).
+
 Shader drag is unchanged (5.6 / 7.6). Static scenes are untouched (the glow shows only while the bar is lit).
 
 Measurement limits: the example is a debug (JIT) build, and on a loaded host its first frames after a touch can stall (a spring then jumps 2–3 frames, and fits give response ≈ 0.05); about half the takes of the shader path show it, so read the fits of clean takes (`newa`). The drag's lens lag (mean centre over frames 20–50: iOS 207–215 pt, native 204–212, shader 189–228) varies more between takes than between renderers; `follow` is unchanged. Open: the lens over a tap is wider than iOS's (81 vs 65 pt where it overhangs) and peaks lower on a press (4.7 vs 6.0–7.3 pt).

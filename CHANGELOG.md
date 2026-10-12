@@ -4,7 +4,8 @@
   dragged lens as iOS's does (the glow shader mode already drew), and in
   dark mode the dragged lens is dimmed a little. Against SwiftUI's
   `TabView`: drag mean |diff| 7.0 / 9.1 -> 6.4 / 8.2 (frames 0-10 /
-  10-60), press 10-60 7.6 -> 6.3.
+  10-60), press 10-60 7.6 -> 6.3. The native lens no longer smears the
+  tinted tabs under it into a blue halo.
 - `GlassTabBar`: a quick tap's travelling lens looks closer to iOS 26's.
   The tabs under it magnify on their own spring from touch-down
   (`TabBarMetrics.magnify`), up to about 1.14 for a tap instead of 1.2

@@ -108,7 +108,11 @@ and CHANGELOG.md.
     too, cut out under the lens; nativeLensDragShade 0.2), shader 5.6 /
     7.6 unchanged. At matched lens positions what is left is the glyphs
     beside the lens (Home/Settings columns read |diff| 22-26: shapes and
-    placement, see glyph shapes) and the native lens itself (|d| 10)
+    placement, see glyph shapes) and the native lens itself (|d| 10).
+    Native blue halo gone (no tinted copy under the native lens: tap 0-10
+    3.85 -> 3.64, matched lens 8.3 -> 7.7, drag 10-60 8.2 -> 7.7). Not
+    done: iOS's sideways motion blur of the moving tabs (would need a
+    velocity blur in tab_lens_content.frag)
   - icons beside the search tab ~0.4 pt right of iOS's on Music/Settings
     (Home matches); plain-bar labels +0.4 px, Home +1.1-1.3 px
   - glyph shapes: CupertinoIcons stand-ins vs SF Symbols (house, gear)
