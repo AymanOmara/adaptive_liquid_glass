@@ -2,7 +2,7 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
-import 'package:adaptive_liquid_glass/src/tab_bar/lens_ends_clipper.dart';
+import 'package:adaptive_liquid_glass/src/tab_bar/capsule_clipper.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/tab_lens.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/tab_lens_content.dart';
 import 'package:flutter/cupertino.dart';
@@ -205,12 +205,6 @@ void main() {
     await t.pumpWidget(bar());
     final g = await hold(t);
     expect(
-      find.byWidgetPredicate(
-        (w) => w is ClipPath && w.clipper is LensEndsClipper,
-      ),
-      findsNothing,
-    );
-    expect(
       find.descendant(
         of: find.byType(GlassTabBar),
         matching: find.byType(ShaderMask),
@@ -228,11 +222,12 @@ void main() {
     await t.pumpWidget(bar());
     final g = await hold(t);
     expect(t.widget<LiquidGlass>(lens).mode, isNull);
+    // No tinted copy under native glass (it smeared it into a halo).
     expect(
       find.byWidgetPredicate(
-        (w) => w is ClipPath && w.clipper is LensEndsClipper,
+        (w) => w is ClipPath && w.clipper is CapsuleClipper,
       ),
-      findsOneWidget,
+      findsNothing,
     );
     await g.up();
     await t.pumpAndSettle();

@@ -37,7 +37,6 @@ import 'glass_material_tab_bar_style.dart';
 import 'glass_search_tab_button.dart';
 import 'glass_tab_bar_item.dart';
 import 'hole_clipper.dart';
-import 'lens_ends_clipper.dart';
 import 'rim_fade.dart';
 import 'tab_bar_edge_to_edge.dart';
 import 'tab_bar_fill_scope.dart';
@@ -1080,11 +1079,8 @@ class _GlassTabBarState extends State<GlassTabBar>
                             if (!lensContent) baseRow,
                             if (lensShown && !lensContent && _shaderLens)
                               ClipPath(
-                                // The shader lens bends the whole copy; native
-                                // glass only gets the ends (see LensEndsClipper).
-                                clipper: _shaderLens
-                                    ? CapsuleClipper(lens)
-                                    : LensEndsClipper(lens),
+                                // The shader lens bends the whole copy.
+                                clipper: CapsuleClipper(lens),
                                 child: _row(
                                   (_) => selected,
                                   semantics: false,
