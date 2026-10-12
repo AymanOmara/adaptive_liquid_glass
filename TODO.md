@@ -81,9 +81,11 @@ and CHANGELOG.md.
     of iOS's), content bend -0.4. Left: magnification while crossing
     Music 1.14 vs iOS's 1.02-1.09; iOS's motion blur on the tabs; the
     native lens's blue halo (UIKit glass refracting the tinted copy)
-  - tap timing: our lens showed ~1-2 frames before iOS's; with tapHold
-    165 / tapLift 0.93 the shader lens now first shows at frame 3-5 (iOS
-    4-5) and its centre per frame matches; native not yet re-checked
+  - tap timing: closed 2026-10-13. Shader lens first shows at frame 2-5
+    (iOS 3-6), centre track +1.1 frames (median of 8 takes, spread
+    +0.4..+3.1); native 2-7, -1.3 (-0.3..-1.6). Below what onset-aligned
+    debug-build takes resolve (the same code reads +3.5 or -1.2 between
+    batches); before the lens fix shader read +3.5 (-1.0..+9.8)
   - tapped lens at its end: 47 pt wide on its last visible frame (was 35;
     iOS 51)
   - selected pill over black: 54 grey levels against iOS's 50-51
