@@ -1193,7 +1193,7 @@ Stack(
   `GlassColorPicker` sheet, `GlassRefresh`, `GlassSearchable`, the
   `GlassDatePicker` wheel and time styles, `GlassWheelPicker` and the
   full-screen cover's close button and drag thresholds follow iOS by eye,
-  not by measurement. `GlassRefresh` has no arrow-to-spinner morph.
+  not by measurement.
 - **Picker menu, first tap:** on the simulator, the first tap on a picker
   after launch has been seen not to open its menu; the second does.
 

@@ -1,5 +1,6 @@
 import 'dart:ui' show lerpDouble;
 
+import 'package:flutter/cupertino.dart' show CupertinoActivityIndicator;
 import 'package:flutter/material.dart' show CircularProgressIndicator;
 import 'package:flutter/widgets.dart';
 
@@ -8,12 +9,12 @@ import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
 import '../liquid_glass.dart';
-import '../progress/glass_progress_indicator.dart';
 import 'refresh_metrics.dart';
 
 /// iOS 26's pull to refresh indicator: a glass disk that scales in with
-/// the pull, a ring filling as it nears the threshold, and a spinner
-/// once refresh starts. Shown by [GlassRefresh] and
+/// the pull, the spinner's spokes revealed one by one as it nears the
+/// threshold (as `UIRefreshControl` does), and the spinner turning once
+/// refresh starts. Shown by [GlassRefresh] and
 /// [SliverGlassRefresh]; rarely built directly.
 ///
 /// ```dart
@@ -33,13 +34,14 @@ class GlassRefreshIndicator extends StatelessWidget {
     this.mode,
   });
 
-  /// Pull progress, 0 to 1 (clamped); drives the ring and the scale-in.
+  /// Pull progress, 0 to 1 (clamped); drives the spokes and the scale-in.
   final double progress;
 
   /// Whether onRefresh is pending: the spinner spins.
   final bool refreshing;
 
-  /// The ring's / spinner's fill. Defaults to system blue.
+  /// The spinner's colour (the ring's on the Material path). Defaults to
+  /// the system's.
   final Color? color;
 
   /// Announced while refreshing. Defaults to 'Refreshing' (English; there
@@ -67,7 +69,7 @@ class GlassRefreshIndicator extends StatelessWidget {
             builder: (context, effective) =>
                 effective == EffectiveGlassMode.material
                 ? _material()
-                : _glass(),
+                : _glass(reduceMotion),
           ),
         ),
       ),
@@ -90,7 +92,7 @@ class GlassRefreshIndicator extends StatelessWidget {
     ),
   );
 
-  Widget _glass() => LiquidGlass(
+  Widget _glass(bool reduceMotion) => LiquidGlass(
     shape: const GlassShape.circle(),
     mode: mode,
     child: SizedBox.square(
@@ -98,11 +100,15 @@ class GlassRefreshIndicator extends StatelessWidget {
       child: Center(
         child: ExcludeSemantics(
           child: refreshing
-              ? GlassProgressIndicator.circular(color: color, mode: mode)
-              : GlassProgressIndicator.circular(
-                  value: progress.clamp(0.0, 1.0),
+              ? CupertinoActivityIndicator(
                   color: color,
-                  mode: mode,
+                  radius: RefreshMetrics.spinnerSize / 2,
+                  animating: !reduceMotion,
+                )
+              : CupertinoActivityIndicator.partiallyRevealed(
+                  color: color,
+                  radius: RefreshMetrics.spinnerSize / 2,
+                  progress: progress.clamp(0.0, 1.0),
                 ),
         ),
       ),

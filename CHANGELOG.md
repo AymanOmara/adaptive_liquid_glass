@@ -6,6 +6,9 @@
   glass follows Increase Contrast itself; Material is unchanged.
 - Accessibility: `GlassToggle` draws iOS's "I" and "O" marks on its track
   when On/Off Labels is on (`MediaQuery.onOffSwitchLabelsOf`).
+- `GlassRefresh` / `SliverGlassRefresh`: pulling reveals the spinner's
+  spokes one by one, as `UIRefreshControl` does, instead of filling a
+  ring that then jumps to the spinner. `color` now tints the spinner.
 
 ## 0.1.9 (2026-10-11)
 

@@ -45,7 +45,8 @@ class SliverGlassRefresh extends StatefulWidget {
   /// the future completes.
   final Future<void> Function() onRefresh;
 
-  /// The ring's / spinner's fill. Defaults to system blue.
+  /// The spinner's colour (the ring's on the Material path). Defaults to
+  /// the system's.
   final Color? color;
 
   /// Announced while refreshing. Defaults to 'Refreshing'.
