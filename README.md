@@ -1199,13 +1199,6 @@ Stack(
   `GlassDatePicker` wheel and time styles, `GlassWheelPicker` and the
   full-screen cover's close button and drag thresholds follow iOS by eye,
   not by measurement.
-- **Native menus open late on the simulator:** a glass menu (`GlassPicker`,
-  `GlassMenuButton`) on iOS 26 shows a new native glass view, and the frame
-  that adds it stalls in the engine while UIKit creates the view (measured
-  on the iOS 26.4 simulator, debug: about 0.7 s on the first open, 0.5 s
-  later). The tap is not lost: the menu appears after the stall. A second
-  tap during the stall lands on the menu once it shows, and can choose a
-  row. Shader and Material menus are not affected.
 
 ## License
 

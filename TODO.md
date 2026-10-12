@@ -1,16 +1,12 @@
 Open items, highest priority first. Done items are dropped; history is in git
 and CHANGELOG.md.
 
-1- native menu open latency (investigated 2026-10-12; was "Period picker:
-  first tap does not open the menu"). Not a lost tap: on the iOS 26.4
-  simulator (debug) every first tap reached the picker and opened the
-  menu, but the frame adding the panel's native glass view stalls in the
-  engine (raster ~700 ms first open, ~500 ms later; cold launch, hot
-  restart, after scrolling all the same). A second tap during the stall
-  hits the menu once shown. Documented in README Known limitations. To
-  do, if it matters on a device: measure in profile on hardware; if still
-  slow, consider a pre-created panel view or a shader panel while native
-  glass settles.
+1- native menu open latency: not reproduced (re-measured 2026-10-12, iOS
+  26.4 simulator, debug, components demo Period picker, 4 opens per run).
+  Worst frame on opening 70-170 ms, once 371 ms; the shader path is as slow
+  or slower there (100-270 ms frames), and the native view is created in
+  under 1 ms. The earlier 0.5-0.7 s stall was simulator/debug noise. Only
+  to do if a device shows lag: measure in profile on hardware.
 
 2- Android options (requested 2026-10-09):
   - iOS look on Android (~1 h, later): already wired. Components choose by
