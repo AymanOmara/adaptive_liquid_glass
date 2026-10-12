@@ -1183,7 +1183,6 @@ Stack(
   is not fixed by rebuilding the glass.
 - **Native interactive glass:** pressing native glass gets this package's
   stretch and growth, but not SwiftUI's own touch glow.
-- **Shader glow:** the shader's touch glow is brighter than SwiftUI's.
 - **Tab bar:** close to iOS 26.4's `TabView`, not identical. Over photos
   the shader-drawn bar differs most from native; the tapped lens runs about
   a frame ahead of iOS's and is a little brighter early on; icons are

@@ -6,6 +6,9 @@
   glass follows Increase Contrast itself; Material is unchanged.
 - Accessibility: `GlassToggle` draws iOS's "I" and "O" marks on its track
   when On/Off Labels is on (`MediaQuery.onOffSwitchLabelsOf`).
+- Shader glass: the touch glow is about 6× fainter, matching SwiftUI's
+  (measured luma lift 0.027 light / 0.041 dark, SwiftUI 0.012–0.019 /
+  0.041–0.066; it was 0.175 / 0.238).
 - `GlassRefresh` / `SliverGlassRefresh`: pulling reveals the spinner's
   spokes one by one, as `UIRefreshControl` does, instead of filling a
   ring that then jumps to the spinner. `color` now tints the spinner.

@@ -200,8 +200,8 @@ void main() {
 
   test('Task 17d keys pack into F, I and J (pre-17d behaviour by default)', () {
     final d = packGlassUniforms(frame(const []));
-    // F.yzw: glow 0.25, no post-lens blur, outline normals.
-    expect(d.sublist(229, 232), [0.25, 0, 1]);
+    // F.yzw: the fitted glow, no post-lens blur, outline normals.
+    expect(d.sublist(229, 232), [closeTo(0.027, 1e-6), 0, 1]);
     expect(d.sublist(241, 244), [0, closeTo(0.6 * 3, 1e-12), 0]);
     expect(d.sublist(248, 251), [0.5, 0, 0]); // K.w = blurSizeRef·dpr
     expect(d.sublist(244, 248), [0, 1.5 * 3, 1 * 3, 1]);
