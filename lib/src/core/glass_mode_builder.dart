@@ -28,6 +28,7 @@ class GlassModeBuilder extends StatelessWidget {
           resolveGlassMode(
             requested: mode ?? LiquidGlassTheme.of(context).defaultMode,
             environment: environment,
+            highContrast: MediaQuery.highContrastOf(context),
           ),
         ),
       );

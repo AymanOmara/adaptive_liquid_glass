@@ -56,6 +56,7 @@ class GlassContextMenu extends StatelessWidget {
     final effective = resolveGlassMode(
       requested: mode ?? LiquidGlassTheme.of(context).defaultMode,
       environment: GlassPlatform.instance.environment.value,
+      highContrast: MediaQuery.highContrastOf(context),
     );
     final box = context.findRenderObject()! as RenderBox;
     final rect = box.localToGlobal(Offset.zero) & box.size;

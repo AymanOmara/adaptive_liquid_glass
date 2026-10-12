@@ -17,8 +17,12 @@ GlassEnvironment env({
   shaderSupported: shader,
 );
 
-EffectiveGlassMode r(GlassRenderMode m, GlassEnvironment e) =>
-    resolveGlassMode(requested: m, environment: e);
+EffectiveGlassMode r(
+  GlassRenderMode m,
+  GlassEnvironment e, {
+  bool highContrast = false,
+}) =>
+    resolveGlassMode(requested: m, environment: e, highContrast: highContrast);
 
 void main() {
   const auto = GlassRenderMode.auto;
@@ -95,5 +99,29 @@ void main() {
     expect(r(auto, forced), EffectiveGlassMode.opaque);
     expect(r(GlassRenderMode.native, forced), EffectiveGlassMode.opaque);
     expect(r(GlassRenderMode.material, forced), EffectiveGlassMode.material);
+  });
+
+  test('high contrast makes the Flutter-drawn paths opaque', () {
+    expect(
+      r(auto, env(ios: 18), highContrast: true),
+      EffectiveGlassMode.opaque,
+    );
+    expect(
+      r(auto, env(ios: 18, shader: false), highContrast: true),
+      EffectiveGlassMode.opaque,
+    );
+    expect(
+      r(GlassRenderMode.shader, env(), highContrast: true),
+      EffectiveGlassMode.opaque,
+    );
+  });
+
+  test('high contrast leaves native and material alone', () {
+    // SwiftUI's glass follows Increase Contrast itself.
+    expect(r(auto, env(), highContrast: true), EffectiveGlassMode.native);
+    expect(
+      r(auto, env(platform: TargetPlatform.android), highContrast: true),
+      EffectiveGlassMode.material,
+    );
   });
 }

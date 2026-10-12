@@ -28,6 +28,7 @@ Future<GlassDialogAction?> showGlassConfirmationDialog({
   final effective = resolveGlassMode(
     requested: mode ?? LiquidGlassTheme.of(context).defaultMode,
     environment: GlassPlatform.instance.environment.value,
+    highContrast: MediaQuery.highContrastOf(context),
   );
   GlassDialogAction? cancel;
   for (final a in actions) {

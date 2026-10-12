@@ -1,3 +1,10 @@
+## Unreleased
+
+- Accessibility: high contrast (`MediaQuery.highContrastOf`) now draws
+  the shader and degraded glass as a solid surface, as Reduce
+  Transparency does, so text over glass keeps its contrast. Native iOS 26
+  glass follows Increase Contrast itself; Material is unchanged.
+
 ## 0.1.9 (2026-10-11)
 
 - Tab bar: `GlassTabBarItem.spacer()`, an empty slot (e.g. under a

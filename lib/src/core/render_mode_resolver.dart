@@ -11,10 +11,14 @@ import 'glass_render_mode.dart';
 /// (degraded without shader support) and Material elsewhere. Reduce
 /// Transparency makes the Flutter-drawn paths opaque; native glass handles
 /// the system setting itself, as SwiftUI does, but is drawn opaque too when
-/// the app forces the setting on (SwiftUI cannot see that).
+/// the app forces the setting on (SwiftUI cannot see that). High contrast
+/// ([highContrast], `MediaQuery.highContrastOf`) makes the Flutter-drawn
+/// paths opaque too, so text keeps its contrast; SwiftUI's glass follows
+/// Increase Contrast itself.
 EffectiveGlassMode resolveGlassMode({
   required GlassRenderMode requested,
   required GlassEnvironment environment,
+  required bool highContrast,
 }) {
   final isIOS = environment.platform == TargetPlatform.iOS;
   final nativeAvailable = isIOS && (environment.iosMajorVersion ?? 0) >= 26;
@@ -35,9 +39,11 @@ EffectiveGlassMode resolveGlassMode({
           : shaderPath,
   };
 
+  final flutterDrawn =
+      mode == EffectiveGlassMode.shader || mode == EffectiveGlassMode.degraded;
+  if (highContrast && flutterDrawn) return EffectiveGlassMode.opaque;
   if (environment.reduceTransparency &&
-      (mode == EffectiveGlassMode.shader ||
-          mode == EffectiveGlassMode.degraded ||
+      (flutterDrawn ||
           (mode == EffectiveGlassMode.native &&
               environment.reduceTransparencyForced))) {
     return EffectiveGlassMode.opaque;

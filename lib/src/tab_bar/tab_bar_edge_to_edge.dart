@@ -14,5 +14,6 @@ bool tabBarEdgeToEdge(BuildContext context, GlassTabBar bar) =>
     resolveGlassMode(
           requested: bar.mode ?? LiquidGlassTheme.of(context).defaultMode,
           environment: GlassPlatform.instance.environment.value,
+          highContrast: MediaQuery.highContrastOf(context),
         ) ==
         EffectiveGlassMode.material;

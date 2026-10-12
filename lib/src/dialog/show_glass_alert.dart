@@ -44,6 +44,7 @@ Future<GlassDialogAction?> showGlassAlert({
   final effective = resolveGlassMode(
     requested: mode ?? LiquidGlassTheme.of(context).defaultMode,
     environment: GlassPlatform.instance.environment.value,
+    highContrast: MediaQuery.highContrastOf(context),
   );
   final GlassDialogAction? chosen;
   if (effective == EffectiveGlassMode.material) {

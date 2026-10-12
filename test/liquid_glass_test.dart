@@ -433,6 +433,26 @@ void main() {
     );
   }, variant: ios);
 
+  testWidgets('high contrast draws opaque glass', (t) async {
+    env();
+    Widget glass(bool highContrast) => MediaQuery(
+      data: MediaQueryData.fromView(
+        WidgetsBinding.instance.platformDispatcher.implicitView!,
+      ).copyWith(highContrast: highContrast),
+      child: const Directionality(
+        textDirection: TextDirection.ltr,
+        child: LiquidGlass(child: SizedBox.expand()),
+      ),
+    );
+    await t.pumpWidget(glass(false));
+    expect(backdropOf(t).debugLastFrame!.uniforms.opaqueColor, isNull);
+    await t.pumpWidget(glass(true));
+    expect(
+      backdropOf(t).debugLastFrame!.uniforms.opaqueColor,
+      opaqueGlassColor(Brightness.light),
+    );
+  }, variant: ios);
+
   testWidgets('AdaptiveLiquidGlass.reduceTransparency forces opaque glass', (
     t,
   ) async {

@@ -56,6 +56,7 @@ Future<GlassDialogAction?> showGlassActionSheet({
   final effective = resolveGlassMode(
     requested: mode ?? LiquidGlassTheme.of(context).defaultMode,
     environment: GlassPlatform.instance.environment.value,
+    highContrast: MediaQuery.highContrastOf(context),
   );
   GlassDialogAction? chosen;
   if (effective == EffectiveGlassMode.material) {

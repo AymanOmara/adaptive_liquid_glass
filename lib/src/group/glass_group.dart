@@ -250,6 +250,7 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
     final mode = resolveGlassMode(
       requested: widget.mode ?? theme.defaultMode,
       environment: environment,
+      highContrast: MediaQuery.highContrastOf(context),
     );
     // The theme's appearance, which Cupertino colours resolve against, so
     // the glass and the content on it always agree (see glassBrightnessOf).

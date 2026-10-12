@@ -58,6 +58,7 @@ GlassFullScreenCoverHandle<T> showGlassFullScreenCover<T>({
   final effective = resolveGlassMode(
     requested: mode ?? LiquidGlassTheme.of(context).defaultMode,
     environment: GlassPlatform.instance.environment.value,
+    highContrast: MediaQuery.highContrastOf(context),
   );
   final navigator = useRootNavigator
       ? Navigator.of(context, rootNavigator: true)
