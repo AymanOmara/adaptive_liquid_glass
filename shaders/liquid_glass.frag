@@ -29,7 +29,7 @@ uniform vec4 uVar[34];     // per variant (regular A-L, then clear A-L, then
                            //   clamp (fidelity group 4)
                            //   P(ambient mix, ambient reach px, luma-keyed tone mix, shadow y offset px) (item 8;
                            //   P.z item 8 round 3)
-                           //   Q(sideways dispersion, -, -, -), regular then clear
+                           //   Q(sideways dispersion, ellipse normal mix, -, -), regular then clear
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -247,6 +247,15 @@ void main() {
   vec2 grad = vec2(fxp - fxm, fyp - fym) + vec2(1e-6);
   float gradLen = length(grad);
   vec2 nrm = grad / gradLen;
+  // Elliptical normals (Q.y, iOS 26's tab lens): the lens bends along the
+  // normals of the ellipse inscribed in its rect, so along a capsule's
+  // flat sides the bend turns gradually towards the round ends and a
+  // vertical-only lens thins its bands smoothly towards them.
+  if (Q4.y > 0.0) {
+    vec2 hr = max(rcB.zw * 0.5, vec2(1.0));
+    vec2 ne = (px - (rcB.xy + hr)) / (hr * hr);
+    nrm = normalize(mix(nrm, ne / max(length(ne), 1e-6), Q4.y));
+  }
 
   // Merge necks (fidelity group 2, measured on the g2-* scenes): where the
   // lens field's smooth union is active (smin weight > 0) the lens treats

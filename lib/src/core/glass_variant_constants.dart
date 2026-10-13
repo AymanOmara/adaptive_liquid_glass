@@ -37,6 +37,7 @@ class GlassVariantConstants {
     this.ambientReach = 0,
     this.shadowOffsetY = 0,
     this.dispersionTangent = 0,
+    this.lensEllipse = 0,
     this.toneLumaMix = 0,
     this.glowStrength = 0.25,
     this.postBlurShare = 0,
@@ -118,6 +119,7 @@ class GlassVariantConstants {
       'dispersionTangent',
       base.dispersionTangent,
     ),
+    lensEllipse: GlassJson.number(j, 'lensEllipse', base.lensEllipse),
     toneLumaMix: GlassJson.number(j, 'toneLumaMix', base.toneLumaMix),
     glowStrength: GlassJson.number(j, 'glowStrength', base.glowStrength),
     postBlurShare: GlassJson.number(j, 'postBlurShare', base.postBlurShare),
@@ -294,6 +296,12 @@ class GlassVariantConstants {
   /// 26.4's tab lens). 0 splits only along the normal ([dispersion]).
   final double dispersionTangent;
 
+  /// How far (0-1) the lens bends along the normals of the ellipse
+  /// inscribed in the shape instead of the outline's: along a capsule's
+  /// flat sides the bend turns gradually towards the round ends (iOS 26.4's
+  /// tab lens: its bands thin smoothly towards the ends). 0 = the outline.
+  final double lensEllipse;
+
   /// How far the tone LUT is keyed on luma instead of applied per channel
   /// (item 8 round 3): at 1 the LUT moves the frosted backdrop's luma and
   /// its chroma rides along unchanged; 0 = per channel, as before.
@@ -441,6 +449,7 @@ class GlassVariantConstants {
     'ambientReach': ambientReach,
     'shadowOffsetY': shadowOffsetY,
     'dispersionTangent': dispersionTangent,
+    'lensEllipse': lensEllipse,
     'toneLumaMix': toneLumaMix,
     'glowStrength': glowStrength,
     'postBlurShare': postBlurShare,

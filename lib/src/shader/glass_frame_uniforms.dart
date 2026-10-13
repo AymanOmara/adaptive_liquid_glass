@@ -157,7 +157,7 @@ const int kGlassUniformFloats = 344;
 /// O.w = postJacobianMax (fidelity group 4),
 /// P = (ambientMix, ambientReach px, toneLumaMix, shadowOffsetY px) (item 8;
 /// P.z round 3),
-/// Q = (dispersionTangent, 0, 0, 0).
+/// Q = (dispersionTangent, lensEllipse, 0, 0).
 List<double> packGlassUniforms(GlassFrameUniforms u) {
   final dpr = u.devicePixelRatio;
   final shapes = u.shapes.where(_drawable).take(_maxShapes).toList();
@@ -303,9 +303,10 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
     ]);
     k += 4;
   }
-  // Sideways dispersion: Q per variant (uVar[32..33]).
+  // Sideways dispersion and elliptical normals: Q per variant
+  // (uVar[32..33]).
   for (final v in variantSets) {
-    f.setAll(k, [v.dispersionTangent, 0, 0, 0]);
+    f.setAll(k, [v.dispersionTangent, v.lensEllipse, 0, 0]);
     k += 4;
   }
   return f;

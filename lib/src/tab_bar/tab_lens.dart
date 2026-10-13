@@ -31,6 +31,7 @@ const tabLensLight = GlassVariantConstants(
   lensSizeRef: 0,
   dispersion: 0.3,
   dispersionTangent: tabLensDispersionTangent,
+  lensEllipse: tabLensEllipse,
   normalRadiusScale: 1,
   lensEdge: -6.7,
   lensEdgeDecay: 8,
@@ -76,6 +77,7 @@ const tabLensDark = GlassVariantConstants(
   lensSizeRef: 0,
   dispersion: 0.3,
   dispersionTangent: tabLensDispersionTangent,
+  lensEllipse: tabLensEllipse,
   normalRadiusScale: 1,
   lensEdge: -6.7,
   lensEdgeDecay: 8,
@@ -112,6 +114,11 @@ const tabLensDark = GlassVariantConstants(
 /// band above the bar fringes warm at its left end and cool at its right,
 /// flipped below; -3 matches the direction and about the size).
 const tabLensDispersionTangent = -3.0;
+
+/// How far the tab lens bends along elliptical normals (iOS 26.4: its
+/// bands above and below the bar are thickest mid-lens and thin smoothly
+/// to nothing at the round ends).
+const tabLensEllipse = 1.0;
 
 /// Colour split of the tinted tabs under the lens (TabLensContent); the
 /// glass splits the backdrop less.

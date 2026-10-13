@@ -458,13 +458,13 @@ void main() {
     expect(f.sublist(325, 328), [0, 0, 1.15]);
   });
 
-  test('sideways dispersion packs into Q after P', () {
+  test('sideways dispersion and elliptical normals pack into Q after P', () {
     final c = GlassConstants.fromJson({
-      'regular': {'dispersionTangent': 0.5},
+      'regular': {'dispersionTangent': 0.5, 'lensEllipse': 1.0},
       'clear': {'dispersionTangent': -3.0},
     });
     final f = packGlassUniforms(frame(const [], constants: c));
-    expect(f.sublist(336, 340), [0.5, 0, 0, 0]);
+    expect(f.sublist(336, 340), [0.5, 1, 0, 0]);
     expect(f.sublist(340, 344), [-3, 0, 0, 0]);
   });
 

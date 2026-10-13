@@ -51,6 +51,7 @@ VARIANT_DEFAULTS = {
     "ambientReach": 0.0,
     "shadowOffsetY": 0.0,
     "dispersionTangent": 0.0,
+    "lensEllipse": 0.0,
     "glowStrength": 0.25,
     "postBlurShare": 0.0,
     "normalRadiusScale": 1.0,
