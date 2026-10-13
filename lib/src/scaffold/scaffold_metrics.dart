@@ -18,6 +18,19 @@ abstract final class ScaffoldMetrics {
   /// The bottom accessory's inset from the screen's sides.
   static const double accessoryInset = 21;
 
+  /// With the tab bar minimized, the accessory drops into the bar's row
+  /// beside the circle: its start and end from the screen's sides (iOS
+  /// 26.4, `tabbarminimizeacc`: 84 and 30 pt, 48 pt tall, centred on the
+  /// bar).
+  static const double accessoryMinimizedStart = 84;
+
+  /// See [accessoryMinimizedStart].
+  static const double accessoryMinimizedEnd = 30;
+
+  /// How long the accessory takes to move with the minimizing bar (the
+  /// bar's 0.4 s spring, settled).
+  static const Duration accessoryMinimizeDuration = Duration(milliseconds: 450);
+
   /// The floating action button's margin from the screen's end and from
   /// the bars below it (Material 3's 16; iOS has no such button).
   static const double floatingActionButtonMargin = 16;

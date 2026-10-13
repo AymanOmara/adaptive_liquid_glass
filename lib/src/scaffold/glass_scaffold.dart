@@ -1,3 +1,4 @@
+import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 
 import '../core/glass_environment.dart';
@@ -9,6 +10,7 @@ import '../tab_bar/glass_tab_bar.dart';
 import '../tab_bar/glass_tab_bar_minimize_behavior.dart';
 import '../tab_bar/tab_bar_edge_to_edge.dart';
 import '../tab_bar/tab_bar_fill_scope.dart';
+import '../tab_bar/tab_bar_metrics.dart';
 import '../tab_bar/tab_bar_minimize_scope.dart';
 import '../tab_bar/tab_lens.dart';
 import '../toolbar/toolbar_metrics.dart';
@@ -167,6 +169,56 @@ class _GlassScaffoldState extends State<GlassScaffold> {
       _minimize.scrolled(n.metrics.pixels, n.metrics.minScrollExtent);
     }
     return false;
+  }
+
+  // The accessory above the bar; when the bar minimizes it slides into the
+  // bar's row beside the circle, as iOS 26.4 does.
+  Widget _accessory(
+    BuildContext context,
+    PreferredSizeWidget accessory,
+    GlassTabBar? tabBar,
+  ) {
+    final h = accessory.preferredSize.height;
+    final child = tabBar == null
+        ? accessory
+        : GlassScaffold._sameGlassAsTabBar(context, tabBar, accessory);
+    if (tabBar?.minimizeBehavior != GlassTabBarMinimizeBehavior.onScrollDown) {
+      return PositionedDirectional(
+        top: 0,
+        start: ScaffoldMetrics.accessoryInset,
+        end: ScaffoldMetrics.accessoryInset,
+        height: h,
+        child: child,
+      );
+    }
+    final rowTop =
+        h +
+        ScaffoldMetrics.accessoryGap +
+        (tabBar!.height - TabBarMetrics.minimizedSize) / 2;
+    return ListenableBuilder(
+      listenable: _minimize,
+      builder: (context, _) => TweenAnimationBuilder<double>(
+        tween: Tween(end: _minimize.minimized ? 1 : 0),
+        duration: ScaffoldMetrics.accessoryMinimizeDuration,
+        curve: Curves.easeOutCubic,
+        builder: (context, t, child) => PositionedDirectional(
+          top: lerpDouble(0, rowTop, t),
+          start: lerpDouble(
+            ScaffoldMetrics.accessoryInset,
+            ScaffoldMetrics.accessoryMinimizedStart,
+            t,
+          ),
+          end: lerpDouble(
+            ScaffoldMetrics.accessoryInset,
+            ScaffoldMetrics.accessoryMinimizedEnd,
+            t,
+          ),
+          height: lerpDouble(h, TabBarMetrics.minimizedSize, t),
+          child: child!,
+        ),
+        child: child,
+      ),
+    );
   }
 
   @override
@@ -338,19 +390,7 @@ class _GlassScaffoldState extends State<GlassScaffold> {
                             ],
                           ),
                           if (accessory != null)
-                            PositionedDirectional(
-                              top: 0,
-                              start: ScaffoldMetrics.accessoryInset,
-                              end: ScaffoldMetrics.accessoryInset,
-                              height: accessory.preferredSize.height,
-                              child: tabBar == null
-                                  ? accessory
-                                  : GlassScaffold._sameGlassAsTabBar(
-                                      context,
-                                      tabBar,
-                                      accessory,
-                                    ),
-                            ),
+                            _accessory(context, accessory, tabBar),
                         ],
                       ),
                     ),
