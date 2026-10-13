@@ -24,7 +24,8 @@ const tabLensLight = GlassVariantConstants(
   // iOS's does: about 8 pt, measured on `-controls lensreach`, a hue ramp
   // above the bar. 33 pt pulled whole text rows into the band.)
   // plus an outward tail (negative lensEdge) that still moves the bar's
-  // edge about 3.5 pt at 8 pt in.
+  // edge about 3.5 pt at 8 pt in: held, iOS 26.4 shows the bar's edge
+  // 3.3 pt inside its own (-6.7 showed it 2.3 pt in).
   lensBand: 8.25,
   lensStrength: 0.4,
   lensDecay: 1000,
@@ -33,7 +34,7 @@ const tabLensLight = GlassVariantConstants(
   dispersionTangent: tabLensDispersionTangent,
   lensEllipse: tabLensEllipse,
   normalRadiusScale: 1,
-  lensEdge: -6.7,
+  lensEdge: -12,
   lensEdgeDecay: 8,
   // The bend is strongest where the lens faces up or down; its round
   // ends bend half as much (Kept: clear mid-bar, a rainbow crescent past
@@ -80,7 +81,7 @@ const tabLensDark = GlassVariantConstants(
   dispersionTangent: tabLensDispersionTangent,
   lensEllipse: tabLensEllipse,
   normalRadiusScale: 1,
-  lensEdge: -6.7,
+  lensEdge: -12,
   lensEdgeDecay: 8,
   // The bend is strongest where the lens faces up or down; its round
   // ends bend half as much (Kept: clear mid-bar, a rainbow crescent past
