@@ -50,7 +50,7 @@ void main() {
         }),
       ),
     );
-    expect(f.length, 344);
+    expect(f.length, 352);
     expect(f.sublist(0, 4), [1, 3, -2, 0]);
     expect(f.sublist(4, 8), [
       60,
@@ -464,13 +464,16 @@ void main() {
         'dispersionTangent': 0.5,
         'lensEllipse': 1.0,
         'backdropInset': 4.0,
+        'ambientLift': 0.5,
+        'backdropOutside': 1.0,
       },
       'clear': {'dispersionTangent': -3.0},
     });
     final f = packGlassUniforms(frame(const [], constants: c));
     // The inset is a length (x dpr 3).
-    expect(f.sublist(336, 340), [0.5, 1, 12, 0]);
+    expect(f.sublist(336, 340), [0.5, 1, 12, 0.5]);
     expect(f.sublist(340, 344), [-3, 0, 0, 0]);
+    expect(f.sublist(344, 348), [1, 0, 0, 0]);
   });
 
   test('ambient colour packs into P after the M-O blocks (item 8)', () {

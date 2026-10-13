@@ -156,19 +156,26 @@ Widget withTabLens(
   return LiquidGlassTheme(
     data: theme.copyWith(
       constants: theme.constants.copyWith(
-        clear: _inset(_bent(tabLensLight, bend), overhang),
-        clearDark: _inset(_bent(tabLensDark, bend), overhang),
+        clear: _inset(_bent(tabLensLight, bend), overhang, 1),
+        clearDark: _inset(_bent(tabLensDark, bend), overhang, 0),
       ),
     ),
     child: child,
   );
 }
 
-/// [c] refracting only the bar under a lens overhanging it by [overhang].
-GlassVariantConstants _inset(GlassVariantConstants c, double overhang) =>
-    overhang <= 0
+/// [c] refracting only the bar under a lens overhanging it by [overhang];
+/// beyond it, the page's background ([outside]: 1 white, 0 black).
+GlassVariantConstants _inset(
+  GlassVariantConstants c,
+  double overhang,
+  double outside,
+) => overhang <= 0
     ? c
-    : GlassVariantConstants.fromJson({'backdropInset': overhang}, c);
+    : GlassVariantConstants.fromJson({
+        'backdropInset': overhang,
+        'backdropOutside': outside,
+      }, c);
 
 GlassVariantConstants _bent(GlassVariantConstants c, double bend) => bend >= 1
     ? c
@@ -207,7 +214,9 @@ const _tabBarOverrides = <String, Object?>{
 const _tabBarLightOverrides = <String, Object?>{
   ..._tabBarOverrides,
   'toneLift': 0.0,
-  'fillOpacity': 0.62,
+  'fillOpacity': 0.70,
+  'fillColor': '#DDDDDD',
+  'ambientLift': 0.27,
   'saturation': 1.45,
   'blurSigma': 7.0,
   // The values the bar was fitted with (before the g13 refit).
@@ -222,10 +231,12 @@ const _tabBarLightOverrides = <String, Object?>{
 const _tabBarDarkOverrides = <String, Object?>{
   ..._tabBarOverrides,
   'toneLift': 0.0,
-  'fillColor': '#282828',
-  'fillOpacity': 0.55,
+  'fillColor': '#1E1E1E',
+  'fillOpacity': 0.70,
+  'ambientLift': 0.45,
   'saturation': 1.5,
-  'blurSigma': 14.0,
+  'blurAspectPower': 0.0,
+  'blurSigma': 9.0,
   // The values the bar was fitted with (before the g13 refit).
   'fillSizeDrop': 0.798,
   'tintStrength': 1.0084,

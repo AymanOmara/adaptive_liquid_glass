@@ -120,7 +120,7 @@ List<GlassShapeUniform> mergeUnions(List<GlassShapeUniform> shapes) {
 }
 
 /// Number of user floats after `uSize`.
-const int kGlassUniformFloats = 344;
+const int kGlassUniformFloats = 352;
 
 /// Packs [u] into the float layout documented in `shaders/liquid_glass.frag`:
 ///
@@ -137,6 +137,7 @@ const int kGlassUniformFloats = 344;
 /// | 304–327 | uVar[24..29]   | regular M–O, then clear M–O               |
 /// | 328–335 | uVar[30..31]   | regular P, then clear P                   |
 /// | 336–343 | uVar[32..33]   | regular Q, then clear Q                   |
+/// | 344–351 | uVar[34..35]   | regular R, then clear R                   |
 ///
 /// Per variant: A = (lens decay px, lens band px, lens strength, dispersion),
 /// B = (rim width px, rim intensity, fillOpacity, dim),
@@ -157,7 +158,8 @@ const int kGlassUniformFloats = 344;
 /// O.w = postJacobianMax (fidelity group 4),
 /// P = (ambientMix, ambientReach px, toneLumaMix, shadowOffsetY px) (item 8;
 /// P.z round 3),
-/// Q = (dispersionTangent, lensEllipse, backdropInset px, 0).
+/// Q = (dispersionTangent, lensEllipse, backdropInset px, ambientLift).
+/// R = (backdropOutside, 0, 0, 0).
 List<double> packGlassUniforms(GlassFrameUniforms u) {
   final dpr = u.devicePixelRatio;
   final shapes = u.shapes.where(_drawable).take(_maxShapes).toList();
@@ -306,7 +308,17 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
   // Sideways dispersion and elliptical normals: Q per variant
   // (uVar[32..33]).
   for (final v in variantSets) {
-    f.setAll(k, [v.dispersionTangent, v.lensEllipse, v.backdropInset * dpr, 0]);
+    f.setAll(k, [
+      v.dispersionTangent,
+      v.lensEllipse,
+      v.backdropInset * dpr,
+      v.ambientLift,
+    ]);
+    k += 4;
+  }
+  // What lies beyond the backdrop inset: R per variant (uVar[34..35]).
+  for (final v in variantSets) {
+    f.setAll(k, [v.backdropOutside, 0, 0, 0]);
     k += 4;
   }
   return f;

@@ -97,11 +97,17 @@ void main() {
     expect(inset, greaterThan(0));
     expect(
       theme.constants.clear,
-      GlassVariantConstants.fromJson({'backdropInset': inset}, tabLensLight),
+      GlassVariantConstants.fromJson({
+        'backdropInset': inset,
+        'backdropOutside': 1,
+      }, tabLensLight),
     );
     expect(
       theme.constants.clearDark,
-      GlassVariantConstants.fromJson({'backdropInset': inset}, tabLensDark),
+      GlassVariantConstants.fromJson({
+        'backdropInset': inset,
+        'backdropOutside': 0,
+      }, tabLensDark),
     );
     // The bar is shader glass too, so the lens can refract it (native glass
     // is invisible to the shader).

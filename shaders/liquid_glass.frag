@@ -11,7 +11,7 @@ uniform vec4 uTouch;       // x, y, glow, glowRadius px
 uniform vec4 uRects[16];   // x, y, w, h px
 uniform vec4 uInfo[16];    // radius px, variant(0 regular, 1 clear), cornerExponent (0 = global), fill scale
 uniform vec4 uTints[16];   // rgb, strength
-uniform vec4 uVar[34];     // per variant (regular A-L, then clear A-L, then
+uniform vec4 uVar[36];     // per variant (regular A-L, then clear A-L, then
                            // regular M-O, then clear M-O, then regular P,
                            // then clear P):
                            //   A(lens decay px, band px, lens strength, disp) B(rimW, rimI, fillOpacity, dim)
@@ -29,7 +29,8 @@ uniform vec4 uVar[34];     // per variant (regular A-L, then clear A-L, then
                            //   clamp (fidelity group 4)
                            //   P(ambient mix, ambient reach px, luma-keyed tone mix, shadow y offset px) (item 8;
                            //   P.z item 8 round 3)
-                           //   Q(sideways dispersion, ellipse normal mix, backdrop inset px, -), regular then clear
+                           //   Q(sideways dispersion, ellipse normal mix, backdrop inset px, ambient lift), regular then clear
+                           //   R(backdrop outside grey, -, -, -), regular then clear
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -211,6 +212,7 @@ void main() {
   vec4 K = mix(uVar[10], uVar[22], clearMix);
   vec4 L4 = mix(uVar[11], uVar[23], clearMix);
   vec4 Q4 = mix(uVar[32], uVar[33], clearMix);
+  vec4 R4 = mix(uVar[34], uVar[35], clearMix);
   vec4 M = mix(uVar[24], uVar[27], clearMix);
   vec4 N = mix(uVar[25], uVar[28], clearMix);
   vec4 O = mix(uVar[26], uVar[29], clearMix);
@@ -312,6 +314,12 @@ void main() {
     dLens *= wv;
   }
   vec2 sp = px + nrm * lensAmt;
+  // Backdrop inset (Q.z, iOS 26.4's tab lens): only the backdrop between
+  // the shape's top and bottom inset by Q.z is refracted (the bar under
+  // an overhanging lens); what the lens would bend in from beyond reads
+  // the grey R.x (the page's background: black bands in dark mode, white
+  // in light). Each tap is masked on its own, so the bar's edge fringes.
+  vec2 bandY = vec2(rcB.y + Q4.z, rcB.y + rcB.w - Q4.z);
 
   // Frost v2, measured from SwiftUI (Task 17c, tool/fidelity/measure_frost.py):
   // a sharp core plus a wide tail, (1 - w) G(core) + w G(core + wide). The
@@ -332,6 +340,7 @@ void main() {
   // plain lens sample `base`, reused by dispersion.
   vec3 base = tex(sp).rgb;
   vec3 col = base;
+  float mk = inBand(sp.y, bandY, Q4.z);
   float sPost = K.z * (K.w > 0.0 ? min(1.0, halfMin / K.w) : 1.0);
   if (sPost >= 0.25) {
     // The lens field equals the outline's field when no variant rounds it
@@ -381,15 +390,9 @@ void main() {
   // (post-lens blur + wide mix), so dispersion 0 is an exact no-op and a
   // grey backdrop stays grey (the offset must be measured after the wide
   // mix, not before it).
-  // Backdrop inset (Q.z, iOS 26.4's tab lens): only the backdrop between
-  // the shape's top and bottom inset by Q.z is refracted (the bar under
-  // an overhanging lens); what the lens bends in from beyond reads black.
-  // Each dispersed tap is masked on its own, so the bar's edge still
-  // fringes.
-  vec2 bandY = vec2(rcB.y + Q4.z, rcB.y + rcB.w - Q4.z);
-  float mk = inBand(sp.y, bandY, Q4.z);
-  col *= mk;
-  base *= mk;
+  vec3 outside = vec3(R4.x);
+  col = mix(outside, col, mk);
+  base = mix(outside, base, mk);
   if (A.w != 0.0 || Q4.x != 0.0) {
     vec3 coreOff = col - base;
     // Along the normal, plus sideways along the rim (Q.x): red and blue
@@ -397,11 +400,12 @@ void main() {
     // the other.
     vec2 disp = nrm * lensAmt * abs(A.w) + vec2(-nrmO.y, nrmO.x) * lensAmt * Q4.x;
     float dw = v;
-    col.r = mix(
-        col.r, tex(sp + disp).r * inBand(sp.y + disp.y, bandY, Q4.z) + coreOff.r, dw);
+    float mr = inBand(sp.y + disp.y, bandY, Q4.z);
+    col.r = mix(col.r, mix(outside.r, tex(sp + disp).r, mr) + coreOff.r, dw);
     // Negative dispersion (iOS's tab lens) moves green with blue, so a
     // blue tint fringes in shades of blue instead of green.
-    vec3 sm = tex(sp - disp).rgb * inBand(sp.y - disp.y, bandY, Q4.z) + coreOff;
+    float mb = inBand(sp.y - disp.y, bandY, Q4.z);
+    vec3 sm = mix(outside, tex(sp - disp).rgb, mb) + coreOff;
     col.b = mix(col.b, sm.b, dw);
     if (A.w < 0.0) col.g = mix(col.g, sm.g, dw);
   }
@@ -429,8 +433,27 @@ void main() {
   vec3 lk = max(vec3(1.0) - col / max(K.x, 1e-3), vec3(0.0));
   col += (I.w * liftSz) * lk * lk;
 
+  // The frosted backdrop's luma before the fill wash, for the ambient lift.
+  float preFill = dot(col, vec3(0.2126, 0.7152, 0.0722));
   col = mix(col, D.rgb, B.z * fillScale);
   col *= (1.0 - B.w);
+
+  // Ambient lift (Q.w, fitted on iOS 26.4's tab bar over grey stripes,
+  // text and photos): the whole glass lightens with the average luma of
+  // the backdrop under it beyond 0.2, less where the backdrop behind a
+  // pixel is already light: + Q.w x max(avg - 0.2, 0) x (1 - 0.6 x luma).
+  // avg = 5 x 5 taps of the blurred texture over the blended rect.
+  if (Q4.w != 0.0) {
+    float al = 0.0;
+    for (int i = 0; i < 5; i++) {
+      for (int j = 0; j < 5; j++) {
+        al += dot(tex(rcB.xy + rcB.zw * (vec2(float(i), float(j)) + 0.5) * 0.2).rgb,
+            vec3(0.2126, 0.7152, 0.0722));
+      }
+    }
+    al *= 0.04;
+    col += Q4.w * max(al - 0.2, 0.0) * (1.0 - 0.6 * preFill);
+  }
 
   // Small-shape tone curve (Task g13, measured on the reference simulator):
   // SwiftUI switches small shapes (half shorter side <= ~32 pt) to a

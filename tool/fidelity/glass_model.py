@@ -53,6 +53,8 @@ VARIANT_DEFAULTS = {
     "dispersionTangent": 0.0,
     "lensEllipse": 0.0,
     "backdropInset": 0.0,
+    "ambientLift": 0.0,
+    "backdropOutside": 0.0,
     "glowStrength": 0.25,
     "postBlurShare": 0.0,
     "normalRadiusScale": 1.0,

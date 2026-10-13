@@ -39,6 +39,8 @@ class GlassVariantConstants {
     this.dispersionTangent = 0,
     this.lensEllipse = 0,
     this.backdropInset = 0,
+    this.ambientLift = 0,
+    this.backdropOutside = 0,
     this.toneLumaMix = 0,
     this.glowStrength = 0.25,
     this.postBlurShare = 0,
@@ -122,6 +124,12 @@ class GlassVariantConstants {
     ),
     lensEllipse: GlassJson.number(j, 'lensEllipse', base.lensEllipse),
     backdropInset: GlassJson.number(j, 'backdropInset', base.backdropInset),
+    ambientLift: GlassJson.number(j, 'ambientLift', base.ambientLift),
+    backdropOutside: GlassJson.number(
+      j,
+      'backdropOutside',
+      base.backdropOutside,
+    ),
     toneLumaMix: GlassJson.number(j, 'toneLumaMix', base.toneLumaMix),
     glowStrength: GlassJson.number(j, 'glowStrength', base.glowStrength),
     postBlurShare: GlassJson.number(j, 'postBlurShare', base.postBlurShare),
@@ -311,6 +319,17 @@ class GlassVariantConstants {
   /// dark over any page. 0 = the whole backdrop.
   final double backdropInset;
 
+  /// How much the whole glass lightens with the average luma of the
+  /// backdrop under it beyond 0.2 (less where the backdrop behind a pixel
+  /// is already light). iOS 26.4's tab bar does: over bright content its
+  /// dark glass lightens as a whole. 0 = off.
+  final double ambientLift;
+
+  /// The grey (0-1) the glass refracts in from beyond [backdropInset]:
+  /// iOS 26.4's tab lens shows the page's background there (black in
+  /// dark mode, white in light), never the page's content.
+  final double backdropOutside;
+
   /// How far the tone LUT is keyed on luma instead of applied per channel
   /// (item 8 round 3): at 1 the LUT moves the frosted backdrop's luma and
   /// its chroma rides along unchanged; 0 = per channel, as before.
@@ -460,6 +479,8 @@ class GlassVariantConstants {
     'dispersionTangent': dispersionTangent,
     'lensEllipse': lensEllipse,
     'backdropInset': backdropInset,
+    'ambientLift': ambientLift,
+    'backdropOutside': backdropOutside,
     'toneLumaMix': toneLumaMix,
     'glowStrength': glowStrength,
     'postBlurShare': postBlurShare,
