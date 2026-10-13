@@ -1193,6 +1193,13 @@ class _GlassTabBarState extends State<GlassTabBar>
         vibrantTint: true,
       ),
     );
+    final nativeLead = Offset(
+      TabBarMetrics.inset +
+          (_followTicker.isActive ? _followVelocity : 0.0) *
+              _itemWidth *
+              TabBarMetrics.nativeLensLead,
+      TabBarMetrics.inset,
+    );
     final m = _magnify.value.clamp(0.0, 1.0);
     final magnify = Offset(
       lerpDouble(1, TabBarMetrics.magnifyX, m)!,
@@ -1305,13 +1312,13 @@ class _GlassTabBarState extends State<GlassTabBar>
             ),
           ),
           // UIKit's clear glass casts no shadow; iOS's light tab lens does.
+          // Native glass draws a frame or two after Flutter, so a lens
+          // following the finger leads by its velocity over that latency.
           if (lensShown &&
               !_shaderLens &&
               GlassGroupScope.brightnessOf(context) != Brightness.dark)
             Positioned.fromRect(
-              rect: lens.shift(
-                const Offset(TabBarMetrics.inset, TabBarMetrics.inset),
-              ),
+              rect: lens.shift(nativeLead),
               child: const IgnorePointer(
                 child: CustomPaint(
                   painter: BarShadow(
@@ -1324,9 +1331,11 @@ class _GlassTabBarState extends State<GlassTabBar>
             ),
           if (lensShown)
             Positioned.fromRect(
-              rect: lens.shift(
-                const Offset(TabBarMetrics.inset, TabBarMetrics.inset),
-              ),
+              rect: _shaderLens
+                  ? lens.shift(
+                      const Offset(TabBarMetrics.inset, TabBarMetrics.inset),
+                    )
+                  : lens.shift(nativeLead),
               child: _shaderLens
                   ? withTabLens(
                       context,

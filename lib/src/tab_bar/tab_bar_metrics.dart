@@ -21,6 +21,11 @@ abstract final class TabBarMetrics {
   /// See [nativePillStyle].
   static const double nativePillOpacityDark = 0.133;
 
+  /// How far ahead (seconds of its travel) the native lens glass is placed
+  /// while it follows a finger:
+  /// UIKit draws it after Flutter's frame, so it trailed iOS's lens.
+  static const double nativeLensLead = 0.025;
+
   /// The gap between the bar's edge and its tabs.
   static const double inset = 4;
 
