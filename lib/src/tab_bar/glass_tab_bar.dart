@@ -396,6 +396,16 @@ class _GlassTabBarState extends State<GlassTabBar>
   /// Pixels from the row's left edge of visual slot position [slots].
   double _toPixels(double slots) => _pillWidth / 2 + slots * _itemWidth;
 
+  /// The lens content's motion blur (logical px): its travel over a
+  /// frame's exposure, from the follow or travel spring's velocity.
+  double get _motionBlur {
+    final v = _followTicker.isActive ? _followVelocity : _x.velocity;
+    return (v.abs() * _itemWidth / 60 * TabBarMetrics.lensMotionBlur).clamp(
+      0.0,
+      TabBarMetrics.lensMotionBlurMax,
+    );
+  }
+
   bool get _reduceMotion =>
       MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
@@ -1359,6 +1369,7 @@ class _GlassTabBarState extends State<GlassTabBar>
                   _contentHeight + _lensPad * 2,
                 ),
                 lens: lens.shift(Offset(_lensPad - lean, _lensPad)),
+                motion: _motionBlur,
                 fallback: const SizedBox.shrink(),
                 child: ColoredBox(
                   // Keeps the filter's layer the size of the box.

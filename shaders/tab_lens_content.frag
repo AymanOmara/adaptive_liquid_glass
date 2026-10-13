@@ -12,6 +12,7 @@ uniform vec4 uProfile;  // lens decay, band (logical px), strength, dispersion
 uniform vec4 uEdge;     // edge (logical px, < 0 anisotropic), edge decay,
                         // anisotropic (1: the lens bends only at the ends),
                         // blur radius at the rim (logical px)
+uniform float uMotion;  // horizontal motion blur length (logical px)
 uniform sampler2D uTexture;
 
 out vec4 fragColor;
@@ -23,12 +24,23 @@ float field(vec2 p) {
   return length(max(q, vec2(0.0))) + min(max(q.x, q.y), 0.0) - r;
 }
 
-vec4 tex(vec2 p) {
+vec4 tex0(vec2 p) {
   vec2 uv = p / uBox;
 #ifdef IMPELLER_TARGET_OPENGLES
   uv.y = 1.0 - uv.y;
 #endif
   return texture(uTexture, clamp(uv, vec2(0.0), vec2(1.0)));
+}
+
+// The lens's content smears along its motion, as iOS's does while the
+// lens slides (a box over the frame's travel).
+vec4 tex(vec2 p) {
+  if (uMotion < 0.5) return tex0(p);
+  vec4 c = vec4(0.0);
+  for (int i = 0; i < 5; i++) {
+    c += tex0(p + vec2((float(i) / 4.0 - 0.5) * uMotion, 0.0));
+  }
+  return c / 5.0;
 }
 
 void main() {

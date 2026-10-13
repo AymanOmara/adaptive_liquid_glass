@@ -410,4 +410,13 @@ abstract final class TabBarMetrics {
 
   /// See [pillVibrancyScaleDark].
   static const double pillVibrancyLiftDark = 0.139;
+
+  /// The lens content's motion blur: this many times the lens's travel per
+  /// 60 Hz frame (iOS 26.4 smears the tabs inside a sliding lens; over a
+  /// drag its horizontal/vertical edge ratio dips to 0.84 of rest, ours
+  /// 0.92 without blur, 0.88 with).
+  static const double lensMotionBlur = 3;
+
+  /// The longest motion blur (logical px).
+  static const double lensMotionBlurMax = 24;
 }

@@ -17,6 +17,7 @@ class TabLensContent extends StatelessWidget {
     required this.box,
     required this.lens,
     this.dispersion = tabLensContentDispersion,
+    this.motion = 0,
     required this.fallback,
     required this.child,
   });
@@ -30,6 +31,10 @@ class TabLensContent extends StatelessWidget {
   /// Colour split of the tabs (negative: red against green and blue, so
   /// blue tabs fringe in shades of blue).
   final double dispersion;
+
+  /// Horizontal motion blur length (logical px): the lens's travel over
+  /// a frame's exposure.
+  final double motion;
 
   /// Shown until the shader is available.
   final Widget fallback;
@@ -59,7 +64,8 @@ class TabLensContent extends StatelessWidget {
             ..setFloat(12, 0)
             ..setFloat(13, 1)
             ..setFloat(14, 1)
-            ..setFloat(15, tabLensContentBlur);
+            ..setFloat(15, tabLensContentBlur)
+            ..setFloat(16, motion);
           return IgnorePointer(
             child: ImageFiltered(
               imageFilter: ui.ImageFilter.shader(shader),
