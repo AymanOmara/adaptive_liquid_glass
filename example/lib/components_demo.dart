@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:flutter/cupertino.dart' show CupertinoColors, CupertinoIcons;
 import 'package:flutter/material.dart';
@@ -59,6 +61,7 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
   final _rows = ['Copied Image', 'Meeting notes', 'Shopping list'];
   int _page = 0;
   final _tags = {'Travel': true, 'Food': false, 'Music': false};
+  List<GlassPickedPhoto> _photos = const [];
 
   void _snack(String message) => ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
@@ -614,6 +617,45 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                       GlassShareLink(label: 'Share', onShare: () {}),
                     ],
                   ),
+                  const SizedBox(height: 24),
+                  GlassPhotosPicker(
+                    label: 'Select Photos',
+                    maxSelection: 0,
+                    filter: GlassPhotosPickerFilter.any,
+                    onPicked: (photos) => setState(() => _photos = photos),
+                  ),
+                  if (_photos.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 72,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _photos.length,
+                        separatorBuilder: (_, _) => const SizedBox(width: 8),
+                        itemBuilder: (_, i) => ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: _photos[i].isVideo
+                              ? const ColoredBox(
+                                  color: Colors.black54,
+                                  child: SizedBox.square(
+                                    dimension: 72,
+                                    child: Icon(
+                                      CupertinoIcons.videocam_fill,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : Image.file(
+                                  File(_photos[i].path),
+                                  width: 72,
+                                  height: 72,
+                                  fit: BoxFit.cover,
+                                  cacheWidth: 216,
+                                ),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   Center(
                     child: GlassPageControl(
