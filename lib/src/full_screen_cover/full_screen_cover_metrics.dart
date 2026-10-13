@@ -1,6 +1,7 @@
 import 'package:flutter/animation.dart' show Cubic, Curve, FlippedCurve;
 import 'package:flutter/physics.dart' show SpringDescription;
 
+import '../button/glass_button_metrics.dart';
 import '../sheet/sheet_metrics.dart';
 
 /// iOS 26's full-screen cover. The motion is fitted from a screen
@@ -8,8 +9,8 @@ import '../sheet/sheet_metrics.dart';
 /// 60 fps; the cover's top edge per frame, `-controls covertiming`) and
 /// re-checked against a second recording: RMS error 0.6% of the screen's
 /// height sliding up, 0.5% sliding down (worst frame 2.1%). SwiftUI's cover has no drag to
-/// dismiss or close button of its own: those follow the sheet and iOS 26's
-/// close button, and say so.
+/// dismiss or close button of its own: drag follows the sheet; the close button is
+/// measured from a close-role toolbar button in the cover.
 abstract final class FullScreenCoverMetrics {
   /// The cover sliding up over the page (fitted: settled within a pixel
   /// after about 0.45 s).
@@ -39,7 +40,27 @@ abstract final class FullScreenCoverMetrics {
   /// A released cover springing back into place (the sheet's).
   static final SpringDescription spring = SheetMetrics.spring;
 
-  /// The close button's inset from the safe area's top-trailing corner
-  /// (estimated, as a toolbar item's 16 pt margin).
+  /// The close button's inset from the screen's trailing edge
+  /// (measured: SwiftUI's close-role toolbar button, `-controls
+  /// coverclose`, "components" → "cover_close").
   static const double closeButtonInset = 16;
+
+  /// The close button's gap below the safe area's top (measured: flush).
+  static const double closeButtonTop = 0;
+
+  /// The close button's diameter, a navigation-bar item's (measured).
+  static const double closeButtonSize = 44;
+
+  /// The close button: a 44-pt glass xmark circle.
+  static const GlassButtonMetrics closeButton = GlassButtonMetrics(
+    height: closeButtonSize,
+    padding: 14,
+    fontSize: 17,
+    // CupertinoIcons glyphs are padded: 26 gives SF's 21-pt bar ink.
+    iconSize: 26,
+    iconGap: 6,
+    iconOnlyHeight: closeButtonSize,
+    iconOnlyExtraWidth: 0,
+    cornerRadius: 12,
+  );
 }

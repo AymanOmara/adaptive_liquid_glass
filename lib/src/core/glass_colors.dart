@@ -329,9 +329,6 @@ abstract final class GlassColors {
 
   // ColorPicker (estimated, not measured)
 
-  /// The thin ring around the row's swatch.
-  static const Color colorPickerRing = Color(0x33000000);
-
   /// The ring around the selected grid swatch.
   static const Color colorPickerSelection = white;
 

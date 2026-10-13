@@ -1369,10 +1369,9 @@ testWidgets('pays', (tester) async {
   stay Roboto (not SF Pro), and scroll physics, the back gesture and
   haptics stay Android's; making those iOS-like is not part of the
   package.
-- **Unmeasured geometry:** `GlassLabel`, `GlassLink`/`GlassShareLink`, the
-  `GlassColorPicker` sheet, `GlassRefresh`, `GlassSearchable`, the
-  `GlassDatePicker` wheel and time styles, `GlassWheelPicker` and the
-  full-screen cover's close button and drag thresholds follow iOS by eye,
+- **Unmeasured geometry:** the `GlassColorPicker` sheet, `GlassRefresh`,
+  `GlassSearchable`'s scope bar and suggestions, the date wheel's time
+  columns and the full-screen cover's drag thresholds follow iOS by eye,
   not by measurement.
 
 ## License

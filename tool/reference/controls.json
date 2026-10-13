@@ -281,6 +281,71 @@
     },
     "search_tab": {
       "circle_right_inset": 21.0
+    },
+    "label": {
+      "icon_ink_width": 18.67,
+      "title_from_icon": 30.0,
+      "ink_gap": 11.33
+    },
+    "link": {
+      "text": {
+        "width": 55.33,
+        "height": 36.33,
+        "ink_start": 13.67
+      },
+      "share": {
+        "width": 108.33,
+        "height": 37.33,
+        "ink_start": 14.0,
+        "icon_ink_width": 14.67,
+        "ink_gap": 11.33
+      },
+      "icon": {
+        "width": 80.0,
+        "height": 36.33,
+        "ink_start": 14.0,
+        "icon_ink_width": 12.33,
+        "ink_gap": 12.0
+      }
+    },
+    "wheel_picker": {
+      "band_height": 32.0,
+      "band_width": 302.0,
+      "band_start": 50.0,
+      "selected_digit_ink": 15.33,
+      "band_colour": "#F4F4F5"
+    },
+    "date_wheel": {
+      "band_height": 30.67,
+      "band_width": 302.0,
+      "month_start": 69.0,
+      "day_centre": 220.67,
+      "year_centre": 297.83,
+      "hour_centre": 126.17,
+      "minute_centre": 194.5,
+      "period_centre": 257.83,
+      "time_capsule_height": 37.33,
+      "time_capsule_padding": 14.33
+    },
+    "searchable": {
+      "inset": 12.0,
+      "field_end": 330.0,
+      "close_size": 48.0,
+      "close_inset": 12.0,
+      "gap": 12.0,
+      "height": 48.0,
+      "keyboard_gap": 11.67
+    },
+    "cover_close": {
+      "size": 44.0,
+      "height": 44.0,
+      "right_inset": 16.0,
+      "top": 62.0
+    },
+    "color_row": {
+      "swatch": 28.0,
+      "ring": 3.33,
+      "ring_gap": 1.67
     }
   }
 }

@@ -3,10 +3,15 @@ import 'dart:io';
 
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart'
     show GlassSheetDetent, GlassStepper;
+import 'package:adaptive_liquid_glass/src/button/glass_button_metrics.dart';
+import 'package:adaptive_liquid_glass/src/button/glass_control_size.dart';
+import 'package:adaptive_liquid_glass/src/color_picker/color_picker_metrics.dart';
 import 'package:adaptive_liquid_glass/src/controls/control_metrics.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
 import 'package:adaptive_liquid_glass/src/date_picker/date_picker_metrics.dart';
 import 'package:adaptive_liquid_glass/src/dialog/dialog_metrics.dart';
+import 'package:adaptive_liquid_glass/src/full_screen_cover/full_screen_cover_metrics.dart';
+import 'package:adaptive_liquid_glass/src/label/label_metrics.dart';
 import 'package:adaptive_liquid_glass/src/menu/menu_metrics.dart';
 import 'package:adaptive_liquid_glass/src/popover/popover_metrics.dart';
 import 'package:adaptive_liquid_glass/src/scaffold/scaffold_metrics.dart';
@@ -14,6 +19,7 @@ import 'package:adaptive_liquid_glass/src/search/search_metrics.dart';
 import 'package:adaptive_liquid_glass/src/sheet/sheet_metrics.dart';
 import 'package:adaptive_liquid_glass/src/swipe/swipe_metrics.dart';
 import 'package:adaptive_liquid_glass/src/toolbar/toolbar_metrics.dart';
+import 'package:adaptive_liquid_glass/src/wheel_picker/wheel_picker_metrics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -449,6 +455,155 @@ void main() {
     expect(
       ScaffoldMetrics.accessoryInset,
       moreOrLessEquals(n(m('search_tab'), 'circle_right_inset'), epsilon: pt),
+    );
+  });
+
+  test('label', () {
+    // The title's ink starts about a point after its layout box.
+    final l = m('label');
+    expect(
+      LabelMetrics.iconSize + LabelMetrics.iconGap,
+      moreOrLessEquals(n(l, 'title_from_icon') - 1, epsilon: 1),
+    );
+  });
+
+  test('link and share link', () {
+    final regular = glassButtonMetrics(GlassControlSize.regular);
+    final l = m('link');
+    for (final key in ['text', 'share', 'icon']) {
+      final link = l[key] as Map<String, dynamic>;
+      expect(
+        regular.height,
+        moreOrLessEquals(n(link, 'height'), epsilon: 1),
+        reason: key,
+      );
+      // Padding to the first ink, which sits within a point of the box.
+      expect(
+        regular.padding,
+        moreOrLessEquals(n(link, 'ink_start'), epsilon: 1),
+        reason: key,
+      );
+    }
+    // Icon box and gap against the icon link's ink: 12.33 + 12 ink.
+    final icon = l['icon'] as Map<String, dynamic>;
+    expect(
+      regular.iconSize + regular.iconGap,
+      moreOrLessEquals(
+        n(icon, 'icon_ink_width') + n(icon, 'ink_gap') - 1,
+        epsilon: 1.5,
+      ),
+    );
+  });
+
+  test('wheel picker', () {
+    final w = m('wheel_picker');
+    expect(
+      WheelPickerMetrics.itemExtent,
+      moreOrLessEquals(n(w, 'band_height'), epsilon: pt),
+    );
+    expect(
+      WheelPickerMetrics.width - WheelPickerMetrics.bandInset * 2,
+      moreOrLessEquals(n(w, 'band_width'), epsilon: pt),
+    );
+    // SF's figures are 0.7 em tall.
+    expect(
+      WheelPickerMetrics.fontSize * 0.7,
+      moreOrLessEquals(n(w, 'selected_digit_ink'), epsilon: pt),
+    );
+  });
+
+  test('date picker wheel and time capsule', () {
+    final d = m('date_wheel');
+    expect(
+      DatePickerWheelMetrics.bandHeight,
+      moreOrLessEquals(n(d, 'band_height'), epsilon: pt),
+    );
+    // Columns centred on the 402-pt screen.
+    const total =
+        DatePickerWheelMetrics.monthWidth +
+        DatePickerWheelMetrics.dayWidth +
+        DatePickerWheelMetrics.yearWidth;
+    const start = (402 - total) / 2;
+    const day =
+        start +
+        DatePickerWheelMetrics.monthWidth +
+        DatePickerWheelMetrics.dayWidth / 2;
+    const year = start + total - DatePickerWheelMetrics.yearWidth / 2;
+    expect(day, moreOrLessEquals(n(d, 'day_centre'), epsilon: 3));
+    expect(year, moreOrLessEquals(n(d, 'year_centre'), epsilon: 3));
+    expect(
+      DatePickerMetrics.height,
+      moreOrLessEquals(n(d, 'time_capsule_height'), epsilon: 1),
+    );
+    expect(
+      DatePickerMetrics.padding,
+      moreOrLessEquals(n(d, 'time_capsule_padding'), epsilon: 1.5),
+    );
+  });
+
+  test('searchable', () {
+    final s = m('searchable');
+    expect(SearchMetrics.inset, moreOrLessEquals(n(s, 'inset'), epsilon: pt));
+    expect(
+      SearchMetrics.inset,
+      moreOrLessEquals(n(s, 'close_inset'), epsilon: pt),
+    );
+    expect(SearchMetrics.cancelGap, moreOrLessEquals(n(s, 'gap'), epsilon: pt));
+    expect(
+      SearchMetrics.cancelSize,
+      moreOrLessEquals(n(s, 'close_size'), epsilon: pt),
+    );
+    expect(SearchMetrics.height, moreOrLessEquals(n(s, 'height'), epsilon: pt));
+    expect(
+      SearchMetrics.verticalInset,
+      moreOrLessEquals(n(s, 'keyboard_gap'), epsilon: pt),
+    );
+    final idle = m('search');
+    expect(
+      SearchMetrics.idleInset,
+      moreOrLessEquals(n(idle, 'inset'), epsilon: pt),
+    );
+    expect(
+      SearchMetrics.idleBottom,
+      moreOrLessEquals(n(idle, 'bottom_gap'), epsilon: pt),
+    );
+  });
+
+  test('full-screen cover close button', () {
+    final c = m('cover_close');
+    // iPhone 17 Pro's safe area top.
+    const safeTop = 62.0;
+    expect(
+      FullScreenCoverMetrics.closeButtonSize,
+      moreOrLessEquals(n(c, 'size'), epsilon: pt),
+    );
+    expect(
+      FullScreenCoverMetrics.closeButton.iconOnlyHeight,
+      moreOrLessEquals(n(c, 'height'), epsilon: pt),
+    );
+    expect(
+      FullScreenCoverMetrics.closeButtonInset,
+      moreOrLessEquals(n(c, 'right_inset'), epsilon: pt),
+    );
+    expect(
+      safeTop + FullScreenCoverMetrics.closeButtonTop,
+      moreOrLessEquals(n(c, 'top'), epsilon: pt),
+    );
+  });
+
+  test('colour picker row swatch', () {
+    final c = m('color_row');
+    expect(
+      ColorPickerMetrics.rowSwatch,
+      moreOrLessEquals(n(c, 'swatch'), epsilon: pt),
+    );
+    expect(
+      ColorPickerMetrics.rowRing,
+      moreOrLessEquals(n(c, 'ring'), epsilon: pt),
+    );
+    expect(
+      ColorPickerMetrics.rowRingGap,
+      moreOrLessEquals(n(c, 'ring_gap'), epsilon: pt),
     );
   });
 }

@@ -35,10 +35,18 @@ abstract final class DatePickerMetrics {
   static const double headerFontSize = 17;
 }
 
-/// The date picker's wheel style, time capsule and week numbers. Estimated
-/// from iOS 26's `.wheel` date picker and compact time capsule, not
-/// measured.
+/// The date picker's wheel style, time capsule and week numbers. The band
+/// is measured from SwiftUI's `.wheel` date picker (iOS 26.4,
+/// "components" → "date_wheel"); its 320-pt surface and column centres
+/// (month left-aligned at 69, day 220.7, year 297.8; hour 126.2, minute
+/// 194.5, AM/PM 257.8) are recorded there. The day and year columns below
+/// put their centres within 3 pt of those; the time columns, evenly
+/// spaced, do not (UIKit packs them unevenly). The compact time capsule
+/// shares the date capsule's geometry (measured within 1 pt).
 abstract final class DatePickerWheelMetrics {
+  /// The selection band's height (measured; the plain wheel's is 32).
+  static const double bandHeight = 30.67;
+
   /// The day column's width (estimated).
   static const double dayWidth = 64;
 
