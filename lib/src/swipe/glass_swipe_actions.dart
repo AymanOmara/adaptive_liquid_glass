@@ -44,7 +44,11 @@ class GlassSwipeActions extends StatefulWidget {
     this.leading = const [],
     this.trailing = const [],
     this.allowsFullSwipe = true,
-  });
+    this.fullSwipeThreshold = SwipeMetrics.fullSwipe,
+  }) : assert(
+         fullSwipeThreshold > 0 && fullSwipeThreshold <= 1,
+         'fullSwipeThreshold is a fraction of the row width.',
+       );
 
   /// The row.
   final Widget child;
@@ -59,6 +63,13 @@ class GlassSwipeActions extends StatefulWidget {
 
   /// Whether a long swipe runs the first action of that side.
   final bool allowsFullSwipe;
+
+  /// The fraction of the row's width past which a swipe is a full swipe
+  /// (see [allowsFullSwipe]).
+  final double fullSwipeThreshold;
+
+  /// Closes whichever row is open (when the list's filter changes, say).
+  static void closeAll() => _GlassSwipeActionsState._active.value = null;
 
   @override
   State<GlassSwipeActions> createState() => _GlassSwipeActionsState();
@@ -124,7 +135,7 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
   bool get _fullSwipe =>
       widget.allowsFullSwipe &&
       _width > 0 &&
-      _offset.value.abs() > _width * SwipeMetrics.fullSwipe;
+      _offset.value.abs() > _width * widget.fullSwipeThreshold;
 
   @override
   void initState() {
@@ -220,7 +231,10 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
     final offset = _offset.value;
     if (offset == 0) return _settle(0);
     final actions = _shown;
-    if (_fullSwipe) return _run(actions.first, full: true);
+    if (_fullSwipe) {
+      _run(actions.first, full: true);
+      return;
+    }
     final extent = _extent(actions);
     final opening = velocity.abs() > SwipeMetrics.flingVelocity
         ? velocity.sign == offset.sign
@@ -228,7 +242,15 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
     _settle(opening ? offset.sign * extent : 0, velocity: velocity);
   }
 
-  void _run(GlassSwipeAction action, {bool full = false}) {
+  Future<void> _run(GlassSwipeAction action, {bool full = false}) async {
+    final confirm = action.confirm;
+    if (confirm != null) {
+      // The row holds where it is while the app asks.
+      _offset.stop();
+      final confirmed = await confirm();
+      if (!mounted) return;
+      if (!confirmed) return _settle(0);
+    }
     if (full && !_reduceMotion) {
       // The row slides out of the way, then the action runs.
       final target = _offset.value.sign * _width;

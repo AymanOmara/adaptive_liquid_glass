@@ -10,6 +10,7 @@ class GlassSwipeAction {
     required this.label,
     required this.onPressed,
     this.color,
+    this.confirm,
   });
 
   /// The capsule's icon.
@@ -21,6 +22,11 @@ class GlassSwipeAction {
   /// Called when the action is tapped or fully swiped; the row closes
   /// first.
   final VoidCallback onPressed;
+
+  /// Asked before [onPressed] runs, from a tap or a full swipe (an alert,
+  /// say). False keeps the item: the row closes and [onPressed] does not
+  /// run. Null runs [onPressed] straight away.
+  final Future<bool> Function()? confirm;
 
   /// The capsule's tint. Defaults to system gray; use system red for a
   /// destructive action.

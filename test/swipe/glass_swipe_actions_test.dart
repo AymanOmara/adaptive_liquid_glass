@@ -309,4 +309,102 @@ void main() {
     expect(label.top - capsule.bottom, moreOrLessEquals(8));
     expect(label.center.dx, moreOrLessEquals(capsule.center.dx));
   }, variant: ios);
+
+  group('W11', () {
+    Widget confirmList(
+      List<String> log, {
+      required bool answer,
+      double threshold = SwipeMetrics.fullSwipe,
+    }) => MaterialApp(
+      home: Scaffold(
+        body: ListView(
+          children: [
+            GlassSwipeActions(
+              key: const ValueKey('A'),
+              fullSwipeThreshold: threshold,
+              trailing: [
+                GlassSwipeAction(
+                  icon: CupertinoIcons.trash,
+                  label: 'Delete',
+                  confirm: () async {
+                    log.add('confirm');
+                    return answer;
+                  },
+                  onPressed: () => log.add('delete'),
+                ),
+              ],
+              child: const SizedBox(
+                height: 60,
+                child: Center(child: Text('A')),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    testWidgets('a declined confirm keeps the row and skips the action', (
+      t,
+    ) async {
+      shaderEnv();
+      final log = <String>[];
+      await t.pumpWidget(confirmList(log, answer: false));
+      await t.timedDrag(
+        _rowOf('A'),
+        const Offset(-600, 0),
+        const Duration(milliseconds: 600),
+      );
+      await t.pumpAndSettle();
+      expect(log, ['confirm']);
+      expect(_shift(t, 'A'), 0);
+    }, variant: ios);
+
+    testWidgets('an accepted confirm runs the action, also from a tap', (
+      t,
+    ) async {
+      shaderEnv();
+      final log = <String>[];
+      await t.pumpWidget(confirmList(log, answer: true));
+      await t.timedDrag(
+        _rowOf('A'),
+        const Offset(-150, 0),
+        const Duration(milliseconds: 400),
+      );
+      await t.pumpAndSettle();
+      await t.tap(find.text('Delete'));
+      await t.pumpAndSettle();
+      expect(log, ['confirm', 'delete']);
+      expect(_shift(t, 'A'), 0);
+    }, variant: ios);
+
+    testWidgets('fullSwipeThreshold moves the full-swipe point', (t) async {
+      shaderEnv();
+      final log = <String>[];
+      await t.pumpWidget(confirmList(log, answer: true, threshold: 0.9));
+      await t.timedDrag(
+        _rowOf('A'),
+        const Offset(-600, 0),
+        const Duration(milliseconds: 600),
+      );
+      await t.pumpAndSettle();
+      // 600 of 800 is short of 0.9: the row only opens.
+      expect(log, isEmpty);
+      expect(_shift(t, 'A'), lessThan(0));
+    }, variant: ios);
+
+    testWidgets('closeAll closes the open row', (t) async {
+      shaderEnv();
+      await t.pumpWidget(_list([]));
+      await t.timedDrag(
+        _rowOf('A'),
+        const Offset(-200, 0),
+        const Duration(milliseconds: 400),
+      );
+      await t.pumpAndSettle();
+      expect(_shift(t, 'A'), lessThan(0));
+      GlassSwipeActions.closeAll();
+      await t.pumpAndSettle();
+      expect(_shift(t, 'A'), 0);
+    }, variant: ios);
+  });
 }

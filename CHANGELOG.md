@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Swipe actions: `GlassSwipeAction.confirm` asks before the action runs
+  (false closes the row and skips it); `GlassSwipeActions.fullSwipeThreshold`
+  sets the full-swipe point (0.6 of the width by default);
+  `GlassSwipeActions.closeAll()` closes the open row.
 - `showGlassToast(replace: true)`: the new toast takes over at once; the
   shown one leaves and those waiting are dropped (on the Material path,
   the messenger's snackbars are cleared).
