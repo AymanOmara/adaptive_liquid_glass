@@ -183,6 +183,12 @@ GlassGroup(
 )
 ```
 
+Group repeated glass too. A `LiquidGlass` outside any `GlassGroup` gets a
+group of its own, and on iOS 26 every group hosts its own native view, which
+is costly to create. Twenty chips in a row, glass list rows or glass inside a
+sheet's content each become a separate view unless one `GlassGroup` wraps
+them; debug builds print a warning when more than 8 are alive at once.
+
 `spacing` is how close two shapes must be to flow together. The default, 0,
 merges only shapes that touch, so a row of buttons stays a row of separate
 buttons. Set it to at least the gap between them (here 12) for SwiftUI's

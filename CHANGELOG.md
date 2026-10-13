@@ -1,3 +1,10 @@
+## 0.2.1 (2026-10-14)
+
+- Debug builds print a one-time warning when more than 8 native glass
+  views are alive at once: a `LiquidGlass` outside any `GlassGroup` hosts
+  its own native view on iOS 26. The README says to wrap repeated glass in
+  one `GlassGroup`.
+
 ## 0.2.0 (2026-10-14)
 
 - `GlassTabBar`, native mode: SwiftUI draws the selected pill inside the

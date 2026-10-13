@@ -118,6 +118,35 @@ void main() {
     expect(shape['interactive'], false);
   }, variant: ios);
 
+  testWidgets('many ungrouped glass widgets warn once in debug', (t) async {
+    iosEnv();
+    mockNative(t);
+    NativeGlassLayer.debugWarned = false;
+    final printed = <String>[];
+    final saved = debugPrint;
+    debugPrint = (m, {wrapWidth}) => printed.add(m ?? '');
+
+    Widget chips(int n) => themed(
+      Wrap(
+        children: [
+          for (var i = 0; i < n; i++)
+            const LiquidGlass(child: SizedBox(width: 20, height: 20)),
+        ],
+      ),
+    );
+
+    await t.pumpWidget(chips(kNativeGroupWarningThreshold));
+    expect(NativeGlassLayer.debugLiveCount, kNativeGroupWarningThreshold);
+    expect(printed, isEmpty);
+
+    await t.pumpWidget(chips(kNativeGroupWarningThreshold + 2));
+    debugPrint = saved;
+    expect(printed.where((m) => m.contains('GlassGroup')), hasLength(1));
+
+    await t.pumpWidget(themed(const SizedBox()));
+    expect(NativeGlassLayer.debugLiveCount, 0);
+  }, variant: ios);
+
   testWidgets('iOS 26: native from the first frame, no theme or flag', (
     t,
   ) async {

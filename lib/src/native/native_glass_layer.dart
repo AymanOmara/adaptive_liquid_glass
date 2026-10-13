@@ -13,6 +13,9 @@ import '../group/glass_registry.dart';
 /// How far the native view extends past the group on each side.
 const double kNativeOverhang = 24;
 
+/// Live native glass views above which a debug build warns once.
+const int kNativeGroupWarningThreshold = 8;
+
 /// Hosts SwiftUI's own Liquid Glass (a `GlassEffectContainer` with one
 /// `.glassEffect` view per member) behind the group's content and keeps its
 /// shapes, appearance and unions in sync.
@@ -33,6 +36,14 @@ class NativeGlassLayer extends StatefulWidget {
 
   /// Group content.
   final Widget child;
+
+  /// Native glass views alive now (debug builds only; 0 in release).
+  @visibleForTesting
+  static int get debugLiveCount => _NativeGlassLayerState._live;
+
+  /// Whether the too-many-views warning was printed; reset it in tests.
+  @visibleForTesting
+  static bool debugWarned = false;
 
   @override
   State<NativeGlassLayer> createState() => _NativeGlassLayerState();
@@ -68,10 +79,28 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
     }
   }
 
+  /// Native views alive now, counted in debug builds only.
+  static int _live = 0;
+
   @override
   void initState() {
     super.initState();
     widget.registry.addListener(_schedule);
+    assert(() {
+      _live++;
+      if (_live > kNativeGroupWarningThreshold &&
+          !NativeGlassLayer.debugWarned) {
+        NativeGlassLayer.debugWarned = true;
+        debugPrint(
+          'adaptive_liquid_glass: $_live GlassGroups are on screen, each '
+          'hosting its own native glass view, and every view is costly to '
+          'create on iOS. A LiquidGlass outside a GlassGroup gets a group of '
+          'its own: wrap repeated glass (list rows, chip rows, sheet content) '
+          'in one shared GlassGroup.',
+        );
+      }
+      return true;
+    }());
   }
 
   @override
@@ -87,6 +116,10 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
   @override
   void dispose() {
     widget.registry.removeListener(_schedule);
+    assert(() {
+      _live--;
+      return true;
+    }());
     super.dispose();
   }
 
