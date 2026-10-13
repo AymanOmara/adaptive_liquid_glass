@@ -1,5 +1,10 @@
 ## Unreleased
 
+- New `GlassTabBarItem.symbol(name, fallback:, label:)` and `GlassSymbol`:
+  SF Symbols drawn by iOS at run time (never bundled), in the icon
+  colour, at `TabView`'s size (18 pt, medium, large scale) and position;
+  the fallback `IconData` elsewhere. Against SwiftUI's `TabView` (white
+  page, idle): icon region |diff| 4.8 -> 0.8, bar 1.2 -> 0.5.
 - `GlassTabBar`: a held lens is 2.7 pt narrower (iOS's outline, within
   1 px), and on arriving at a held tab it settles to its resting size
   and lifts again without vanishing (it went invisible for ~6 frames),

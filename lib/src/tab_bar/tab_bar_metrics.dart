@@ -168,6 +168,20 @@ abstract final class TabBarMetrics {
   /// SwiftUI `TabView`, iOS 26.4).
   static const double iconSize = 28;
 
+  /// [GlassTabBarItem.symbol]'s SF Symbol configuration, as SwiftUI's
+  /// `TabView` draws its tab symbols (iOS 26.4, fitted to its ink).
+  static const double symbolPointSize = 18;
+
+  /// See [symbolPointSize].
+  static const String symbolWeight = 'medium';
+
+  /// See [symbolPointSize].
+  static const String symbolScale = 'large';
+
+  /// How far above the icon box's centre a symbol's alignment centre sits
+  /// (SwiftUI `TabView`, iOS 26.4: 2 px @3x above ours at 0).
+  static const double symbolRise = 2 / 3;
+
   /// The height a tab's icon takes in the tab's column, less than
   /// [iconSize]: icon centre 60.8 pt and label ink top 78.7 pt below the
   /// bar's crop line, as SwiftUI's `TabView` (iOS 26.4, measured).

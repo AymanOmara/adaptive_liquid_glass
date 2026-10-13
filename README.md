@@ -497,6 +497,18 @@ Each tab is a selectable button for VoiceOver and TalkBack, the order follows
 the reading direction, and with Reduce Motion the pill moves without
 animating.
 
+For the exact icons iOS draws, use `GlassTabBarItem.symbol` with an SF
+Symbol name. iOS renders the symbol at run time (nothing is bundled), at
+`TabView`'s size and position; other platforms show `fallback`.
+
+```dart
+GlassTabBarItem.symbol(
+  'house.fill',
+  fallback: CupertinoIcons.house_fill,
+  label: 'Home',
+),
+```
+
 For SVG or image icons, use `GlassTabBarItem.custom`. The bar draws the
 widget inside an `IconTheme` with its icon size and colour, so widgets that
 read it (`ImageIcon`, a theme-tinted SVG) follow the selection; plain images
@@ -1192,7 +1204,8 @@ Stack(
 - **Tab bar:** close to iOS 26.4's `TabView`, not identical. Over photos
   the shader-drawn bar differs most from native; the tapped lens runs about
   a frame ahead of iOS's and is a little brighter early on; icons are
-  CupertinoIcons, not SF Symbols (`GlassTabBarItem.custom` takes your own). `tabBarMinimizeBehavior` and
+  CupertinoIcons unless you use `GlassTabBarItem.symbol` (SF Symbols
+  drawn by iOS). `tabBarMinimizeBehavior` and
   `sidebarAdaptable` are not implemented.
 - **Unmeasured geometry:** `GlassLabel`, `GlassLink`/`GlassShareLink`, the
   `GlassColorPicker` sheet, `GlassRefresh`, `GlassSearchable`, the

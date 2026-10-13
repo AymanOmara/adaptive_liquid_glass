@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 
+import '../symbol/glass_symbol.dart';
 import 'glass_tab_bar.dart';
+import 'tab_bar_metrics.dart';
 
 /// One tab of a [GlassTabBar]: an icon over a short label.
 @immutable
@@ -27,6 +29,24 @@ class GlassTabBarItem {
     this.activeIconWidget,
     this.badge,
   }) : icon = null,
+       activeIcon = null,
+       isSpacer = false;
+
+  /// A tab whose icon is the SF Symbol [symbol] (e.g. `house.fill`), drawn
+  /// by iOS at run time as `TabView` draws it; [fallback] is used elsewhere.
+  /// [activeSymbol] replaces it while selected.
+  GlassTabBarItem.symbol(
+    String symbol, {
+    required IconData fallback,
+    required this.label,
+    String? activeSymbol,
+    IconData? activeFallback,
+    this.badge,
+  }) : iconWidget = _symbol(symbol, fallback),
+       activeIconWidget = activeSymbol == null
+           ? null
+           : _symbol(activeSymbol, activeFallback ?? fallback),
+       icon = null,
        activeIcon = null,
        isSpacer = false;
 
@@ -73,4 +93,17 @@ class GlassTabBarItem {
   /// A badge on the icon: a count or short text, or a dot when empty.
   /// Null shows none.
   final String? badge;
+
+  /// A tab symbol: SwiftUI's `TabView` (iOS 26.4) sets its symbols'
+  /// centres TabBarMetrics.symbolRise above the icon box's.
+  static Widget _symbol(String name, IconData fallback) => Transform.translate(
+    offset: const Offset(0, -TabBarMetrics.symbolRise),
+    child: GlassSymbol(
+      name,
+      fallback: fallback,
+      pointSize: TabBarMetrics.symbolPointSize,
+      weight: TabBarMetrics.symbolWeight,
+      scale: TabBarMetrics.symbolScale,
+    ),
+  );
 }

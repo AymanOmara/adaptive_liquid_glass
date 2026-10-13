@@ -25,9 +25,49 @@ public class AdaptiveLiquidGlassPlugin: NSObject, FlutterPlugin, FlutterStreamHa
         "iosMajorVersion": ProcessInfo.processInfo.operatingSystemVersion.majorVersion,
         "reduceTransparency": UIAccessibility.isReduceTransparencyEnabled,
       ])
+    case "symbol":
+      result(Self.symbol(call.arguments as? [String: Any] ?? [:]))
     default:
       result(FlutterMethodNotImplemented)
     }
+  }
+
+  /// Renders the system symbol `name` white on transparent at the screen's
+  /// scale, laid out in its own frame (UIKit's alignment rect kept, so it
+  /// centres as a tab bar's symbol does). Nil when there is no such symbol.
+  static func symbol(_ args: [String: Any]) -> Any? {
+    guard let name = args["name"] as? String else { return nil }
+    let size = CGFloat(args["pointSize"] as? Double ?? 17)
+    let weights: [String: UIImage.SymbolWeight] = [
+      "ultraLight": .ultraLight, "thin": .thin, "light": .light,
+      "regular": .regular, "medium": .medium, "semibold": .semibold,
+      "bold": .bold, "heavy": .heavy, "black": .black,
+    ]
+    let scales: [String: UIImage.SymbolScale] = [
+      "small": .small, "medium": .medium, "large": .large,
+    ]
+    let config = UIImage.SymbolConfiguration(
+      pointSize: size,
+      weight: weights[args["weight"] as? String ?? "regular"] ?? .regular,
+      scale: scales[args["scale"] as? String ?? "medium"] ?? .medium)
+    guard
+      let image = UIImage(systemName: name, withConfiguration: config)?
+        .withTintColor(.white, renderingMode: .alwaysOriginal)
+    else { return nil }
+    let format = UIGraphicsImageRendererFormat()
+    format.scale = CGFloat(args["scale_px"] as? Double ?? Double(UIScreen.main.scale))
+    let png = UIGraphicsImageRenderer(size: image.size, format: format).pngData { _ in
+      image.draw(at: .zero)
+    }
+    let inset = image.alignmentRectInsets
+    return [
+      "png": FlutterStandardTypedData(bytes: png),
+      "width": image.size.width,
+      "height": image.size.height,
+      "baseline": image.baselineOffsetFromBottom ?? 0,
+      "alignTop": inset.top, "alignLeft": inset.left,
+      "alignBottom": inset.bottom, "alignRight": inset.right,
+    ]
   }
 
   public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {

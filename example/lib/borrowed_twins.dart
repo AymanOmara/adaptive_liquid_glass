@@ -301,10 +301,22 @@ class _TabBarState extends State<_TabBar> {
     final scaffold = GlassScaffold(
       backgroundColor: widget.dark ? Colors.black : Colors.white,
       tabBar: GlassTabBar(
-        items: const [
-          GlassTabBarItem(icon: CupertinoIcons.house_fill, label: 'Home'),
-          GlassTabBarItem(icon: CupertinoIcons.music_note, label: 'Music'),
-          GlassTabBarItem(icon: CupertinoIcons.gear_solid, label: 'Settings'),
+        items: [
+          GlassTabBarItem.symbol(
+            'house.fill',
+            fallback: CupertinoIcons.house_fill,
+            label: 'Home',
+          ),
+          GlassTabBarItem.symbol(
+            'music.note',
+            fallback: CupertinoIcons.music_note,
+            label: 'Music',
+          ),
+          GlassTabBarItem.symbol(
+            'gearshape.fill',
+            fallback: CupertinoIcons.gear_solid,
+            label: 'Settings',
+          ),
         ],
         selectedIndex: _tab,
         onSelected: (i) => setState(() => _tab = i),
@@ -343,10 +355,22 @@ class _AccessoryTextState extends State<_AccessoryText> {
     GlassScaffold(
       backgroundColor: Colors.black,
       tabBar: GlassTabBar(
-        items: const [
-          GlassTabBarItem(icon: CupertinoIcons.house_fill, label: 'Home'),
-          GlassTabBarItem(icon: CupertinoIcons.music_note, label: 'Music'),
-          GlassTabBarItem(icon: CupertinoIcons.gear_solid, label: 'Settings'),
+        items: [
+          GlassTabBarItem.symbol(
+            'house.fill',
+            fallback: CupertinoIcons.house_fill,
+            label: 'Home',
+          ),
+          GlassTabBarItem.symbol(
+            'music.note',
+            fallback: CupertinoIcons.music_note,
+            label: 'Music',
+          ),
+          GlassTabBarItem.symbol(
+            'gearshape.fill',
+            fallback: CupertinoIcons.gear_solid,
+            label: 'Settings',
+          ),
         ],
         selectedIndex: _tab,
         onSelected: (i) => setState(() => _tab = i),
@@ -406,10 +430,22 @@ class _LensReachState extends State<_LensReach> {
     GlassScaffold(
       backgroundColor: Colors.black,
       tabBar: GlassTabBar(
-        items: const [
-          GlassTabBarItem(icon: CupertinoIcons.house_fill, label: 'Home'),
-          GlassTabBarItem(icon: CupertinoIcons.music_note, label: 'Music'),
-          GlassTabBarItem(icon: CupertinoIcons.gear_solid, label: 'Settings'),
+        items: [
+          GlassTabBarItem.symbol(
+            'house.fill',
+            fallback: CupertinoIcons.house_fill,
+            label: 'Home',
+          ),
+          GlassTabBarItem.symbol(
+            'music.note',
+            fallback: CupertinoIcons.music_note,
+            label: 'Music',
+          ),
+          GlassTabBarItem.symbol(
+            'gearshape.fill',
+            fallback: CupertinoIcons.gear_solid,
+            label: 'Settings',
+          ),
         ],
         selectedIndex: _tab,
         onSelected: (i) => setState(() => _tab = i),
