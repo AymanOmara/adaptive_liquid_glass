@@ -13,6 +13,10 @@
 /// preloads the shaders in `main()`.
 library;
 
+// GlassRangeSlider.values is a RangeValues; re-exported so callers need
+// no material import.
+export 'package:flutter/material.dart' show RangeValues;
+
 export 'src/action_sheet/show_glass_action_sheet.dart';
 export 'src/activity_indicator/glass_activity_indicator.dart';
 export 'src/adaptive/glass_adaptive.dart';
