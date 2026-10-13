@@ -357,6 +357,7 @@ class _GlassTextFieldState extends State<GlassTextField> {
     if (widget._password) {
       return Semantics(
         button: true,
+        enabled: widget.enabled,
         label: _revealed ? widget.hidePasswordLabel : widget.showPasswordLabel,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -461,11 +462,15 @@ class _GlassTextFieldState extends State<GlassTextField> {
 
   Widget? _materialTrailing(BuildContext context) {
     if (widget._password) {
+      // A label, not a tooltip: assistive tech reads it as the glass
+      // path's eye button.
       return IconButton(
-        icon: Icon(_revealed ? Icons.visibility_off : Icons.visibility),
-        tooltip: _revealed
-            ? widget.hidePasswordLabel
-            : widget.showPasswordLabel,
+        icon: Icon(
+          _revealed ? Icons.visibility_off : Icons.visibility,
+          semanticLabel: _revealed
+              ? widget.hidePasswordLabel
+              : widget.showPasswordLabel,
+        ),
         onPressed: widget.enabled ? _toggleRevealed : null,
       );
     }

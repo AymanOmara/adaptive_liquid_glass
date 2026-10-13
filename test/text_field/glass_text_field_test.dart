@@ -183,4 +183,28 @@ void main() {
     expect(t.widget<TextField>(find.byType(TextField)).obscureText, isFalse);
     expect(find.byIcon(Icons.visibility_off), findsOneWidget);
   }, variant: android);
+
+  for (final platform in [ios, android]) {
+    testWidgets('the eye button reads the same on both paths', (t) async {
+      shaderEnv();
+      final handle = t.ensureSemantics();
+      await t.pumpWidget(_app(const GlassTextField.password()));
+      final eye = find.bySemanticsLabel('Show password');
+      expect(eye, findsOneWidget);
+      expect(
+        t.getSemantics(eye),
+        isSemantics(
+          label: 'Show password',
+          isButton: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          hasTapAction: true,
+        ),
+      );
+      await t.tap(eye);
+      await t.pump();
+      expect(find.bySemanticsLabel('Hide password'), findsOneWidget);
+      handle.dispose();
+    }, variant: platform);
+  }
 }

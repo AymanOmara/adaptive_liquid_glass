@@ -147,6 +147,24 @@ void main() {
     s.dispose();
   }, variant: ios);
 
+  testWidgets('Material: as tall as the glass chip', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      appHost(
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GlassChip(label: 'Tag', onSelected: (_) {}),
+            GlassChip(label: 'Tag', onDeleted: () {}),
+          ],
+        ),
+      ),
+    );
+    for (final chip in t.widgetList(find.byType(GlassChip))) {
+      expect(t.getSize(find.byWidget(chip)).height, ChipMetrics.height);
+    }
+  }, variant: android);
+
   testWidgets('Material: a FilterChip that toggles', (t) async {
     shaderEnv();
     final picks = <bool>[];

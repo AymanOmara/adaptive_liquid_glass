@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show FilterChip, InputChip;
+import 'package:flutter/material.dart'
+    show FilterChip, InputChip, MaterialTapTargetSize, VisualDensity;
 
 import '../core/effective_glass_mode.dart';
 import '../core/glass.dart';
@@ -80,6 +81,8 @@ class GlassChip extends StatelessWidget {
         : _glass(context),
   );
 
+  static const VisualDensity _density = VisualDensity(vertical: -3);
+
   Widget _material(BuildContext context) => onSelected != null
       ? FilterChip(
           label: Text(label),
@@ -88,6 +91,10 @@ class GlassChip extends StatelessWidget {
           onSelected: onSelected,
           onDeleted: onDeleted,
           deleteButtonTooltipMessage: deleteLabel ?? 'Remove $label',
+          // Without the padded tap target, and 6 shorter than Material 3's
+          // 38: as tall as the glass chip.
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: _density,
           selectedColor: selectedColor == null
               ? null
               : CupertinoDynamicColor.resolve(selectedColor!, context),
@@ -97,6 +104,10 @@ class GlassChip extends StatelessWidget {
           avatar: icon == null ? null : Icon(icon),
           onDeleted: onDeleted,
           deleteButtonTooltipMessage: deleteLabel ?? 'Remove $label',
+          // Without the padded tap target, and 6 shorter than Material 3's
+          // 38: as tall as the glass chip.
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: _density,
           isEnabled: true,
         );
 

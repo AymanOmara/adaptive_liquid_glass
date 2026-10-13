@@ -1,5 +1,10 @@
 ## Unreleased
 
+- `GlassTextField.password`: the Material eye button reads its show /
+  hide label to assistive tech (it was a tooltip only), and the glass
+  one reports its enabled state, so both paths read the same.
+- Material `GlassChip`s are 32 tall, as the glass chip: compact, without
+  the padded tap target.
 - `GlassSegmentedControl.height`: the control is this tall on both
   paths; the Material `SegmentedButton` is compact without the padded
   tap target, so a fixed-extent header fits either.
