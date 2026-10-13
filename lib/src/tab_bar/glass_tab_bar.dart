@@ -1368,7 +1368,14 @@ class _GlassTabBarState extends State<GlassTabBar>
                       child: LiquidGlass(
                         glass: _nativeLensGlass(light),
                         mode: widget.mode,
-                        child: const SizedBox.expand(),
+                        child: _nativeLensBands(
+                          top: -(lens.top + TabBarMetrics.inset + growY),
+                          bottom:
+                              lens.bottom +
+                              TabBarMetrics.inset -
+                              widget.height -
+                              growY,
+                        ),
                       ),
                     ),
             ),
@@ -1456,6 +1463,29 @@ class _GlassTabBarState extends State<GlassTabBar>
   /// The native lens's glass: clear, shaded in dark mode as the bar's
   /// [light] fades and while dragged (see TabBarMetrics.nativeLensShade,
   /// TabBarMetrics.nativeLensDragShade).
+  /// The native lens's overhang, [top] and [bottom] high past the bar:
+  /// iOS's lens refracts only the bar there, darker than UIKit's clear
+  /// glass reads over the page.
+  Widget _nativeLensBands({required double top, required double bottom}) {
+    final dark = GlassGroupScope.brightnessOf(context) == Brightness.dark;
+    final opacity = dark
+        ? TabBarMetrics.nativeLensBandShadeDark
+        : TabBarMetrics.nativeLensBandShade;
+    Widget band(double h) => SizedBox(
+      height: math.max(h, 0),
+      child: GlassContentFill(
+        style: GlassFillStyle.darken,
+        opacity: opacity,
+        child: const SizedBox.expand(),
+      ),
+    );
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [band(top), band(bottom)],
+    );
+  }
+
   Glass _nativeLensGlass(double light) {
     final shade = math.max(
       TabBarMetrics.nativeLensShade * (1 - light.clamp(0.0, 1.0)),

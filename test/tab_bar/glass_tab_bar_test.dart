@@ -224,8 +224,40 @@ void main() {
     await t.pumpWidget(
       plainHost(_Harness(_picks(), mode: GlassRenderMode.native)),
     );
-    final fill = t.widget<GlassContentFill>(find.byType(GlassContentFill));
-    expect(fill.style, TabBarMetrics.nativePillStyle);
+    final styles = t
+        .widgetList<GlassContentFill>(find.byType(GlassContentFill))
+        .map((f) => f.style);
+    expect(styles, contains(TabBarMetrics.nativePillStyle));
+  }, variant: ios);
+
+  testWidgets('native mode: the lens darkens its overhang past the bar', (
+    t,
+  ) async {
+    GlassPlatform.instance.debugEnvironment = const GlassEnvironment(
+      platform: TargetPlatform.iOS,
+      iosMajorVersion: 26,
+      reduceTransparency: false,
+      shaderSupported: true,
+    );
+    await t.pumpWidget(
+      plainHost(_Harness(_picks(), mode: GlassRenderMode.native)),
+    );
+    final g = await t.startGesture(t.getCenter(find.text('History')));
+    for (var i = 0; i < 30; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    final bands = find.byWidgetPredicate(
+      (w) =>
+          w is GlassContentFill &&
+          w.style == GlassFillStyle.darken &&
+          w.opacity == TabBarMetrics.nativeLensBandShade,
+    );
+    expect(bands, findsNWidgets(2));
+    for (final e in bands.evaluate()) {
+      expect(t.getSize(find.byWidget(e.widget)).height, greaterThan(0));
+    }
+    await g.up();
+    await t.pumpAndSettle();
   }, variant: ios);
 
   testWidgets('holding shows the lens; dragging picks on release', (t) async {

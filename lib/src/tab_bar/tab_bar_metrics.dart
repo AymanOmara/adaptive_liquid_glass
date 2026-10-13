@@ -162,6 +162,14 @@ abstract final class TabBarMetrics {
   /// the white bar reads 255, SwiftUI's `TabView` lens 247 (iOS 26.4).
   static const double nativeLensLightShade = 0.035;
 
+  /// How much the native lens darkens its overhang past the bar (a
+  /// [GlassFillStyle.darken] fill): UIKit's clear glass reads 49 there
+  /// over black, iOS's tab lens about 22; 247 against 240 over white.
+  static const double nativeLensBandShadeDark = 0.11;
+
+  /// See [nativeLensBandShadeDark].
+  static const double nativeLensBandShade = 0.03;
+
   /// The shadow under the native lens in light mode (UIKit's clear glass
   /// casts none; SwiftUI's `TabView` lens reads ~221 just below it).
   static const double nativeLensShadowOpacity = 0.1;

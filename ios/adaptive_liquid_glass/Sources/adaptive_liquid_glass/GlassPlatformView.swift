@@ -208,6 +208,8 @@ struct GlassHostView: View {
       }
     }
       .frame(width: s.frame.width, height: s.frame.height)
+      // Fills belong to the glass: none reaches past its outline.
+      .clipShape(shape(s))
       .glassEffect(glass(s), in: shape(s))
     Group {
       if let u = s.union {
