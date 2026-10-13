@@ -79,15 +79,19 @@ and CHANGELOG.md.
     selected tint 24.4 -> 16.2 light, 22.4 -> 12.6 dark; the pill (photo
     whole crop 4.39 -> 3.81). Native mode keeps
     flat colours (Flutter cannot see UIKit glass)
-  - lens fringe: sideways dispersion (dispersionTangent -3) gives the
-    held lens's bands iOS's warm/cool ends (top-left warm, top-right cool,
-    flipped below; press 10-60 |diff| 7.25 -> 6.93). Open: the band reads
-    ~13 vs iOS ~25 over black (our outward bend samples the page, iOS's
-    shows more of the bar)
-  - motion blur: done (lens content smears by 3x its per-frame travel;
-    drag edge ratio dips to 0.88 of rest vs iOS 0.84, 0.92 before)
-  - native mode's lens is UIKit glass: it cannot bend the bar's edges or
-    darken only its overhang (the shader cannot see native glass)
+  - held lens: done (2026-10-13). Elliptical normals and a thin crescent
+    band, fringed warm/cool only at its round ends; the lens refracts
+    only the bar it overhangs (backdropInset), so its bands stay dark
+    over text instead of showing the page (press 10-60 |diff| 7.25 ->
+    6.47)
+  - drag: done. VibrantBlend reuses its glyph image (rasterising every
+    tab each frame dropped frames: a drag took 139 frames vs iOS 66, now
+    71); no motion blur (iOS keeps the tabs crisp; ours ghosted)
+  - native mode (open): the lens is UIKit glass, so it cannot bend the
+    bar's edges or darken only its overhang (the shader cannot see
+    native glass); labels and icons keep flat colours (no vibrancy:
+    Flutter cannot see UIKit glass). Look for a platform-view or
+    UIKit-side route for each
   - motion is measured in debug builds (profile is not available on the
     simulator): onset timing within +-2 frames of iOS, below take noise
   Features (see also 9):
