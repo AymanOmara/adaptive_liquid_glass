@@ -185,3 +185,34 @@ struct GaugeReference: View {
     .statusBarHidden(true)
   }
 }
+
+/// Motion: a plain list of 30 rows whose `.refreshable` action takes 1 s;
+/// pull it down to record the indicator's hold and snap-back
+/// (`tool/fidelity/record_component_motion.sh`). Light.
+@available(iOS 26.0, *)
+struct RefreshMotionReference: View {
+  var body: some View {
+    List(0..<30) { i in Text("Row \(i)") }
+      .listStyle(.plain)
+      .refreshable { try? await Task.sleep(for: .seconds(1)) }
+      .environment(\.colorScheme, .light)
+      .statusBarHidden(true)
+  }
+}
+
+/// Motion: a ColorPicker well centred at 201, 300; tap it to open the
+/// system picker and pick a swatch to record its selection ring. Light.
+@available(iOS 26.0, *)
+struct ColorMotionReference: View {
+  @State private var color = Color.blue
+  var body: some View {
+    ZStack(alignment: .topLeading) {
+      Color.white
+      ColorPicker("Tint", selection: $color).labelsHidden().position(x: 201, y: 300)
+    }
+    .frame(width: 402, height: 874)
+    .ignoresSafeArea()
+    .environment(\.colorScheme, .light)
+    .statusBarHidden(true)
+  }
+}

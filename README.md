@@ -1330,8 +1330,12 @@ testWidgets('pays', (tester) async {
 
 - **Context menu not measured:** synthetic touches on the simulator do
   not open SwiftUI's `.contextMenu`, so `GlassContextMenu` follows the
-  system's look but has not been measured. Springs and press animations of
-  the newer components are not measured either.
+  system's look but has not been measured. Of the newer components'
+  motion, the disclosure spring, the refresh snap-back and the colour
+  grid's ring are measured; `GlassSearchable`'s Cancel reveal (iOS rides
+  the field up with the keyboard) and the wheel picker's VoiceOver step
+  are not, and `GlassRefresh` does not hold the list down while
+  refreshing as SwiftUI does.
 - **Native mode, runtime light→dark flip:** on iOS 26, 71 of 72 measured
   brightness flips at runtime match SwiftUI. One does not: a regular glass
   capsule over a photo, flipped from light to dark, keeps part of Apple's

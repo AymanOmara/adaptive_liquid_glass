@@ -29,9 +29,13 @@ abstract final class DisclosureMetrics {
   /// (measured: titles at 52 against the group's 32).
   static const double childIndent = 20;
 
-  /// The expand/collapse spring's response, in seconds (estimated).
-  static const double springResponse = 0.35;
+  /// The expand/collapse spring's response, in seconds. Measured from
+  /// SwiftUI's DisclosureGroup on iOS 26.4 (the next row's travel,
+  /// tool/fidelity/component_motion.py): median 0.29 over five clean takes,
+  /// collapse and expand alike (0.25-0.31).
+  static const double springResponse = 0.29;
 
-  /// The expand/collapse spring's damping fraction (estimated).
+  /// The expand/collapse spring's damping fraction: critically damped,
+  /// no overshoot (fits 0.99-1.09).
   static const double springDamping = 1.0;
 }

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
 import 'package:adaptive_liquid_glass/src/disclosure/disclosure_chevron.dart';
@@ -101,6 +103,34 @@ void main() {
     await t.tap(find.text('Advanced'));
     await t.pumpAndSettle();
     expect(_turns(t), DisclosureMetrics.expandedTurns);
+  }, variant: ios);
+
+  test("the spring is SwiftUI's measured one (0.29 / 1.0)", () {
+    expect(DisclosureMetrics.springResponse, 0.29);
+    expect(DisclosureMetrics.springDamping, 1.0);
+  });
+
+  testWidgets('the expansion follows the measured spring', (t) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(_group()));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Advanced'));
+    await t.pump();
+    const elapsed = Duration(milliseconds: 100);
+    await t.pump(elapsed);
+    // Critically damped: 1 - e^(-ωt)(1 + ωt), ω = 2π / response.
+    final wt =
+        2 *
+        math.pi /
+        DisclosureMetrics.springResponse *
+        elapsed.inMicroseconds /
+        Duration.microsecondsPerSecond;
+    final expected = 1 - math.exp(-wt) * (1 + wt);
+    expect(
+      _turns(t) / DisclosureMetrics.expandedTurns,
+      closeTo(expected, 0.02),
+    );
+    await t.pumpAndSettle();
   }, variant: ios);
 
   testWidgets('Reduce Motion: the jump is instant', (t) async {

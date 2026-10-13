@@ -1,5 +1,6 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/color_hex.dart';
+import 'package:adaptive_liquid_glass/src/color_picker/color_picker_metrics.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/color_swatch_dot.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/glass_color_picker_panel.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
@@ -76,6 +77,10 @@ Color _swatchColor(WidgetTester t) => t
 void main() {
   setUp(() => GlassProgram.instance.debugReset(skipLoad: true));
   tearDown(() => GlassPlatform.instance.debugReset());
+
+  test("the grid's selection ring swaps at once, as UIKit's (measured)", () {
+    expect(ColorPickerMetrics.selectionDuration, Duration.zero);
+  });
 
   group('hex', () {
     test('parses #RRGGBB and #AARRGGBB, with or without #', () {

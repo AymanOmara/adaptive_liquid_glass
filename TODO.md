@@ -51,8 +51,14 @@ and CHANGELOG.md.
   SwiftUI): GlassLabel, GlassLink/GlassShareLink, GlassColorPicker sheet,
   GlassRefresh, GlassSearchable, GlassDatePicker wheel/time, GlassWheelPicker,
   full-screen cover close button and drag thresholds, context menu (synthetic
-  touches cannot open SwiftUI's), springs and press animations of the newer
-  components.
+  touches cannot open SwiftUI's). Motion measured (2026-10-13,
+  tool/fidelity/record_component_motion.sh + component_motion.py):
+  disclosure spring, refresh snap-back, colour grid ring. Motion still
+  open: GlassSearchable's reveal (iOS 26.4 rides the field up with the
+  keyboard and shows an xmark button, not Cancel; not separable), the
+  wheel's step (VoiceOver-only, no touch drives it), context menu; and
+  GlassRefresh does not hold the list ~60 pt down while refreshing as
+  SwiftUI does (behaviour, not a constant).
 
 7- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
   Still scenes, whole-crop mean |diff| native/shader (2026-10-13, with
