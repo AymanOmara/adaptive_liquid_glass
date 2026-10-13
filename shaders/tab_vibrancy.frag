@@ -7,7 +7,8 @@
 
 uniform vec2 uSize;     // set by the engine: the backdrop, physical px
 uniform vec4 uBox;      // the glyph image's origin and size, physical px
-uniform vec4 uTone;     // lightness gain, reference lightness, chroma gain
+uniform vec4 uTone;     // lightness gain, reference lightness, chroma gain,
+                        // tinted (1: each channel moves by gain instead)
 uniform sampler2D uTexture;
 uniform sampler2D uGlyphs;
 
@@ -36,6 +37,11 @@ void main() {
   }
   vec3 gc = g.rgb / g.a;
   vec3 bc = c.a > 0.0 ? c.rgb / c.a : vec3(0.0);
+  if (uTone.w > 0.5) {
+    vec3 t = clamp(gc + uTone.x * (bc - vec3(uTone.y)), 0.0, 1.0);
+    fragColor = mix(c, vec4(t, 1.0), g.a);
+    return;
+  }
   float lb = lum(bc);
   float l = lum(gc) + uTone.x * (lb - uTone.y);
   vec3 v = clamp(vec3(l) + uTone.z * (bc - vec3(lb)), 0.0, 1.0);

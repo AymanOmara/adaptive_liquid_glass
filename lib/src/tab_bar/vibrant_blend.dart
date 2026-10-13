@@ -18,8 +18,13 @@ class VibrantBlend extends SingleChildRenderObjectWidget {
     super.key,
     this.enabled = true,
     this.dark = false,
+    this.tinted = false,
     super.child,
   });
+
+  /// Whether [child] is the selected tint: iOS moves each channel by about
+  /// half the glass's change, instead of keeping the glass's hue.
+  final bool tinted;
 
   /// Whether to blend; false paints the child normally.
   final bool enabled;
@@ -33,6 +38,7 @@ class VibrantBlend extends SingleChildRenderObjectWidget {
     return RenderVibrantBlend(
       enabled: enabled,
       dark: dark,
+      tinted: tinted,
       devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
     );
   }
@@ -46,6 +52,7 @@ class VibrantBlend extends SingleChildRenderObjectWidget {
     renderObject
       ..enabled = enabled
       ..dark = dark
+      ..tinted = tinted
       ..devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
   }
 }
@@ -56,9 +63,11 @@ class RenderVibrantBlend extends RenderProxyBox {
   RenderVibrantBlend({
     required bool enabled,
     required bool dark,
+    required bool tinted,
     required double devicePixelRatio,
   }) : _enabled = enabled,
        _dark = dark,
+       _tinted = tinted,
        _devicePixelRatio = devicePixelRatio;
 
   bool _enabled;
@@ -79,6 +88,16 @@ class RenderVibrantBlend extends RenderProxyBox {
   set dark(bool value) {
     if (value == _dark) return;
     _dark = value;
+    markNeedsPaint();
+  }
+
+  bool _tinted;
+
+  /// See [VibrantBlend.tinted].
+  bool get tinted => _tinted;
+  set tinted(bool value) {
+    if (value == _tinted) return;
+    _tinted = value;
     markNeedsPaint();
   }
 
@@ -167,30 +186,34 @@ class RenderVibrantBlend extends RenderProxyBox {
     _image?.dispose();
     _image = image;
     final origin = localToGlobal(Offset(-pad, -pad)) * dpr;
+    final (gain, reference, chroma) = _tinted
+        ? (
+            TabBarMetrics.tintVibrancyGain,
+            _dark
+                ? TabBarMetrics.tintVibrancyReferenceDark
+                : TabBarMetrics.tintVibrancyReference,
+            0.0,
+          )
+        : _dark
+        ? (
+            TabBarMetrics.vibrancyLightnessGainDark,
+            TabBarMetrics.vibrancyReferenceDark,
+            TabBarMetrics.vibrancyChromaGainDark,
+          )
+        : (
+            TabBarMetrics.vibrancyLightnessGain,
+            TabBarMetrics.vibrancyReference,
+            TabBarMetrics.vibrancyChromaGain,
+          );
     final shader = program.fragmentShader()
       ..setFloat(2, origin.dx)
       ..setFloat(3, origin.dy)
       ..setFloat(4, bounds.width * dpr)
       ..setFloat(5, bounds.height * dpr)
-      ..setFloat(
-        6,
-        _dark
-            ? TabBarMetrics.vibrancyLightnessGainDark
-            : TabBarMetrics.vibrancyLightnessGain,
-      )
-      ..setFloat(
-        7,
-        _dark
-            ? TabBarMetrics.vibrancyReferenceDark
-            : TabBarMetrics.vibrancyReference,
-      )
-      ..setFloat(
-        8,
-        _dark
-            ? TabBarMetrics.vibrancyChromaGainDark
-            : TabBarMetrics.vibrancyChromaGain,
-      )
-      ..setFloat(9, 0)
+      ..setFloat(6, gain)
+      ..setFloat(7, reference)
+      ..setFloat(8, chroma)
+      ..setFloat(9, _tinted ? 1 : 0)
       ..setImageSampler(1, image);
     final backdrop = _backdrop.layer ??= BackdropFilterLayer();
     backdrop.filter = ui.ImageFilter.shader(shader);

@@ -1170,6 +1170,7 @@ class _GlassTabBarState extends State<GlassTabBar>
         // zero several times and would flicker the tint off and on.
         (i) => !lensShown && i == widget.selectedIndex ? selected : null,
         semantics: true,
+        vibrantTint: true,
       ),
     );
     final m = _magnify.value.clamp(0.0, 1.0);
@@ -1437,6 +1438,7 @@ class _GlassTabBarState extends State<GlassTabBar>
   Widget _row(
     Color? Function(int index) colorOf, {
     required bool semantics,
+    bool vibrantTint = false,
     Offset scale = const Offset(1, 1),
   }) {
     final labelShift = widget.onSearch == null
@@ -1468,8 +1470,11 @@ class _GlassTabBarState extends State<GlassTabBar>
                         final c = tint ?? _labelColor(context);
                         // iOS's untinted labels are vibrant: over shader
                         // glass they keep its hue and take their lightness.
+                        // The selected tint follows the glass too, less
+                        // (only in the plain row: lens copies are filtered).
                         return VibrantBlend(
-                          enabled: tint == null && _shaderBar,
+                          enabled: _shaderBar && (tint == null || vibrantTint),
+                          tinted: tint != null,
                           dark:
                               GlassGroupScope.brightnessOf(context) ==
                               Brightness.dark,

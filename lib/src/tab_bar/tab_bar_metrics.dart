@@ -378,4 +378,15 @@ abstract final class TabBarMetrics {
 
   /// [vibrancyChromaGain] in dark mode.
   static const double vibrancyChromaGainDark = 0.37;
+
+  /// The selected tint over shader glass: each channel moves by this share
+  /// of the glass's change from [tintVibrancyReference] (the pill over a
+  /// plain page; iOS 26.4 over a photo: 0.525 light, 0.463 dark).
+  static const double tintVibrancyGain = 0.5;
+
+  /// See [tintVibrancyGain].
+  static const double tintVibrancyReference = 0.922;
+
+  /// [tintVibrancyReference] in dark mode.
+  static const double tintVibrancyReferenceDark = 0.208;
 }

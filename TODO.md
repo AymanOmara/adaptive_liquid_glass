@@ -74,11 +74,10 @@ and CHANGELOG.md.
   0.8), light lens (grey glass + shadow, shader and native), held lens
   size, arrival dip, drag follow, selected pill (53 vs iOS 53).
   Open:
-  - vibrancy: done for untinted labels over shader glass
-    (tab_vibrancy.frag; glyph |diff| over the photo 12.4 -> 8.7 light,
-    11.2 -> 10.1 dark). Open: the selected tint (iOS darkens blue G by
-    ~0.5 of the glass's drop) and native mode (Flutter cannot see UIKit
-    glass)
+  - vibrancy: done over shader glass (tab_vibrancy.frag): untinted
+    glyph |diff| over the photo 12.4 -> 8.7 light, 11.2 -> 10.1 dark; the
+    selected tint 24.4 -> 16.2 light, 22.4 -> 12.6 dark. Native mode keeps
+    flat colours (Flutter cannot see UIKit glass)
   - lens fringe: iOS's bands at the lens top/bottom carry a rainbow fringe
     warm on one end, cool on the other; our dispersion is symmetric
     (stronger dispersion / lensVertical / normal radius tried, held-lens

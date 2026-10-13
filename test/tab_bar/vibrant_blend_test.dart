@@ -32,16 +32,16 @@ void main() {
   });
   tearDown(() => GlassPlatform.instance.debugReset());
 
-  testWidgets('shader glass: untinted labels are vibrant', (t) async {
+  testWidgets('shader glass: labels are vibrant, the tint as tinted', (
+    t,
+  ) async {
     await t.pumpWidget(plainHost(_bar(GlassRenderMode.shader)));
     final blends = t
         .renderObjectList<RenderVibrantBlend>(find.byType(VibrantBlend))
         .toList();
-    expect(blends.where((b) => b.enabled), hasLength(1), reason: 'Settings');
-    expect(
-      blends.where((b) => b.enabled).single.child!.needsCompositing,
-      isFalse,
-    );
+    expect(blends.where((b) => b.enabled), hasLength(2));
+    expect(blends.where((b) => b.enabled && b.tinted), hasLength(1));
+    expect(blends.any((b) => b.enabled && b.child!.needsCompositing), isFalse);
   }, variant: _ios);
 
   testWidgets('native glass: no blend', (t) async {
