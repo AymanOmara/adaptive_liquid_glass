@@ -251,6 +251,9 @@ void main() {
   // normals of the ellipse inscribed in its rect, so along a capsule's
   // flat sides the bend turns gradually towards the round ends and a
   // vertical-only lens thins its bands smoothly towards them.
+  // The outline's own normal: sideways dispersion runs along its tangent
+  // (iOS's tab lens fringes only at its round ends).
+  vec2 nrmO = nrm;
   if (Q4.y > 0.0) {
     vec2 hr = max(rcB.zw * 0.5, vec2(1.0));
     vec2 ne = (px - (rcB.xy + hr)) / (hr * hr);
@@ -376,7 +379,7 @@ void main() {
     // Along the normal, plus sideways along the rim (Q.x): red and blue
     // move apart along the outline, warm at one end of a band, cool at
     // the other.
-    vec2 disp = nrm * lensAmt * abs(A.w) + vec2(-nrm.y, nrm.x) * lensAmt * Q4.x;
+    vec2 disp = nrm * lensAmt * abs(A.w) + vec2(-nrmO.y, nrmO.x) * lensAmt * Q4.x;
     float dw = v;
     col.r = mix(col.r, tex(sp + disp).r + coreOff.r, dw);
     // Negative dispersion (iOS's tab lens) moves green with blue, so a

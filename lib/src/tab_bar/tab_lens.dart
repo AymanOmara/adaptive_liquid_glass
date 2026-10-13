@@ -26,7 +26,7 @@ const tabLensLight = GlassVariantConstants(
   // plus an outward tail (negative lensEdge) that still moves the bar's
   // edge about 3.5 pt at 8 pt in.
   lensBand: 8.25,
-  lensStrength: 0.5,
+  lensStrength: 0.4,
   lensDecay: 1000,
   lensSizeRef: 0,
   dispersion: 0.3,
@@ -38,7 +38,7 @@ const tabLensLight = GlassVariantConstants(
   // The bend is strongest where the lens faces up or down; its round
   // ends bend half as much (Kept: clear mid-bar, a rainbow crescent past
   // the bar's end).
-  lensVertical: 0.5,
+  lensVertical: 1.0,
   // Kept's rim: teal-cyan (hue ~180), about 0.2 saturated.
   rimTint: -0.2,
   rimHue: 180,
@@ -72,7 +72,7 @@ const tabLensDark = GlassVariantConstants(
   // plus an outward tail (negative lensEdge) that still moves the bar's
   // edge about 3.5 pt at 8 pt in.
   lensBand: 8.25,
-  lensStrength: 0.5,
+  lensStrength: 0.4,
   lensDecay: 1000,
   lensSizeRef: 0,
   dispersion: 0.3,
@@ -84,7 +84,7 @@ const tabLensDark = GlassVariantConstants(
   // The bend is strongest where the lens faces up or down; its round
   // ends bend half as much (Kept: clear mid-bar, a rainbow crescent past
   // the bar's end).
-  lensVertical: 0.5,
+  lensVertical: 1.0,
   // SwiftUI's `TabView` (iOS 26.4) over black: a thin grey rim, about 83
   // grey levels at its peak (the teal 0.85 mix read 155), neutral on top,
   // cooler on its left (95, 111, 113) and warmer on its right (80, 71, 60).
