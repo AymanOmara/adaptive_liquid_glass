@@ -260,7 +260,8 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `GlassToolbar`, `GlassToolbarSpacer` | The floating bottom toolbar, merged capsules | Material buttons |
 | `GlassTabBar`, `GlassTabBarItem`, `GlassMaterialTabBarStyle` | iOS 26's floating tab bar, draggable lens, `onSearch` tab | `NavigationBar`, floating or edge to edge |
 | `GlassToggle` | iOS 26's switch, glass lens thumb | `Switch` |
-| `GlassSlider` | Slider with a glass lens thumb, optional `divisions` | `Slider` |
+| `GlassSlider` | Slider with a glass lens thumb, optional `divisions`, horizontal or vertical | `Slider` |
+| `GlassRangeSlider` | Two-thumb range slider on the same track (SwiftUI has none) | `RangeSlider` |
 | `GlassSegmentedControl`, `GlassSegment` | Segmented control, sliding lens | `SegmentedButton` |
 | `GlassStepper` | Minus/plus capsule stepper | pair of icon buttons |
 | `GlassPicker`, `GlassPickerItem` | Menu-style picker, current choice checked | `DropdownButton` |
@@ -612,6 +613,8 @@ starts a new capsule and pushes the groups apart, like SwiftUI's
 ```dart
 GlassToggle(value: wifi, onChanged: (v) => setState(() => wifi = v))
 GlassSlider(value: volume, onChanged: (v) => setState(() => volume = v))
+GlassSlider(axis: Axis.vertical, value: level, onChanged: (v) => setState(() => level = v))
+GlassRangeSlider(values: price, onChanged: (v) => setState(() => price = v))
 GlassSegmentedControl<Period>(
   segments: const [
     GlassSegment(value: Period.day, label: Text('Day')),
@@ -625,7 +628,13 @@ GlassStepper(value: count, min: 0, max: 10, onChanged: (v) => setState(() => cou
 
 As in iOS 26, each thumb turns into a clear glass lens while it is
 pressed or dragged. The segmented control's lens slides between segments
-with a haptic on each one. All four follow the reading direction and
+with a haptic on each one.
+`axis: Axis.vertical` stands a slider up with its minimum at the bottom,
+as a rotated SwiftUI `Slider` (give it a height). `GlassRangeSlider` has
+no SwiftUI counterpart; it follows the single slider's geometry with two
+thumbs that never cross. A touch takes the nearest thumb, and on
+overlapping thumbs the drag's direction picks; each thumb is its own
+slider for VoiceOver. On Android it is a `RangeSlider`. All four follow the reading direction and
 Reduce Motion. On Android they are `Switch`, `Slider`, `SegmentedButton`
 and a pair of icon buttons.
 

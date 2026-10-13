@@ -50,6 +50,8 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
   _Period _period = _Period.week;
   bool _wifi = true;
   double _volume = 0.6;
+  RangeValues _hours = const RangeValues(9, 17);
+  double _brightness = 0.4;
   bool _toolbar = false;
   bool _advanced = false;
   double _count = 3;
@@ -212,6 +214,43 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                             const SizedBox(width: 8),
                             const Icon(CupertinoIcons.speaker_3_fill, size: 18),
                           ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Open ${_hours.start.round()}:00 – '
+                          '${_hours.end.round()}:00',
+                        ),
+                        GlassRangeSlider(
+                          values: _hours,
+                          min: 0,
+                          max: 24,
+                          divisions: 24,
+                          semanticFormatter: (v) => '${v.round()}:00',
+                          onChanged: (v) => setState(() => _hours = v),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 160,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              GlassSlider(
+                                axis: Axis.vertical,
+                                value: _brightness,
+                                onChanged: (v) =>
+                                    setState(() => _brightness = v),
+                              ),
+                              const SizedBox(width: 24),
+                              GlassRangeSlider(
+                                axis: Axis.vertical,
+                                values: _hours,
+                                min: 0,
+                                max: 24,
+                                divisions: 24,
+                                onChanged: (v) => setState(() => _hours = v),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 12),
                         Row(

@@ -28,6 +28,7 @@ export 'src/button/glass_floating_action_button.dart';
 export 'src/chip/glass_chip.dart';
 export 'src/color_picker/glass_color_picker.dart';
 export 'src/context_menu/glass_context_menu.dart';
+export 'src/controls/glass_range_slider.dart';
 export 'src/controls/glass_segment.dart';
 export 'src/controls/glass_segmented_control.dart';
 export 'src/controls/glass_slider.dart';

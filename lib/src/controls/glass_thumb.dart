@@ -19,6 +19,7 @@ class GlassThumb extends StatelessWidget {
     this.mode,
     this.child,
     this.shadow = false,
+    this.axis = Axis.horizontal,
   });
 
   /// How far the thumb has turned into a lens.
@@ -37,11 +38,18 @@ class GlassThumb extends StatelessWidget {
   /// does; its toggle and segmented thumbs are flat.
   final bool shadow;
 
+  /// The track the thumb runs along. A vertical slider's thumb is the
+  /// horizontal one turned a quarter, so it grows the other way round.
+  final Axis axis;
+
   @override
   Widget build(BuildContext context) {
     final t = pressed.clamp(0.0, 1.0);
-    final scaleX = 1 + (ControlMetrics.lensScaleX - 1) * pressed;
-    final scaleY = 1 + (ControlMetrics.lensScaleY - 1) * pressed;
+    final vertical = axis == Axis.vertical;
+    final along = 1 + (ControlMetrics.lensScaleX - 1) * pressed;
+    final across = 1 + (ControlMetrics.lensScaleY - 1) * pressed;
+    final scaleX = vertical ? across : along;
+    final scaleY = vertical ? along : across;
     return Transform.scale(
       scaleX: scaleX < 0.8 ? 0.8 : scaleX,
       scaleY: scaleY < 0.8 ? 0.8 : scaleY,
