@@ -38,6 +38,7 @@ class GlassVariantConstants {
     this.shadowOffsetY = 0,
     this.dispersionTangent = 0,
     this.lensEllipse = 0,
+    this.backdropInset = 0,
     this.toneLumaMix = 0,
     this.glowStrength = 0.25,
     this.postBlurShare = 0,
@@ -120,6 +121,7 @@ class GlassVariantConstants {
       base.dispersionTangent,
     ),
     lensEllipse: GlassJson.number(j, 'lensEllipse', base.lensEllipse),
+    backdropInset: GlassJson.number(j, 'backdropInset', base.backdropInset),
     toneLumaMix: GlassJson.number(j, 'toneLumaMix', base.toneLumaMix),
     glowStrength: GlassJson.number(j, 'glowStrength', base.glowStrength),
     postBlurShare: GlassJson.number(j, 'postBlurShare', base.postBlurShare),
@@ -302,6 +304,13 @@ class GlassVariantConstants {
   /// tab lens: its bands thin smoothly towards the ends). 0 = the outline.
   final double lensEllipse;
 
+  /// When > 0, the glass refracts only the backdrop between its top and
+  /// bottom inset by this much (logical px); what it would bend in from
+  /// beyond reads black. iOS 26.4's tab lens overhangs the bar by this
+  /// much and bends in only the bar, so its bands above and below stay
+  /// dark over any page. 0 = the whole backdrop.
+  final double backdropInset;
+
   /// How far the tone LUT is keyed on luma instead of applied per channel
   /// (item 8 round 3): at 1 the LUT moves the frosted backdrop's luma and
   /// its chroma rides along unchanged; 0 = per channel, as before.
@@ -450,6 +459,7 @@ class GlassVariantConstants {
     'shadowOffsetY': shadowOffsetY,
     'dispersionTangent': dispersionTangent,
     'lensEllipse': lensEllipse,
+    'backdropInset': backdropInset,
     'toneLumaMix': toneLumaMix,
     'glowStrength': glowStrength,
     'postBlurShare': postBlurShare,

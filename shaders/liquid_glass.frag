@@ -29,7 +29,7 @@ uniform vec4 uVar[34];     // per variant (regular A-L, then clear A-L, then
                            //   clamp (fidelity group 4)
                            //   P(ambient mix, ambient reach px, luma-keyed tone mix, shadow y offset px) (item 8;
                            //   P.z item 8 round 3)
-                           //   Q(sideways dispersion, ellipse normal mix, -, -), regular then clear
+                           //   Q(sideways dispersion, ellipse normal mix, backdrop inset px, -), regular then clear
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -37,6 +37,13 @@ uniform vec4 uVar[34];     // per variant (regular A-L, then clear A-L, then
 uniform sampler2D uTexture;
 
 out vec4 fragColor;
+
+// 1 inside the backdrop band [band.x, band.y] (Q.z backdrop inset),
+// fading to 0 within 1.5 px beyond it; always 1 when inset <= 0.
+float inBand(float y, vec2 band, float inset) {
+  if (inset <= 0.0) return 1.0;
+  return 1.0 - smoothstep(-1.5, 1.5, max(band.x - y, y - band.y));
+}
 
 vec4 tex(vec2 px) {
   vec2 uv = clamp(px / uSize, vec2(0.0), vec2(1.0));
@@ -374,6 +381,15 @@ void main() {
   // (post-lens blur + wide mix), so dispersion 0 is an exact no-op and a
   // grey backdrop stays grey (the offset must be measured after the wide
   // mix, not before it).
+  // Backdrop inset (Q.z, iOS 26.4's tab lens): only the backdrop between
+  // the shape's top and bottom inset by Q.z is refracted (the bar under
+  // an overhanging lens); what the lens bends in from beyond reads black.
+  // Each dispersed tap is masked on its own, so the bar's edge still
+  // fringes.
+  vec2 bandY = vec2(rcB.y + Q4.z, rcB.y + rcB.w - Q4.z);
+  float mk = inBand(sp.y, bandY, Q4.z);
+  col *= mk;
+  base *= mk;
   if (A.w != 0.0 || Q4.x != 0.0) {
     vec3 coreOff = col - base;
     // Along the normal, plus sideways along the rim (Q.x): red and blue
@@ -381,10 +397,11 @@ void main() {
     // the other.
     vec2 disp = nrm * lensAmt * abs(A.w) + vec2(-nrmO.y, nrmO.x) * lensAmt * Q4.x;
     float dw = v;
-    col.r = mix(col.r, tex(sp + disp).r + coreOff.r, dw);
+    col.r = mix(
+        col.r, tex(sp + disp).r * inBand(sp.y + disp.y, bandY, Q4.z) + coreOff.r, dw);
     // Negative dispersion (iOS's tab lens) moves green with blue, so a
     // blue tint fringes in shades of blue instead of green.
-    vec3 sm = tex(sp - disp).rgb + coreOff;
+    vec3 sm = tex(sp - disp).rgb * inBand(sp.y - disp.y, bandY, Q4.z) + coreOff;
     col.b = mix(col.b, sm.b, dw);
     if (A.w < 0.0) col.g = mix(col.g, sm.g, dw);
   }

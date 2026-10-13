@@ -1325,6 +1325,7 @@ class _GlassTabBarState extends State<GlassTabBar>
                       // iOS keeps a held lens fully glass while it settles
                       // on arrival and lifts again.
                       bend: _held ? 1 : t,
+                      overhang: -(lens.top + TabBarMetrics.inset),
                       const GlassGroup(
                         mode: GlassRenderMode.shader,
                         child: LiquidGlass(

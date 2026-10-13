@@ -146,18 +146,29 @@ const tabLensContentBlur = 2.5;
 /// pill-sized lens (still inside the bar) does not pull the page past the
 /// bar's edge into a dark ring, nor light a rim yet (SwiftUI `TabView`,
 /// iOS 26.4: the lens reads as even as the pill for its first frames).
-Widget withTabLens(BuildContext context, Widget child, {double bend = 1}) {
+Widget withTabLens(
+  BuildContext context,
+  Widget child, {
+  double bend = 1,
+  double overhang = 0,
+}) {
   final theme = LiquidGlassTheme.of(context);
   return LiquidGlassTheme(
     data: theme.copyWith(
       constants: theme.constants.copyWith(
-        clear: _bent(tabLensLight, bend),
-        clearDark: _bent(tabLensDark, bend),
+        clear: _inset(_bent(tabLensLight, bend), overhang),
+        clearDark: _inset(_bent(tabLensDark, bend), overhang),
       ),
     ),
     child: child,
   );
 }
+
+/// [c] refracting only the bar under a lens overhanging it by [overhang].
+GlassVariantConstants _inset(GlassVariantConstants c, double overhang) =>
+    overhang <= 0
+    ? c
+    : GlassVariantConstants.fromJson({'backdropInset': overhang}, c);
 
 GlassVariantConstants _bent(GlassVariantConstants c, double bend) => bend >= 1
     ? c

@@ -1,5 +1,6 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
+import 'package:adaptive_liquid_glass/src/core/glass_variant_constants.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/capsule_clipper.dart';
@@ -91,8 +92,17 @@ void main() {
     final g = await hold(t);
     expect(t.widget<LiquidGlass>(lens).mode, GlassRenderMode.shader);
     final theme = LiquidGlassTheme.of(t.element(lens));
-    expect(theme.constants.clear, tabLensLight);
-    expect(theme.constants.clearDark, tabLensDark);
+    // The tab lens's glass, refracting only the bar it overhangs.
+    final inset = theme.constants.clear.backdropInset;
+    expect(inset, greaterThan(0));
+    expect(
+      theme.constants.clear,
+      GlassVariantConstants.fromJson({'backdropInset': inset}, tabLensLight),
+    );
+    expect(
+      theme.constants.clearDark,
+      GlassVariantConstants.fromJson({'backdropInset': inset}, tabLensDark),
+    );
     // The bar is shader glass too, so the lens can refract it (native glass
     // is invisible to the shader).
     final barGlass = t
