@@ -31,7 +31,8 @@ void main() {
   vec2 guv = (px - uBox.xy) / uBox.zw;
   vec4 g = vec4(0.0);
   if (all(greaterThanEqual(guv, vec2(0.0))) && all(lessThanEqual(guv, vec2(1.0)))) {
-    g = texture(uGlyphs, flip(guv));
+    // An image, not a render target: never stored bottom-up.
+    g = texture(uGlyphs, guv);
   }
   if (g.a <= 0.0) {
     fragColor = c;
