@@ -430,8 +430,12 @@ class _AccessoryTextState extends State<_AccessoryText> {
                 ],
               ),
             ),
+      // SwiftUI lays the page 7.3 pt lower under the accessory (measured).
       body: Padding(
-        padding: const EdgeInsetsDirectional.only(start: 20),
+        padding: EdgeInsetsDirectional.only(
+          start: 20,
+          top: widget.accessory ? 7.3 : 0,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -440,9 +444,16 @@ class _AccessoryTextState extends State<_AccessoryText> {
                 height: 34,
                 child: Align(
                   alignment: AlignmentDirectional.centerStart,
+                  // SF Pro Display, spaced to the SwiftUI page's
+                  // `.system(size: 22)` (its 22 pt optical size is wider).
                   child: Text(
                     'Day Week Month Day Week',
-                    style: TextStyle(fontSize: 22, color: Colors.white),
+                    style: TextStyle(
+                      fontFamily: 'CupertinoSystemDisplay',
+                      fontSize: 22,
+                      letterSpacing: 0.3,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
