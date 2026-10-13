@@ -105,6 +105,9 @@ struct GlassSpec: Identifiable, Equatable {
   let interactive: Bool
   /// Shapes with the same union index merge (`glassEffectUnion`).
   let union: Int?
+  /// System fills drawn as the glass's own content (vibrant, as iOS 26's
+  /// tab bar pill), in points relative to the shape.
+  let fills: [GlassFill]
 
   /// [fallbackId] (the payload index) is used only when Dart sends no `id`.
   init(fallbackId: Int, _ s: [String: Any]) {
@@ -118,6 +121,32 @@ struct GlassSpec: Identifiable, Equatable {
     tint = s["tint"] as? Int
     interactive = s["interactive"] as? Bool ?? false
     union = s["union"] as? Int
+    let f = s["fills"] as? [Double] ?? []
+    fills = stride(from: 0, to: f.count - 5, by: 6).enumerated().map { i, k in
+      GlassFill(
+        id: i,
+        frame: CGRect(x: f[k], y: f[k + 1], width: f[k + 2], height: f[k + 3]),
+        opacity: f[k + 4], style: Int(f[k + 5]))
+    }
+  }
+}
+
+/// A capsule of a system fill inside a glass shape (`GlassContentFill`).
+@available(iOS 26.0, *)
+struct GlassFill: Identifiable, Equatable {
+  let id: Int
+  let frame: CGRect
+  let opacity: Double
+  /// 0 `.fill`, 1 `.fill.secondary`, 2 `.fill.tertiary`, 3 `.fill.quaternary`.
+  let style: Int
+
+  var shapeStyle: AnyShapeStyle {
+    switch style {
+    case 0: AnyShapeStyle(.fill)
+    case 1: AnyShapeStyle(.fill.secondary)
+    case 3: AnyShapeStyle(.fill.quaternary)
+    default: AnyShapeStyle(.fill.tertiary)
+    }
   }
 }
 
@@ -156,7 +185,16 @@ struct GlassHostView: View {
   }
 
   @ViewBuilder private func shapeView(_ s: GlassSpec) -> some View {
-    let base = Color.clear
+    let base = ZStack(alignment: .topLeading) {
+      Color.clear
+      ForEach(s.fills) { f in
+        Capsule()
+          .fill(f.shapeStyle)
+          .opacity(f.opacity)
+          .frame(width: f.frame.width, height: f.frame.height)
+          .offset(x: f.frame.minX, y: f.frame.minY)
+      }
+    }
       .frame(width: s.frame.width, height: s.frame.height)
       .glassEffect(glass(s), in: shape(s))
     Group {

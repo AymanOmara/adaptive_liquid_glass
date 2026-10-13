@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 
 import '../core/glass.dart';
 import '../core/glass_shape.dart';
+import 'glass_content_fill.dart';
 import 'glass_press_geometry.dart';
 
 /// One `LiquidGlass` registered with a group.
@@ -41,6 +42,10 @@ class GlassEntry {
 
   /// Where the renderer last drew this entry, in group-local coordinates.
   Rect? lastDrawnLocal;
+
+  /// System fills inside this glass that native glass draws as its own
+  /// content (see GlassContentFill).
+  final Set<RenderGlassContentFill> fills = <RenderGlassContentFill>{};
 
   /// Content opacity during morphs.
   final ValueNotifier<double> contentOpacity = ValueNotifier(1);

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
+import 'package:adaptive_liquid_glass/src/group/glass_content_fill.dart';
 import 'package:adaptive_liquid_glass/src/native/native_glass_layer.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_backdrop.dart';
@@ -393,5 +394,40 @@ void main() {
         .single;
     expect(sent, isEmpty);
     expect(entry.lastDrawnLocal, const Rect.fromLTWH(0, 0, 100, 40));
+  }, variant: ios);
+
+  testWidgets('content fills are sent relative to their glass', (t) async {
+    iosEnv();
+    final sent = mockNative(t);
+    await t.pumpWidget(
+      host(
+        const Align(
+          alignment: AlignmentDirectional.topStart,
+          child: LiquidGlass(
+            child: SizedBox(
+              width: 100,
+              height: 40,
+              child: Padding(
+                padding: EdgeInsetsDirectional.only(start: 10, top: 4),
+                child: Align(
+                  alignment: AlignmentDirectional.topStart,
+                  child: GlassContentFill(
+                    style: GlassFillStyle.quaternary,
+                    opacity: 0.5,
+                    child: SizedBox(width: 30, height: 20),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.pump();
+    await t.pump();
+
+    final shape =
+        (sent.last['shapes']! as List).single as Map<Object?, Object?>;
+    expect(shape['fills'], <double>[10, 4, 30, 20, 0.5, 3]);
   }, variant: ios);
 }

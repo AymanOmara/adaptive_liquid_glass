@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/widgets.dart';
 
 import '../core/glass_variant.dart';
 import '../group/entry_geometry.dart';
+import '../group/glass_entry.dart';
 import '../group/glass_group_scope.dart';
 import '../group/glass_registry.dart';
 
@@ -140,6 +142,7 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
           null => null,
           final id => unions.putIfAbsent(id, () => unions.length),
         },
+        'fills': _fills(g.entry, g.drawn),
       });
     }
     final channel = _channel;
@@ -155,6 +158,27 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
     channel.invokeMethod<void>('setShapes', payload);
   }
 
+  /// [entry]'s content fills, flattened as x, y, w, h (points, relative to
+  /// the drawn glass [drawn], global), opacity and style per fill.
+  static List<double> _fills(GlassEntry entry, Rect drawn) => [
+    for (final f in entry.fills)
+      if (f.attached && f.hasSize)
+        ...() {
+          final r = MatrixUtils.transformRect(
+            f.getTransformTo(null),
+            Offset.zero & f.size,
+          );
+          return [
+            r.left - drawn.left,
+            r.top - drawn.top,
+            r.width,
+            r.height,
+            f.opacity,
+            f.style.index.toDouble(),
+          ];
+        }(),
+  ];
+
   static bool _samePayload(Map<String, Object?> a, Map<String, Object?> b) {
     if (a['spacing'] != b['spacing'] || a['dark'] != b['dark']) return false;
     final sa = a['shapes']! as List<Map<String, Object?>>;
@@ -165,7 +189,13 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
       final y = sb[i];
       if (x.length != y.length) return false;
       for (final k in x.keys) {
-        if (x[k] != y[k]) return false;
+        final a = x[k];
+        final b = y[k];
+        if (a is List<double> && b is List<double>) {
+          if (!listEquals(a, b)) return false;
+        } else if (a != b) {
+          return false;
+        }
       }
     }
     return true;

@@ -1,11 +1,25 @@
 import 'package:flutter/cupertino.dart';
 
 import '../core/swiftui_spring.dart';
+import '../group/glass_content_fill.dart';
 
 /// Measured from iOS 26.4's tab bar (Kept, iPhone 17 Pro) by frame-by-frame
 /// tracking of press, hold, drag and release (`example/lib/tab_bar_probe.dart`
 /// lays the bar out the same way).
 abstract final class TabBarMetrics {
+  /// The selected pill's system fill on native glass (GlassContentFill),
+  /// light and dark, and its opacity.
+  static const GlassFillStyle nativePillStyle = GlassFillStyle.quaternary;
+
+  /// See [nativePillStyle].
+  static const GlassFillStyle nativePillStyleDark = GlassFillStyle.secondary;
+
+  /// See [nativePillStyle].
+  static const double nativePillOpacity = 0.9;
+
+  /// See [nativePillStyle].
+  static const double nativePillOpacityDark = 0.97;
+
   /// The gap between the bar's edge and its tabs.
   static const double inset = 4;
 

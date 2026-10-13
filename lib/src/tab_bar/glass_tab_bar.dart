@@ -26,6 +26,7 @@ import '../core/glass_system_colors.dart';
 import '../core/liquid_glass_theme.dart';
 import '../core/render_mode_resolver.dart';
 import '../foreground/glass_foreground.dart';
+import '../group/glass_content_fill.dart';
 import '../group/glass_group.dart';
 import '../group/glass_group_scope.dart';
 import '../liquid_glass.dart';
@@ -322,6 +323,9 @@ class _GlassTabBarState extends State<GlassTabBar>
   /// Whether the bar's glass is drawn by the shader, which then needs the
   /// bar's own shadow (BarShadow); UIKit draws native glass's.
   bool _shaderBar = false;
+
+  /// Whether the bar itself is native (SwiftUI) glass.
+  bool _nativeBar = false;
 
   /// The bar's path: with the shader lens the bar is shader glass too, so
   /// the lens can refract it (native glass is invisible to the shader). An
@@ -881,13 +885,13 @@ class _GlassTabBarState extends State<GlassTabBar>
               environment.shaderSupported &&
               (widget.mode == null || mode == EffectiveGlassMode.shader);
           if (_shaderLens) TabLensProgram.instance.load();
-          _shaderBar =
-              resolveGlassMode(
-                requested: _barMode ?? LiquidGlassTheme.of(context).defaultMode,
-                environment: environment,
-                highContrast: MediaQuery.highContrastOf(context),
-              ) ==
-              EffectiveGlassMode.shader;
+          final barMode = resolveGlassMode(
+            requested: _barMode ?? LiquidGlassTheme.of(context).defaultMode,
+            environment: environment,
+            highContrast: MediaQuery.highContrastOf(context),
+          );
+          _shaderBar = barMode == EffectiveGlassMode.shader;
+          _nativeBar = barMode == EffectiveGlassMode.native;
           return mode == EffectiveGlassMode.material
               ? _materialBar(context)
               : _glassBar(context);
@@ -1460,7 +1464,22 @@ class _GlassTabBarState extends State<GlassTabBar>
         ),
       ),
     );
-    if (!_shaderBar || widget.indicatorColor != null) return plain;
+    if (widget.indicatorColor != null) return plain;
+    // Native glass draws the pill as its own content, vibrant as iOS's.
+    if (_nativeBar) {
+      final dark = GlassGroupScope.brightnessOf(context) == Brightness.dark;
+      return GlassContentFill(
+        style: dark
+            ? TabBarMetrics.nativePillStyleDark
+            : TabBarMetrics.nativePillStyle,
+        opacity:
+            opacity *
+            (dark
+                ? TabBarMetrics.nativePillOpacityDark
+                : TabBarMetrics.nativePillOpacity),
+      );
+    }
+    if (!_shaderBar) return plain;
     TabVibrancyProgram.instance.load();
     return ValueListenableBuilder<FragmentProgram?>(
       valueListenable: TabVibrancyProgram.instance.program,

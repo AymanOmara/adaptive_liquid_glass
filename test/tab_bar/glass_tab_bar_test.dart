@@ -2,6 +2,7 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/badge/badge_metrics.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
+import 'package:adaptive_liquid_glass/src/group/glass_content_fill.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/bar_shadow.dart';
@@ -209,6 +210,22 @@ void main() {
       find.byWidgetPredicate((w) => w is CustomPaint && w.painter is BarShadow),
       findsNothing,
     );
+  }, variant: ios);
+
+  testWidgets('native mode: the pill is a SwiftUI fill in the glass', (
+    t,
+  ) async {
+    GlassPlatform.instance.debugEnvironment = const GlassEnvironment(
+      platform: TargetPlatform.iOS,
+      iosMajorVersion: 26,
+      reduceTransparency: false,
+      shaderSupported: true,
+    );
+    await t.pumpWidget(
+      plainHost(_Harness(_picks(), mode: GlassRenderMode.native)),
+    );
+    final fill = t.widget<GlassContentFill>(find.byType(GlassContentFill));
+    expect(fill.style, TabBarMetrics.nativePillStyle);
   }, variant: ios);
 
   testWidgets('holding shows the lens; dragging picks on release', (t) async {
