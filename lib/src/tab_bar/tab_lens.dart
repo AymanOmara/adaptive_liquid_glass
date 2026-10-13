@@ -218,6 +218,7 @@ const _tabBarLightOverrides = <String, Object?>{
   'fillColor': '#DDDDDD',
   'ambientLift': 0.27,
   'saturation': 1.45,
+  'blurAspectPower': 0.2,
   'blurSigma': 7.0,
   // The values the bar was fitted with (before the g13 refit).
   'fillSizeDrop': 0.1268,
@@ -234,8 +235,8 @@ const _tabBarDarkOverrides = <String, Object?>{
   'fillColor': '#1E1E1E',
   'fillOpacity': 0.70,
   'ambientLift': 0.45,
-  'saturation': 1.5,
-  'blurAspectPower': 0.0,
+  'saturation': 1.85,
+  'blurAspectPower': 0.2,
   'blurSigma': 9.0,
   // The values the bar was fitted with (before the g13 refit).
   'fillSizeDrop': 0.798,
