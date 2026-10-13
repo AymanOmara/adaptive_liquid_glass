@@ -1465,24 +1465,39 @@ class _GlassTabBarState extends State<GlassTabBar>
   /// TabBarMetrics.nativeLensDragShade).
   /// The native lens's overhang, [top] and [bottom] high past the bar:
   /// iOS's lens refracts only the bar there, darker than UIKit's clear
-  /// glass reads over the page.
+  /// glass reads over the page. In dark mode, also its brighter rim.
   Widget _nativeLensBands({required double top, required double bottom}) {
     final dark = GlassGroupScope.brightnessOf(context) == Brightness.dark;
     final opacity = dark
         ? TabBarMetrics.nativeLensBandShadeDark
         : TabBarMetrics.nativeLensBandShade;
+    // iOS's lens squeezes the bar too: its edge shows this far further in.
     Widget band(double h) => SizedBox(
-      height: math.max(h, 0),
+      height: h > 0 ? h + TabBarMetrics.nativeLensBandInset : 0,
       child: GlassContentFill(
         style: GlassFillStyle.darken,
         opacity: opacity,
         child: const SizedBox.expand(),
       ),
     );
-    return Column(
+    final bands = Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [band(top), band(bottom)],
+    );
+    if (!dark) return bands;
+    // iOS's dark lens has a bright rim, near twice UIKit's.
+    return Stack(
+      children: [
+        Positioned.fill(child: bands),
+        const Positioned.fill(
+          child: GlassContentFill(
+            style: GlassFillStyle.lightenRim,
+            opacity: TabBarMetrics.nativeLensRimDark,
+            child: SizedBox.expand(),
+          ),
+        ),
+      ],
     );
   }
 

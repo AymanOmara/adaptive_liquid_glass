@@ -71,6 +71,10 @@ enum GlassFillStyle {
   /// Black subtracted from the glass beneath (`.plusDarker`): lowers every
   /// channel by the same amount, keeping the backdrop's colour.
   darken,
+
+  /// A 1-pt white ring along the capsule, added to the glass beneath
+  /// (`.plusLighter`): a brighter rim than UIKit's own.
+  lightenRim,
 }
 
 /// See [GlassContentFill].

@@ -138,7 +138,8 @@ struct GlassFill: Identifiable, Equatable {
   let frame: CGRect
   let opacity: Double
   /// 0 `.fill`, 1 `.fill.secondary`, 2 `.fill.tertiary`, 3 `.fill.quaternary`,
-  /// 4 white added (`.plusLighter`), 5 black subtracted (`.plusDarker`).
+  /// 4 white added (`.plusLighter`), 5 black subtracted (`.plusDarker`),
+  /// 6 a 1-pt white ring along the capsule, added.
   let style: Int
 
   var shapeStyle: AnyShapeStyle {
@@ -154,7 +155,7 @@ struct GlassFill: Identifiable, Equatable {
 
   var blendMode: BlendMode {
     switch style {
-    case 4: .plusLighter
+    case 4, 6: .plusLighter
     case 5: .plusDarker
     default: .normal
     }
@@ -199,8 +200,7 @@ struct GlassHostView: View {
     let base = ZStack(alignment: .topLeading) {
       Color.clear
       ForEach(s.fills) { f in
-        Capsule()
-          .fill(f.shapeStyle)
+        fillShape(f)
           .opacity(f.opacity)
           .blendMode(f.blendMode)
           .frame(width: f.frame.width, height: f.frame.height)
@@ -219,6 +219,14 @@ struct GlassHostView: View {
       }
     }
     .position(x: s.frame.midX, y: s.frame.midY)
+  }
+
+  @ViewBuilder private func fillShape(_ f: GlassFill) -> some View {
+    if f.style == 6 {
+      Capsule().strokeBorder(Color.white, lineWidth: 0.67)
+    } else {
+      Capsule().fill(f.shapeStyle)
+    }
   }
 
   private func glass(_ s: GlassSpec) -> Glass {
