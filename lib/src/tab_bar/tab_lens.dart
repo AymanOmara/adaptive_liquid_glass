@@ -38,7 +38,7 @@ const tabLensLight = GlassVariantConstants(
   // the bar's end).
   lensVertical: 0.5,
   // Kept's rim: teal-cyan (hue ~180), about 0.2 saturated.
-  rimTint: 0.2,
+  rimTint: -0.2,
   rimHue: 180,
   rimMix: 0.85,
   rimMixWidth: 1.4,
@@ -47,11 +47,12 @@ const tabLensLight = GlassVariantConstants(
   rimWidth: 1.2,
   rimIntensity: 0,
   fillColor: GlassColors.white,
-  fillOpacity: 0.07,
+  fillOpacity: 0,
   saturation: 1,
-  dim: 0,
-  shadowRadius: 0,
-  shadowOpacity: 0,
+  dim: 0.02,
+  shadowRadius: 10,
+  shadowOpacity: 0.1,
+  shadowOffsetY: 6,
   tintStrength: 0.35,
 );
 
@@ -80,20 +81,23 @@ const tabLensDark = GlassVariantConstants(
   // ends bend half as much (Kept: clear mid-bar, a rainbow crescent past
   // the bar's end).
   lensVertical: 0.5,
-  // Kept's rim: teal-cyan (hue ~180), about 0.2 saturated.
-  rimTint: 0.2,
+  // SwiftUI's `TabView` (iOS 26.4) over black: a thin grey rim, about 83
+  // grey levels at its peak (the teal 0.85 mix read 155), neutral on top,
+  // cooler on its left (95, 111, 113) and warmer on its right (80, 71, 60).
+  rimTint: -0.2,
   rimHue: 180,
-  rimMix: 0.85,
+  rimMix: 0.46,
   rimMixWidth: 1.4,
   rimMixCut: 3,
   rimMixLumaFloor: 1,
   rimWidth: 1.2,
   rimIntensity: 0,
   fillColor: GlassColors.white,
-  // Kept over black: the lit bar (about 48 by the lens) reads 53 under the
-  // lens and black stays near black (a gain, not a wash); the tinted tabs
-  // above keep their colour (TabLensContent).
-  toneKnots: [0.031, 0.135, 0.255, 0.38, 0.5, 0.625, 0.75, 0.875, 1.0],
+  // SwiftUI's `TabView` (iOS 26.4) over black, every frame
+  // (tabbar_fill.py): black stays near black (3), the bar at rest (19)
+  // reads 20 under the lens and the lit bar (~48) 50-52; a gain, not a
+  // wash. The tinted tabs above keep their colour (TabLensContent).
+  toneKnots: [0.012, 0.122, 0.278, 0.38, 0.5, 0.625, 0.75, 0.875, 1.0],
   fillOpacity: 0,
   saturation: 1,
   dim: 0,
@@ -117,7 +121,7 @@ const tabLensContentBand = 20.0;
 const tabLensContentDecay = 6.0;
 
 /// See [tabLensContentBand].
-const tabLensContentStrength = -0.8;
+const tabLensContentStrength = -0.4;
 
 /// Blur radius of the tinted tabs at the lens's rim (logical px), easing
 /// to none inside: iOS's bent tabs are soft.
@@ -201,13 +205,32 @@ const _tabBarDarkOverrides = <String, Object?>{
   'tintStrength': 1.0084,
 };
 
+/// The lit bar's tone (the lens's before its 2026-10-13 refit, which
+/// would have darkened the bar around a held lens).
+const _barLitToneKnots = [
+  0.031,
+  0.135,
+  0.255,
+  0.38,
+  0.5,
+  0.625,
+  0.75,
+  0.875,
+  1.0,
+];
+
 /// The bar's dark glass while a lens is held is more see-through
 /// (GlassColors.tabBarPressedFill at this opacity).
 const _barPressedFillOpacity = 0.35;
 
 /// [child] with regular glass drawn as the tab bar. [light] blends the dark
 /// bar from rest (0) to its held look (1) and its dragged look (2).
-Widget withTabBarGlass(BuildContext context, Widget child, {double light = 0}) {
+Widget withTabBarGlass(
+  BuildContext context,
+  Widget child, {
+  double light = 0,
+  double sizeScale = 1,
+}) {
   final theme = LiquidGlassTheme.of(context);
   final c = theme.constants;
   final p = light.clamp(0.0, 1.0);
@@ -238,22 +261,34 @@ Widget withTabBarGlass(BuildContext context, Widget child, {double light = 0}) {
           ),
           'toneKnots': [
             for (var i = 0; i < 9; i++)
-              lerpDouble(rest.toneKnots[i], tabLensDark.toneKnots[i], p),
+              lerpDouble(rest.toneKnots[i], _barLitToneKnots[i], p),
           ],
         }, c.regularDark);
   return LiquidGlassTheme(
     data: theme.copyWith(
       constants: c.copyWith(
-        regular: GlassVariantConstants.fromJson(
-          _tabBarLightOverrides,
-          c.regular,
+        regular: _sized(
+          GlassVariantConstants.fromJson(_tabBarLightOverrides, c.regular),
+          sizeScale,
         ),
-        regularDark: dark,
+        regularDark: _sized(dark, sizeScale),
       ),
     ),
     child: child,
   );
 }
+
+/// [v] with its size references scaled by [k], so a shape [k] times the
+/// bar's size is drawn with the bar's own material (the minimized bar).
+GlassVariantConstants _sized(GlassVariantConstants v, double k) => k == 1
+    ? v
+    : GlassVariantConstants.fromJson({
+        'blurSizeRef': v.blurSizeRef * k,
+        'frostWideSizeRef': v.frostWideSizeRef * k,
+        'lensSizeRef': v.lensSizeRef * k,
+        'toneLiftSizeRef': v.toneLiftSizeRef * k,
+        'fillSizeRef': v.fillSizeRef * k,
+      }, v);
 
 String _hex(Color c) =>
     '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';

@@ -22,7 +22,7 @@ X0, X1, BIN = 150, 1080, 30
 
 
 def rows(run, gesture, take, dy, n=61):
-    out, onset = tm.track(f"{run}/{gesture}.{take}")
+    out, onset, _ = tm.track(f"{run}/{gesture}.{take}")
     frames = tm.load(f"{run}/{gesture}.{take}")
     res = []
     for k in range(n):

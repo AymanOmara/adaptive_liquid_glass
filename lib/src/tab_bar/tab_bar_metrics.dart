@@ -28,8 +28,10 @@ abstract final class TabBarMetrics {
   /// top-aligned with the count badges (measured, iOS 26.4).
   static const double emptyBadge = 18;
 
-  /// The held lens over the pill: 114.3 by 74 against 93.7 by 54.
-  static const double lensGrowX = 20.6;
+  /// The held lens over the pill: 112.3 by 76 against 93.7 by 54 (SwiftUI
+  /// `TabView`, iOS 26.4, outline at frame 30 of a press; 20.6 stood
+  /// 2.7 pt wider).
+  static const double lensGrowX = 17.9;
 
   /// See [lensGrowX]. 22.6 rather than Kept's 20: SwiftUI's `TabView`
   /// (iOS 26.4) holds its lens 6.0 pt over the grown bar, ours stood 4.7
@@ -74,6 +76,19 @@ abstract final class TabBarMetrics {
   /// See [magnifyX].
   static const double magnifyY = 1.19;
 
+  /// The tabs' magnification under the lens rising from a touch-down,
+  /// whatever the lens's size does: SwiftUI's `TabView` (iOS 26.4) holds
+  /// 1.22 through a press's settle and relift, while a quick tap's
+  /// travelling lens magnifies 1.02-1.09 early and 1.14 on arrival.
+  static final SpringDescription magnify = swiftUISpring(
+    response: 0.35,
+    dampingFraction: 1,
+  );
+
+  /// Where [magnify] heads after a quick tap's touch-up (a share of
+  /// [magnifyX]/[magnifyY]'s extra): iOS's tapped lens reaches about 1.14.
+  static const double tapMagnify = 0.65;
+
   /// Peak white of the light a held lens casts on the bar (see BarGlow).
   static const double glow = 0.095;
 
@@ -90,6 +105,18 @@ abstract final class TabBarMetrics {
     dampingFraction: 1,
   );
 
+  /// A drag keeps the held light this long, then softens it with
+  /// [dragLight]: SwiftUI's `TabView` (iOS 26.4, over black) holds the
+  /// lens's fill at 52 for ~20 frames of a drag, then eases it to 41 by
+  /// frame ~36 (tabbar_fill.py).
+  static const Duration dragLightDelay = Duration(milliseconds: 300);
+
+  /// See [dragLightDelay].
+  static final SpringDescription dragLight = swiftUISpring(
+    response: 0.3,
+    dampingFraction: 1,
+  );
+
   /// See [light].
   static final SpringDescription lightOff = swiftUISpring(
     response: 0.45,
@@ -101,6 +128,26 @@ abstract final class TabBarMetrics {
   /// black at about 40 grey levels; iOS's tab lens, once the finger lifts,
   /// shows the bar and page through it.
   static const double nativeLensShade = 0.5;
+
+  /// Shade on the native lens (dark) while dragged: SwiftUI's `TabView`
+  /// (iOS 26.4) dims its dragged lens with the bar's softer light; at
+  /// matched lens positions ours read +6.5 grey levels without it (+0.8
+  /// with). A held lens keeps none (it read 3 levels darker with it).
+  static const double nativeLensDragShade = 0.2;
+
+  /// Black tint on the native lens in light mode: UIKit's clear glass over
+  /// the white bar reads 255, SwiftUI's `TabView` lens 247 (iOS 26.4).
+  static const double nativeLensLightShade = 0.035;
+
+  /// The shadow under the native lens in light mode (UIKit's clear glass
+  /// casts none; SwiftUI's `TabView` lens reads ~221 just below it).
+  static const double nativeLensShadowOpacity = 0.1;
+
+  /// See [nativeLensShadowOpacity].
+  static const Offset nativeLensShadowOffset = Offset(0, 6);
+
+  /// See [nativeLensShadowOpacity].
+  static const double nativeLensShadowSigma = 5;
 
   /// The band at the lens's edge where content is refracted, not sharp.
   static const double lensRim = 9;
@@ -120,6 +167,44 @@ abstract final class TabBarMetrics {
   /// SwiftUI's tab symbols (gear 24 pt, house 27 pt wide; measured from
   /// SwiftUI `TabView`, iOS 26.4).
   static const double iconSize = 28;
+
+  /// [GlassTabBarItem.symbol]'s SF Symbol configuration, as SwiftUI's
+  /// `TabView` draws its tab symbols (iOS 26.4, fitted to its ink).
+  static const double symbolPointSize = 18;
+
+  /// See [symbolPointSize].
+  static const String symbolWeight = 'medium';
+
+  /// See [symbolPointSize].
+  static const String symbolScale = 'large';
+
+  /// How far above the icon box's centre a symbol's alignment centre sits
+  /// (SwiftUI `TabView`, iOS 26.4: 2 px @3x above ours at 0).
+  static const double symbolRise = 2 / 3;
+
+  /// GlassTabBarMinimizeBehavior.onScrollDown: scrolled this far down
+  /// since the bar was expanded, it minimizes (SwiftUI `TabView`, iOS
+  /// 26.4: 70 pt kept it, 80 pt minimized).
+  static const double minimizeDistance = 75;
+
+  /// Within this of the top the minimized bar expands again (iOS 26.4: 22
+  /// pt kept it minimized, ~10 pt expanded).
+  static const double minimizeExpandOffset = 15;
+
+  /// The minimized bar: a circle this wide (iOS 26.4: 48 pt), centred
+  /// on the bar's middle row ...
+  static const double minimizedSize = 48;
+
+  /// ... and this far from the screen's leading edge (its centre; iOS
+  /// 26.4: 51.8 pt).
+  static const double minimizedCentre = 52;
+
+  /// The bar shrinking to its selected tab and back (iOS 26.4: the
+  /// selected icon settles ~0.3 s after it starts).
+  static final SpringDescription minimize = swiftUISpring(
+    response: 0.4,
+    dampingFraction: 1,
+  );
 
   /// The height a tab's icon takes in the tab's column, less than
   /// [iconSize]: icon centre 60.8 pt and label ink top 78.7 pt below the
@@ -173,7 +258,16 @@ abstract final class TabBarMetrics {
   /// lets it settle into the pill and lifts it again (SwiftUI `TabView`:
   /// gone 2–4 frames after arriving, growing again 6 frames later, full
   /// 12 frames after that with [press]).
-  static const Duration relift = Duration(milliseconds: 100);
+  static const Duration relift = Duration(milliseconds: 60);
+
+  /// The held lens settling on arrival (before [relift]): without the
+  /// release spring's undershoot, so it shrinks to its resting size but no
+  /// smaller (SwiftUI `TabView`, iOS 26.4: 65 pt tall at the dip, held
+  /// 76).
+  static final SpringDescription arrive = swiftUISpring(
+    response: 0.2,
+    dampingFraction: 1,
+  );
 
   /// Pill to lens.
   static final SpringDescription press = swiftUISpring(
@@ -187,9 +281,11 @@ abstract final class TabBarMetrics {
     dampingFraction: 0.55,
   );
 
-  /// The lens following the finger.
+  /// The lens following the finger. SwiftUI's `TabView` (iOS 26.4, a
+  /// 0.8 s drag Home to Settings) keeps its lens within ~3 pt of ours at
+  /// 0.25 over frames 20-50; 0.35 trailed it by ~12 pt.
   static final SpringDescription follow = swiftUISpring(
-    response: 0.35,
+    response: 0.25,
     dampingFraction: 1.0,
   );
 
@@ -237,11 +333,16 @@ abstract final class TabBarMetrics {
 
   /// After a quick tap the lens stays up this long from touch-down, then
   /// shrinks into the pill wherever it is: SwiftUI's `TabView` (iOS 26.4,
-  /// Home to Settings) drops it ~130 ms in, before it arrives, so it never
+  /// Home to Settings) drops it ~165 ms in, before it arrives, so it never
   /// reaches the held lens's full width or height (tabbar_motion.py, tap:
   /// 7.0 pt above the bar at most). A longer press releases at once;
   /// Reduce Motion skips it.
-  static const Duration tapHold = Duration(milliseconds: 130);
+  static const Duration tapHold = Duration(milliseconds: 165);
+
+  /// A quick tap's travelling lens heads for this share of the held
+  /// lens's size from touch-up until it settles (SwiftUI's `TabView`, iOS
+  /// 26.4: 7.0 pt over the bar at most).
+  static const double tapLift = 0.93;
 
   /// After a quick tap on another tab the new pill fades in over this,
   /// from the lens starting to settle: SwiftUI's `TabView` (iOS 26.4)

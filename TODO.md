@@ -66,42 +66,36 @@ and CHANGELOG.md.
   components.
 
 7- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
-  Bar-region mean |diff| native/shader: white 1.24/1.35, photo 1.93/5.14,
-  dark 1.23/1.60, dark photo 2.27/3.95, badge 1.65/1.77, searchtab
-  1.47/1.56, accessory 2.04/2.44
-  Done 2026-10-09: lens size (press, tap, drag, idle pill within ~1 pt);
-  tapped lens travel, lift (7.0 pt peak) and late pill fade-in; labels
-  beside the search tab (searchLabelShift).
-  Open (small), measured 2026-10-09 against SwiftUI TabView (tabbardark):
-  - tap brightness (2026-10-12, tabbar_motion.py's brightness line):
-    native 0-10 mean |diff| 4.9 -> 4.0 (10-60 2.0), the native lens's
-    grey veil shaded off with the bar's light (nativeLensShade); shader
-    4.1-5.7 (10-60 2.1-2.5), its lens as bright as iOS's (+1 level at
-    matched positions) but the tinted glyphs under it bent and placed
-    differently (Music's icon, Settings' glyph)
-  - tap timing: our lens shows ~1 frame before iOS's (frame 1-2 vs 3-4);
-    delaying ours a frame would gain only ~0.15 |diff|, below the
-    debug-build stall noise, so left
-  - tapped lens at its end narrows faster than iOS's (35 vs 51 pt wide on
-    its last visible frame)
-  - selected pill over black: 54 grey levels against iOS's 50-51
-  - press brightness: frames 0-10 mean |diff| ~4.5
-  - drag brightness: mean |diff| ~3-4 (mid-drag within +-4)
-  - icons beside the search tab ~0.4 pt right of iOS's on Music/Settings
-    (Home matches); plain-bar labels +0.4 px, Home +1.1-1.3 px
-  - glyph shapes: CupertinoIcons stand-ins vs SF Symbols (house, gear)
-  Hard:
-  - retune the shader-mode glass over photos (5.14 light, 3.95 dark): the
-    biggest visible gap left
-  - selected blue shifting with the colours behind it, as native's does
+  Still scenes, whole-crop mean |diff| native/shader (2026-10-13, with
+  GlassTabBarItem.symbol): white 0.33/0.45, dark 0.34/0.71, photo
+  1.30/4.54, dark photo 1.60/3.28, searchtab 0.71/0.81, accessory
+  1.66/1.43 (were 1.24/1.35, 1.23/1.60, 1.93/5.14, 2.27/3.95, 1.47/1.56,
+  2.04/2.44). Done 2026-10-13: SF Symbols at run time (icon region 4.8 ->
+  0.8), light lens (grey glass + shadow, shader and native), held lens
+  size, arrival dip, drag follow, selected pill (53 vs iOS 53).
+  Open:
+  - vibrancy over photos (shader 4.5 light / 3.3 dark is mostly this):
+    iOS tints each glyph pixel with the colour behind it (gear +24 red
+    over the red patch, selected blue G -44). Per-tab average tint does
+    not fit (fitted k -1.45..+0.78); a luminosity blend cannot see the
+    glass layer. Needs a backdrop-sampling glyph shader (shader mode only;
+    native glass is invisible to Flutter)
+  - lens fringe: iOS's bands at the lens top/bottom carry a rainbow fringe
+    warm on one end, cool on the other; our dispersion is symmetric
+    (stronger dispersion / lensVertical / normal radius tried, held-lens
+    SSIM 0.810 -> 0.80-0.81, reverted)
+  - motion blur of moving tabs (needs a velocity blur in
+    tab_lens_content.frag)
+  - native mode's lens is UIKit glass: it cannot bend the bar's edges or
+    darken only its overhang (the shader cannot see native glass)
+  - motion is measured in debug builds (profile is not available on the
+    simulator): onset timing within +-2 frames of iOS, below take noise
   Features (see also 9):
-  - tabBarMinimizeBehavior: the bar shrinking to its selected tab on scroll
-  - sidebarAdaptable: the tab bar becoming a sidebar on wide screens
 
 8- match the flutter shader with the native navigation bar
 
 9- more SwiftUI components (docs/superpowers/notes/component-gap.md):
-  keyboard toolbar, tabBarMinimizeBehavior, sidebarAdaptable, zoom
+  keyboard toolbar, zoom
   transitions, TipKit tips; then re-check the gap list for anything new.
   Candidate from app use (2026-10-10): a sliver pinned under the nav bar
   (the app's PinnedBelowBarSliver). Kept app-side for now: sticky bottom

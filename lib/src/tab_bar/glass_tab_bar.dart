@@ -36,12 +36,14 @@ import 'capsule_clipper.dart';
 import 'glass_material_tab_bar_style.dart';
 import 'glass_search_tab_button.dart';
 import 'glass_tab_bar_item.dart';
+import 'glass_tab_bar_minimize_behavior.dart';
+import 'glass_tab_bar_style.dart';
 import 'hole_clipper.dart';
-import 'lens_ends_clipper.dart';
 import 'rim_fade.dart';
 import 'tab_bar_edge_to_edge.dart';
 import 'tab_bar_fill_scope.dart';
 import 'tab_bar_metrics.dart';
+import 'tab_bar_minimize_scope.dart';
 import 'tab_lens.dart';
 import 'tab_lens_content.dart';
 import 'tab_lens_program.dart';
@@ -93,6 +95,8 @@ class GlassTabBar extends StatefulWidget {
     this.onSearch,
     this.searchLabel,
     this.materialStyle = GlassMaterialTabBarStyle.floating,
+    this.minimizeBehavior = GlassTabBarMinimizeBehavior.automatic,
+    this.style = GlassTabBarStyle.automatic,
   }) : assert(items.length >= 2, 'A tab bar needs at least two tabs.');
 
   /// The tabs, in reading order.
@@ -148,6 +152,16 @@ class GlassTabBar extends StatefulWidget {
   /// the glass paths.
   final GlassMaterialTabBarStyle materialStyle;
 
+  /// Whether the bar shrinks to its selected tab as the page scrolls, as
+  /// SwiftUI's `tabBarMinimizeBehavior`. Needs a [GlassScaffold] (it
+  /// follows the scaffold's body); glass paths only.
+  final GlassTabBarMinimizeBehavior minimizeBehavior;
+
+  /// The bar's form on a wide screen; [GlassTabBarStyle.sidebarAdaptable]
+  /// moves it to the top with a sidebar on an iPad, inside a
+  /// [GlassScaffold] (SwiftUI `tabViewStyle(.sidebarAdaptable)`).
+  final GlassTabBarStyle style;
+
   @override
   State<GlassTabBar> createState() => _GlassTabBarState();
 }
@@ -162,6 +176,14 @@ class _GlassTabBarState extends State<GlassTabBar>
 
   /// 0 at rest (the pill), 1 while held (the lens); springs past both.
   late final AnimationController _press = AnimationController.unbounded(
+    vsync: this,
+  );
+
+  /// How magnified the tabs under the lens are: 0 none, 1
+  /// TabBarMetrics.magnifyX/Y. Springs up from each touch-down on its own
+  /// (see TabBarMetrics.magnify), not with the lens's size, and stays up
+  /// until the lens is gone.
+  late final AnimationController _magnify = AnimationController.unbounded(
     vsync: this,
   );
 
@@ -181,6 +203,35 @@ class _GlassTabBarState extends State<GlassTabBar>
   late final AnimationController _grow = AnimationController.unbounded(
     vsync: this,
   );
+
+  /// 0 full, 1 shrunk to the selected tab (GlassTabBar.minimizeBehavior).
+  late final AnimationController _min = AnimationController.unbounded(
+    vsync: this,
+  );
+  TabBarMinimizeController? _minimizer;
+
+  /// The bar's leading edge on screen, for the minimized circle's place.
+  double _barLeft = 0;
+
+  void _onMinimize() {
+    final target =
+        widget.minimizeBehavior == GlassTabBarMinimizeBehavior.onScrollDown &&
+            (_minimizer?.minimized ?? false)
+        ? 1.0
+        : 0.0;
+    if (_reduceMotion) {
+      _min.value = target;
+      return;
+    }
+    _min.animateWith(
+      SpringSimulation(
+        TabBarMetrics.minimize,
+        _min.value,
+        target,
+        _min.velocity,
+      ),
+    );
+  }
 
   void _springGrow(double target) {
     if (_reduceMotion) {
@@ -466,6 +517,12 @@ class _GlassTabBarState extends State<GlassTabBar>
     // re-places the pill too.
     if (!_placed || !_held) _x.value = _slot(widget.selectedIndex).toDouble();
     _placed = true;
+    final m = TabBarMinimizeScope.maybeOf(context);
+    if (m != _minimizer) {
+      _minimizer?.removeListener(_onMinimize);
+      _minimizer = m?..addListener(_onMinimize);
+      _onMinimize();
+    }
   }
 
   @override
@@ -487,10 +544,14 @@ class _GlassTabBarState extends State<GlassTabBar>
   @override
   void dispose() {
     _holdTimer?.cancel();
+    _dragLightTimer?.cancel();
     _reliftTimer?.cancel();
     _followTicker.dispose();
     _grow.dispose();
+    _minimizer?.removeListener(_onMinimize);
+    _min.dispose();
     _light.dispose();
+    _magnify.dispose();
     _wobbleTicker.dispose();
     _wobble.dispose();
     _x.dispose();
@@ -514,6 +575,21 @@ class _GlassTabBarState extends State<GlassTabBar>
       if (mounted && !_held) settle?.call();
     });
     _dragging = false;
+    _dragLightTimer?.cancel();
+    // A lens already up keeps its magnification; a new one starts flat.
+    if (!_lensUp && _press.value <= 0.05) _magnify.value = 0;
+    if (_reduceMotion) {
+      _magnify.value = 1;
+    } else {
+      _magnify.animateWith(
+        SpringSimulation(
+          TabBarMetrics.magnify,
+          _magnify.value,
+          1,
+          _magnify.velocity,
+        ),
+      );
+    }
     _springLight(TabBarMetrics.light, 1);
     _springGrow(1);
     // The lens grows at the current selection and travels to the finger,
@@ -542,16 +618,39 @@ class _GlassTabBarState extends State<GlassTabBar>
     }
     if (!_dragging) {
       _dragging = true;
-      _springLight(TabBarMetrics.light, 2);
+      // iOS keeps the held light for a moment, then softens it.
+      _dragLightTimer?.cancel();
+      _dragLightTimer = Timer(TabBarMetrics.dragLightDelay, () {
+        _dragLightTimer = null;
+        if (mounted && _held && _dragging) {
+          _springLight(TabBarMetrics.dragLight, 2);
+        }
+      });
     }
   }
 
+  /// Softens the light TabBarMetrics.dragLightDelay into a drag.
+  Timer? _dragLightTimer;
+
   void _release(double velocity) {
+    _dragLightTimer?.cancel();
+    _dragLightTimer = null;
     _held = false;
     _cancelRelift();
     // The bar stays as grown as it is until the lens settles.
     _grow.stop();
     _springLight(TabBarMetrics.lightOff, 0);
+    // A quick tap's lens magnifies less (iOS: 1.14 on arrival, not 1.22).
+    if (_holdTimer != null && !_reduceMotion) {
+      _magnify.animateWith(
+        SpringSimulation(
+          TabBarMetrics.magnify,
+          _magnify.value,
+          TabBarMetrics.tapMagnify,
+          _magnify.velocity,
+        ),
+      );
+    }
     var slot = _nearestSlot;
     var index = _rtl ? _count - 1 - slot : slot;
     // A spacer takes no selection: the lens goes back to the selected tab.
@@ -570,6 +669,10 @@ class _GlassTabBarState extends State<GlassTabBar>
       _arrival = slot.toDouble();
       _x.addListener(_settleOnArrival);
     } else if (_holdTimer != null) {
+      // A quick tap's travelling lens lifts less than a held one.
+      if (travelling && !_reduceMotion) {
+        _springPress(TabBarMetrics.pop, TabBarMetrics.tapLift);
+      }
       _shrink(() {
         _settle(TabBarMetrics.tapSettle);
         if (travelling && !_reduceMotion) _pillIn.forward(from: 0);
@@ -625,7 +728,7 @@ class _GlassTabBarState extends State<GlassTabBar>
     _reliftAt = null;
     _x.removeListener(_reliftOnArrival);
     if (!_held) return;
-    _springPress(TabBarMetrics.release, 0);
+    _springPress(TabBarMetrics.arrive, 0);
     _reliftTimer = Timer(TabBarMetrics.relift, () {
       _reliftTimer = null;
       if (mounted && _held) _springPress(TabBarMetrics.press, 1);
@@ -865,7 +968,7 @@ class _GlassTabBarState extends State<GlassTabBar>
       widget.indicatorColor ?? GlassColors.tabBarPill,
       context,
     );
-    return Semantics(
+    final full = Semantics(
       container: true,
       explicitChildNodes: true,
       child: GestureDetector(
@@ -882,9 +985,132 @@ class _GlassTabBarState extends State<GlassTabBar>
             _grow,
             _wobble,
             _light,
+            _magnify,
             _pillIn,
           ]),
           builder: (context, _) => _bar(_press.value, selected, indicator),
+        ),
+      ),
+    );
+    return AnimatedBuilder(
+      animation: _min,
+      builder: (context, _) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final box = context.findRenderObject();
+          if (mounted && box is RenderBox && box.attached) {
+            _barLeft = box.localToGlobal(Offset.zero).dx;
+          }
+        });
+        final m = _min.value;
+        return m <= 0.001 ? full : _minimized(m, selected);
+      },
+    );
+  }
+
+  /// The bar shrinking into a circle that holds the selected tab's icon
+  /// (GlassTabBarMinimizeBehavior.onScrollDown): its glass draws in from
+  /// the bar's bounds, the other tabs and the labels fade, and the
+  /// selected icon moves into the circle. A tap on the circle expands it.
+  Widget _minimized(double m, Color selected) {
+    final width = _rowWidth + TabBarMetrics.inset * 2;
+    final height = widget.height;
+    final screen = MediaQuery.sizeOf(context).width;
+    // At iOS's place on the screen, kept within the bar (on a wide screen
+    // the bar's leading end), where it can take a tap.
+    const r = TabBarMetrics.minimizedSize / 2;
+    final cx =
+        (_rtl
+                ? screen - TabBarMetrics.minimizedCentre - _barLeft
+                : TabBarMetrics.minimizedCentre - _barLeft)
+            .clamp(r, width - r);
+    final circle = Rect.fromCenter(
+      center: Offset(cx, height / 2),
+      width: TabBarMetrics.minimizedSize,
+      height: TabBarMetrics.minimizedSize,
+    );
+    final glass = Rect.lerp(Offset.zero & Size(width, height), circle, m)!;
+    final sel = widget.selectedIndex;
+    final labelHeight =
+        (TabBarMetrics.label.fontSize ?? 10) *
+        (TabBarMetrics.label.height ?? 1.2);
+    final column =
+        TabBarMetrics.iconSlot + TabBarMetrics.labelGap + labelHeight;
+    final iconStart = Offset(
+      TabBarMetrics.inset + _toPixels(_slot(sel).toDouble()),
+      TabBarMetrics.inset +
+          (_contentHeight - column) / 2 +
+          TabBarMetrics.iconDrop +
+          TabBarMetrics.iconSize / 2,
+    );
+    final fade = (1 - m * 2).clamp(0.0, 1.0);
+    return Semantics(
+      button: true,
+      label: widget.items[sel].label,
+      onTap: () => _minimizer?.expand(),
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fromRect(
+              rect: glass,
+              child: CustomPaint(
+                painter: _shaderBar ? const BarShadow() : null,
+                child: withTabBarGlass(
+                  context,
+                  // The circle keeps the bar's material, not a smaller
+                  // shape's (iOS 26.4: the same frosted white).
+                  sizeScale: glass.shortestSide / height,
+                  GlassGroup(
+                    mode: _barMode,
+                    child: LiquidGlass(
+                      glass: widget.glass,
+                      mode: _barMode,
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (fade > 0)
+              Positioned(
+                left: TabBarMetrics.inset,
+                top: TabBarMetrics.inset,
+                width: _rowWidth,
+                height: _contentHeight,
+                child: IgnorePointer(
+                  child: Opacity(
+                    opacity: fade,
+                    child: _row(
+                      (i) => i == sel ? selected : null,
+                      semantics: false,
+                    ),
+                  ),
+                ),
+              ),
+            Positioned.fromRect(
+              rect: Rect.fromCenter(
+                center: Offset.lerp(iconStart, circle.center, m)!,
+                width: TabBarMetrics.iconSize,
+                height: TabBarMetrics.iconSize,
+              ),
+              child: IgnorePointer(
+                child: Opacity(
+                  opacity: (1 - fade).clamp(0.0, 1.0),
+                  child: _icon(widget.items[sel], true, selected),
+                ),
+              ),
+            ),
+            Positioned.fromRect(
+              rect: circle,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                excludeFromSemantics: true,
+                onTap: () => _minimizer?.expand(),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -922,6 +1148,10 @@ class _GlassTabBarState extends State<GlassTabBar>
     final lean = TabBarMetrics.growLean * (x - _rowWidth / 2) * g;
     final growX = TabBarMetrics.growX * g;
     final growY = TabBarMetrics.growY * g;
+    _rowGrow = Offset(
+      1 + 2 * growX / (_rowWidth + 2 * TabBarMetrics.inset),
+      1 + 2 * growY / (_contentHeight + 2 * TabBarMetrics.inset),
+    );
     // The bar's glass reaches past the row by the inset plus its growth.
     final glowInsetX = TabBarMetrics.inset + growX;
     final glowInsetY = TabBarMetrics.inset + growY;
@@ -941,9 +1171,10 @@ class _GlassTabBarState extends State<GlassTabBar>
         semantics: true,
       ),
     );
+    final m = _magnify.value.clamp(0.0, 1.0);
     final magnify = Offset(
-      lerpDouble(1, TabBarMetrics.magnifyX, t)!,
-      lerpDouble(1, TabBarMetrics.magnifyY, t)!,
+      lerpDouble(1, TabBarMetrics.magnifyX, m)!,
+      lerpDouble(1, TabBarMetrics.magnifyY, m)!,
     );
     return SizedBox(
       width: _rowWidth + TabBarMetrics.inset * 2,
@@ -973,7 +1204,7 @@ class _GlassTabBarState extends State<GlassTabBar>
                         child: Stack(
                           clipBehavior: Clip.none,
                           children: [
-                            if (_shaderLens && glow > 0)
+                            if (glow > 0)
                               Positioned(
                                 left: -glowInsetX,
                                 top: -glowInsetY,
@@ -983,13 +1214,26 @@ class _GlassTabBarState extends State<GlassTabBar>
                                   borderRadius: BorderRadius.circular(
                                     _contentHeight / 2 + glowInsetY,
                                   ),
-                                  child: CustomPaint(
-                                    painter: BarGlow(
-                                      centre: Offset(
-                                        x + glowInsetX,
-                                        _contentHeight / 2 + glowInsetY,
+                                  // Native glass is a flat veil that takes
+                                  // up what lies under it: the glow stops at
+                                  // the lens, or the lens reads far too
+                                  // bright.
+                                  child: ClipPath(
+                                    clipper: HoleClipper(
+                                      _shaderLens || !lensShown
+                                          ? null
+                                          : lens.shift(
+                                              Offset(glowInsetX, glowInsetY),
+                                            ),
+                                    ),
+                                    child: CustomPaint(
+                                      painter: BarGlow(
+                                        centre: Offset(
+                                          x + glowInsetX,
+                                          _contentHeight / 2 + glowInsetY,
+                                        ),
+                                        opacity: TabBarMetrics.glow * glow,
                                       ),
-                                      opacity: TabBarMetrics.glow * glow,
                                     ),
                                   ),
                                 ),
@@ -1021,15 +1265,14 @@ class _GlassTabBarState extends State<GlassTabBar>
                             // Under a held lens the row has a hole filled by a
                             // magnified, tinted copy. Without the content
                             // shader both lie beneath the lens, so its glass
-                            // refracts them (bending them at its rim).
+                            // refracts them (bending them at its rim). Native
+                            // glass smeared that copy into a blue halo, so a
+                            // native lens shows only the sharp copy above it.
                             if (!lensContent) baseRow,
-                            if (lensShown && !lensContent)
+                            if (lensShown && !lensContent && _shaderLens)
                               ClipPath(
-                                // The shader lens bends the whole copy; native
-                                // glass only gets the ends (see LensEndsClipper).
-                                clipper: _shaderLens
-                                    ? CapsuleClipper(lens)
-                                    : LensEndsClipper(lens),
+                                // The shader lens bends the whole copy.
+                                clipper: CapsuleClipper(lens),
                                 child: _row(
                                   (_) => selected,
                                   semantics: false,
@@ -1045,6 +1288,24 @@ class _GlassTabBarState extends State<GlassTabBar>
               ),
             ),
           ),
+          // UIKit's clear glass casts no shadow; iOS's light tab lens does.
+          if (lensShown &&
+              !_shaderLens &&
+              GlassGroupScope.brightnessOf(context) != Brightness.dark)
+            Positioned.fromRect(
+              rect: lens.shift(
+                const Offset(TabBarMetrics.inset, TabBarMetrics.inset),
+              ),
+              child: const IgnorePointer(
+                child: CustomPaint(
+                  painter: BarShadow(
+                    opacity: TabBarMetrics.nativeLensShadowOpacity,
+                    offset: TabBarMetrics.nativeLensShadowOffset,
+                    sigma: TabBarMetrics.nativeLensShadowSigma,
+                  ),
+                ),
+              ),
+            ),
           if (lensShown)
             Positioned.fromRect(
               rect: lens.shift(
@@ -1053,7 +1314,9 @@ class _GlassTabBarState extends State<GlassTabBar>
               child: _shaderLens
                   ? withTabLens(
                       context,
-                      bend: t,
+                      // iOS keeps a held lens fully glass while it settles
+                      // on arrival and lifts again.
+                      bend: _held ? 1 : t,
                       const GlassGroup(
                         mode: GlassRenderMode.shader,
                         child: LiquidGlass(
@@ -1153,13 +1416,19 @@ class _GlassTabBarState extends State<GlassTabBar>
   }
 
   /// The native lens's glass: clear, shaded in dark mode as the bar's
-  /// [light] fades (see TabBarMetrics.nativeLensShade).
+  /// [light] fades and while dragged (see TabBarMetrics.nativeLensShade,
+  /// TabBarMetrics.nativeLensDragShade).
   Glass _nativeLensGlass(double light) {
-    final shade = TabBarMetrics.nativeLensShade * (1 - light.clamp(0.0, 1.0));
-    if (shade < 0.01 ||
-        GlassGroupScope.brightnessOf(context) != Brightness.dark) {
-      return Glass.clear;
+    final shade = math.max(
+      TabBarMetrics.nativeLensShade * (1 - light.clamp(0.0, 1.0)),
+      TabBarMetrics.nativeLensDragShade * (light - 1).clamp(0.0, 1.0),
+    );
+    if (GlassGroupScope.brightnessOf(context) != Brightness.dark) {
+      return Glass.clear.tint(
+        GlassColors.black.withValues(alpha: TabBarMetrics.nativeLensLightShade),
+      );
     }
+    if (shade < 0.01) return Glass.clear;
     return Glass.clear.tint(GlassColors.black.withValues(alpha: shade));
   }
 
@@ -1247,8 +1516,16 @@ class _GlassTabBarState extends State<GlassTabBar>
             ),
       ],
     );
-    return semantics ? row : ExcludeSemantics(child: row);
+    // The tabs grow with the bar (SwiftUI's `TabView`, iOS 26.4: held,
+    // Home and Settings move out 4.4 pt as the bar grows 7 pt a side).
+    final grown = _rowGrow == const Offset(1, 1)
+        ? row
+        : Transform.scale(scaleX: _rowGrow.dx, scaleY: _rowGrow.dy, child: row);
+    return semantics ? grown : ExcludeSemantics(child: grown);
   }
+
+  /// The tabs' scale with the bar's growth, set by [_bar].
+  Offset _rowGrow = const Offset(1, 1);
 
   /// Unselected tabs: iOS's tab bar label, dark over light content and
   /// light over dark (GlassForeground's sampled brightness).

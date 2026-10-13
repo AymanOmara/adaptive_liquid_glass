@@ -8,6 +8,67 @@
   and iOS's grey disabled state, and dim while pressed. On Android they
   map to `FilledButton.tonal`, `FilledButton` and `TextButton`. Fills and
   press dimming are estimated, not measured.
+- New `GlassTabBar.style` (`GlassTabBarStyle.sidebarAdaptable`): on an
+  iPad the bar floats at the top as text tabs with a sidebar button and an
+  overlay sidebar, as iOS 26.4's `.sidebarAdaptable` (measured on iPad Pro
+  11-inch; top bar within ~3.5 mean levels, open sidebar ~0.5).
+- `GlassScaffold`: with the tab bar minimized, the bottom accessory moves
+  beside the circle, as iOS 26.4 does.
+- New `GlassTabBar.minimizeBehavior` (`GlassTabBarMinimizeBehavior`):
+  `.onScrollDown` shrinks the bar into a 48 pt circle holding the
+  selected tab after ~75 pt of scrolling down, and expands it within
+  ~15 pt of the top or on a tap, as iOS 26.4's `TabView` does (measured).
+  Default `.automatic` (never on iPhone) keeps today's bar.
+- `GlassScaffold`: a scrolling body fades into the page colour behind the
+  tab bar, iOS 26's scroll edge under a tab bar (text ink within ~10
+  levels of SwiftUI's).
+- New `GlassTabBarItem.symbol(name, fallback:, label:)` and `GlassSymbol`:
+  SF Symbols drawn by iOS at run time (never bundled), in the icon
+  colour, at `TabView`'s size (18 pt, medium, large scale) and position;
+  the fallback `IconData` elsewhere. Against SwiftUI's `TabView` (white
+  page, idle): icon region |diff| 4.8 -> 0.8, bar 1.2 -> 0.5.
+- `GlassTabBar`: a held lens is 2.7 pt narrower (iOS's outline, within
+  1 px), and on arriving at a held tab it settles to its resting size
+  and lifts again without vanishing (it went invisible for ~6 frames),
+  as iOS 26's does.
+- `GlassTabBar` (light, native): the lens is tinted to iOS's grey (247
+  over the white bar, was 255) and casts a soft shadow below it, as
+  SwiftUI's `TabView` lens does.
+- `GlassTabBar` (light, shader): the lens is light-grey glass with a soft
+  shadow below it and a neutral rim, as iOS 26's (was near-invisible with
+  a teal rim). New `GlassVariantConstants.shadowOffsetY` moves a shadow
+  down. Against SwiftUI's `TabView` (tabbar_light.py, 0-10 / 10-60): tap
+  5.9 / 1.4 -> 5.2 / 1.3, press 4.2 / 3.5 -> 5.2 / 2.4, drag 5.0 / 8.1 ->
+  5.0 / 5.4.
+- `GlassTabBar`: the dragged lens follows the finger faster (spring
+  response 0.25, was 0.35), keeping within ~3 pt of iOS 26's lens
+  instead of ~12 pt behind.
+- `GlassTabBar` (dark): the shader lens rim splits colour by side (cool
+  left, warm right) as iOS's does; the lens keeps black at 3 and the
+  resting bar at 20 under it; a drag keeps the held light ~300 ms before
+  softening it. Lens fill error per frame vs SwiftUI's `TabView`
+  (tabbar_fill.py, max): drag native 11 -> 4.5, shader 7.3 -> 5.8;
+  press shader overhang 8 -> 3.
+- `GlassTabBar`: the tabs grow with the bar around a held or dragged
+  lens, as iOS 26's do (Home and Settings move out about 4 pt). Against
+  SwiftUI's `TabView` (dark, frames 0-10 / 10-60): press shader 6.2 /
+  5.8 -> 5.1 / 4.4, native 7.6 / 6.3 -> 6.3 / 4.2; drag shader 5.6 / 7.6
+  -> 4.6 / 5.2, native 6.6 / 7.7 -> 6.3 / 6.3.
+- `GlassTabBar`, native mode: the bar now lights up around a held or
+  dragged lens as iOS's does (the glow shader mode already drew), and in
+  dark mode the dragged lens is dimmed a little. Against SwiftUI's
+  `TabView`: drag mean |diff| 7.0 / 9.1 -> 6.4 / 8.2 (frames 0-10 /
+  10-60), press 10-60 7.6 -> 6.3. The native lens no longer smears the
+  tinted tabs under it into a blue halo.
+- `GlassTabBar`: a quick tap's travelling lens looks closer to iOS 26's.
+  The tabs under it magnify on their own spring from touch-down
+  (`TabBarMetrics.magnify`), up to about 1.14 for a tap instead of 1.2
+  at once. The lens stays up a little longer (`tapHold` 130 -> 165 ms)
+  and lifts a little less (`tapLift`), so its height follows iOS's frame
+  by frame. In shader mode, dark, the lens rim is a thin neutral grey
+  (about 83 grey levels, as iOS's) instead of a bright teal ring, and the
+  tinted tabs bend less at the lens's ends. Shader tap frames 0-10 mean
+  |diff| against SwiftUI's `TabView`: 5.2 -> 3.7.
 - `GlassTabBar`, native mode, dark: a quick tap's travelling lens no
   longer shows a grey veil. UIKit's clear glass lifted black to about 40
   grey levels under the lens; it is now shaded as the bar's light fades,

@@ -27,7 +27,7 @@ uniform vec4 uVar[32];     // per variant (regular A-L, then clear A-L, then
                            //   knots at inputs i/8 (Task g13); O.yz(smallSizeLo
                            //   px, smallSizeHi px); O.w post-lens Jacobian
                            //   clamp (fidelity group 4)
-                           //   P(ambient mix, ambient reach px, luma-keyed tone mix, 0) (item 8;
+                           //   P(ambient mix, ambient reach px, luma-keyed tone mix, shadow y offset px) (item 8;
                            //   P.z item 8 round 3)
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
@@ -214,7 +214,16 @@ void main() {
   // black at alpha `sh` over the untouched backdrop, and is also kept under
   // the anti-aliased edge (|d| < 0.75) so no bright ring appears there.
   float sr = max(C.x * 0.5, 1.0);
-  float dOut = max(d, 0.0);
+  // Moved down by P.w px: the shape's distance one offset up.
+  float dSh = d;
+  if (P.w != 0.0) {
+    dSh = 1e6;
+    for (int i = 0; i < 16; i++) {
+      if (i >= count) break;
+      dSh = smin(dSh, shapeOf(px - vec2(0.0, P.w), uRects[i], uInfo[i], 1.0, uGlobal2.w), uGlobal2.x);
+    }
+  }
+  float dOut = max(dSh, 0.0);
   float sh = C.y * exp(-(dOut * dOut) / (2.0 * sr * sr));
   vec4 shadow = vec4(0.0, 0.0, 0.0, sh) * (1.0 - inside);
   if (inside <= 0.0) {
@@ -438,7 +447,12 @@ void main() {
   // Rim tint (L.z strength, L.w hue in turns; iOS 26's tab lens has a
   // teal-cyan rim): the rim's white turns towards that hue.
   vec3 rimTarget = vec3(1.0);
-  if (L4.z > 0.0) {
+  if (L4.z < 0.0) {
+    // Negative: a colour split by side instead (iOS 26's tab lens, dark:
+    // cool where the rim faces left, warm where it faces right).
+    float sx = -L4.z * nrm.x;
+    rimTarget = vec3(1.0 + sx, 1.0, 1.0 - sx);
+  } else if (L4.z > 0.0) {
     vec3 rgb = clamp(abs(fract(L4.w + vec3(0.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0
         - 3.0) - 1.0, 0.0, 1.0);
     rimTarget = mix(vec3(1.0), rgb, L4.z);

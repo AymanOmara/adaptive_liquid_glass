@@ -5,8 +5,8 @@ import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/bar_shadow.dart';
+import 'package:adaptive_liquid_glass/src/tab_bar/capsule_clipper.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/glass_search_tab_button.dart';
-import 'package:adaptive_liquid_glass/src/tab_bar/lens_ends_clipper.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/search_glyph.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/tab_bar_fill_scope.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/tab_bar_metrics.dart';
@@ -71,7 +71,9 @@ Color? _labelColor(WidgetTester t, String label) =>
 
 /// The clear glass lens is shown only while the bar is held.
 Finder get _lens =>
-    find.byWidgetPredicate((w) => w is LiquidGlass && w.glass == Glass.clear);
+    find.byWidgetPredicate(
+      (w) => w is LiquidGlass && w.glass?.variant == GlassVariant.clear,
+    );
 
 void main() {
   setUp(() => GlassProgram.instance.debugReset(skipLoad: true));
@@ -748,11 +750,9 @@ void main() {
     expect(_lens, findsNothing);
   }, variant: ios);
 
-  testWidgets('only the lens ends refract tabs; its middle and rims do not', (
-    t,
-  ) async {
-    // Without shader support the lens is native glass: the ends-only
-    // refraction and the sharp overlay apply.
+  testWidgets('a native lens has no tinted copy under it', (t) async {
+    // Without shader support the lens is native glass, which smeared a
+    // copy beneath it into a blue halo: only the sharp copy above stays.
     GlassPlatform.instance.debugEnvironment = const GlassEnvironment(
       platform: TargetPlatform.iOS,
       iosMajorVersion: 26,
@@ -764,23 +764,14 @@ void main() {
     for (var i = 0; i < 20; i++) {
       await t.pump(const Duration(milliseconds: 16));
     }
-    // The tinted copy under the lens glass is clipped to the lens ends.
-    final clip = t
-        .widgetList<ClipPath>(find.byType(ClipPath))
-        .map((c) => c.clipper)
-        .whereType<LensEndsClipper>()
-        .single;
-    final lensBox = t.getRect(_lens);
-    final path = clip.getClip(const Size(400, 54));
-    final ends = path.getBounds();
-    expect(ends.width, greaterThan(lensBox.width * 0.9));
-    final middle = Offset(ends.center.dx, ends.center.dy);
-    expect(path.contains(middle), isFalse, reason: 'middle is not refracted');
     expect(
-      path.contains(Offset(ends.left + 6, ends.center.dy)),
-      isTrue,
-      reason: 'the leading end is',
+      t
+          .widgetList<ClipPath>(find.byType(ClipPath))
+          .map((c) => c.clipper)
+          .whereType<CapsuleClipper>(),
+      isEmpty,
     );
+    expect(_lens, findsOneWidget);
     await g.up();
     await t.pumpAndSettle();
   }, variant: ios);
@@ -829,7 +820,7 @@ void main() {
     t,
   ) async {
     shaderEnv();
-    expect(TabBarMetrics.tapHold, const Duration(milliseconds: 130));
+    expect(TabBarMetrics.tapHold, const Duration(milliseconds: 165));
     final picks = <int>[];
     await t.pumpWidget(plainHost(_Harness(picks)));
     // A tap on the selected tab: the lens has nowhere to travel, so
@@ -837,12 +828,12 @@ void main() {
     final g = await t.startGesture(t.getCenter(find.text('History')));
     await t.pump(const Duration(milliseconds: 16));
     await g.up();
-    // 128 ms after touch-down, still inside tapHold: the lens stays up.
-    for (var i = 0; i < 7; i++) {
+    // 160 ms after touch-down, still inside tapHold: the lens stays up.
+    for (var i = 0; i < 9; i++) {
       await t.pump(const Duration(milliseconds: 16));
     }
     expect(_lens, findsOneWidget);
-    // iOS has settled it into the pill by ~330 ms; so do we.
+    // iOS has settled it into the pill by ~370 ms; so do we.
     for (var i = 0; i < 13; i++) {
       await t.pump(const Duration(milliseconds: 16));
     }
@@ -884,12 +875,12 @@ void main() {
     final g = await t.startGesture(t.getCenter(find.text('Settings')));
     await t.pump(const Duration(milliseconds: 16));
     await g.up();
-    for (var i = 0; i < 8; i++) {
+    for (var i = 0; i < 9; i++) {
       await t.pump(const Duration(milliseconds: 16));
     }
     final up = t.getSize(_lens).height;
     // Past tapHold the lens shrinks, still on its way.
-    for (var i = 0; i < 4; i++) {
+    for (var i = 0; i < 6; i++) {
       await t.pump(const Duration(milliseconds: 16));
     }
     expect(t.getSize(_lens).height, lessThan(up - 2));

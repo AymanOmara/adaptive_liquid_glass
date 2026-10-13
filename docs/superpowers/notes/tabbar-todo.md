@@ -94,6 +94,58 @@ Tap brightness (2026-10-12, runs `tapb0*` before, `tapx1*` after; `tabbar_motion
 
 The shader lens (unchanged) is already within ~1 level of iOS's at matched positions; its tap 0-10 (4.1–5.7) is the tinted glyphs under the lens, bent and placed unlike iOS's. Timing: shifting ours a frame later lowers native tap 0-10 by ~0.15 only (3.95 → 3.79), below the take-to-take spread, so the springs stay. The static scenes are untouched (the lens is drawn only while up).
 
+Tapped lens look (2026-10-13; side-by-side sheets of a clean take, iOS | native | shader, before `sbs1b` and after `v2d2`). Before, in shader mode the tabs under the lens jumped to 1.18–1.20× at once (iOS: 1.02–1.09× while crossing Music, 1.14× on arrival, 1.22× held), the rim was a bright teal ring (155 grey levels, teal; iOS: about 83, neutral), the tinted Settings gear smeared into a blue crescent at the lens's end, and the lens stood up 1–2 frames early and settled 1–2 frames early. Changes: the magnification has its own spring from touch-down (`TabBarMetrics.magnify` 0.35 / 1.0, heading for `tapMagnify` 0.65 of the extra after a quick tap's touch-up) instead of following the lens's size; `tabLensDark` rim `rimMix` 0.85 → 0.46, `rimTint` 0.2 → 0 (peak now 83, neutral); `tabLensContentStrength` −0.8 → −0.4; `tapHold` 130 → 165 ms with the travelling lens heading for `tapLift` 0.93 from touch-up.
+
+Lens per frame, tap (centre x / overhang pt; iOS take `v2c2`/`sbs1b`, ours shader `v2d2`):
+
+| | 175–180 | 194–198 | 212–215 | 240–242 | 251–261 | 267–273 | 276–280 |
+|---|---|---|---|---|---|---|---|
+| iOS | 2.3–2.7 | 4.3 | 5.7–6.0 | 7.0 | 5.7–6.7 | 3.0–4.3 | 1.7–2.0 |
+| shader before | 6.0 | 7.0 | 7.0 | 6.3 | 5.3 | 2.3 | 1.0 (272) |
+| shader now | 2.3 | 4.0 | 5.3 | 6.7 | 6.7 | 4.7–5.7 | 1.7–3.0 |
+
+Mean |diff| medians (takes): shader tap 0-10 5.2 (8) → 3.7 (4), 10-60 2.3 → 2.1; native tap 0-10 4.05 (5) → 3.97 (4); shader press 6.3 / 7.3 (2) → 5.9 / 5.7 (3); shader drag 6.6 / 8.6 → 5.6 / 7.6; native drag 6.7 / 8.9 → 7.0 / 9.1 (within the spread). Native press 0-10 reads 8.1–10.4 against 7.4–8.6 before, but in those takes the native lens appears 5–9 frames after the onset (debug stalls: 3–7 repeated frames in frames 0–14); nothing in these changes reaches the native lens's timing. Nearly every take on this host (load ~14) has repeated frames, so medians, not single takes. Left: magnification while crossing Music (1.14 vs 1.02–1.09), iOS's horizontal motion blur on the tabs, iOS's slightly wider settling pill at frame 20, and the native lens's blue halo.
+
+Tap timing (2026-10-13): per take, the first frame the lens shows (30 pt wide or more) and the frame offset that maps our lens-centre track onto iOS's (iOS's frame at which it reaches each of our centres, minus ours; + = ours early). Before the tapped-lens fix (8 takes): shader first frame 0–1 vs iOS 2–5, offset median +3.5 (−1.0..+9.8); native 0–3, +0.9. After (`v2b*`, `v2d*`, 8 takes): shader 2–5 vs iOS 3–6, +1.1 (+0.4..+3.1); native 2–7, −1.3 (−0.3..−1.6). The same native code read +3.5 in one batch and −1.2 in another, so a frame is below what these debug-build, onset-aligned takes resolve; nothing is left to change here. The lens's x spring (`travel`) was never ahead: the old lead was the lens popping up early, fixed by the tap's lift and hold.
+
+Native lens over the black page (2026-10-13, dark, tap, `v2d*`): per frame the native lens reads the same grey above the bar as over it (29 → 21 as the light fades; iOS 17 → 3 above, 32 → 19 over), i.e. UIKit's clear glass is a flat veil that shows neither the bar nor the page through it. `nativeLensShade` 0.7 darkened both (above and over: 16 → 14) and tap 0-10 went 3.97 → 4.56 (median, 8 / 5 takes), so 0.5 stays. A fix would tint the lens darker and paint the bar's grey over its bar band from Flutter; the overhang is about 1.5 % of the crop, so it is worth ≤ 0.3 of the tap's mean |diff|.
+
+Light mode (2026-10-13, `SCENE=tabbar tool/fidelity/record_tabbar_motion.sh`, runs `lt*` (4 tap takes), `ltp*` (3 press/drag); geometry tracking assumes the black page, so brightness only):
+
+| Mean \|diff\| 0-10 / 10-60 | Native | Shader |
+|---|---|---|
+| Tap | 4.8–5.7 / 1.8 | 3.7–4.0 / 1.7–1.8 |
+| Press | 5.6–5.9 / 6.8–6.9 | 5.1–5.4 / 6.0–6.1 |
+| Drag | 5.3–5.7 / 8.0–8.2 | 4.7–5.0 / 6.9–7.1 |
+
+Seen side by side (`light_tap.png`): iOS's travelling lens over the white bar is a light-grey glass, a little darker than the bar, with a soft shadow below and a colour fringe at its ends; the shader lens is almost invisible (a faint cyan rim), the native one a white blob whose glass smears the blue copy into a halo. Today's dark-only changes (`nativeLensShade`, the dark rim) do not reach light mode; the shared ones (magnification spring, `tapHold`, `tapLift`) apply as in dark. `tabbar_light.py` updated for `track()`'s new return value.
+
+Drag brightness (2026-10-13, dark; each iOS frame against our frame of the same take with the nearest lens centre, within 4 pt, so the drag's varying lag drops out). Before (`v2dp*`, 3 takes, ~140 matched frames): native lens region |diff| 11.1 (signed +6.6), rest 7.7 (−2.6); shader lens 9.6 (−0.7), rest 5.8 (−1.0). The rest is mostly the glyphs beside the lens (the Home and Settings columns read 22–26 in both modes) and, in native, an unlit bar: iOS lights the bar around a dragged or held lens and only shader mode drew that glow. Drawing `BarGlow` in native mode too brightened the outside but lifted the native lens (+12.5: UIKit's glass takes up the glow under it), so the glow is cut out under a native lens (`HoleClipper`), and a dragged native lens gets `nativeLensDragShade` 0.2 (a held one stays unshaded: 0.2 there read −2.5 instead of +3.0).
+
+| Native, dark | Before | After (`gd*`) |
+|---|---|---|
+| Drag, matched: lens / rest \|diff\| | 11.1 (+6.6) / 7.7 (−2.6) | 10.1 (+0.9) / 6.9 (−2.4) |
+| Drag 0-10 / 10-60 (median) | 7.0 / 9.1 | 6.4 / 8.2 |
+| Press, matched: lens / rest | 7.0 (+2.9) / 7.6 (−2.9) | 7.3 (+3.2) / 6.2 (−1.2) |
+| Press 0-10 / 10-60 | 10.1 / 7.6 (stalled takes; 7.4–8.6 / 7.7–8.6 earlier) | 7.4 / 6.3 |
+| Tap 0-10 / 10-60 | 3.97 / 1.86 | 3.85 / 1.85 |
+
+Native blue halo: the native lens also refracted a tinted copy of the tabs laid under it (`LensEndsClipper`), which UIKit's glass smeared into a blue halo at its rim. That copy is now drawn only under a shader lens; the native lens keeps the sharp copy above it (`RimFade`). Native, 4 takes (`nh*`) against `gt*`/`gd*`: tap 0-10 3.85 → 3.64 (10-60 1.85 → 1.78), matched tap lens |diff| 8.3 → 7.7; drag 6.4 / 8.2 → 6.6 / 7.7 (matched lens 10.1 → 9.9); press 7.4 / 6.3 → 7.3 / 6.3. iOS also blurs the moving tabs sideways; not reproduced (it would need a velocity blur in `tab_lens_content.frag`).
+
+Shader drag is unchanged (5.6 / 7.6). Static scenes are untouched (the glow shows only while the bar is lit).
+
+Press (2026-10-13, dark, `pr*` before / `rg*` after, 4 takes each). Over time the press's mean |diff| sat at ~6 through the whole hold (frames 15–50), so the held state itself differed; at frame 36 the lens region read only 4–7, and the Home and Settings columns 27–29. iOS scales the whole tab row with the bar's growth: held, Home's icon centre moves 344 → 331 px and Settings' 860 → 874 px (distance from the bar's centre ×1.051, the bar's width 274 → 288 pt ×1.051), and the icons grow with it. The row (and the tinted copies) now scale about the bar's centre by the bar's growth (`_rowGrow`). A quick tap's bar does not grow, so taps are unchanged.
+
+| Dark, median 0-10 / 10-60 | Before | After |
+|---|---|---|
+| Press, shader | 6.16 / 5.79 | 5.10 / 4.43 |
+| Press, native | 7.55 / 6.25 | 6.25 / 4.21 |
+| Drag, shader | 5.6 / 7.6 | 4.62 / 5.21 |
+| Drag, native | 6.62 / 7.65 | 6.30 / 6.25 |
+| Press, matched: lens / rest (shader) | 5.1 / 6.1 | 5.5 / 3.1 |
+
+Lens geometry on the press: travelling peak 5.3–5.7 pt over the bar (iOS 6.3–7.3), held 6.0 (iOS 6.0), relift 2–4 frames after iOS's.
+
 Measurement limits: the example is a debug (JIT) build, and on a loaded host its first frames after a touch can stall (a spring then jumps 2–3 frames, and fits give response ≈ 0.05); about half the takes of the shader path show it, so read the fits of clean takes (`newa`). The drag's lens lag (mean centre over frames 20–50: iOS 207–215 pt, native 204–212, shader 189–228) varies more between takes than between renderers; `follow` is unchanged. Open: the lens over a tap is wider than iOS's (81 vs 65 pt where it overhangs) and peaks lower on a press (4.7 vs 6.0–7.3 pt).
 
 ## Hard
@@ -101,3 +153,5 @@ Measurement limits: the example is a debug (JIT) build, and on a loaded host its
 - [ ] Selected tint vibrancy: iOS's selected blue shifts with the backdrop (0,80,237 over the photo); ours is flat.
 - [ ] Shader mode over the photo (5.14): bar glass blur/refraction/tone vs UIKit's bar material; needs a tab-bar-specific fit like `tool/fidelity` does for shapes.
 - [ ] Dark photo, shader mode (3.95): same fit, dark variant.
+
+Light lens, shader (2026-10-13): held over Music, iOS's lens reads 247 inside (bar 255), a darker band at its top (235) and a shadow below (221); ours read 252 with a teal rim and no shadow. Now `dim` 0.02, neutral split rim (-0.2), shadow 10 pt / 0.1 moved down 6 pt (`shadowOffsetY`, new): inside 247, top 244-248, below 222-224. Runs `runs/L1..L5`, `M1..M3` (scratchpad).
