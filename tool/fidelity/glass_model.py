@@ -55,6 +55,7 @@ VARIANT_DEFAULTS = {
     "backdropInset": 0.0,
     "ambientLift": 0.0,
     "backdropReach": 0.0,
+    "bandSplitDrop": 0.0,
     "glowStrength": 0.25,
     "postBlurShare": 0.0,
     "normalRadiusScale": 1.0,

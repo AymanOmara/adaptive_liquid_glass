@@ -41,6 +41,7 @@ class GlassVariantConstants {
     this.backdropInset = 0,
     this.ambientLift = 0,
     this.backdropReach = 0,
+    this.bandSplitDrop = 0,
     this.toneLumaMix = 0,
     this.glowStrength = 0.25,
     this.postBlurShare = 0,
@@ -126,6 +127,7 @@ class GlassVariantConstants {
     backdropInset: GlassJson.number(j, 'backdropInset', base.backdropInset),
     ambientLift: GlassJson.number(j, 'ambientLift', base.ambientLift),
     backdropReach: GlassJson.number(j, 'backdropReach', base.backdropReach),
+    bandSplitDrop: GlassJson.number(j, 'bandSplitDrop', base.bandSplitDrop),
     toneLumaMix: GlassJson.number(j, 'toneLumaMix', base.toneLumaMix),
     glowStrength: GlassJson.number(j, 'glowStrength', base.glowStrength),
     postBlurShare: GlassJson.number(j, 'postBlurShare', base.postBlurShare),
@@ -327,6 +329,13 @@ class GlassVariantConstants {
   /// mode), never the page further out.
   final double backdropReach;
 
+  /// How much of the colour split across the rim is dropped where the
+  /// glass reaches past [backdropInset]'s band: 1 keeps only the split
+  /// along the rim there. iOS 26.4's dark tab lens shows its overhang
+  /// near black (the split tinted it blue with the bar); its light lens
+  /// keeps the rainbow (0).
+  final double bandSplitDrop;
+
   /// How far the tone LUT is keyed on luma instead of applied per channel
   /// (item 8 round 3): at 1 the LUT moves the frosted backdrop's luma and
   /// its chroma rides along unchanged; 0 = per channel, as before.
@@ -479,6 +488,7 @@ class GlassVariantConstants {
     'backdropInset': backdropInset,
     'ambientLift': ambientLift,
     'backdropReach': backdropReach,
+    'bandSplitDrop': bandSplitDrop,
     'toneLumaMix': toneLumaMix,
     'glowStrength': glowStrength,
     'postBlurShare': postBlurShare,

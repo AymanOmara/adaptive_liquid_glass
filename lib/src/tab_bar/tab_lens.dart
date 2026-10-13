@@ -91,6 +91,8 @@ const tabLensDark = GlassVariantConstants(
   // cooler on its left (95, 111, 113) and warmer on its right (80, 71, 60).
   rimTint: -0.2,
   rimHue: 180,
+  // Its overhang stays near black (23 grey), with no split across the rim.
+  bandSplitDrop: 1,
   rimMix: 0.46,
   rimMixWidth: 1.4,
   rimMixCut: 3,

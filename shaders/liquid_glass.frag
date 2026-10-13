@@ -321,7 +321,12 @@ void main() {
   // out (text there showed, sharp and colour-split). Each tap is clamped
   // on its own, so the bar's edge still fringes.
   vec2 bandY = vec2(rcB.y + Q4.z - R4.x, rcB.y + rcB.w - Q4.z + R4.x);
+  // How far the tap was pulled into the band: there R.y of the split
+  // across the rim is dropped (iOS's dark tab lens shows its overhang
+  // near black; the split tinted it blue with the bar).
+  float outBand = sp.y;
   sp = inBand(sp, bandY, Q4.z);
+  outBand = clamp(abs(outBand - sp.y) * 0.5, 0.0, 1.0);
 
   // Frost v2, measured from SwiftUI (Task 17c, tool/fidelity/measure_frost.py):
   // a sharp core plus a wide tail, (1 - w) G(core) + w G(core + wide). The
@@ -397,6 +402,7 @@ void main() {
     // move apart along the outline, warm at one end of a band, cool at
     // the other.
     vec2 disp = nrm * lensAmt * abs(A.w) + vec2(-nrmO.y, nrmO.x) * lensAmt * Q4.x;
+    disp.y *= 1.0 - outBand * R4.y;
     float dw = v;
     col.r = mix(col.r, tex(inBand(sp + disp, bandY, Q4.z)).r + coreOff.r, dw);
     // Negative dispersion (iOS's tab lens) moves green with blue, so a
