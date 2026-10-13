@@ -1329,13 +1329,24 @@ class _GlassTabBarState extends State<GlassTabBar>
                 ),
               ),
             ),
-          if (lensShown)
+          // The native lens stays mounted, empty while hidden: creating its
+          // UIKit view on each press showed the lens frames after iOS's.
+          if (lensShown || !_shaderLens)
             Positioned.fromRect(
               rect: _shaderLens
                   ? lens.shift(
                       const Offset(TabBarMetrics.inset, TabBarMetrics.inset),
                     )
-                  : lens.shift(nativeLead),
+                  : lensShown
+                  ? lens.shift(nativeLead)
+                  : Rect.fromCenter(
+                      center: lens.center.translate(
+                        TabBarMetrics.inset,
+                        TabBarMetrics.inset,
+                      ),
+                      width: 0,
+                      height: 0,
+                    ),
               child: _shaderLens
                   ? withTabLens(
                       context,
