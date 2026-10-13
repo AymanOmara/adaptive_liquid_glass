@@ -218,9 +218,11 @@ abstract final class TabBarMetrics {
     dampingFraction: 0.55,
   );
 
-  /// The lens following the finger.
+  /// The lens following the finger. SwiftUI's `TabView` (iOS 26.4, a
+  /// 0.8 s drag Home to Settings) keeps its lens within ~3 pt of ours at
+  /// 0.25 over frames 20-50; 0.35 trailed it by ~12 pt.
   static final SpringDescription follow = swiftUISpring(
-    response: 0.35,
+    response: 0.25,
     dampingFraction: 1.0,
   );
 

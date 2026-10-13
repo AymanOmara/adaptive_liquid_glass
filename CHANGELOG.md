@@ -1,5 +1,8 @@
 ## Unreleased
 
+- `GlassTabBar`: the dragged lens follows the finger faster (spring
+  response 0.25, was 0.35), keeping within ~3 pt of iOS 26's lens
+  instead of ~12 pt behind.
 - `GlassTabBar` (dark): the shader lens rim splits colour by side (cool
   left, warm right) as iOS's does; the lens keeps black at 3 and the
   resting bar at 20 under it; a drag keeps the held light ~300 ms before

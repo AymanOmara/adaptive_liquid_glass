@@ -125,6 +125,10 @@ and CHANGELOG.md.
     3.85 -> 3.64, matched lens 8.3 -> 7.7, drag 10-60 8.2 -> 7.7). Not
     done: iOS's sideways motion blur of the moving tabs (would need a
     velocity blur in tab_lens_content.frag)
+    Lag (2026-10-13, load < 10, 3 takes): follow 0.35 -> 0.25; lens
+    centre frames 20-50 vs iOS -12 -> -3 pt (shader), native -8 pt;
+    shader 10-60 5.4 -> 5.2. The earlier 5.9 was host load, not
+    0d9b17a's 300 ms light hold (5.4 with it, 5.3 without).
   - icons beside the search tab ~0.4 pt right of iOS's on Music/Settings
     (Home matches); plain-bar labels +0.4 px, Home +1.1-1.3 px
   - glyph shapes: CupertinoIcons stand-ins vs SF Symbols (house, gear)
