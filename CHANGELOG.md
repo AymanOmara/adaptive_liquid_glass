@@ -1,4 +1,4 @@
-## 0.1.10 (2026-10-14)
+## 0.2.0 (2026-10-14)
 
 - `GlassTabBar`, native mode: SwiftUI draws the selected pill inside the
   glass, shifting it by a fixed amount as iOS does, so a photo keeps its
