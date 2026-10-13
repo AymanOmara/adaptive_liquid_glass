@@ -1,5 +1,16 @@
 ## Unreleased
 
+- Material path: `GlassNavigationBar` is as tall as the app's
+  `AppBarTheme.toolbarHeight` in a `Scaffold` or `GlassScaffold` (it was
+  squeezed to the glass bar's 46.33).
+- Glass routes (sheets, popovers, dialogs, full-screen covers, context
+  menus) put a transparent `Material` under their content, so a
+  `ListTile` or `TextField` works there.
+- `GlassSheetDetent.contentHeight(h)`: the sheet's content is exactly `h`
+  tall; the grabber and bottom inset are added on top.
+- Material path: tinted glass keeps the tint as given instead of a pastel
+  `primaryContainer` seeded from it, with black or white labels for
+  contrast; tinted prominent buttons label for contrast too.
 - Swipe actions: `GlassSwipeAction.confirm` asks before the action runs
   (false closes the row and skips it); `GlassSwipeActions.fullSwipeThreshold`
   sets the full-swipe point (0.6 of the width by default);

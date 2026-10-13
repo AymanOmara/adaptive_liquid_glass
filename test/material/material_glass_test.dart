@@ -59,7 +59,7 @@ void main() {
     expect(m.shape, isA<RoundedSuperellipseBorder>());
   });
 
-  testWidgets('tint → primaryContainer of a seeded scheme', (t) async {
+  testWidgets('a tint is kept as given', (t) async {
     await t.pumpWidget(
       host(
         MaterialGlass(
@@ -69,10 +69,7 @@ void main() {
         ),
       ),
     );
-    expect(
-      materialOf(t).color,
-      ColorScheme.fromSeed(seedColor: Colors.orange).primaryContainer,
-    );
+    expect(materialOf(t).color, Colors.orange);
   });
 
   testWidgets('interactive adds a ripple without stealing child taps', (

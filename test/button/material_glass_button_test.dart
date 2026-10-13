@@ -135,4 +135,34 @@ void main() {
     );
     expect(t.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
   }, variant: android);
+
+  testWidgets('a tinted prominent button labels for contrast (W20)', (
+    t,
+  ) async {
+    shaderEnv();
+    Color? labelOf(String text) =>
+        DefaultTextStyle.of(t.element(find.text(text))).style.color;
+    await t.pumpWidget(
+      appHost(
+        Column(
+          children: [
+            GlassButton(
+              onPressed: () {},
+              style: GlassButtonStyle.glassProminent,
+              tint: Colors.yellow,
+              child: const Text('Light'),
+            ),
+            GlassButton(
+              onPressed: () {},
+              style: GlassButtonStyle.borderedProminent,
+              tint: Colors.indigo.shade900,
+              child: const Text('Dark'),
+            ),
+          ],
+        ),
+      ),
+    );
+    expect(labelOf('Light'), Colors.black);
+    expect(labelOf('Dark'), Colors.white);
+  }, variant: android);
 }

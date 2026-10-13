@@ -51,4 +51,58 @@ void main() {
     await t.pumpAndSettle();
     expect(find.byType(BackButton), findsOneWidget);
   }, variant: android);
+
+  group("the app's AppBarTheme (W7)", () {
+    final theme = ThemeData(
+      appBarTheme: const AppBarTheme(
+        toolbarHeight: 64,
+        backgroundColor: Colors.red,
+      ),
+    );
+
+    testWidgets('in a Scaffold the bar is the theme height', (t) async {
+      shaderEnv();
+      await t.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: const Scaffold(
+            appBar: GlassNavigationBar(title: Text('T')),
+            body: SizedBox(),
+          ),
+        ),
+      );
+      expect(t.getSize(find.byType(AppBar)).height, 64);
+    }, variant: android);
+
+    testWidgets('in a GlassScaffold the bar is the theme height', (t) async {
+      shaderEnv();
+      await t.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: const GlassScaffold(
+            navigationBar: GlassNavigationBar(title: Text('T')),
+            body: SizedBox(),
+          ),
+        ),
+      );
+      expect(t.getSize(find.byType(AppBar)).height, 64);
+    }, variant: android);
+
+    testWidgets('the glass bar keeps its own height', (t) async {
+      shaderEnv();
+      await t.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: const Scaffold(
+            appBar: GlassNavigationBar(title: Text('T')),
+            body: SizedBox(),
+          ),
+        ),
+      );
+      expect(
+        t.getSize(find.byType(GlassNavigationBar)).height,
+        moreOrLessEquals(46.33, epsilon: 0.01),
+      );
+    }, variant: ios);
+  });
 }

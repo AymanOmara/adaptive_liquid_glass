@@ -47,11 +47,12 @@ void main() {
   tearDown(() => GlassPlatform.instance.debugReset());
 
   testWidgets('preferred height is the measured bar', (t) async {
+    shaderEnv();
     expect(
       const GlassNavigationBar().preferredSize.height,
       NavBarMetrics.barHeight,
     );
-  });
+  }, variant: ios);
 
   testWidgets('title is a centred header, 17 semibold', (t) async {
     shaderEnv();

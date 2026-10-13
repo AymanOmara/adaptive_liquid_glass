@@ -119,6 +119,61 @@ void main() {
     );
   }, variant: android);
 
+  testWidgets('Material widgets work in a glass sheet (W18)', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showGlassSheet<void>(
+              context: context,
+              builder: (_) => Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(title: const Text('Row'), onTap: () {}),
+                  const TextField(),
+                ],
+              ),
+            ),
+            child: const Text('Open'),
+          ),
+        ),
+      ),
+    );
+    await t.tap(find.text('Open'));
+    await t.pumpAndSettle();
+    expect(t.takeException(), isNull);
+    expect(find.text('Row'), findsOneWidget);
+  }, variant: ios);
+
+  for (final grabber in [true, false]) {
+    testWidgets('contentHeight gives the content exactly that (W19), '
+        'grabber $grabber', (t) async {
+      shaderEnv();
+      await t.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showGlassSheet<void>(
+                context: context,
+                showGrabber: grabber,
+                detents: const [GlassSheetDetent.contentHeight(200)],
+                builder: (_) => const SizedBox.expand(key: Key('content')),
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      );
+      await t.tap(find.text('Open'));
+      await t.pumpAndSettle();
+      expect(
+        t.getSize(find.byKey(const Key('content'))).height,
+        moreOrLessEquals(200),
+      );
+    }, variant: ios);
+  }
+
   testWidgets('tapping outside dismisses it', (t) async {
     shaderEnv();
     await t.pumpWidget(_app((_) {}));

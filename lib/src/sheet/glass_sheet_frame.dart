@@ -197,7 +197,15 @@ class _GlassSheetFrameState extends State<GlassSheetFrame>
         ),
       );
     }
-    _stops = [for (final d in widget.detents) d.resolve(size, top)]..sort();
+    final chrome =
+        SheetMetrics.inset +
+        (widget.showGrabber
+            ? SheetMetrics.grabberTop +
+                  (widget.grabberSize?.height ?? SheetMetrics.grabberHeight)
+            : 0);
+    _stops = [
+      for (final d in widget.detents) d.resolve(size, top, chrome: chrome),
+    ]..sort();
     if (!_placed) {
       _height.value = _stops[widget.initialDetent.clamp(0, _stops.length - 1)];
       _placed = true;

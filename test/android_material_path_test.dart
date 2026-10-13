@@ -242,7 +242,7 @@ void main() {
     expect(IconTheme.of(probe).color, scheme.onSurface);
   }, variant: android);
 
-  testWidgets('tinted glass labels with onPrimaryContainer', (t) async {
+  testWidgets('tinted glass labels in black or white for contrast', (t) async {
     late BuildContext probe;
     await t.pumpWidget(
       host(
@@ -258,12 +258,9 @@ void main() {
       ),
     );
     expectNoGlassPath(t);
-    final seeded = ColorScheme.fromSeed(
-      seedColor: Colors.orange,
-      brightness: Theme.of(probe).brightness,
-    );
-    expect(DefaultTextStyle.of(probe).style.color, seeded.onPrimaryContainer);
-    expect(IconTheme.of(probe).color, seeded.onPrimaryContainer);
+    // Orange is light: black labels.
+    expect(DefaultTextStyle.of(probe).style.color, Colors.black);
+    expect(IconTheme.of(probe).color, Colors.black);
   }, variant: android);
 
   testWidgets('a group of three members is three Materials, no backdrop', (
@@ -381,14 +378,8 @@ void main() {
       ),
     );
     expectNoGlassPath(t);
-    final scheme = Theme.of(t.element(find.byType(MaterialGlass))).colorScheme;
-    expect(
-      materialOf(t).color,
-      ColorScheme.fromSeed(
-        seedColor: Colors.orange,
-        brightness: scheme.brightness,
-      ).primaryContainer,
-    );
+    // The tint as given, not a pastel tone seeded from it (W8).
+    expect(materialOf(t).color, Colors.orange);
   }, variant: android);
 
   testWidgets('Glass.identity shows the child with no surface', (t) async {

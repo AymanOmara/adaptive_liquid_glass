@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../core/effective_glass_mode.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
+import '../core/render_mode_resolver.dart';
+import '../platform/glass_platform.dart';
 import 'glass_scroll_edge.dart';
 import 'glass_scroll_edge_style.dart';
 import 'nav_bar_content.dart';
@@ -61,8 +63,19 @@ class GlassNavigationBar extends StatefulWidget implements PreferredSizeWidget {
   /// [GlassScrollEdgeStyle].
   final GlassScrollEdgeStyle scrollEdgeStyle;
 
+  /// The glass bar's height, or on the Material path an [AppBar]'s, which
+  /// a Scaffold reads from the app's `AppBarTheme.toolbarHeight`. Without
+  /// a context the theme's default mode is not known: [mode], or auto.
   @override
-  Size get preferredSize => const Size.fromHeight(NavBarMetrics.barHeight);
+  Size get preferredSize =>
+      resolveGlassMode(
+            requested: mode ?? GlassRenderMode.auto,
+            environment: GlassPlatform.instance.environment.value,
+            highContrast: false,
+          ) ==
+          EffectiveGlassMode.material
+      ? AppBar().preferredSize
+      : const Size.fromHeight(NavBarMetrics.barHeight);
 
   @override
   State<GlassNavigationBar> createState() => _GlassNavigationBarState();

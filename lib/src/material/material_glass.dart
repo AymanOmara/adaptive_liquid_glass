@@ -50,18 +50,21 @@ class MaterialGlass extends StatelessWidget {
     if (glass.variant == GlassVariant.identity) return child;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    // A tint is kept as given (a brand colour stays that colour), with
+    // black or white labels for contrast.
     final tint = glass.tintColor;
-    final seeded = tint == null
-        ? null
-        : ColorScheme.fromSeed(seedColor: tint, brightness: theme.brightness);
-    final Color color = seeded != null
-        ? seeded.primaryContainer
-        : glass.variant == GlassVariant.clear
-        ? scheme.surfaceContainerLow.withValues(alpha: 0.85)
-        : scheme.surfaceContainerHigh;
+    final Color color =
+        tint ??
+        (glass.variant == GlassVariant.clear
+            ? scheme.surfaceContainerLow.withValues(alpha: 0.85)
+            : scheme.surfaceContainerHigh);
     final content = adaptiveForeground
         ? GlassLabelStyle(
-            color: seeded?.onPrimaryContainer ?? scheme.onSurface,
+            color: tint == null
+                ? scheme.onSurface
+                : ThemeData.estimateBrightnessForColor(tint) == Brightness.light
+                ? GlassColors.black
+                : GlassColors.white,
             child: child,
           )
         : child;

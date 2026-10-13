@@ -2,10 +2,13 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 
+import '../core/effective_glass_mode.dart';
 import '../core/glass_environment.dart';
 import '../core/glass_render_mode.dart';
 import '../core/liquid_glass_theme.dart';
+import '../core/render_mode_resolver.dart';
 import '../foreground/glass_backdrop_source.dart';
+import '../navigation/glass_navigation_bar.dart';
 import '../platform/glass_platform.dart';
 import '../tab_bar/glass_tab_bar.dart';
 import '../tab_bar/glass_tab_bar_minimize_behavior.dart';
@@ -225,6 +228,28 @@ class _GlassScaffoldState extends State<GlassScaffold> {
     );
   }
 
+  /// The navigation bar, sized by the app's `AppBarTheme` when it is
+  /// Material here (its own [GlassNavigationBar.preferredSize] cannot read
+  /// the theme's default mode).
+  PreferredSizeWidget? _appBar(BuildContext context) {
+    final bar = widget.navigationBar;
+    if (bar is! GlassNavigationBar) return bar;
+    final material =
+        resolveGlassMode(
+          requested: bar.mode ?? LiquidGlassTheme.of(context).defaultMode,
+          environment: GlassPlatform.instance.environment.value,
+          highContrast: MediaQuery.highContrastOf(context),
+        ) ==
+        EffectiveGlassMode.material;
+    if (!material) return bar;
+    return PreferredSize(
+      preferredSize: Size.fromHeight(
+        AppBar.preferredHeightFor(context, AppBar().preferredSize),
+      ),
+      child: bar,
+    );
+  }
+
   @override
   Widget build(BuildContext context) =>
       ValueListenableBuilder<GlassEnvironment>(
@@ -303,7 +328,7 @@ class _GlassScaffoldState extends State<GlassScaffold> {
       backgroundColor: widget.backgroundColor,
       extendBody: true,
       extendBodyBehindAppBar: true,
-      appBar: widget.navigationBar,
+      appBar: _appBar(context),
       body: Stack(
         fit: StackFit.expand,
         children: [

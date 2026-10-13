@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/glass_colors.dart';
 import 'glass_button.dart';
 import 'glass_button_role.dart';
 import 'glass_button_shape.dart';
@@ -62,6 +63,12 @@ class MaterialGlassButton extends StatelessWidget {
               : b.tint)
         : destructive
         ? (prominent ? scheme.onError : scheme.onErrorContainer)
+        // A custom fill: black or white, whichever reads on it (the
+        // theme's onPrimary is made for its primary, not this colour).
+        : background != null
+        ? (ThemeData.estimateBrightnessForColor(background) == Brightness.light
+              ? GlassColors.black
+              : GlassColors.white)
         : null;
     final OutlinedBorder? border = switch (b.shape) {
       GlassButtonShape.roundedRect => RoundedRectangleBorder(

@@ -114,18 +114,14 @@ void main() {
     expect(IconTheme.of(c).color, scheme.onSurface);
   }, variant: android);
 
-  testWidgets('Material tinted glass uses its on-container colour', (t) async {
+  testWidgets('Material tinted glass labels for contrast', (t) async {
     shaderEnv();
     final c = await _probe(
       t,
       (p) => LiquidGlass(glass: Glass.regular.tint(Colors.orange), child: p),
       host: appHost,
     );
-    final seeded = ColorScheme.fromSeed(
-      seedColor: Colors.orange,
-      brightness: Theme.of(c).brightness,
-    );
-    expect(_textColor(c), seeded.onPrimaryContainer);
+    expect(_textColor(c), Colors.black);
   }, variant: android);
 
   testWidgets('identity glass leaves the content alone', (t) async {
