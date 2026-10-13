@@ -26,6 +26,9 @@ abstract final class TabBarMetrics {
   /// UIKit draws it after Flutter's frame, so it trailed iOS's lens.
   static const double nativeLensLead = 0.025;
 
+  /// See [nativeLensLead]: the same for a lens springing across.
+  static const double nativeLensTravelLead = 0.017;
+
   /// The gap between the bar's edge and its tabs.
   static const double inset = 4;
 

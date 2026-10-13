@@ -1148,7 +1148,16 @@ class _GlassTabBarState extends State<GlassTabBar>
     final lensShown = _held || _lensUp || p > 0.05;
     final lensContent =
         _shaderLens && TabLensProgram.instance.program.value != null;
-    final x = _toPixels(_x.value);
+    // Native glass draws a frame or two after Flutter, so the native lens
+    // (glass, tint and hole alike) leads by its velocity over that latency.
+    final x =
+        _toPixels(_x.value) +
+        (_shaderLens
+            ? 0.0
+            : (_followTicker.isActive
+                      ? _followVelocity * TabBarMetrics.nativeLensLead
+                      : _xVelocity * TabBarMetrics.nativeLensTravelLead) *
+                  _itemWidth);
     // The wobble belongs to the held lens: it fades with it and never
     // reaches the pill.
     final wobble = _wobble.value * t;
@@ -1192,13 +1201,6 @@ class _GlassTabBarState extends State<GlassTabBar>
         semantics: true,
         vibrantTint: true,
       ),
-    );
-    final nativeLead = Offset(
-      TabBarMetrics.inset +
-          (_followTicker.isActive ? _followVelocity : 0.0) *
-              _itemWidth *
-              TabBarMetrics.nativeLensLead,
-      TabBarMetrics.inset,
     );
     final m = _magnify.value.clamp(0.0, 1.0);
     final magnify = Offset(
@@ -1312,13 +1314,13 @@ class _GlassTabBarState extends State<GlassTabBar>
             ),
           ),
           // UIKit's clear glass casts no shadow; iOS's light tab lens does.
-          // Native glass draws a frame or two after Flutter, so a lens
-          // following the finger leads by its velocity over that latency.
           if (lensShown &&
               !_shaderLens &&
               GlassGroupScope.brightnessOf(context) != Brightness.dark)
             Positioned.fromRect(
-              rect: lens.shift(nativeLead),
+              rect: lens.shift(
+                const Offset(TabBarMetrics.inset, TabBarMetrics.inset),
+              ),
               child: const IgnorePointer(
                 child: CustomPaint(
                   painter: BarShadow(
@@ -1333,12 +1335,10 @@ class _GlassTabBarState extends State<GlassTabBar>
           // UIKit view on each press showed the lens frames after iOS's.
           if (lensShown || !_shaderLens)
             Positioned.fromRect(
-              rect: _shaderLens
+              rect: lensShown
                   ? lens.shift(
                       const Offset(TabBarMetrics.inset, TabBarMetrics.inset),
                     )
-                  : lensShown
-                  ? lens.shift(nativeLead)
                   : Rect.fromCenter(
                       center: lens.center.translate(
                         TabBarMetrics.inset,
