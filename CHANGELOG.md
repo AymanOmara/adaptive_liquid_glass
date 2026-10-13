@@ -1,5 +1,9 @@
 ## Unreleased
 
+- `package:adaptive_liquid_glass/glass_testing.dart`: `GlassTesting.setUp`
+  pins the platform, iOS version and fallbacks for an app's widget tests
+  and stops the shaders loading; `GlassTesting.reset` restores the
+  defaults. README: Testing your app.
 - `GlassSwipeActions` matches SwiftUI's motion, measured frame by frame
   (`tool/fidelity/record_swipe_motion.sh`): actions grow in place as the
   row uncovers them, trailing a fast drag; past rest the inner ones keep

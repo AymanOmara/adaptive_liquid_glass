@@ -1256,6 +1256,32 @@ Stack(
   )
   ```
 
+## Testing your app
+
+Under `flutter test` the package's shaders do not load and the iOS
+plugin is absent, so which path glass takes depends on the machine.
+`GlassTesting` pins it:
+
+```dart
+import 'package:adaptive_liquid_glass/glass_testing.dart';
+
+setUp(() => GlassTesting.setUp(iosMajorVersion: 18));
+tearDown(GlassTesting.reset);
+
+testWidgets('pays', (tester) async {
+  await tester.pumpWidget(const MyApp());
+  await tester.tap(find.text('Pay'));
+  // ...
+}, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+```
+
+- iOS before 26 tests the Flutter-drawn glass. iOS 26 picks native glass,
+  which widget tests do not draw.
+- Android (the default `platform` follows the variant) tests the
+  Material path.
+- `shaderSupported: false` and `reduceTransparency: true` test the
+  degraded and opaque fallbacks.
+
 ## Known limitations
 
 - **Context menu not measured:** synthetic touches on the simulator do
