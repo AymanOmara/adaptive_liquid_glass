@@ -79,10 +79,11 @@ and CHANGELOG.md.
     selected tint 24.4 -> 16.2 light, 22.4 -> 12.6 dark; the pill (photo
     whole crop 4.39 -> 3.81). Native mode keeps
     flat colours (Flutter cannot see UIKit glass)
-  - lens fringe: iOS's bands at the lens top/bottom carry a rainbow fringe
-    warm on one end, cool on the other; our dispersion is symmetric
-    (stronger dispersion / lensVertical / normal radius tried, held-lens
-    SSIM 0.810 -> 0.80-0.81, reverted)
+  - lens fringe: sideways dispersion (dispersionTangent -3) gives the
+    held lens's bands iOS's warm/cool ends (top-left warm, top-right cool,
+    flipped below; press 10-60 |diff| 7.25 -> 6.93). Open: the band reads
+    ~13 vs iOS ~25 over black (our outward bend samples the page, iOS's
+    shows more of the bar)
   - motion blur: done (lens content smears by 3x its per-frame travel;
     drag edge ratio dips to 0.88 of rest vs iOS 0.84, 0.92 before)
   - native mode's lens is UIKit glass: it cannot bend the bar's edges or
