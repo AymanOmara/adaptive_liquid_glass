@@ -11,6 +11,7 @@ class GlassSwipeAction {
     required this.onPressed,
     this.color,
     this.confirm,
+    this.destructive = false,
   });
 
   /// The capsule's icon.
@@ -28,7 +29,12 @@ class GlassSwipeAction {
   /// run. Null runs [onPressed] straight away.
   final Future<bool> Function()? confirm;
 
-  /// The capsule's tint. Defaults to system gray; use system red for a
-  /// destructive action.
+  /// The capsule's tint. Defaults to system red for a [destructive]
+  /// action, system gray otherwise.
   final Color? color;
+
+  /// Whether the action deletes the row's item, like SwiftUI's
+  /// `role: .destructive`: a full swipe then slides the row away and
+  /// collapses it before [onPressed] runs, which should remove the item.
+  final bool destructive;
 }

@@ -1,5 +1,17 @@
 ## Unreleased
 
+- `GlassSwipeActions` matches SwiftUI's motion, measured frame by frame
+  (`tool/fidelity/record_swipe_motion.sh`): actions grow in place as the
+  row uncovers them, trailing a fast drag; past rest the inner ones keep
+  to the row and fade while the outermost stretches, and past the
+  full-swipe point (now 0.62 of the width) a fast swipe takes the row,
+  while a slow pull there only opens it. Actions bounce slightly as they
+  reach full size. Rows from 90 pt get 50-pt circles centred with their
+  labels. The platter fades on its own clock (no grey dip in light
+  mode), the row's spring no longer overshoots, and compact capsules are
+  SwiftUI's width.
+- `GlassSwipeAction.destructive`: red by default; its full swipe hides
+  the row, collapses it, then runs `onPressed`.
 - Material path: `GlassNavigationBar` is as tall as the app's
   `AppBarTheme.toolbarHeight` in a `Scaffold` or `GlassScaffold` (it was
   squeezed to the glass bar's 46.33).

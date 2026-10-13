@@ -1,5 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart' show PointerDeviceKind, VelocityTracker;
 import 'package:flutter/physics.dart';
+import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter/services.dart' show HapticFeedback;
 
@@ -28,10 +32,12 @@ import 'swipe_metrics.dart';
 /// )
 /// ```
 ///
-/// The row follows the finger, resists past its actions, and springs open
-/// or shut when let go. With [allowsFullSwipe], swiping past most of the
+/// The row follows the finger and springs open or shut when let go; the
+/// actions grow in place as the row uncovers them, and the row turns into
+/// a rounded platter. With [allowsFullSwipe], swiping past most of the
 /// row runs the edge-most action (the first in the list), with a haptic as
-/// the swipe passes that point. A tap on the open row, a scroll, or
+/// the swipe passes that point; a [GlassSwipeAction.destructive] one
+/// slides the row away and collapses it first, as SwiftUI does. A tap on the open row, a scroll, or
 /// opening another row closes it. The first action sits at the row's
 /// edge; edges follow the reading direction. Assistive tech gets the
 /// actions as custom actions on the row. Give each row a key so an open
@@ -76,7 +82,7 @@ class GlassSwipeActions extends StatefulWidget {
 }
 
 class _GlassSwipeActionsState extends State<GlassSwipeActions>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   /// The row that is open or being swiped; opening another closes it.
   static final ValueNotifier<Object?> _active = ValueNotifier(null);
 
@@ -84,10 +90,71 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
   /// trailing actions), in logical pixels.
   late final AnimationController _offset;
 
+  /// The platter behind the swiped row: 0 none, 1 full. Time-driven.
+  late final AnimationController _platter;
+
+  /// The row's height factor: a destructive full swipe collapses it.
+  late final AnimationController _collapse;
+
+  /// Each action's size (0 to 1, outermost first), trailing the size the
+  /// offset sets by [SwipeMetrics.growLag].
+  final List<double> _grown = [];
+  late final Ticker _growTicker;
+  Duration _growLast = Duration.zero;
+  final ValueNotifier<int> _growFrame = ValueNotifier(0);
+
+  /// Each action's bounce about full size since its size reached it
+  /// (null when not bouncing), and when it started.
+  final List<SpringSimulation?> _bounces = [];
+  final List<Duration> _bounceStart = [];
+
+  /// Each action's growth speed on its last frame, before it stops at
+  /// its size.
+  final List<double> _rates = [];
+
+  /// Each action's ramp (see [_ramps]) last frame, and its smoothed speed.
+  final List<double> _rampLast = [];
+  final List<double> _rampSpeeds = [];
+
+  /// Each shown action's size with its bounce, outermost first.
+  List<double> get _sizes => [
+    for (var k = 0; k < _grown.length; k++) _grown[k] + _bounceAt(k),
+  ];
+
+  /// Full size, within the growth's snap.
+  static const double _full = 0.998;
+
+  double _bounceAt(int k) {
+    final b = k < _bounces.length ? _bounces[k] : null;
+    if (b == null) return 0;
+    return b.x((_growLast - _bounceStart[k]).inMicroseconds / 1e6);
+  }
+
+  /// The actions as the row closes: 1 shown, 0 shrunk and faded.
+  late final AnimationController _closing;
+
+  /// The row is springing open: the actions grow to full on their own.
+  bool _opening = false;
+
+  /// A destructive full swipe has taken the row: it is hidden.
+  bool _gone = false;
+
   /// The drag's own offset, before the rubber band.
   double _drag = 0;
   double _width = 0;
-  bool _pastFullSwipe = false;
+
+  /// A full swipe has taken the row.
+  bool _taken = false;
+
+  /// Finger travel still to drop before the row moves, past the touch
+  /// slop the recognizer already took.
+  double _slack = 0;
+
+  /// The drag that took the row no longer moves it.
+  bool _dragDone = false;
+
+  /// The finger's speed, to tell a full swipe from a slow pull.
+  VelocityTracker _tracker = VelocityTracker.withKind(PointerDeviceKind.touch);
   ScrollPosition? _scroll;
 
   bool get _rtl => Directionality.of(context) == TextDirection.rtl;
@@ -102,14 +169,20 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
   /// Whether the row is tall enough for SwiftUI's stacked actions.
   bool get _stacked => _rowHeight >= SwipeMetrics.stackedRowHeight;
 
+  /// Whether the stacked actions are circles centred with their labels.
+  bool get _circles => _rowHeight >= SwipeMetrics.circleRowHeight;
+
   /// Each action's width on one side: SwiftUI gives them all the width of
   /// the widest.
   double _actionWidth(List<GlassSwipeAction> actions) {
+    if (_circles) return SwipeMetrics.stackedCircle;
     if (_stacked) return SwipeMetrics.stackedWidth;
+    // Measured in the style the label is drawn in (it inherits the font).
+    final style = DefaultTextStyle.of(context).style.merge(SwipeMetrics.label);
     var widest = 0.0;
     for (final action in actions) {
       final painter = TextPainter(
-        text: TextSpan(text: action.label, style: SwipeMetrics.label),
+        text: TextSpan(text: action.label, style: style),
         textDirection: Directionality.of(context),
         textScaler: MediaQuery.textScalerOf(context),
         maxLines: 1,
@@ -117,10 +190,10 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
       if (painter.width > widest) widest = painter.width;
       painter.dispose();
     }
-    return SwipeMetrics.compactIconSize +
+    return SwipeMetrics.compactIconWidth +
         SwipeMetrics.compactIconGap +
         widest +
-        SwipeMetrics.compactPadding * 2;
+        (SwipeMetrics.compactPadding - SwipeMetrics.compactLabelBearing) * 2;
   }
 
   /// How far the row moves to open [actions]: the actions, and a gap
@@ -132,7 +205,10 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
   List<GlassSwipeAction> get _shown =>
       _offset.value < 0 ? widget.trailing : widget.leading;
 
-  bool get _fullSwipe =>
+  /// Whether the row is past the full-swipe point. SwiftUI takes the row
+  /// only when it gets there fast ([SwipeMetrics.fullSwipeVelocity]); a
+  /// slow pull past it just stretches the action, and opens on release.
+  bool get _pastFullSwipe =>
       widget.allowsFullSwipe &&
       _width > 0 &&
       _offset.value.abs() > _width * widget.fullSwipeThreshold;
@@ -142,6 +218,14 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
     super.initState();
     _offset = AnimationController.unbounded(vsync: this)
       ..addListener(_onOffset);
+    _platter = AnimationController.unbounded(vsync: this);
+    _collapse = AnimationController(vsync: this, value: 1);
+    _growTicker = createTicker(_stepGrow);
+    _closing = AnimationController(
+      vsync: this,
+      value: 1,
+      duration: SwipeMetrics.closeFade,
+    );
     _active.addListener(_onActive);
   }
 
@@ -159,6 +243,11 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
     _active.removeListener(_onActive);
     if (_active.value == this) _active.value = null;
     _offset.dispose();
+    _platter.dispose();
+    _collapse.dispose();
+    _growTicker.dispose();
+    _closing.dispose();
+    _growFrame.dispose();
     super.dispose();
   }
 
@@ -171,16 +260,180 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
   }
 
   void _onOffset() {
-    final past = _fullSwipe;
-    if (past != _pastFullSwipe) {
-      _pastFullSwipe = past;
-      if (past) HapticFeedback.mediumImpact();
+    final targets = _growTargets();
+    if (_reduceMotion || _grown.length != targets.length) {
+      _grown
+        ..clear()
+        ..addAll(targets);
+    } else if (!_growTicker.isActive) {
+      _growLast = Duration.zero;
+      _growTicker.start();
+    }
+  }
+
+  /// Eases each action's size towards the size the offset sets.
+  void _stepGrow(Duration elapsed) {
+    final dt = (elapsed - _growLast).inMicroseconds / 1e6;
+    _growLast = elapsed;
+    final targets = _growTargets();
+    if (_grown.length != targets.length) {
+      _grown
+        ..clear()
+        ..addAll(targets);
+    }
+    // A short lag, and no faster than SwiftUI's growth rate: a fast drag
+    // outruns it, a slow one does not.
+    final keep = math.exp(-dt / SwipeMetrics.growLag);
+    final step = SwipeMetrics.growRate * dt;
+    if (_bounces.length != targets.length) {
+      _bounces
+        ..clear()
+        ..addAll(List.filled(targets.length, null));
+      _bounceStart
+        ..clear()
+        ..addAll(List.filled(targets.length, Duration.zero));
+      _rates
+        ..clear()
+        ..addAll(List.filled(targets.length, 0));
+      _rampSpeeds
+        ..clear()
+        ..addAll(List.filled(targets.length, 0));
+      _rampLast.clear();
+    }
+    final ramps = _opening || _width == 0 ? null : _ramps();
+    if (ramps != null && ramps.length == targets.length) {
+      if (_rampLast.length == ramps.length && dt > 0) {
+        final blend = 1 - math.exp(-dt / SwipeMetrics.rampSpeedTime);
+        for (var k = 0; k < ramps.length; k++) {
+          final speed = (ramps[k] - _rampLast[k]) / dt;
+          _rampSpeeds[k] += (speed - _rampSpeeds[k]) * blend;
+        }
+      }
+      _rampLast
+        ..clear()
+        ..addAll(ramps);
+    } else {
+      _rampLast.clear();
+    }
+    var settled = true;
+    for (var k = 0; k < targets.length; k++) {
+      final was = _grown[k];
+      final eased = targets[k] + (was - targets[k]) * keep;
+      var move = (eased - was).clamp(-step, step);
+      // Growing, it runs on into its size rather than easing in, as
+      // SwiftUI's does; its speed then is the bounce's start.
+      if (targets[k] > was) {
+        // Springing open it runs on at a set speed; dragged, at a share
+        // of the drag's speed along its ramp.
+        final floor = _opening
+            ? SwipeMetrics.openGrowFloor
+            : SwipeMetrics.dragGrowFloor *
+                  _rampSpeeds[k].clamp(0.0, SwipeMetrics.rampSpeedMax);
+        move = math.max(move, floor * dt);
+        if (dt > 0) _rates[k] = move / dt;
+        move = math.min(move, targets[k] - was);
+      }
+      final next = was + move;
+      _grown[k] = (next - targets[k]).abs() < 0.002 ? targets[k] : next;
+      if (_grown[k] != targets[k]) settled = false;
+      // Reaching full size it bounces, as SwiftUI's, carrying on with
+      // some of its speed.
+      if (was < _full && _grown[k] >= _full && dt > 0) {
+        _bounces[k] = SpringSimulation(
+          SwipeMetrics.bounce,
+          0,
+          0,
+          SwipeMetrics.bounceCarry * _rates[k],
+        );
+        _bounceStart[k] = elapsed;
+      } else if (_grown[k] < _full) {
+        _bounces[k] = null;
+      }
+      final b = _bounces[k];
+      if (b != null) {
+        if (b.isDone((elapsed - _bounceStart[k]).inMicroseconds / 1e6)) {
+          _bounces[k] = null;
+        } else {
+          settled = false;
+        }
+      }
+    }
+    _growFrame.value++;
+    if (settled) _growTicker.stop();
+  }
+
+  /// The size (0 to 1) the offset sets for each shown action, outermost
+  /// first: each grows in place as its slot is uncovered.
+  List<double> _growTargets() {
+    if (_offset.value == 0 || _width == 0) return const [];
+    // Once the row is springing open, every action grows to full.
+    if (_opening) return List.filled(_shown.length, 1);
+    return [for (final t in _ramps()) t.clamp(0.0, 1.0)];
+  }
+
+  /// Where the offset is along each shown action's growth ramp: 0 at its
+  /// start, 1 at its slot uncovered, and beyond either end.
+  List<double> _ramps() {
+    final actions = _shown;
+    const gap = SwipeMetrics.gap;
+    final w = _actionWidth(actions);
+    final reveal = _offset.value.abs();
+    return [
+      for (var k = 0; k < actions.length; k++)
+        () {
+          final slotFull = (k + 1) * (w + gap) + gap;
+          final start = math.min(
+            k * (w + gap) + gap + SwipeMetrics.revealLead,
+            slotFull - 1,
+          );
+          return (reveal - start) / (slotFull - start);
+        }(),
+    ];
+  }
+
+  /// Each shown action's opacity (outermost first): from
+  /// [SwipeMetrics.revealOpacity] as it starts to grow to 1 as its slot
+  /// is uncovered, following the offset without the size's lag (the best
+  /// fit of SwiftUI's frames).
+  List<double> _opacities() => [
+    for (final grown in _growTargets())
+      SwipeMetrics.revealOpacity + (1 - SwipeMetrics.revealOpacity) * grown,
+  ];
+
+  /// The actions' sizes and opacities as the row began to close: they
+  /// shrink and fade from there on their own clock, not with the row.
+  List<double>? _closeSizes;
+  List<double>? _closeOpacities;
+
+  /// Fades the platter towards [target] on its own clock.
+  void _fadePlatter(double target) {
+    if (_reduceMotion) {
+      _platter.value = target;
+    } else if (_platter.value != target) {
+      _platter.animateWith(_Approach(_platter.value, target));
     }
   }
 
   void _settle(double target, {double velocity = 0}) {
+    _taken = false;
     _drag = target;
-    if (target == 0 && _active.value == this) _active.value = null;
+    _opening = target != 0;
+    if (target == 0) {
+      if (_active.value == this) _active.value = null;
+      _fadePlatter(0);
+      // The actions shrink and fade from the tap, under the closing row.
+      if (_reduceMotion || _offset.value.abs() < 0.5) {
+        _closing.value = 0;
+      } else {
+        _closeSizes = _sizes;
+        _closeOpacities = _opacities();
+        _closing.value = 1;
+        _closing.animateTo(0);
+      }
+    } else {
+      _closeSizes = _closeOpacities = null;
+      _closing.value = 1;
+    }
     if (_reduceMotion) {
       _offset.value = target;
     } else {
@@ -218,27 +471,63 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
     _rowHeight = context.size?.height ?? 0;
     _offset.stop();
     _drag = _offset.value;
+    _opening = false;
+    _dragDone = false;
+    // From rest, SwiftUI drops a little more of the finger's travel.
+    _slack = _offset.value == 0 ? SwipeMetrics.dragSlack : 0;
+    _tracker = VelocityTracker.withKind(PointerDeviceKind.touch);
     _active.value = this;
+    _fadePlatter(1);
+    _closeSizes = _closeOpacities = null;
+    _closing
+      ..stop()
+      ..value = 1;
   }
 
   void _update(DragUpdateDetails d) {
-    _drag += _rtl ? -d.delta.dx : d.delta.dx;
+    if (_dragDone || _gone) return;
+    var delta = _rtl ? -d.delta.dx : d.delta.dx;
+    if (_slack > 0) {
+      final taken = math.min(_slack, delta.abs());
+      _slack -= taken;
+      delta -= delta.sign * taken;
+    }
+    _drag += delta;
     _offset.value = _band(_drag);
+    final time = d.sourceTimeStamp;
+    if (time == null) return;
+    _tracker.addPosition(time, Offset(_drag, 0));
+    final velocity = _tracker.getVelocityEstimate()?.pixelsPerSecond.dx ?? 0;
+    // Fast past the full-swipe point: the action takes the row mid-drag.
+    _takeIfFast(velocity);
+  }
+
+  /// Takes the row with a full swipe when it is past the full-swipe point
+  /// and moving outward fast enough.
+  bool _takeIfFast(double velocity) {
+    final offset = _offset.value;
+    if (!_pastFullSwipe ||
+        velocity.sign != offset.sign ||
+        velocity.abs() < SwipeMetrics.fullSwipeVelocity) {
+      return false;
+    }
+    _taken = _dragDone = true;
+    HapticFeedback.mediumImpact();
+    _run(_shown.first, full: true);
+    return true;
   }
 
   void _end(DragEndDetails d) {
+    if (_dragDone || _gone) return;
     final velocity = (_rtl ? -1 : 1) * d.velocity.pixelsPerSecond.dx;
     final offset = _offset.value;
     if (offset == 0) return _settle(0);
     final actions = _shown;
-    if (_fullSwipe) {
-      _run(actions.first, full: true);
-      return;
-    }
+    if (_takeIfFast(velocity)) return;
     final extent = _extent(actions);
     final opening = velocity.abs() > SwipeMetrics.flingVelocity
         ? velocity.sign == offset.sign
-        : offset.abs() > extent / 2;
+        : offset.abs() > extent * SwipeMetrics.openFraction;
     _settle(opening ? offset.sign * extent : 0, velocity: velocity);
   }
 
@@ -251,21 +540,68 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
       if (!mounted) return;
       if (!confirmed) return _settle(0);
     }
-    if (full && !_reduceMotion) {
-      // The row slides out of the way, then the action runs.
-      final target = _offset.value.sign * _width;
-      _offset
-          .animateWith(
-            SpringSimulation(SwipeMetrics.spring, _offset.value, target, 0),
-          )
-          .whenCompleteOrCancel(() {
-            action.onPressed();
-            if (mounted) _settle(0);
-          });
+    if (!full) {
+      _settle(0);
+      action.onPressed();
       return;
     }
-    _settle(0);
+    final target = _offset.value.sign * _width;
+    if (!action.destructive) {
+      // The row slides out of the way, then the action runs.
+      if (_reduceMotion) {
+        _offset.value = target;
+      } else {
+        await _offset
+            .animateWith(
+              SpringSimulation(SwipeMetrics.spring, _offset.value, target, 0),
+            )
+            .orCancel
+            .catchError((_) {});
+      }
+      if (!mounted) return;
+      action.onPressed();
+      if (mounted) _settle(0);
+      return;
+    }
+    // A destructive action takes the row with it, as SwiftUI's: the row
+    // is gone at once, the action filling its place and following on
+    // out, and the row collapses; then the app removes the item.
+    setState(() => _gone = true);
+    if (_reduceMotion) {
+      _offset.value = target;
+      _collapse.value = 0;
+    } else {
+      // The row jumps most of the way out, then glides on to the edge,
+      // the action following it, while the row collapses.
+      _offset.value = target * SwipeMetrics.exitJump;
+      _offset.animateWith(
+        SpringSimulation(
+          SwipeMetrics.exitSpring,
+          _offset.value,
+          target,
+          target.sign * SwipeMetrics.exitVelocity,
+        ),
+      );
+      await _collapse
+          .animateWith(SpringSimulation(SwipeMetrics.collapse, 1, 0, 0))
+          .orCancel
+          .catchError((_) {});
+    }
+    if (!mounted) return;
     action.onPressed();
+    // Still here a frame later: the app kept the item, so the row
+    // returns.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _offset.stop();
+      _gone = _taken = false;
+      _collapse.value = 1;
+      _closing.value = 1;
+      _platter.value = 0;
+      _drag = 0;
+      _offset.value = 0;
+      if (_active.value == this) _active.value = null;
+    });
   }
 
   @override
@@ -274,120 +610,206 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
       for (final a in [...widget.leading, ...widget.trailing])
         CustomSemanticsAction(label: a.label): () => _run(a),
     },
-    child: LayoutBuilder(
-      builder: (context, constraints) {
-        _width = constraints.maxWidth;
-        return GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onHorizontalDragStart: _start,
-          onHorizontalDragUpdate: _update,
-          onHorizontalDragEnd: _end,
-          child: AnimatedBuilder(
-            animation: _offset,
-            builder: (context, child) => _layout(child!),
-            child: widget.child,
-          ),
-        );
-      },
+    // Collapses from the bottom, the row's top staying put.
+    child: AnimatedBuilder(
+      animation: _collapse,
+      builder: (context, child) => _collapse.value == 1
+          ? child!
+          : ClipRect(
+              child: Align(
+                alignment: Alignment.topCenter,
+                heightFactor: _collapse.value,
+                child: child,
+              ),
+            ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          _width = constraints.maxWidth;
+          return GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onHorizontalDragStart: _start,
+            onHorizontalDragUpdate: _update,
+            onHorizontalDragEnd: _end,
+            child: AnimatedBuilder(
+              animation: Listenable.merge([
+                _offset,
+                _platter,
+                _growFrame,
+                _closing,
+              ]),
+              builder: (context, child) => _layout(child!),
+              child: widget.child,
+            ),
+          );
+        },
+      ),
     ),
   );
 
   Widget _layout(Widget child) {
     final offset = _offset.value;
-    final reveal = offset.abs();
-    final open = reveal > 0.5;
-    final progress = (reveal / (SwipeMetrics.gap * 4)).clamp(0.0, 1.0);
-    // SwiftUI: #E5E5EA in light mode, the system's grey 5.
+    final open = offset.abs() > 0.5;
+    final fade = _platter.value.clamp(0.0, 1.0);
+    // SwiftUI: #E5E5EA in light mode, the system's grey 5. It fades by its
+    // own opacity (lerping from transparent black would grey it).
     final platter = CupertinoDynamicColor.resolve(
       GlassColors.swipePlatter,
       context,
     );
     final row = DecoratedBox(
       decoration: ShapeDecoration(
-        color: Color.lerp(GlassColors.transparent, platter, progress),
+        color: platter.withValues(alpha: platter.a * fade),
         shape: RoundedSuperellipseBorder(
-          borderRadius: BorderRadius.circular(
-            SwipeMetrics.rowRadius * progress,
-          ),
+          borderRadius: BorderRadius.circular(SwipeMetrics.rowRadius * fade),
         ),
       ),
       child: child,
     );
     return Stack(
       children: [
-        if (open) _actions(offset),
-        Transform.translate(
-          offset: Offset(_rtl ? -offset : offset, 0),
-          // While open, a tap on the row closes it instead of reaching it.
-          child: open
-              ? GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => _settle(0),
-                  child: AbsorbPointer(child: row),
-                )
-              : row,
+        if (open) ..._actions(offset),
+        // Gone, the row keeps its size (the collapse needs it) unseen.
+        Opacity(
+          opacity: _gone ? 0 : 1,
+          child: Transform.translate(
+            offset: Offset(_rtl ? -offset : offset, 0),
+            // While open, a tap on the row closes it instead of reaching it.
+            child: open
+                ? GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _settle(0),
+                    child: AbsorbPointer(child: row),
+                  )
+                : row,
+          ),
         ),
       ],
     );
   }
 
-  /// The actions in the space the row has uncovered.
-  Widget _actions(double offset) {
+  /// The actions in the space the row has uncovered, as SwiftUI places
+  /// them: each grows in place at its resting spot as its slot is
+  /// uncovered; past rest the inner ones keep to the row (fading) and the
+  /// outermost stretches; past the full-swipe point it takes it all.
+  List<Widget> _actions(double offset) {
     final actions = _shown;
-    // Uncovered space, less the gaps by the row and by the screen's edge.
-    final width = offset.abs() - SwipeMetrics.gap * 2;
-    final full = _fullSwipe;
-    final stacked = _stacked;
+    final n = actions.length;
+    const gap = SwipeMetrics.gap;
+    final w = _actionWidth(actions);
+    final reveal = offset.abs();
+    final rest = _extent(actions);
+    final full = _taken;
+    // Actions at the right screen edge (the row to their left).
+    final atRight = (offset < 0) != _rtl;
     final rowHeight = _rowHeight;
-    // From the row towards the edge: the first action is outermost.
-    final ordered = actions.reversed.toList();
-    final items = <Widget>[
-      for (var i = 0; i < ordered.length; i++) ...[
-        if (i > 0) const SizedBox(width: SwipeMetrics.gap),
-        Expanded(
-          // Past the full-swipe point the outermost action takes it all.
-          flex: full ? (i == ordered.length - 1 ? 1000 : 1) : 1,
-          child: SwipeActionButton(
-            action: ordered[i],
-            stacked: stacked,
-            rowHeight: rowHeight,
-            onPressed: () => _run(ordered[i]),
-          ),
-        ),
-      ],
-    ];
-    // Narrower than the actions need, they keep their size and are
-    // uncovered from the edge in.
-    final natural =
-        actions.length * _actionWidth(actions) +
-        (actions.length - 1) * SwipeMetrics.gap;
-    final shown = width < 0 ? 0.0 : width;
-    final edge = offset < 0
-        ? AlignmentDirectional.centerEnd
-        : AlignmentDirectional.centerStart;
-    return Positioned.fill(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: SwipeMetrics.gap),
-        child: Align(
-          alignment: edge,
-          child: ClipRect(
-            child: SizedBox(
-              width: shown,
-              child: OverflowBox(
-                alignment: edge,
-                minWidth: shown < natural ? natural : shown,
-                maxWidth: shown < natural ? natural : shown,
-                child: Row(
-                  textDirection: offset < 0
-                      ? Directionality.of(context)
-                      : (_rtl ? TextDirection.ltr : TextDirection.rtl),
-                  children: items,
-                ),
+    final double h;
+    final double top;
+    var labelGap = SwipeMetrics.stackedLabelGap;
+    if (_circles) {
+      h = SwipeMetrics.stackedCircle;
+      labelGap = SwipeMetrics.circleLabelGap;
+      top = (rowHeight - (h + labelGap + SwipeMetrics.stackedLabelHeight)) / 2;
+    } else if (_stacked) {
+      h = SwipeMetrics.stackedHeight;
+      top = SwipeMetrics.stackedInset;
+    } else {
+      h = rowHeight - SwipeMetrics.compactInset * 2;
+      top = SwipeMetrics.compactInset;
+    }
+    final groupHeight = _stacked
+        ? h + labelGap + SwipeMetrics.stackedLabelHeight
+        : h;
+    final buttons = <Widget>[];
+    // From the screen edge in: the first action is outermost.
+    // The opacity follows the offset; only the size lags. Closing, both
+    // run down from where they were.
+    final sizes = _closeSizes ?? _sizes;
+    final opacities = _closeOpacities ?? _opacities();
+    for (var k = 0; k < n; k++) {
+      // Past the full-swipe point the outermost takes over at once.
+      final grown = full && k == 0 ? 1.0 : (k < sizes.length ? sizes[k] : 0.0);
+      if (grown == 0) continue;
+      // Closing, the inner actions go in the first part of the outer's
+      // time.
+      final closing = k == 0
+          ? _closing.value
+          : ((_closing.value - 1 + SwipeMetrics.innerCloseFraction) /
+                    SwipeMetrics.innerCloseFraction)
+                .clamp(0.0, 1.0);
+      if (closing == 0) continue;
+      // Closing, they shrink to nothing while fading to about 0.4.
+      var opacity =
+          (full && k == 0 ? 1.0 : (k < opacities.length ? opacities[k] : 1.0)) *
+          (SwipeMetrics.closeOpacity +
+              (1 - SwipeMetrics.closeOpacity) * closing);
+      // Distance of the action's edge-side from the screen edge.
+      var near = gap + k * (w + gap);
+      var width = w;
+      if (reveal > rest) {
+        // The inner ones keep to the row, fading; the outermost stretches
+        // to meet them (past the full-swipe point too).
+        if (k == 0) {
+          width = w + reveal - rest;
+        } else {
+          final past = reveal - rest;
+          near += past;
+          opacity *=
+              SwipeMetrics.innerFade +
+              (1 - SwipeMetrics.innerFade) *
+                  math.exp(-past / SwipeMetrics.innerFadeDistance) -
+              SwipeMetrics.innerFadeTail * ((past - 20) / 60).clamp(0.0, 1.0);
+        }
+      }
+      final action = actions[k];
+      buttons.add(
+        Positioned(
+          left: atRight ? _width - near - width : near,
+          top: top,
+          width: width,
+          height: groupHeight,
+          child: Opacity(
+            opacity: opacity,
+            child: Transform.scale(
+              scale: grown * closing,
+              child: SwipeActionButton(
+                action: action,
+                stacked: _stacked,
+                width: width,
+                naturalWidth: w,
+                height: h,
+                rowOnLeft: atRight,
+                labelGap: labelGap,
+                taken: full && k == 0,
+                onPressed: () => _run(action),
               ),
             ),
           ),
         ),
-      ),
-    );
+      );
+    }
+    return buttons;
   }
+}
+
+/// [from] approaching [to] exponentially, with SwiftUI's platter time
+/// constant ([SwipeMetrics.platterTau]).
+class _Approach extends Simulation {
+  _Approach(this.from, this.to);
+
+  final double from;
+  final double to;
+
+  @override
+  double x(double time) =>
+      to + (from - to) * math.exp(-time / SwipeMetrics.platterTau);
+
+  @override
+  double dx(double time) =>
+      -(from - to) /
+      SwipeMetrics.platterTau *
+      math.exp(-time / SwipeMetrics.platterTau);
+
+  @override
+  bool isDone(double time) =>
+      time * 1000 >= SwipeMetrics.platterFade.inMilliseconds;
 }

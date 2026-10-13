@@ -11,7 +11,7 @@ import 'new_component_twins.dart';
 /// scenes in `ios/Runner/ControlScenes.swift`, so
 /// `tool/reference/measure_components.py` measures both the same way.
 /// Scenes: controls, toolbar, accessory, sheet, sheetlarge, menu, search,
-/// swipe, swipetall, alert, dialog, popover, stepper, picker, datepicker,
+/// swipe, swipetall, swipeone, swipeonedark, alert, dialog, popover, stepper, picker, datepicker,
 /// searchtab, disclosure, emptystate, fullscreencover, gauge; and
 /// borrowedTwin's (tabbar, tabbarphoto, tabbardark, tabbarphotodark,
 /// badge…).
@@ -64,6 +64,8 @@ class ReferenceTwin extends StatelessWidget {
         'searchtab' => const _SearchTab(),
         'swipe' => const _Swipe(tall: false),
         'swipetall' => const _Swipe(tall: true),
+        'swipeone' => const _SwipeOne(dark: false),
+        'swipeonedark' => const _SwipeOne(dark: true),
         _ =>
           borrowedTwin(scene) ?? newComponentTwin(scene) ?? const _Controls(),
       },
@@ -408,6 +410,7 @@ class _Swipe extends StatelessWidget {
                 GlassSwipeAction(
                   icon: CupertinoIcons.trash_fill,
                   label: 'Delete',
+                  destructive: true,
                   color: GlassSystemColors.red,
                   onPressed: () {},
                 ),
@@ -671,4 +674,94 @@ class _SearchTabState extends State<_SearchTab> {
     ),
     body: const SizedBox.expand(),
   );
+}
+
+/// `-controls swipeone(dark)`: 110-pt rows (title, subtitle, three grey
+/// capsules) with one trailing destructive Delete. The list starts at 62,
+/// as SwiftUI's plain List; row 1 spans y 172–282.
+class _SwipeOne extends StatelessWidget {
+  const _SwipeOne({required this.dark});
+
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = dark ? Colors.white : Colors.black;
+    final secondary = dark ? const Color(0x99EBEBF5) : const Color(0x993C3C43);
+    final scaffold = Scaffold(
+      backgroundColor: dark ? Colors.black : Colors.white,
+      body: ListView(
+        padding: const EdgeInsets.only(top: 62),
+        children: [
+          for (var i = 0; i < 8; i++)
+            GlassSwipeActions(
+              key: ValueKey(i),
+              trailing: [
+                GlassSwipeAction(
+                  icon: CupertinoIcons.trash,
+                  label: 'Delete',
+                  destructive: true,
+                  color: GlassSystemColors.red,
+                  onPressed: () {},
+                ),
+              ],
+              child: SizedBox(
+                height: 110,
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        height: 22,
+                        child: Text(
+                          'Session $i',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                            color: fg,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      SizedBox(
+                        height: 20,
+                        child: Text(
+                          '2 days ago · iPhone',
+                          style: TextStyle(fontSize: 15, color: secondary),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          for (final t in const ['Open', 'Share', 'Copy']) ...[
+                            Container(
+                              width: 72,
+                              height: 30,
+                              alignment: Alignment.center,
+                              decoration: ShapeDecoration(
+                                shape: const StadiumBorder(),
+                                color: const Color(0xFF8E8E93)
+                                    .withValues(alpha: 0.25),
+                              ),
+                              child: Text(
+                                t,
+                                style: TextStyle(fontSize: 13, color: fg),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+    return dark ? _dark(context, scaffold) : scaffold;
+  }
 }

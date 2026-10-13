@@ -45,6 +45,10 @@ enum ControlScenes {
     case "searchtab": root = AnyView(SearchTabReference())
     case "swipe": root = AnyView(SwipeReference(tall: false))
     case "swipetall": root = AnyView(SwipeReference(tall: true))
+    case "swipeone": root = AnyView(SwipeOneReference(dark: false))
+    case "swipeonedark": root = AnyView(SwipeOneReference(dark: true))
+    case "swipeonemid": root = AnyView(SwipeVariantReference(tall110: false, two: false))
+    case "swipetwotall": root = AnyView(SwipeVariantReference(tall110: true, two: true))
     case "textfield": root = AnyView(TextFieldReference())
     case "list": root = AnyView(ListReference())
     case "progress": root = AnyView(ProgressReference())
@@ -410,6 +414,96 @@ struct SwipeReference: View {
       .swipeActions(edge: .trailing) {
         Button("Delete", systemImage: "trash", role: .destructive) {}
         Button("Share", systemImage: "square.and.arrow.up") {}.tint(.blue)
+      }
+    }
+    .listStyle(.plain)
+    .environment(\.colorScheme, .light)
+  }
+}
+
+/// A plain list of 110-pt rows (title, subtitle and a row of three grey
+/// capsules, like a history list) with ONE trailing action, a destructive
+/// Delete; no leading actions. `-controls swipeonedark` is the same in dark
+/// mode. Row 1 spans y 172–282 pt (the list starts at 62). Motion
+/// recordings: tool/fidelity/record_swipe_motion.sh.
+@available(iOS 26.0, *)
+struct SwipeOneReference: View {
+  let dark: Bool
+  var body: some View {
+    List(0..<8) { i in
+      VStack(alignment: .leading, spacing: 0) {
+        Text("Session \(i)").font(.system(size: 17, weight: .semibold))
+          .frame(height: 22, alignment: .leading)
+        Text("2 days ago · iPhone").font(.system(size: 15))
+          .foregroundStyle(.secondary)
+          .frame(height: 20, alignment: .leading)
+          .padding(.top, 2)
+        HStack(spacing: 8) {
+          ForEach(["Open", "Share", "Copy"], id: \.self) { t in
+            Capsule().fill(Color.gray.opacity(0.25))
+              .frame(width: 72, height: 30)
+              .overlay(Text(t).font(.system(size: 13)))
+          }
+        }
+        .padding(.top, 12)
+      }
+      .padding(.leading, 16)
+      .frame(maxWidth: .infinity, minHeight: 110, maxHeight: 110, alignment: .leading)
+      .listRowInsets(EdgeInsets())
+      .swipeActions(edge: .trailing) {
+        Button("Delete", systemImage: "trash", role: .destructive) {}
+      }
+    }
+    .listStyle(.plain)
+    .environment(\.colorScheme, dark ? .dark : .light)
+    .background(dark ? Color.black : Color.white)
+  }
+}
+
+/// SwiftUI-only swipe variants (no twin): `-controls swipeonemid` is
+/// swipetall's two-line rows (about 71 pt) with ONE trailing Delete;
+/// `-controls swipetwotall` is swipeone's 110-pt rows with TWO trailing
+/// actions (Delete, Share). Light.
+@available(iOS 26.0, *)
+struct SwipeVariantReference: View {
+  let tall110: Bool
+  let two: Bool
+  var body: some View {
+    List(0..<8) { i in
+      Group {
+        if tall110 {
+          VStack(alignment: .leading, spacing: 0) {
+            Text("Session \(i)").font(.system(size: 17, weight: .semibold))
+              .frame(height: 22, alignment: .leading)
+            Text("2 days ago · iPhone").font(.system(size: 15))
+              .foregroundStyle(.secondary)
+              .frame(height: 20, alignment: .leading)
+              .padding(.top, 2)
+            HStack(spacing: 8) {
+              ForEach(["Open", "Share", "Copy"], id: \.self) { t in
+                Capsule().fill(Color.gray.opacity(0.25))
+                  .frame(width: 72, height: 30)
+                  .overlay(Text(t).font(.system(size: 13)))
+              }
+            }
+            .padding(.top, 12)
+          }
+          .padding(.leading, 16)
+          .frame(maxWidth: .infinity, minHeight: 110, maxHeight: 110, alignment: .leading)
+          .listRowInsets(EdgeInsets())
+        } else {
+          HStack {
+            Image(systemName: "doc.text")
+            VStack(alignment: .leading) {
+              Text("Item \(i)")
+              Text("2 days ago · iPhone").font(.caption).foregroundStyle(.secondary)
+            }
+          }
+        }
+      }
+      .swipeActions(edge: .trailing) {
+        Button("Delete", systemImage: "trash", role: .destructive) {}
+        if two { Button("Share", systemImage: "square.and.arrow.up") {}.tint(.blue) }
       }
     }
     .listStyle(.plain)
