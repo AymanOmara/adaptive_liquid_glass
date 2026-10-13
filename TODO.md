@@ -84,6 +84,14 @@ and CHANGELOG.md.
     only the bar it overhangs (backdropInset), so its bands stay dark
     over text instead of showing the page (press 10-60 |diff| 7.25 ->
     6.47)
+  - bar tone: done (2026-10-13, grey-stripe scenes tabbargreys /
+    tabbarlowgreys): iOS's bar lightens with the average luma under it
+    (ambientLift) and passes less backdrop; whole-crop shader |diff|
+    photo 3.81 -> 2.59, dark photo 3.13 -> 2.84, text 6.89 -> 5.86,
+    greys 3.73 -> 2.44 (dark 4.07 -> 1.68), accessorytext 10.8 -> 7.4.
+    Open: over text the dark bar reads ~+3 bright and its detail is
+    0.81 of iOS's (a Gaussian blur cannot match iOS's kernel on text and
+    photos at once: sigma 7 suits photos, 9 text)
   - drag: done. VibrantBlend reuses its glyph image (rasterising every
     tab each frame dropped frames: a drag took 139 frames vs iOS 66, now
     71); no motion blur (iOS keeps the tabs crisp; ours ghosted)
