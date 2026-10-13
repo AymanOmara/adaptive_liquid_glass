@@ -1,12 +1,16 @@
-/// `GlassColorPicker`'s metrics. Nothing here is measured from SwiftUI's
-/// `ColorPicker` yet: every value is estimated from iOS 26's colour picker
-/// sheet as it appears on screen.
+/// `GlassColorPicker`'s metrics. The row swatch is measured from SwiftUI's
+/// `ColorPicker` (iOS 26.4, "components" → "color_row"); the sheet's values
+/// are estimated (UIColorPickerViewController, presented from a reference
+/// scene, captured blank on the simulator).
 abstract final class ColorPickerMetrics {
-  /// The row's swatch diameter (estimated).
+  /// The row's swatch diameter (measured).
   static const double rowSwatch = 28;
 
-  /// The row's swatch ring thickness (estimated).
-  static const double rowRing = 1.5;
+  /// The row's swatch hue ring thickness (measured).
+  static const double rowRing = 3.33;
+
+  /// The gap between the row swatch's ring and its colour (measured).
+  static const double rowRingGap = 1.67;
 
   /// The sheet content's inset from the sheet's edges (estimated).
   static const double padding = 20;

@@ -390,24 +390,145 @@ def new_components(d):
     return out
 
 
+def runs(v):
+    """Runs of True in a 1-D mask, in pt: [(start, end), ...]."""
+    xs = np.where(np.asarray(v))[0]
+    out = []
+    if len(xs) == 0:
+        return out
+    s = p = xs[0]
+    for x in xs[1:]:
+        if x != p + 1:
+            out.append((s / S, (p + 1) / S))
+            s = x
+        p = x
+    out.append((s / S, (p + 1) / S))
+    return out
+
+
+def more_components(d):
+    """The remaining components, from tool/reference/capture_more.sh
+    captures in `d` (build/reference/swiftui/)."""
+    out = {}
+    dark = lambda c: np.asarray(c).max(axis=-1) < 128
+    # Label (centre 201, 100): the star's ink, then the title's.
+    a = load(d, "label.png")
+    ink = runs(dark(a[int(70 * S):int(130 * S)]).any(axis=0))
+    out["label"] = {"icon_ink_width": r(ink[0][1] - ink[0][0]),
+                    "title_from_icon": r(ink[1][0] - ink[0][0]),
+                    "ink_gap": r(ink[1][0] - ink[0][1])}
+    # Links on mid grey: the glass is lighter than the page.
+    a = load(d, "link.png")
+    link = {}
+    for key, y in (("text", 100), ("share", 200), ("icon", 300)):
+        band = a[int((y - 30) * S):int((y + 30) * S)]
+        gx = max(runs((band.min(axis=-1) > 185).any(axis=0)), key=lambda q: q[1] - q[0])
+        gy = max(runs((band.min(axis=-1) > 185).any(axis=1)), key=lambda q: q[1] - q[0])
+        ink = runs((band.max(axis=-1) < 90).any(axis=0))
+        link[key] = {"width": r(gx[1] - gx[0]), "height": r(gy[1] - gy[0]),
+                     "ink_start": r(ink[0][0] - gx[0])}
+        if key != "text":
+            link[key]["icon_ink_width"] = r(ink[0][1] - ink[0][0])
+            link[key]["ink_gap"] = r(ink[1][0] - ink[0][1])
+    out["link"] = link
+    # Wheel picker (centre 201, 300): the #F4F4F5 selection band, the
+    # selected row's digits.
+    band = lambda c: np.abs(np.asarray(c) - [244, 244, 245]).max(axis=-1) <= 2
+    a = load(d, "wheel.png")
+    by = runs(band(a[:, int(70 * S)]))
+    by = [q for q in by if q[1] - q[0] > 5][0]
+    bx = runs(band(a[int(300 * S)]))
+    sel = runs(dark(a[int(285 * S):int(316 * S), int(150 * S):int(250 * S)]).any(axis=1))
+    out["wheel_picker"] = {
+        "band_height": r(by[1] - by[0]), "band_width": r(bx[-1][1] - bx[0][0]),
+        "band_start": r(bx[0][0]), "selected_digit_ink": r(sel[0][1] - sel[0][0]),
+        "band_colour": hexc(a[int(300 * S), int(70 * S)]),
+    }
+    # Date wheel (201, 200), time wheel (201, 480), time capsule (201, 720).
+    a = load(d, "datewheel.png")
+    by = [q for q in runs(band(a[:, int(60 * S)])) if q[1] - q[0] > 5]
+    bx = runs(band(a[int(200 * S)]))
+    def centres(y):
+        ink = runs(dark(a[int((y - 12) * S):int((y + 12) * S)]).any(axis=0))
+        groups, cur = [], [ink[0]]
+        for q in ink[1:]:
+            if q[0] - cur[-1][1] > 8:
+                groups.append(cur)
+                cur = [q]
+            else:
+                cur.append(q)
+        groups.append(cur)
+        return [r((g[0][0] + g[-1][1]) / 2) for g in groups], [r(g[0][0]) for g in groups]
+    dc, ds = centres(200)
+    tc, _ = centres(480)
+    cy = runs(a[:, int(170 * S)].min(axis=-1) < 252)
+    cy = [q for q in cy if 690 < q[0] < 750][0]
+    cx = runs(a[int(720 * S)].min(axis=-1) < 252)
+    ink = runs(dark(a[int(705 * S):int(735 * S)]).any(axis=0))
+    out["date_wheel"] = {
+        "band_height": r(by[0][1] - by[0][0]), "band_width": r(bx[-1][1] - bx[0][0]),
+        "month_start": ds[0], "day_centre": dc[1], "year_centre": dc[2],
+        "hour_centre": tc[0], "minute_centre": tc[1], "period_centre": tc[2],
+        "time_capsule_height": r(cy[1] - cy[0]),
+        "time_capsule_padding": r(ink[0][0] - cx[0][0]),
+    }
+    # Active search: field and close circle above the keyboard.
+    a = load(d, "searchactive.png")
+    # White runs along y 504; the glyphs split them, so: the field ends
+    # before x 335, the close circle starts after it.
+    wr = runs(a[int(504 * S)].min(axis=-1) >= 254)
+    field_end = max(q[1] for q in wr if q[1] < 335)
+    close = [q for q in wr if q[0] > 335]
+    fy = [q for q in runs(a[:, int(366 * S)].min(axis=-1) >= 254) if q[0] > 440]
+    kb = [q for q in runs(np.abs(np.diff(a[:, int(5 * S)].sum(axis=-1))) > 6) if q[0] > fy[-1][1]][0]
+    out["searchable"] = {
+        "inset": r(wr[0][0]), "field_end": r(field_end),
+        "close_size": r(close[-1][1] - close[0][0]), "close_inset": r(W - close[-1][1]),
+        "gap": r(close[0][0] - field_end),
+        "height": r(fy[-1][1] - fy[0][0]), "keyboard_gap": r(kb[0] - fy[-1][1]),
+    }
+    # Cover close button (around 364, 84): its rim is a 1-px white line
+    # between the faint shadow outside and the glass inside.
+    a = load(d, "coverclose.png")
+    edge = lambda v: runs(np.asarray(v).min(axis=-1) >= 254)
+    ex = [q for q in edge(a[int(84 * S), int(330 * S):]) if q[1] - q[0] < 3]
+    ey = [q for q in edge(a[int(40 * S):int(130 * S), int(364 * S)]) if q[1] - q[0] < 3]
+    x0, x1 = 330 + ex[0][0], 330 + ex[-1][1]
+    y0, y1 = 40 + ey[0][0], 40 + ey[-1][1]
+    out["cover_close"] = {"size": r(x1 - x0), "height": r(y1 - y0),
+                          "right_inset": r(W - x1), "top": r(y0)}
+    # Colour picker row: the swatch at the trailing edge (centre y 125).
+    a = load(d, "colorrow.png")
+    col = runs(np.abs(a[:, int(353.5 * S)] - [255, 255, 255]).max(axis=-1) > 10)
+    col = [q for q in col if 100 < q[0] < 150]
+    out["color_row"] = {"swatch": r(col[-1][1] - col[0][0]),
+                        "ring": r(col[0][1] - col[0][0]),
+                        "ring_gap": r(col[1][0] - col[0][1])}
+    return out
+
+
 def main():
     d = pathlib.Path(sys.argv[1])
-    comp = {
-        **controls(d),
-        "toolbar": toolbar(d),
-        "accessory": accessory(d),
-        "sheet": sheet(d),
-        "menu": menu(d),
-        "search": search(d),
-        "swipe": swipe(d),
-    }
+    dst = pathlib.Path(__file__).with_name("controls.json")
+    data = json.loads(dst.read_text())
+    comp = data.get("components", {})
+    if (d / "controls.png").exists():
+        comp.update({
+            **controls(d),
+            "toolbar": toolbar(d),
+            "accessory": accessory(d),
+            "sheet": sheet(d),
+            "menu": menu(d),
+            "search": search(d),
+            "swipe": swipe(d),
+        })
     if (d / "alert.png").exists():
         comp.update(new_components(d))
+    if (d / "swiftui" / "label.png").exists():
+        comp.update(more_components(d / "swiftui"))
     print(json.dumps(comp, indent=1))
     if "--dry" in sys.argv:
         return
-    dst = pathlib.Path(__file__).with_name("controls.json")
-    data = json.loads(dst.read_text())
     data["components"] = comp
     dst.write_text(json.dumps(data, indent=2) + "\n")
 

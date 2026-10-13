@@ -1,56 +1,51 @@
 import 'package:flutter/cupertino.dart';
 
-import '../core/ios_text.dart';
+import '../button/glass_button.dart';
+import '../button/glass_button_metrics_scope.dart';
+import '../button/glass_button_shape.dart';
+import '../core/glass_render_mode.dart';
+import '../toolbar/toolbar_metrics.dart';
 import 'search_metrics.dart';
 
-/// The "Cancel" label that ends an active [GlassSearchable]'s field.
+/// The button that ends an active `GlassSearchable` field.
 ///
 /// ```dart
 /// SearchCancelButton(onPressed: controller.cancel, label: 'Cancel')
 /// ```
 ///
-/// A body-size active-blue label over a widened touch target; the
-/// searchable springs it in and out.
+/// iOS 26's: a 48-pt glass circle with an xmark beside the field
+/// (measured from SwiftUI's active `.searchable`, iOS 26.4). [label] is
+/// what assistive tech reads.
 class SearchCancelButton extends StatelessWidget {
-  /// Creates the button.
+  /// Creates the cancel button.
   const SearchCancelButton({
     super.key,
     required this.onPressed,
     required this.label,
+    this.mode,
   });
 
-  /// Called when the label is tapped.
+  /// Ends the search.
   final VoidCallback onPressed;
 
-  /// The label, usually the localized "Cancel".
+  /// The button's accessible name.
   final String label;
 
+  /// Rendering mode; see [GlassRenderMode].
+  final GlassRenderMode? mode;
+
   @override
-  Widget build(BuildContext context) => Semantics(
-    container: true,
-    button: true,
-    label: label,
-    child: GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onPressed,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          minWidth: SearchMetrics.cancelMinWidth,
-        ),
-        child: Center(
-          // The semantic label above replaces the visible one.
-          child: ExcludeSemantics(
-            child: Text(
-              label,
-              style: IOSText.style(
-                SearchMetrics.cancelFontSize,
-                color: CupertinoDynamicColor.resolve(
-                  CupertinoColors.activeBlue,
-                  context,
-                ),
-              ),
-            ),
-          ),
+  Widget build(BuildContext context) => MergeSemantics(
+    child: SizedBox.square(
+      dimension: SearchMetrics.cancelSize,
+      child: GlassButtonMetricsScope(
+        metrics: ToolbarMetrics.single,
+        child: GlassButton.icon(
+          onPressed: onPressed,
+          icon: CupertinoIcons.xmark,
+          shape: GlassButtonShape.circle,
+          mode: mode,
+          semanticLabel: label,
         ),
       ),
     ),

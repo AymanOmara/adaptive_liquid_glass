@@ -1,5 +1,14 @@
 ## Unreleased
 
+- Measured against SwiftUI (iOS 26.4) and pinned in the reference tests:
+  `GlassLabel` gap 6 -> 12; `GlassWheelPicker` rows 21 -> 22 pt (band,
+  width and row height confirmed); date wheel band 32 -> 30.67;
+  `GlassSearchable` active field 12 pt from the sides and 12 above the
+  keyboard (was 16/8), idle 28 from the sides and bottom, and Cancel is now
+  iOS 26's 48-pt glass xmark circle 12 pt from the field; the full-screen
+  cover's close button is a 44-pt circle flush with the safe area (was the
+  30-pt regular icon button); the colour row swatch has iOS's hue ring
+  (3.33 pt) and 1.67-pt gap. Links and the time capsule already matched.
 - `GlassTabBar`, native mode, dark: a quick tap's travelling lens no
   longer shows a grey veil. UIKit's clear glass lifted black to about 40
   grey levels under the lens; it is now shaded as the bar's light fades,

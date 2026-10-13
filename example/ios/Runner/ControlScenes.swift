@@ -50,6 +50,15 @@ enum ControlScenes {
     case "covertiming": root = AnyView(CoverTimingReference())
     case "fullscreencover": root = AnyView(FullScreenCoverReference())
     case "gauge": root = AnyView(GaugeReference())
+    case "label": root = AnyView(LabelReference())
+    case "link": root = AnyView(LinkReference())
+    case "wheel": root = AnyView(WheelReference())
+    case "datewheel": root = AnyView(DateWheelReference())
+    case "searchactive": root = AnyView(SearchActiveReference())
+    case "refresh": root = AnyView(RefreshReference())
+    case "colorrow": root = AnyView(ColorSheetReference(present: false))
+    case "colorsheet": root = AnyView(ColorSheetReference(present: true))
+    case "coverclose": root = AnyView(CoverCloseReference())
     default: return false
     }
     window?.rootViewController = UIHostingController(rootView: root)

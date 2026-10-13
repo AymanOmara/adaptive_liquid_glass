@@ -9,3 +9,9 @@ the example for the simulator, install it, capture `buttons.png` and
 `tool/fidelity/.venv/bin/python tool/reference/measure_controls.py build/reference`.
 `lib/src/button/glass_button_metrics.dart` and
 `lib/src/navigation/nav_bar_metrics.dart` are tested against this file.
+
+Remaining components (label, link, wheel, datewheel, searchactive,
+colorrow, coverclose): `tool/reference/capture_more.sh <UDID>` (or
+`capture_one.sh <UDID> <scene>`) into `build/reference/swiftui/`, then
+`measure_components.py build/reference`; it merges into the existing
+"components" section and measures only the captures present.

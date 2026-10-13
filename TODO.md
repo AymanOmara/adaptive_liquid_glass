@@ -58,12 +58,14 @@ and CHANGELOG.md.
     clear capsule/rect16/rect28 text light+dark (SSIM 0.958-0.964, the
     edge band over sharp text; SSIM on text lines is a phase match)
 
-6- components shipped with estimated, unmeasured geometry (measure vs
-  SwiftUI): GlassLabel, GlassLink/GlassShareLink, GlassColorPicker sheet,
-  GlassRefresh, GlassSearchable, GlassDatePicker wheel/time, GlassWheelPicker,
-  full-screen cover close button and drag thresholds, context menu (synthetic
-  touches cannot open SwiftUI's), springs and press animations of the newer
-  components.
+6- still unmeasured vs SwiftUI (label, links, wheels, searchable, cover
+  close button and colour row measured 2026-10-13): GlassColorPicker sheet
+  (UIColorPickerViewController captured blank on the simulator),
+  GlassRefresh (needs a real pull; beginRefreshing showed no spinner),
+  searchable scope bar and suggestions platter (keyboard tutorial covered
+  them), date wheel time-column spacing (UIKit packs them unevenly), cover
+  drag thresholds (SwiftUI's cover has no drag), context menu (synthetic
+  touches cannot open SwiftUI's), springs and press animations.
 
 7- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
   Bar-region mean |diff| native/shader: white 1.24/1.35, photo 1.93/5.14,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart' show MaterialLocalizations;
 import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 
 import '../button/glass_button.dart';
+import '../button/glass_button_metrics_scope.dart';
 import '../button/glass_button_shape.dart';
 import '../core/glass_colors.dart';
 import '../core/ios_page_text.dart';
@@ -110,7 +111,7 @@ class GlassFullScreenCoverRoute<T> extends PageRoute<T> {
                           const SizedBox.expand(),
                           Builder(builder: builder),
                           PositionedDirectional(
-                            top: 0,
+                            top: FullScreenCoverMetrics.closeButtonTop,
                             end: FullScreenCoverMetrics.closeButtonInset,
                             child: Builder(builder: _closeButton),
                           ),
@@ -132,17 +133,20 @@ class GlassFullScreenCoverRoute<T> extends PageRoute<T> {
 
   /// iOS 26's close button: a glass circle with an xmark, popping the
   /// cover (respecting `PopScope`).
-  Widget _closeButton(BuildContext context) => GlassButton.icon(
-    onPressed: () => Navigator.maybePop(context),
-    icon: CupertinoIcons.xmark,
-    shape: GlassButtonShape.circle,
-    semanticLabel:
-        closeButtonSemanticLabel ??
-        Localizations.of<MaterialLocalizations>(
-          context,
-          MaterialLocalizations,
-        )?.closeButtonLabel ??
-        'Close',
+  Widget _closeButton(BuildContext context) => GlassButtonMetricsScope(
+    metrics: FullScreenCoverMetrics.closeButton,
+    child: GlassButton.icon(
+      onPressed: () => Navigator.maybePop(context),
+      icon: CupertinoIcons.xmark,
+      shape: GlassButtonShape.circle,
+      semanticLabel:
+          closeButtonSemanticLabel ??
+          Localizations.of<MaterialLocalizations>(
+            context,
+            MaterialLocalizations,
+          )?.closeButtonLabel ??
+          'Close',
+    ),
   );
 
   @override

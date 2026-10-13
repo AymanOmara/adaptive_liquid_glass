@@ -446,7 +446,10 @@ void main() {
     expect(button, findsOneWidget);
     expect(find.byIcon(CupertinoIcons.xmark), findsOneWidget);
     expect(t.getTopRight(button).dx, moreOrLessEquals(402 - 16));
-    expect(t.getTopRight(button).dy, moreOrLessEquals(59));
+    expect(
+      t.getTopRight(button).dy,
+      moreOrLessEquals(59 + FullScreenCoverMetrics.closeButtonTop),
+    );
     expect(find.bySemanticsLabel('Close'), findsOneWidget);
     await t.tap(button);
     await t.pumpAndSettle();

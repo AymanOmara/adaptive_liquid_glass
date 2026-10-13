@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
@@ -298,15 +299,28 @@ class _GlassSearchableState extends State<GlassSearchable>
       fit: StackFit.expand,
       children: [
         widget.child,
-        PositionedDirectional(
-          start: SearchMetrics.inset,
-          end: SearchMetrics.inset,
-          bottom:
-              math.max(
-                MediaQuery.paddingOf(context).bottom,
-                MediaQuery.viewInsetsOf(context).bottom,
-              ) +
-              SearchMetrics.verticalInset,
+        AnimatedBuilder(
+          animation: _reveal,
+          // Idle, SwiftUI floats the field like the toolbar (28 pt from
+          // the screen's sides and bottom); active, it widens to 12 pt
+          // from the sides and sits 12 pt above the keyboard.
+          builder: (context, child) {
+            final side = lerpDouble(
+              SearchMetrics.idleInset,
+              SearchMetrics.inset,
+              _reveal.value.clamp(0.0, 1.0),
+            )!;
+            return PositionedDirectional(
+              start: side,
+              end: side,
+              bottom: math.max(
+                SearchMetrics.idleBottom,
+                MediaQuery.viewInsetsOf(context).bottom +
+                    SearchMetrics.verticalInset,
+              ),
+              child: child!,
+            );
+          },
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -363,6 +377,7 @@ class _GlassSearchableState extends State<GlassSearchable>
                       label:
                           widget.cancelLabel ??
                           cupertinoL10n(context).cancelButtonLabel,
+                      mode: widget.mode,
                     ),
                   ),
                 ),

@@ -10,8 +10,9 @@ abstract final class WheelPickerMetrics {
   /// The wheel's width when the parent sets none (UIPickerView's default).
   static const double width = 320;
 
-  /// A label's size.
-  static const double fontSize = 21;
+  /// A label's size (measured: the selected row's digits are 15.33 pt of
+  /// ink, SF's 0.7-em figures at 22 pt; 21 before).
+  static const double fontSize = 22;
 
   /// A row's padding either side of its label.
   static const double rowPadding = 16;

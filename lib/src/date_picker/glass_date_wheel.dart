@@ -353,7 +353,7 @@ class _GlassDateWheelState extends State<GlassDateWheel> {
         horizontal: WheelPickerMetrics.bandInset,
       ),
       child: SizedBox(
-        height: WheelPickerMetrics.itemExtent,
+        height: DatePickerWheelMetrics.bandHeight,
         width: double.infinity,
         child: IgnorePointer(child: ExcludeSemantics(child: band)),
       ),

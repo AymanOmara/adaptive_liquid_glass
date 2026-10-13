@@ -1194,10 +1194,9 @@ Stack(
   a frame ahead of iOS's and is a little brighter early on; icons are
   CupertinoIcons, not SF Symbols (`GlassTabBarItem.custom` takes your own). `tabBarMinimizeBehavior` and
   `sidebarAdaptable` are not implemented.
-- **Unmeasured geometry:** `GlassLabel`, `GlassLink`/`GlassShareLink`, the
-  `GlassColorPicker` sheet, `GlassRefresh`, `GlassSearchable`, the
-  `GlassDatePicker` wheel and time styles, `GlassWheelPicker` and the
-  full-screen cover's close button and drag thresholds follow iOS by eye,
+- **Unmeasured geometry:** the `GlassColorPicker` sheet, `GlassRefresh`,
+  `GlassSearchable`'s scope bar and suggestions, the date wheel's time
+  columns and the full-screen cover's drag thresholds follow iOS by eye,
   not by measurement.
 
 ## License

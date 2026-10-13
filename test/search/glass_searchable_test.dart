@@ -178,7 +178,7 @@ void main() {
     expect(find.byType(SearchCancelButton), findsOneWidget);
     expect(
       t.getSize(find.byType(SearchCancelButton)).width,
-      greaterThanOrEqualTo(SearchMetrics.cancelMinWidth),
+      SearchMetrics.cancelSize,
     );
   }, variant: ios);
 
@@ -196,7 +196,14 @@ void main() {
     await t.pumpAndSettle();
     expect(
       t.getSemantics(find.byType(SearchCancelButton)),
-      matchesSemantics(isButton: true, label: 'Cancel', hasTapAction: true),
+      matchesSemantics(
+        isButton: true,
+        label: 'Cancel',
+        hasTapAction: true,
+        isFocusable: true,
+        hasEnabledState: true,
+        isEnabled: true,
+      ),
     );
     expect(
       t.getSemantics(find.byType(GlassSearchSuggestionRow).first),

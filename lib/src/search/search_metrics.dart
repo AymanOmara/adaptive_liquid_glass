@@ -31,22 +31,30 @@ abstract final class SearchMetrics {
   /// The clear button's padding, widening its touch target.
   static const double clearPadding = 6;
 
-  // Searchable presentation (all estimated, not measured).
+  // Searchable presentation. Measured from SwiftUI's active `.searchable`
+  // (`-controls searchactive`, "components" → "searchable") unless marked
+  // estimated.
 
-  /// The field's inset from the content's sides (estimated).
-  static const double inset = 16;
+  /// The idle bottom field's inset from the screen's sides (measured, as
+  /// the toolbar's).
+  static const double idleInset = 28;
 
-  /// The field's inset from the content's top or bottom (estimated).
-  static const double verticalInset = 8;
+  /// The idle bottom field's gap above the screen's bottom edge
+  /// (measured).
+  static const double idleBottom = 28;
 
-  /// The gap between the field and Cancel (estimated).
-  static const double cancelGap = 8;
+  /// The active field's inset from the content's sides (measured).
+  static const double inset = 12;
 
-  /// Cancel's text size (estimated: iOS body).
-  static const double cancelFontSize = 17;
+  /// The active field's gap above the keyboard (measured); also its
+  /// inset from the top in the navigation-bar placement (estimated).
+  static const double verticalInset = 12;
 
-  /// Cancel's least width, widening its touch target (estimated).
-  static const double cancelMinWidth = 56;
+  /// The gap between the active field and the close button (measured).
+  static const double cancelGap = 12;
+
+  /// The close button's diameter: a glass xmark circle (measured).
+  static const double cancelSize = 48;
 
   /// The gap between the field and the scope bar (estimated).
   static const double scopeGap = 8;
