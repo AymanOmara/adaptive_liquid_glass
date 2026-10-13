@@ -1313,9 +1313,9 @@ class _GlassTabBarState extends State<GlassTabBar>
               ),
             ),
           ),
-          // UIKit's clear glass casts no shadow; iOS's light tab lens does.
+          // iOS's light tab lens casts a shadow; UIKit's clear glass none,
+          // and the shader's, full at the outline, read too dark beside it.
           if (lensShown &&
-              !_shaderLens &&
               GlassGroupScope.brightnessOf(context) != Brightness.dark)
             Positioned.fromRect(
               rect: lens.shift(
@@ -1324,9 +1324,9 @@ class _GlassTabBarState extends State<GlassTabBar>
               child: const IgnorePointer(
                 child: CustomPaint(
                   painter: BarShadow(
-                    opacity: TabBarMetrics.nativeLensShadowOpacity,
-                    offset: TabBarMetrics.nativeLensShadowOffset,
-                    sigma: TabBarMetrics.nativeLensShadowSigma,
+                    opacity: TabBarMetrics.lensShadowOpacity,
+                    offset: TabBarMetrics.lensShadowOffset,
+                    sigma: TabBarMetrics.lensShadowSigma,
                   ),
                 ),
               ),

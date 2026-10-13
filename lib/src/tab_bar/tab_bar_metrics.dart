@@ -181,15 +181,16 @@ abstract final class TabBarMetrics {
   /// top) over black, UIKit's clear glass at 78 (41).
   static const double nativeLensRimDark = 0.25;
 
-  /// The shadow under the native lens in light mode (UIKit's clear glass
-  /// casts none; SwiftUI's `TabView` lens reads ~221 just below it).
-  static const double nativeLensShadowOpacity = 0.1;
+  /// The shadow under the lens in light mode, both paths (UIKit's clear
+  /// glass casts none; SwiftUI's `TabView` lens reads ~221 just below it
+  /// and 245 just beside it).
+  static const double lensShadowOpacity = 0.1;
 
-  /// See [nativeLensShadowOpacity].
-  static const Offset nativeLensShadowOffset = Offset(0, 6);
+  /// See [lensShadowOpacity].
+  static const Offset lensShadowOffset = Offset(0, 6);
 
-  /// See [nativeLensShadowOpacity].
-  static const double nativeLensShadowSigma = 5;
+  /// See [lensShadowOpacity].
+  static const double lensShadowSigma = 5;
 
   /// The band at the lens's edge where content is refracted, not sharp.
   static const double lensRim = 9;

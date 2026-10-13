@@ -53,9 +53,9 @@ const tabLensLight = GlassVariantConstants(
   fillOpacity: 0,
   saturation: 1,
   dim: 0.02,
-  shadowRadius: 10,
-  shadowOpacity: 0.1,
-  shadowOffsetY: 6,
+  // The bar paints the lens's shadow (TabBarMetrics.lensShadowOpacity).
+  shadowRadius: 0,
+  shadowOpacity: 0,
   tintStrength: 0.35,
 );
 
