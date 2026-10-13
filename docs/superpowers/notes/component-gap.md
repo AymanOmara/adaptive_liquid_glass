@@ -20,7 +20,7 @@ entrypoint (fidelity constants, not stable API).
   `LiquidGlassTheme`, `LiquidGlassThemeData`, `GlassSystemColors`.
 - **Button**: `GlassButton` (+ `.icon`), `GlassButtonStyle`, `GlassButtonRole`,
   `GlassButtonShape`, `GlassControlSize`, `GlassControlSizeScope`, `GlassChip`.
-- **Controls**: `GlassToggle`, `GlassSlider`, `GlassSegmentedControl`,
+- **Controls**: `GlassToggle`, `GlassSlider`, `GlassRangeSlider`, `GlassSegmentedControl`,
   `GlassSegment`, `GlassStepper`, `GlassDatePicker` (compact only).
 - **Picker/menu**: `GlassPicker` (menu only), `GlassPickerItem`,
   `GlassMenuButton`, `GlassMenuItem`, `GlassMenuController`, `GlassContextMenu`.
@@ -61,7 +61,7 @@ entrypoint (fidelity constants, not stable API).
 | component | SwiftUI API | we have? | common | effort | notes |
 |---|---|---|---|---|---|
 | Toggle | `Toggle` | **yes** — `GlassToggle` | high | — | tap + drag thumb |
-| Slider | `Slider` | **yes** — `GlassSlider` | high | — | filled track, divisions+haptics; no vertical, no range/two-thumb |
+| Slider | `Slider` | **yes** — `GlassSlider` | high | — | filled track, divisions+haptics; `axis: Axis.vertical`; range/two-thumb as `GlassRangeSlider` |
 | Stepper | `Stepper` | **yes** — `GlassStepper` | med | — | configurable `step`; no custom increment/decrement builders |
 | Gauge | `Gauge` | **no** | med | S | start with linear + accessoryCircular styles |
 | ColorPicker | `ColorPicker` | **no** | med | S | HSV wheel + hex/rgb rows in glass sheet; measure vs iOS 26 picker sheet |

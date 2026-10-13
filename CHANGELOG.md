@@ -69,6 +69,16 @@
   (about 83 grey levels, as iOS's) instead of a bright teal ring, and the
   tinted tabs bend less at the lens's ends. Shader tap frames 0-10 mean
   |diff| against SwiftUI's `TabView`: 5.2 -> 3.7.
+- `GlassSlider`: `axis: Axis.vertical` stands it up, minimum at the
+  bottom, as a rotated SwiftUI `Slider` (Control Center style); the
+  thumb, press growth, divisions, haptics and semantics follow
+  (VoiceOver's increase moves it up). Material: a turned `Slider`.
+- New `GlassRangeSlider`: two glass thumbs choosing a `RangeValues`, the
+  track filled between them. SwiftUI has no range slider; geometry and
+  colours follow its single slider. Thumbs never cross, a touch takes
+  the nearest one (on overlapping thumbs the drag direction picks),
+  `divisions` snap with haptics, each thumb is its own semantics slider,
+  and `axis` makes it vertical. Material: `RangeSlider`.
 - `GlassTabBar`, native mode, dark: a quick tap's travelling lens no
   longer shows a grey veil. UIKit's clear glass lifted black to about 40
   grey levels under the lens; it is now shaded as the bar's light fades,

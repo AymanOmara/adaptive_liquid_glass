@@ -1,4 +1,5 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/controls/control_metrics.dart';
 import 'package:adaptive_liquid_glass/src/controls/glass_thumb.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
@@ -9,9 +10,11 @@ import 'package:flutter_test/flutter_test.dart';
 import '../api/hosts.dart';
 
 class _Harness extends StatefulWidget {
-  const _Harness({this.divisions});
+  const _Harness({this.divisions, this.axis = Axis.horizontal});
 
   final int? divisions;
+
+  final Axis axis;
 
   @override
   State<_Harness> createState() => _HarnessState();
@@ -22,10 +25,12 @@ class _HarnessState extends State<_Harness> {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-    width: 300,
+    width: widget.axis == Axis.horizontal ? 300 : null,
+    height: widget.axis == Axis.vertical ? 300 : null,
     child: GlassSlider(
       value: value,
       divisions: widget.divisions,
+      axis: widget.axis,
       onChanged: (v) => setState(() => value = v),
     ),
   );
@@ -106,5 +111,84 @@ void main() {
     shaderEnv();
     await t.pumpWidget(appHost(const _Harness()));
     expect(find.byType(Slider), findsOneWidget);
+  }, variant: android);
+
+  testWidgets('vertical: the thumb sits at the value, min at the bottom', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(const _Harness(axis: Axis.vertical)));
+    final slider = t.getRect(find.byType(GlassSlider));
+    expect(slider.width, ControlMetrics.sliderHeight);
+    expect(slider.height, 300);
+    final thumb = t.getRect(find.byType(GlassThumb));
+    expect(thumb.center.dy, moreOrLessEquals(slider.center.dy));
+    expect(thumb.height, ControlMetrics.sliderThumbWidth);
+    expect(thumb.width, ControlMetrics.sliderThumbHeight);
+  }, variant: ios);
+
+  testWidgets('vertical: dragging up raises the value, down lowers it', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(const _Harness(axis: Axis.vertical)));
+    final g = await t.startGesture(t.getCenter(find.byType(GlassThumb)));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 200));
+    expect(_lens, findsOneWidget);
+    for (var i = 0; i < 10; i++) {
+      await g.moveBy(const Offset(0, -20));
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    expect(_value(t), greaterThan(0.9));
+    for (var i = 0; i < 30; i++) {
+      await g.moveBy(const Offset(0, 20));
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    expect(_value(t), 0);
+    await g.up();
+    await t.pumpAndSettle();
+    expect(_lens, findsNothing);
+  }, variant: ios);
+
+  testWidgets('vertical: a tap near the bottom jumps low', (t) async {
+    shaderEnv();
+    await t.pumpWidget(plainHost(const _Harness(axis: Axis.vertical)));
+    final slider = t.getRect(find.byType(GlassSlider));
+    await t.tapAt(slider.bottomCenter - const Offset(0, 40));
+    await t.pumpAndSettle();
+    expect(_value(t), lessThan(0.15));
+  }, variant: ios);
+
+  testWidgets('vertical: divisions snap and increase moves up', (t) async {
+    shaderEnv();
+    final s = t.ensureSemantics();
+    await t.pumpWidget(
+      plainHost(const _Harness(axis: Axis.vertical, divisions: 4)),
+    );
+    await t.drag(find.byType(GlassThumb), const Offset(0, -60));
+    await t.pumpAndSettle();
+    expect(_value(t), 0.75);
+    t.semantics.performAction(
+      find.semantics.byValue('75%'),
+      SemanticsAction.increase,
+    );
+    await t.pumpAndSettle();
+    expect(_value(t), 1);
+    final thumb = t.getCenter(find.byType(GlassThumb));
+    expect(thumb.dy, lessThan(t.getCenter(find.byType(GlassSlider)).dy));
+    s.dispose();
+  }, variant: ios);
+
+  testWidgets('Material vertical: a turned Material 3 slider', (t) async {
+    shaderEnv();
+    await t.pumpWidget(appHost(const _Harness(axis: Axis.vertical)));
+    expect(find.byType(Slider), findsOneWidget);
+    expect(
+      find.ancestor(of: find.byType(Slider), matching: find.byType(RotatedBox)),
+      findsOneWidget,
+    );
+    final rect = t.getRect(find.byType(GlassSlider));
+    expect(rect.height, greaterThan(rect.width));
   }, variant: android);
 }
