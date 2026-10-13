@@ -67,9 +67,7 @@ class GlassRefresh extends StatefulWidget {
 class _GlassRefreshState extends State<GlassRefresh>
     with SingleTickerProviderStateMixin {
   /// The pull progress, 0 to 1+; also the snap-back animation's value.
-  late final AnimationController _controller = AnimationController.unbounded(
-    vsync: this,
-  );
+  late final AnimationController _controller;
 
   /// The overscroll past the top, in pixels.
   double _pull = 0;
@@ -175,6 +173,14 @@ class _GlassRefreshState extends State<GlassRefresh>
         // The spring settles within its tolerance, not at 0; a value just
         // above 0 would leave the disk showing at its smallest scale.
         .then((_) => _controller.value = 0);
+  }
+
+  // Created here, not lazily: one first read in dispose would create
+  // its ticker on a deactivated element.
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController.unbounded(vsync: this);
   }
 
   @override

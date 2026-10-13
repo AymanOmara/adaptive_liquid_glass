@@ -70,15 +70,12 @@ void main() {
     expect(_spinner(t).color, CupertinoColors.white);
   }, variant: ios);
 
-  testWidgets("'Loading' for assistive tech, or a custom label", (t) async {
+  testWidgets('no English label by default; the app gives its own', (t) async {
     shaderEnv();
     final s = t.ensureSemantics();
     await t.pumpWidget(plainHost(const GlassActivityIndicator()));
     await t.pump();
-    expect(
-      t.getSemantics(find.byType(GlassActivityIndicator)),
-      matchesSemantics(label: 'Loading'),
-    );
+    expect(find.bySemanticsLabel('Loading'), findsNothing);
     await t.pumpWidget(
       plainHost(const GlassActivityIndicator(semanticLabel: 'Syncing')),
     );

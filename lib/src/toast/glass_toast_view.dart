@@ -37,9 +37,7 @@ class GlassToastView extends StatefulWidget {
 class _GlassToastViewState extends State<GlassToastView>
     with SingleTickerProviderStateMixin {
   /// 0 hidden, 1 shown; springs past both.
-  late final AnimationController _show = AnimationController.unbounded(
-    vsync: this,
-  );
+  late final AnimationController _show;
 
   /// The vertical drag, positive towards the screen's edge.
   double _drag = 0;
@@ -59,6 +57,7 @@ class _GlassToastViewState extends State<GlassToastView>
   @override
   void initState() {
     super.initState();
+    _show = AnimationController.unbounded(vsync: this);
     widget.request.animateOut = _close;
   }
 

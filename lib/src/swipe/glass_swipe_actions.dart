@@ -71,9 +71,7 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
 
   /// The row's offset towards the trailing edge (negative reveals the
   /// trailing actions), in logical pixels.
-  late final AnimationController _offset = AnimationController.unbounded(
-    vsync: this,
-  )..addListener(_onOffset);
+  late final AnimationController _offset;
 
   /// The drag's own offset, before the rubber band.
   double _drag = 0;
@@ -131,6 +129,8 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
   @override
   void initState() {
     super.initState();
+    _offset = AnimationController.unbounded(vsync: this)
+      ..addListener(_onOffset);
     _active.addListener(_onActive);
   }
 

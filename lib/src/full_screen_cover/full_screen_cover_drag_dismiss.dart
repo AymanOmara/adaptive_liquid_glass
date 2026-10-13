@@ -32,12 +32,18 @@ class FullScreenCoverDragDismiss extends StatefulWidget {
 class _FullScreenCoverDragDismissState extends State<FullScreenCoverDragDismiss>
     with SingleTickerProviderStateMixin {
   /// The cover's offset below its resting place.
-  late final AnimationController _offset = AnimationController.unbounded(
-    vsync: this,
-  );
+  late final AnimationController _offset;
 
   /// Set once the cover is popping, so a late drag cannot pull it back.
   bool _dismissing = false;
+
+  // Created here, not lazily: one first read in dispose would create
+  // its ticker on a deactivated element.
+  @override
+  void initState() {
+    super.initState();
+    _offset = AnimationController.unbounded(vsync: this);
+  }
 
   @override
   void dispose() {

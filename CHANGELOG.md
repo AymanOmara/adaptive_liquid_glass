@@ -1,5 +1,13 @@
 ## Unreleased
 
+- Every animated control (toggle, slider, segmented control, refresh,
+  tab bar and sidebar, progress, toast, swipe actions, search, sheet,
+  full-screen cover) creates its animation controllers in `initState`;
+  a lazy one first read in `dispose` threw on Flutter before 3.47.
+- `GlassSegmentedControl`: a pick the parent rejects (keeps `selected`)
+  springs the thumb back to the selected segment.
+- `GlassActivityIndicator.semanticLabel` defaults to none, not the
+  English 'Loading'; pass a label in the app's language.
 - `GlassButtonStyle` gains SwiftUI's styles without glass: `bordered`
   (grey fill, or the tint at 15% / 20% dark, accent label),
   `borderedProminent` (solid accent fill, white label), `borderless`

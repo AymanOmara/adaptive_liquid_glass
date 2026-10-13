@@ -60,6 +60,30 @@ void main() {
     );
   }, variant: ios);
 
+  testWidgets('a pick the parent rejects returns the thumb', (t) async {
+    shaderEnv();
+    final picks = <String>[];
+    await t.pumpWidget(
+      plainHost(
+        SizedBox(
+          width: 300,
+          child: GlassSegmentedControl<String>(
+            segments: _segments,
+            selected: 'd',
+            onChanged: picks.add,
+          ),
+        ),
+      ),
+    );
+    await t.tap(find.text('Month'));
+    await t.pumpAndSettle();
+    expect(picks, ['m']);
+    expect(
+      t.getCenter(find.byType(GlassThumb)).dx,
+      moreOrLessEquals(t.getCenter(find.text('Day')).dx, epsilon: 1),
+    );
+  }, variant: ios);
+
   testWidgets('dragging the lens picks on release only', (t) async {
     shaderEnv();
     await t.pumpWidget(plainHost(const _Harness()));

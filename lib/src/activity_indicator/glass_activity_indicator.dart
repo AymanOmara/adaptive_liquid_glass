@@ -25,7 +25,7 @@ class GlassActivityIndicator extends StatelessWidget {
     this.color,
     this.animating = true,
     this.mode,
-    this.semanticLabel = 'Loading',
+    this.semanticLabel,
   }) : assert(radius > 0, 'radius must be positive');
 
   /// Half the spinner's diameter.
@@ -41,7 +41,8 @@ class GlassActivityIndicator extends StatelessWidget {
   /// The rendering path; see [GlassRenderMode].
   final GlassRenderMode? mode;
 
-  /// What assistive tech reads.
+  /// What assistive tech reads, in the app's language (for example
+  /// "Loading"). None by default: the package has no strings of its own.
   final String? semanticLabel;
 
   @override

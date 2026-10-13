@@ -33,10 +33,18 @@ class GlassTabSidebar extends StatefulWidget {
 
 class _GlassTabSidebarState extends State<GlassTabSidebar>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _open = AnimationController(
-    vsync: this,
-    duration: TabSidebarMetrics.duration,
-  );
+  late final AnimationController _open;
+
+  // Created here, not lazily: one first read in dispose would create
+  // its ticker on a deactivated element.
+  @override
+  void initState() {
+    super.initState();
+    _open = AnimationController(
+      vsync: this,
+      duration: TabSidebarMetrics.duration,
+    );
+  }
 
   @override
   void dispose() {

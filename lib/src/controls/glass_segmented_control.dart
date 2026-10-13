@@ -60,14 +60,10 @@ class GlassSegmentedControl<T> extends StatefulWidget {
 class _GlassSegmentedControlState<T> extends State<GlassSegmentedControl<T>>
     with TickerProviderStateMixin {
   /// The thumb's centre in visual slots (the leftmost segment is 0).
-  late final AnimationController _x = AnimationController.unbounded(
-    vsync: this,
-  );
+  late final AnimationController _x;
 
   /// 0 at rest, 1 held.
-  late final AnimationController _press = AnimationController.unbounded(
-    vsync: this,
-  );
+  late final AnimationController _press;
 
   bool _placed = false;
   double _segmentWidth = 80;
@@ -94,6 +90,15 @@ class _GlassSegmentedControlState<T> extends State<GlassSegmentedControl<T>>
     } else {
       c.animateWith(SpringSimulation(s, c.value, target, c.velocity));
     }
+  }
+
+  // Created here, not lazily: one first read in dispose would create
+  // its ticker on a deactivated element.
+  @override
+  void initState() {
+    super.initState();
+    _x = AnimationController.unbounded(vsync: this);
+    _press = AnimationController.unbounded(vsync: this);
   }
 
   @override
@@ -145,7 +150,14 @@ class _GlassSegmentedControlState<T> extends State<GlassSegmentedControl<T>>
     _spring(_x, ControlMetrics.slide, _fingerSlot.toDouble());
     final index = _rtl ? _count - 1 - _fingerSlot : _fingerSlot;
     final value = widget.segments[index].value;
-    if (value != widget.selected) widget.onChanged?.call(value);
+    if (value == widget.selected) return;
+    widget.onChanged?.call(value);
+    // Controlled: a parent that keeps its selection gets the thumb back.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.selected != value) {
+        _spring(_x, ControlMetrics.slide, _slot(_selectedIndex).toDouble());
+      }
+    });
   }
 
   @override

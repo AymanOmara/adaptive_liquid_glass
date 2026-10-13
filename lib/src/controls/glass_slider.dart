@@ -88,9 +88,7 @@ class GlassSlider extends StatefulWidget {
 class _GlassSliderState extends State<GlassSlider>
     with SingleTickerProviderStateMixin {
   /// 0 at rest, 1 held.
-  late final AnimationController _press = AnimationController.unbounded(
-    vsync: this,
-  );
+  late final AnimationController _press;
 
   double _length = 0;
 
@@ -125,6 +123,14 @@ class _GlassSliderState extends State<GlassSlider>
         ),
       );
     }
+  }
+
+  // Created here, not lazily: one first read in dispose would create
+  // its ticker on a deactivated element.
+  @override
+  void initState() {
+    super.initState();
+    _press = AnimationController.unbounded(vsync: this);
   }
 
   @override

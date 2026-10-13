@@ -56,15 +56,10 @@ class GlassToggle extends StatefulWidget {
 class _GlassToggleState extends State<GlassToggle>
     with TickerProviderStateMixin {
   /// 0 off, 1 on.
-  late final AnimationController _position = AnimationController.unbounded(
-    vsync: this,
-    value: widget.value ? 1 : 0,
-  );
+  late final AnimationController _position;
 
   /// 0 at rest, 1 held.
-  late final AnimationController _press = AnimationController.unbounded(
-    vsync: this,
-  );
+  late final AnimationController _press;
 
   /// A drag is in progress; its updates own `_position`.
   bool _dragging = false;
@@ -87,6 +82,18 @@ class _GlassToggleState extends State<GlassToggle>
     } else {
       c.animateWith(SpringSimulation(spring, c.value, target, c.velocity));
     }
+  }
+
+  // Created here, not lazily: one first read in dispose would create
+  // its ticker on a deactivated element.
+  @override
+  void initState() {
+    super.initState();
+    _position = AnimationController.unbounded(
+      vsync: this,
+      value: widget.value ? 1 : 0,
+    );
+    _press = AnimationController.unbounded(vsync: this);
   }
 
   @override

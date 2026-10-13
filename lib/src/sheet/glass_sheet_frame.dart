@@ -68,9 +68,7 @@ class _GlassSheetFrameState extends State<GlassSheetFrame>
     with SingleTickerProviderStateMixin {
   /// The sheet's height above the screen's bottom, or (without detents)
   /// its drag offset below its resting place.
-  late final AnimationController _height = AnimationController.unbounded(
-    vsync: this,
-  );
+  late final AnimationController _height;
 
   bool _placed = false;
   List<double> _stops = const [];
@@ -80,6 +78,14 @@ class _GlassSheetFrameState extends State<GlassSheetFrame>
 
   bool get _reduceMotion =>
       MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+
+  // Created here, not lazily: one first read in dispose would create
+  // its ticker on a deactivated element.
+  @override
+  void initState() {
+    super.initState();
+    _height = AnimationController.unbounded(vsync: this);
+  }
 
   @override
   void dispose() {

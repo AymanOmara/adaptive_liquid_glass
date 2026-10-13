@@ -173,44 +173,30 @@ class _GlassTabBarState extends State<GlassTabBar>
     with TickerProviderStateMixin {
   /// The selection's centre in visual slots, left to right (the leftmost
   /// tab's centre is 0), so a width change keeps it put.
-  late final AnimationController _x = AnimationController.unbounded(
-    vsync: this,
-  );
+  late final AnimationController _x;
 
   /// 0 at rest (the pill), 1 while held (the lens); springs past both.
-  late final AnimationController _press = AnimationController.unbounded(
-    vsync: this,
-  );
+  late final AnimationController _press;
 
   /// How magnified the tabs under the lens are: 0 none, 1
   /// TabBarMetrics.magnifyX/Y. Springs up from each touch-down on its own
   /// (see TabBarMetrics.magnify), not with the lens's size, and stays up
   /// until the lens is gone.
-  late final AnimationController _magnify = AnimationController.unbounded(
-    vsync: this,
-  );
+  late final AnimationController _magnify;
 
   /// The pill fading in at a quick tap's new tab once its lens is gone
   /// (see TabBarMetrics.tapPillIn); 1 otherwise.
-  late final AnimationController _pillIn = AnimationController(
-    vsync: this,
-    value: 1,
-    duration: TabBarMetrics.tapPillIn,
-  );
+  late final AnimationController _pillIn;
 
   static const Curve _pillInCurve = Interval(0.48, 1, curve: Curves.easeInOut);
 
   /// The bar's growth around a held lens: 0 at rest, 1 grown (see
   /// TabBarMetrics.grow). Frozen when the finger lifts; it goes back once
   /// the lens settles, so a quick tap leaves the bar as it is.
-  late final AnimationController _grow = AnimationController.unbounded(
-    vsync: this,
-  );
+  late final AnimationController _grow;
 
   /// 0 full, 1 shrunk to the selected tab (GlassTabBar.minimizeBehavior).
-  late final AnimationController _min = AnimationController.unbounded(
-    vsync: this,
-  );
+  late final AnimationController _min;
   TabBarMinimizeController? _minimizer;
 
   /// The bar's leading edge on screen, for the minimized circle's place.
@@ -276,7 +262,7 @@ class _GlassTabBarState extends State<GlassTabBar>
   /// Drives [_x] towards the finger with a spring integrated every frame.
   /// Restarting a spring simulation on each touch (every ~4 frames) left
   /// the lens still for the restart frame: a visible stutter.
-  late final Ticker _followTicker = createTicker(_stepFollow);
+  late final Ticker _followTicker;
   double _followTarget = 0;
   double _followVelocity = 0;
   Duration _followLast = Duration.zero;
@@ -306,9 +292,7 @@ class _GlassTabBarState extends State<GlassTabBar>
 
   /// The light on the bar: 0 at rest, 1 while the lens is held (lit around
   /// it, see BarGlow), 2 while it is dragged (a softer glow), as on iOS.
-  late final AnimationController _light = AnimationController.unbounded(
-    vsync: this,
-  );
+  late final AnimationController _light;
 
   /// Whether the held lens has been dragged since it was pressed.
   bool _dragging = false;
@@ -325,7 +309,7 @@ class _GlassTabBarState extends State<GlassTabBar>
 
   /// Extra lens overhang per side from the sideways wobble, in points.
   final ValueNotifier<double> _wobble = ValueNotifier(0);
-  late final Ticker _wobbleTicker = createTicker(_stepWobble);
+  late final Ticker _wobbleTicker;
   double _wobbleVelocity = 0;
   double _lastVelocity = 0;
   Duration _lastTick = Duration.zero;
@@ -521,6 +505,26 @@ class _GlassTabBarState extends State<GlassTabBar>
     _lastTick = Duration.zero;
     _lastVelocity = _xVelocity;
     _wobbleTicker.start();
+  }
+
+  // Created here, not lazily: one first read in dispose would create
+  // its ticker on a deactivated element.
+  @override
+  void initState() {
+    super.initState();
+    _x = AnimationController.unbounded(vsync: this);
+    _press = AnimationController.unbounded(vsync: this);
+    _magnify = AnimationController.unbounded(vsync: this);
+    _pillIn = AnimationController(
+      vsync: this,
+      value: 1,
+      duration: TabBarMetrics.tapPillIn,
+    );
+    _grow = AnimationController.unbounded(vsync: this);
+    _min = AnimationController.unbounded(vsync: this);
+    _followTicker = createTicker(_stepFollow);
+    _light = AnimationController.unbounded(vsync: this);
+    _wobbleTicker = createTicker(_stepWobble);
   }
 
   @override

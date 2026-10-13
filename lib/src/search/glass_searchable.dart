@@ -138,9 +138,7 @@ class _GlassSearchableState extends State<GlassSearchable>
   final FocusNode _focusNode = FocusNode();
 
   /// 0 with Cancel hidden, 1 shown; a spring in between.
-  late final AnimationController _reveal = AnimationController.unbounded(
-    vsync: this,
-  );
+  late final AnimationController _reveal;
 
   /// Whether search is active, as last seen from the controller.
   bool _wasActive = false;
@@ -156,6 +154,7 @@ class _GlassSearchableState extends State<GlassSearchable>
   @override
   void initState() {
     super.initState();
+    _reveal = AnimationController.unbounded(vsync: this);
     _wasActive = _controller.isActive;
     _reveal.value = _wasActive ? 1 : 0;
     _cancelMounted = _reveal.value > 0;

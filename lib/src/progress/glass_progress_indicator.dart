@@ -73,10 +73,7 @@ class GlassProgressIndicator extends StatefulWidget {
 class _GlassProgressIndicatorState extends State<GlassProgressIndicator>
     with SingleTickerProviderStateMixin {
   /// The indeterminate segment's slide from start to end.
-  late final AnimationController _slide = AnimationController(
-    vsync: this,
-    duration: ProgressMetrics.indeterminatePeriod,
-  );
+  late final AnimationController _slide;
 
   bool get _reduceMotion =>
       MediaQuery.maybeDisableAnimationsOf(context) ?? false;
@@ -100,6 +97,17 @@ class _GlassProgressIndicatorState extends State<GlassProgressIndicator>
         ..stop()
         ..value = 0;
     }
+  }
+
+  // Created here, not lazily: one first read in dispose would create
+  // its ticker on a deactivated element.
+  @override
+  void initState() {
+    super.initState();
+    _slide = AnimationController(
+      vsync: this,
+      duration: ProgressMetrics.indeterminatePeriod,
+    );
   }
 
   @override
