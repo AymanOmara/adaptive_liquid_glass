@@ -1,5 +1,8 @@
 ## Unreleased
 
+- `showGlassToast(replace: true)`: the new toast takes over at once; the
+  shown one leaves and those waiting are dropped (on the Material path,
+  the messenger's snackbars are cleared).
 - `GlassTextField.password`: the Material eye button reads its show /
   hide label to assistive tech (it was a tooltip only), and the glass
   one reports its enabled state, so both paths read the same.

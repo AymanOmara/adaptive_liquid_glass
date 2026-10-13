@@ -43,7 +43,8 @@ import 'toast_request.dart';
 /// snackbar-styled surface in the overlay at the bottom.
 ///
 /// The [duration] the toast stays defaults to 4 seconds; null keeps the
-/// toast until dismissed.
+/// toast until dismissed. With [replace], this toast takes over at once:
+/// the shown one leaves and those still waiting are dropped.
 GlassToastHandle showGlassToast(
   BuildContext context, {
   required String message,
@@ -52,6 +53,7 @@ GlassToastHandle showGlassToast(
   Duration? duration = ToastMetrics.defaultDuration,
   Glass? glass,
   GlassRenderMode? mode,
+  bool replace = false,
 }) {
   final effective = resolveGlassMode(
     requested: mode ?? LiquidGlassTheme.of(context).defaultMode,
@@ -61,6 +63,7 @@ GlassToastHandle showGlassToast(
   if (effective == EffectiveGlassMode.material) {
     final messenger = ScaffoldMessenger.maybeOf(context);
     if (messenger != null) {
+      if (replace) messenger.clearSnackBars();
       return _SnackBarHandle(
         messenger.showSnackBar(
           SnackBar(
@@ -97,7 +100,8 @@ GlassToastHandle showGlassToast(
     material: effective == EffectiveGlassMode.material,
     capturedThemes: InheritedTheme.capture(from: context, to: overlay.context),
   );
-  ToastQueue.of(overlay).add(request);
+  final queue = ToastQueue.of(overlay);
+  replace ? queue.replace(request) : queue.add(request);
   return request;
 }
 

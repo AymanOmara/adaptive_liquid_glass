@@ -157,6 +157,26 @@ void main() {
     await second.closed;
   }, variant: ios);
 
+  testWidgets('replace: the newest toast takes over at once', (t) async {
+    shaderEnv();
+    await t.pumpWidget(_messengerApp());
+    final first = showGlassToast(_toastContext, message: 'One');
+    final waiting = showGlassToast(_toastContext, message: 'Two');
+    await t.pumpAndSettle();
+    final last = showGlassToast(_toastContext, message: 'Three', replace: true);
+    // The shown toast leaves and the waiting one is dropped, unshown.
+    await t.pumpAndSettle();
+    expect(find.text('One'), findsNothing);
+    expect(find.text('Two'), findsNothing);
+    expect(find.text('Three'), findsOneWidget);
+    await first.closed;
+    await waiting.closed;
+    await t.pump(const Duration(seconds: 5));
+    await t.pumpAndSettle();
+    expect(find.text('Three'), findsNothing);
+    await last.closed;
+  }, variant: ios);
+
   testWidgets('dismiss closes the shown toast', (t) async {
     shaderEnv();
     await t.pumpWidget(_messengerApp());
@@ -312,6 +332,19 @@ void main() {
     await t.pumpAndSettle();
     expect(find.byType(SnackBar), findsNothing);
     await handle.closed;
+  }, variant: android);
+
+  testWidgets('Material: replace takes over the messenger', (t) async {
+    shaderEnv();
+    await t.pumpWidget(_messengerApp());
+    showGlassToast(_toastContext, message: 'One');
+    showGlassToast(_toastContext, message: 'Two');
+    await t.pumpAndSettle();
+    showGlassToast(_toastContext, message: 'Three', replace: true);
+    await t.pumpAndSettle();
+    expect(find.text('One'), findsNothing);
+    expect(find.text('Two'), findsNothing);
+    expect(find.text('Three'), findsOneWidget);
   }, variant: android);
 
   testWidgets('Material without a messenger: a bottom surface that '

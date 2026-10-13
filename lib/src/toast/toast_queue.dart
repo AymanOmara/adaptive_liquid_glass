@@ -29,6 +29,17 @@ class ToastQueue {
     }
   }
 
+  /// Shows [request] next: the waiting toasts are dropped and the shown
+  /// one animates out.
+  void replace(ToastRequest request) {
+    for (final waiting in List.of(_pending)) {
+      remove(waiting);
+    }
+    final current = _current;
+    add(request);
+    current?.dismiss();
+  }
+
   /// Drops [request] while it still waits, completing it unshown.
   void remove(ToastRequest request) {
     _pending.remove(request);
