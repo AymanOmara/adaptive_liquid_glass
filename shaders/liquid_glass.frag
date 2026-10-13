@@ -438,7 +438,12 @@ void main() {
   // Rim tint (L.z strength, L.w hue in turns; iOS 26's tab lens has a
   // teal-cyan rim): the rim's white turns towards that hue.
   vec3 rimTarget = vec3(1.0);
-  if (L4.z > 0.0) {
+  if (L4.z < 0.0) {
+    // Negative: a colour split by side instead (iOS 26's tab lens, dark:
+    // cool where the rim faces left, warm where it faces right).
+    float sx = -L4.z * nrm.x;
+    rimTarget = vec3(1.0 + sx, 1.0, 1.0 - sx);
+  } else if (L4.z > 0.0) {
     vec3 rgb = clamp(abs(fract(L4.w + vec3(0.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0
         - 3.0) - 1.0, 0.0, 1.0);
     rimTarget = mix(vec3(1.0), rgb, L4.z);

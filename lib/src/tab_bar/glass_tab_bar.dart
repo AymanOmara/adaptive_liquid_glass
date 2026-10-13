@@ -494,6 +494,7 @@ class _GlassTabBarState extends State<GlassTabBar>
   @override
   void dispose() {
     _holdTimer?.cancel();
+    _dragLightTimer?.cancel();
     _reliftTimer?.cancel();
     _followTicker.dispose();
     _grow.dispose();
@@ -522,6 +523,7 @@ class _GlassTabBarState extends State<GlassTabBar>
       if (mounted && !_held) settle?.call();
     });
     _dragging = false;
+    _dragLightTimer?.cancel();
     // A lens already up keeps its magnification; a new one starts flat.
     if (!_lensUp && _press.value <= 0.05) _magnify.value = 0;
     if (_reduceMotion) {
@@ -564,11 +566,23 @@ class _GlassTabBarState extends State<GlassTabBar>
     }
     if (!_dragging) {
       _dragging = true;
-      _springLight(TabBarMetrics.light, 2);
+      // iOS keeps the held light for a moment, then softens it.
+      _dragLightTimer?.cancel();
+      _dragLightTimer = Timer(TabBarMetrics.dragLightDelay, () {
+        _dragLightTimer = null;
+        if (mounted && _held && _dragging) {
+          _springLight(TabBarMetrics.dragLight, 2);
+        }
+      });
     }
   }
 
+  /// Softens the light TabBarMetrics.dragLightDelay into a drag.
+  Timer? _dragLightTimer;
+
   void _release(double velocity) {
+    _dragLightTimer?.cancel();
+    _dragLightTimer = null;
     _held = false;
     _cancelRelift();
     // The bar stays as grown as it is until the lens settles.

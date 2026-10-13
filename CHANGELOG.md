@@ -1,5 +1,11 @@
 ## Unreleased
 
+- `GlassTabBar` (dark): the shader lens rim splits colour by side (cool
+  left, warm right) as iOS's does; the lens keeps black at 3 and the
+  resting bar at 20 under it; a drag keeps the held light ~300 ms before
+  softening it. Lens fill error per frame vs SwiftUI's `TabView`
+  (tabbar_fill.py, max): drag native 11 -> 4.5, shader 7.3 -> 5.8;
+  press shader overhang 8 -> 3.
 - `GlassTabBar`: the tabs grow with the bar around a held or dragged
   lens, as iOS 26's do (Home and Settings move out about 4 pt). Against
   SwiftUI's `TabView` (dark, frames 0-10 / 10-60): press shader 6.2 /

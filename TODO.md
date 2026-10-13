@@ -101,6 +101,12 @@ and CHANGELOG.md.
     dark-only fixes (nativeLensShade, dark rim)
   - tapped lens at its end: 47 pt wide on its last visible frame (was 35;
     iOS 51)
+  - lens fill every frame (tabbar_fill.py, 2026-10-13): max per-frame
+    RGB error tap/press/drag shader bar 5.5/3.6/5.8, native 2.0/4.8/4.5;
+    native overhang over black 17-49 (UIKit flat veil, not tintable
+    apart). Open (sheets tabbar_sheet.py): iOS's iridescent rim top/
+    bottom, motion blur and dispersion of the glyph while settling,
+    dragged lens shape flatter than a capsule
   - selected pill over black: 54 grey levels against iOS's 50-51
   - press brightness (2026-10-13, dark, medians of 4 takes): the held
     gap was the tabs beside the lens: iOS scales the tab row with the

@@ -361,6 +361,9 @@ class GlassVariantConstants {
 
   /// How far the isotropic rim ([rimMix]) turns from white towards
   /// [rimHue] (0 = white, the default; iOS 26's tab lens has a teal rim).
+  /// Negative splits the rim's colour by side instead: cooler where the
+  /// outline faces left, warmer where it faces right, by this much (iOS
+  /// 26's dark tab lens).
   final double rimTint;
 
   /// Hue of [rimTint], in degrees.

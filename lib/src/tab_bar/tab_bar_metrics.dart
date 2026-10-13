@@ -103,6 +103,18 @@ abstract final class TabBarMetrics {
     dampingFraction: 1,
   );
 
+  /// A drag keeps the held light this long, then softens it with
+  /// [dragLight]: SwiftUI's `TabView` (iOS 26.4, over black) holds the
+  /// lens's fill at 52 for ~20 frames of a drag, then eases it to 41 by
+  /// frame ~36 (tabbar_fill.py).
+  static const Duration dragLightDelay = Duration(milliseconds: 300);
+
+  /// See [dragLightDelay].
+  static final SpringDescription dragLight = swiftUISpring(
+    response: 0.3,
+    dampingFraction: 1,
+  );
+
   /// See [light].
   static final SpringDescription lightOff = swiftUISpring(
     response: 0.45,

@@ -80,9 +80,10 @@ const tabLensDark = GlassVariantConstants(
   // ends bend half as much (Kept: clear mid-bar, a rainbow crescent past
   // the bar's end).
   lensVertical: 0.5,
-  // SwiftUI's `TabView` (iOS 26.4) over black: a thin neutral grey rim,
-  // about 83 grey levels at its peak (the teal 0.85 mix read 155).
-  rimTint: 0,
+  // SwiftUI's `TabView` (iOS 26.4) over black: a thin grey rim, about 83
+  // grey levels at its peak (the teal 0.85 mix read 155), neutral on top,
+  // cooler on its left (95, 111, 113) and warmer on its right (80, 71, 60).
+  rimTint: -0.2,
   rimHue: 180,
   rimMix: 0.46,
   rimMixWidth: 1.4,
@@ -91,10 +92,11 @@ const tabLensDark = GlassVariantConstants(
   rimWidth: 1.2,
   rimIntensity: 0,
   fillColor: GlassColors.white,
-  // Kept over black: the lit bar (about 48 by the lens) reads 53 under the
-  // lens and black stays near black (a gain, not a wash); the tinted tabs
-  // above keep their colour (TabLensContent).
-  toneKnots: [0.031, 0.135, 0.255, 0.38, 0.5, 0.625, 0.75, 0.875, 1.0],
+  // SwiftUI's `TabView` (iOS 26.4) over black, every frame
+  // (tabbar_fill.py): black stays near black (3), the bar at rest (19)
+  // reads 20 under the lens and the lit bar (~48) 50-52; a gain, not a
+  // wash. The tinted tabs above keep their colour (TabLensContent).
+  toneKnots: [0.012, 0.122, 0.278, 0.38, 0.5, 0.625, 0.75, 0.875, 1.0],
   fillOpacity: 0,
   saturation: 1,
   dim: 0,
@@ -202,6 +204,20 @@ const _tabBarDarkOverrides = <String, Object?>{
   'tintStrength': 1.0084,
 };
 
+/// The lit bar's tone (the lens's before its 2026-10-13 refit, which
+/// would have darkened the bar around a held lens).
+const _barLitToneKnots = [
+  0.031,
+  0.135,
+  0.255,
+  0.38,
+  0.5,
+  0.625,
+  0.75,
+  0.875,
+  1.0,
+];
+
 /// The bar's dark glass while a lens is held is more see-through
 /// (GlassColors.tabBarPressedFill at this opacity).
 const _barPressedFillOpacity = 0.35;
@@ -239,7 +255,7 @@ Widget withTabBarGlass(BuildContext context, Widget child, {double light = 0}) {
           ),
           'toneKnots': [
             for (var i = 0; i < 9; i++)
-              lerpDouble(rest.toneKnots[i], tabLensDark.toneKnots[i], p),
+              lerpDouble(rest.toneKnots[i], _barLitToneKnots[i], p),
           ],
         }, c.regularDark);
   return LiquidGlassTheme(
