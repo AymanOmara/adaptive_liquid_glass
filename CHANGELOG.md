@@ -1,5 +1,11 @@
 ## Unreleased
 
+- `GlassTabBar` (light, shader): the lens is light-grey glass with a soft
+  shadow below it and a neutral rim, as iOS 26's (was near-invisible with
+  a teal rim). New `GlassVariantConstants.shadowOffsetY` moves a shadow
+  down. Against SwiftUI's `TabView` (tabbar_light.py, 0-10 / 10-60): tap
+  5.9 / 1.4 -> 5.2 / 1.3, press 4.2 / 3.5 -> 5.2 / 2.4, drag 5.0 / 8.1 ->
+  5.0 / 5.4.
 - `GlassTabBar`: the dragged lens follows the finger faster (spring
   response 0.25, was 0.35), keeping within ~3 pt of iOS 26's lens
   instead of ~12 pt behind.

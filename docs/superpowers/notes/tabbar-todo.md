@@ -153,3 +153,5 @@ Measurement limits: the example is a debug (JIT) build, and on a loaded host its
 - [ ] Selected tint vibrancy: iOS's selected blue shifts with the backdrop (0,80,237 over the photo); ours is flat.
 - [ ] Shader mode over the photo (5.14): bar glass blur/refraction/tone vs UIKit's bar material; needs a tab-bar-specific fit like `tool/fidelity` does for shapes.
 - [ ] Dark photo, shader mode (3.95): same fit, dark variant.
+
+Light lens, shader (2026-10-13): held over Music, iOS's lens reads 247 inside (bar 255), a darker band at its top (235) and a shadow below (221); ours read 252 with a teal rim and no shadow. Now `dim` 0.02, neutral split rim (-0.2), shadow 10 pt / 0.1 moved down 6 pt (`shadowOffsetY`, new): inside 247, top 244-248, below 222-224. Runs `runs/L1..L5`, `M1..M3` (scratchpad).

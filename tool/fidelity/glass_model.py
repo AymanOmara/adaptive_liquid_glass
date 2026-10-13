@@ -49,6 +49,7 @@ VARIANT_DEFAULTS = {
     "postJacobianMax": 4.0,
     "ambientMix": 0.0,
     "ambientReach": 0.0,
+    "shadowOffsetY": 0.0,
     "glowStrength": 0.25,
     "postBlurShare": 0.0,
     "normalRadiusScale": 1.0,
@@ -460,7 +461,7 @@ def _uvar(constants, brightness, scale):
                            v["smallSizeHi"] * scale, v["postJacobianMax"]]),
             # Ambient colour (item 8): mix and reach px; P.z luma-keyed tone
             # mix (item 8 round 3, shipped in the shader).
-            "P": np.array([v["ambientMix"], v["ambientReach"] * scale, v["toneLumaMix"], 0.0]),
+            "P": np.array([v["ambientMix"], v["ambientReach"] * scale, v["toneLumaMix"], v.get("shadowOffsetY", 0.0) * scale]),
             # Item 8 round 3 (model experiments, off by default).
             "Q": np.array([v["linearLight"], v["vibrancyK"], 0.0, v["ambientGate"]]),
             "R": np.array([v["mergeSizeMix"], v["edgeSharpMix"], v["edgeSharpSigma"] * scale,

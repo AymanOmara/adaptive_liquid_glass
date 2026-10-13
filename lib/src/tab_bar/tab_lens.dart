@@ -38,7 +38,7 @@ const tabLensLight = GlassVariantConstants(
   // the bar's end).
   lensVertical: 0.5,
   // Kept's rim: teal-cyan (hue ~180), about 0.2 saturated.
-  rimTint: 0.2,
+  rimTint: -0.2,
   rimHue: 180,
   rimMix: 0.85,
   rimMixWidth: 1.4,
@@ -47,11 +47,12 @@ const tabLensLight = GlassVariantConstants(
   rimWidth: 1.2,
   rimIntensity: 0,
   fillColor: GlassColors.white,
-  fillOpacity: 0.07,
+  fillOpacity: 0,
   saturation: 1,
-  dim: 0,
-  shadowRadius: 0,
-  shadowOpacity: 0,
+  dim: 0.02,
+  shadowRadius: 10,
+  shadowOpacity: 0.1,
+  shadowOffsetY: 6,
   tintStrength: 0.35,
 );
 

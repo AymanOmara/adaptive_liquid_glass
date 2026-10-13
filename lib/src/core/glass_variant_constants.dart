@@ -35,6 +35,7 @@ class GlassVariantConstants {
     this.postJacobianMax = 4,
     this.ambientMix = 0,
     this.ambientReach = 0,
+    this.shadowOffsetY = 0,
     this.toneLumaMix = 0,
     this.glowStrength = 0.25,
     this.postBlurShare = 0,
@@ -110,6 +111,7 @@ class GlassVariantConstants {
     ),
     ambientMix: GlassJson.number(j, 'ambientMix', base.ambientMix),
     ambientReach: GlassJson.number(j, 'ambientReach', base.ambientReach),
+    shadowOffsetY: GlassJson.number(j, 'shadowOffsetY', base.shadowOffsetY),
     toneLumaMix: GlassJson.number(j, 'toneLumaMix', base.toneLumaMix),
     glowStrength: GlassJson.number(j, 'glowStrength', base.glowStrength),
     postBlurShare: GlassJson.number(j, 'postBlurShare', base.postBlurShare),
@@ -276,6 +278,10 @@ class GlassVariantConstants {
   /// rect on each side (item 8).
   final double ambientReach;
 
+  /// How far (pt) the shadow ([shadowRadius]) is moved down; 0 centres it
+  /// on the shape.
+  final double shadowOffsetY;
+
   /// How far the tone LUT is keyed on luma instead of applied per channel
   /// (item 8 round 3): at 1 the LUT moves the frosted backdrop's luma and
   /// its chroma rides along unchanged; 0 = per channel, as before.
@@ -421,6 +427,7 @@ class GlassVariantConstants {
     'postJacobianMax': postJacobianMax,
     'ambientMix': ambientMix,
     'ambientReach': ambientReach,
+    'shadowOffsetY': shadowOffsetY,
     'toneLumaMix': toneLumaMix,
     'glowStrength': glowStrength,
     'postBlurShare': postBlurShare,
