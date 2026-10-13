@@ -137,7 +137,8 @@ struct GlassFill: Identifiable, Equatable {
   let id: Int
   let frame: CGRect
   let opacity: Double
-  /// 0 `.fill`, 1 `.fill.secondary`, 2 `.fill.tertiary`, 3 `.fill.quaternary`.
+  /// 0 `.fill`, 1 `.fill.secondary`, 2 `.fill.tertiary`, 3 `.fill.quaternary`,
+  /// 4 white added (`.plusLighter`), 5 black subtracted (`.plusDarker`).
   let style: Int
 
   var shapeStyle: AnyShapeStyle {
@@ -145,7 +146,17 @@ struct GlassFill: Identifiable, Equatable {
     case 0: AnyShapeStyle(.fill)
     case 1: AnyShapeStyle(.fill.secondary)
     case 3: AnyShapeStyle(.fill.quaternary)
+    case 4: AnyShapeStyle(Color.white)
+    case 5: AnyShapeStyle(Color.black)
     default: AnyShapeStyle(.fill.tertiary)
+    }
+  }
+
+  var blendMode: BlendMode {
+    switch style {
+    case 4: .plusLighter
+    case 5: .plusDarker
+    default: .normal
     }
   }
 }
@@ -191,6 +202,7 @@ struct GlassHostView: View {
         Capsule()
           .fill(f.shapeStyle)
           .opacity(f.opacity)
+          .blendMode(f.blendMode)
           .frame(width: f.frame.width, height: f.frame.height)
           .offset(x: f.frame.minX, y: f.frame.minY)
       }

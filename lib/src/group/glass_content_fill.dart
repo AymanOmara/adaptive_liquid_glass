@@ -49,7 +49,8 @@ class GlassContentFill extends SingleChildRenderObjectWidget {
   }
 }
 
-/// SwiftUI's system fills (`FillShapeStyle` and its levels), lightest last.
+/// SwiftUI's system fills (`FillShapeStyle` and its levels, lightest
+/// last), and plain lighten and darken.
 enum GlassFillStyle {
   /// `.fill`.
   primary,
@@ -62,6 +63,14 @@ enum GlassFillStyle {
 
   /// `.fill.quaternary`.
   quaternary,
+
+  /// White added to the glass beneath (`.plusLighter`): lifts every
+  /// channel by the same amount, keeping the backdrop's colour.
+  lighten,
+
+  /// Black subtracted from the glass beneath (`.plusDarker`): lowers every
+  /// channel by the same amount, keeping the backdrop's colour.
+  darken,
 }
 
 /// See [GlassContentFill].

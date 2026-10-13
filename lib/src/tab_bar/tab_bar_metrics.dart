@@ -7,18 +7,19 @@ import '../group/glass_content_fill.dart';
 /// tracking of press, hold, drag and release (`example/lib/tab_bar_probe.dart`
 /// lays the bar out the same way).
 abstract final class TabBarMetrics {
-  /// The selected pill's system fill on native glass (GlassContentFill),
-  /// light and dark, and its opacity.
-  static const GlassFillStyle nativePillStyle = GlassFillStyle.quaternary;
+  /// The selected pill on native glass (GlassContentFill), light and dark,
+  /// and its opacity: iOS's pill shifts the glass by a fixed amount (17
+  /// levels darker, 33 lighter in dark), keeping a photo's colour beneath.
+  static const GlassFillStyle nativePillStyle = GlassFillStyle.darken;
 
   /// See [nativePillStyle].
-  static const GlassFillStyle nativePillStyleDark = GlassFillStyle.secondary;
+  static const GlassFillStyle nativePillStyleDark = GlassFillStyle.lighten;
 
   /// See [nativePillStyle].
-  static const double nativePillOpacity = 0.9;
+  static const double nativePillOpacity = 0.072;
 
   /// See [nativePillStyle].
-  static const double nativePillOpacityDark = 0.97;
+  static const double nativePillOpacityDark = 0.133;
 
   /// The gap between the bar's edge and its tabs.
   static const double inset = 4;
