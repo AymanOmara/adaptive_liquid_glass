@@ -135,6 +135,33 @@ void main() {
     s.dispose();
   }, variant: ios);
 
+  testWidgets("labels keep the app's font family", (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      plainHost(
+        const DefaultTextStyle(
+          style: TextStyle(fontFamily: 'Cairo'),
+          child: _Harness(),
+        ),
+      ),
+    );
+    final text = t.widget<RichText>(
+      find.descendant(of: find.text('Day'), matching: find.byType(RichText)),
+    );
+    expect(text.text.style?.fontFamily, 'Cairo');
+  }, variant: ios);
+
+  for (final platform in [ios, android]) {
+    testWidgets('as tall as GlassSegmentedControl.height', (t) async {
+      shaderEnv();
+      await t.pumpWidget(appHost(const _Harness()));
+      expect(
+        t.getSize(find.byType(GlassSegmentedControl<String>)).height,
+        GlassSegmentedControl.height,
+      );
+    }, variant: platform);
+  }
+
   testWidgets('Material: a Material 3 segmented button', (t) async {
     shaderEnv();
     await t.pumpWidget(appHost(const _Harness()));

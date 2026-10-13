@@ -195,7 +195,10 @@ class _GlassToastViewState extends State<GlassToastView>
         MediaQuery.textScalerOf(context).scale(ToastMetrics.fontSize) >
         ToastMetrics.fontSize;
     return DefaultTextStyle(
-      style: IOSText.style(ToastMetrics.fontSize),
+      style: IOSText.inFontOf(
+        IOSText.style(ToastMetrics.fontSize),
+        DefaultTextStyle.of(context).style,
+      ),
       child: Semantics(
         container: true,
         liveRegion: true,

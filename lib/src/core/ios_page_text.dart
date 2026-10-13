@@ -13,9 +13,12 @@ import 'ios_text.dart';
 /// appearance, not the navigator's.
 Widget iosPageText(Widget child) => Builder(
   builder: (context) => DefaultTextStyle(
-    style: IOSText.style(
-      17,
-      color: CupertinoDynamicColor.resolve(GlassColors.label, context),
+    style: IOSText.inFontOf(
+      IOSText.style(
+        17,
+        color: CupertinoDynamicColor.resolve(GlassColors.label, context),
+      ),
+      DefaultTextStyle.of(context).style,
     ),
     child: child,
   ),

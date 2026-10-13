@@ -1,5 +1,11 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show ButtonSegment, SegmentedButton;
+import 'package:flutter/material.dart'
+    show
+        ButtonSegment,
+        ButtonStyle,
+        MaterialTapTargetSize,
+        SegmentedButton,
+        VisualDensity;
 import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
 
@@ -51,6 +57,10 @@ class GlassSegmentedControl<T> extends StatefulWidget {
 
   /// The rendering path for the thumb's lens; see [GlassRenderMode].
   final GlassRenderMode? mode;
+
+  /// The control's height on every path, for layouts of a fixed extent
+  /// (a pinned sliver header, say).
+  static const double height = ControlMetrics.segmentedHeight;
 
   @override
   State<GlassSegmentedControl<T>> createState() =>
@@ -164,20 +174,29 @@ class _GlassSegmentedControlState<T> extends State<GlassSegmentedControl<T>>
   Widget build(BuildContext context) => GlassModeBuilder(
     mode: widget.mode,
     builder: (context, mode) => mode == EffectiveGlassMode.material
-        ? SegmentedButton<T>(
-            segments: [
-              for (final s in widget.segments)
-                ButtonSegment(
-                  value: s.value,
-                  label: s.label,
-                  tooltip: s.semanticLabel,
-                ),
-            ],
-            selected: {widget.selected},
-            showSelectedIcon: false,
-            onSelectionChanged: widget.onChanged == null
-                ? null
-                : (s) => widget.onChanged!(s.first),
+        // Compact (40 - 8) and without the padded tap target: as tall as
+        // the glass track.
+        ? SizedBox(
+            height: GlassSegmentedControl.height,
+            child: SegmentedButton<T>(
+              segments: [
+                for (final s in widget.segments)
+                  ButtonSegment(
+                    value: s.value,
+                    label: s.label,
+                    tooltip: s.semanticLabel,
+                  ),
+              ],
+              selected: {widget.selected},
+              showSelectedIcon: false,
+              style: const ButtonStyle(
+                visualDensity: VisualDensity.compact,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onSelectionChanged: widget.onChanged == null
+                  ? null
+                  : (s) => widget.onChanged!(s.first),
+            ),
           )
         : _glass(context),
   );
@@ -192,6 +211,7 @@ class _GlassSegmentedControlState<T> extends State<GlassSegmentedControl<T>>
       context,
     );
     final label = CupertinoDynamicColor.resolve(GlassColors.label, context);
+    final inherited = DefaultTextStyle.of(context).style;
     return Listener(
       onPointerDown: _enabled ? _down : null,
       onPointerMove: _enabled ? _move : null,
@@ -233,7 +253,7 @@ class _GlassSegmentedControlState<T> extends State<GlassSegmentedControl<T>>
                           mode: widget.mode,
                         ),
                       ),
-                      Positioned.fill(child: _labels(label)),
+                      Positioned.fill(child: _labels(label, inherited)),
                     ],
                   ),
                 ),
@@ -245,7 +265,7 @@ class _GlassSegmentedControlState<T> extends State<GlassSegmentedControl<T>>
     );
   }
 
-  Widget _labels(Color color) => Row(
+  Widget _labels(Color color, TextStyle inherited) => Row(
     children: [
       for (var i = 0; i < _count; i++)
         Expanded(
@@ -264,13 +284,16 @@ class _GlassSegmentedControlState<T> extends State<GlassSegmentedControl<T>>
               child: MediaQuery.withClampedTextScaling(
                 maxScaleFactor: ControlMetrics.segmentedMaxTextScale,
                 child: DefaultTextStyle(
-                  style: IOSText.style(
-                    ControlMetrics.segmentedFontSize,
-                    // As SwiftUI: medium, the selected segment semibold.
-                    weight: i == _selectedIndex
-                        ? FontWeight.w600
-                        : FontWeight.w500,
-                    color: color,
+                  style: IOSText.inFontOf(
+                    IOSText.style(
+                      ControlMetrics.segmentedFontSize,
+                      // As SwiftUI: medium, the selected segment semibold.
+                      weight: i == _selectedIndex
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                      color: color,
+                    ),
+                    inherited,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

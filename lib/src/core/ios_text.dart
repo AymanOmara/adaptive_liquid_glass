@@ -51,4 +51,12 @@ abstract final class IOSText {
     // text; iOS text never is.
     decoration: TextDecoration.none,
   );
+
+  /// [style] in [inherited]'s font family, so glass text set over an
+  /// app's text style keeps its custom font.
+  static TextStyle inFontOf(TextStyle style, TextStyle inherited) =>
+      style.copyWith(
+        fontFamily: inherited.fontFamily,
+        fontFamilyFallback: inherited.fontFamilyFallback,
+      );
 }

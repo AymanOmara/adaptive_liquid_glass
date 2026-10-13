@@ -99,6 +99,31 @@ void main() {
     await handle.closed;
   }, variant: ios);
 
+  testWidgets("the app's font family carries into the toast", (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(fontFamily: 'Cairo'),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              _toastContext = context;
+              return const SizedBox();
+            },
+          ),
+        ),
+      ),
+    );
+    showGlassToast(_toastContext, message: 'Saved');
+    await t.pumpAndSettle();
+    final text = t.widget<RichText>(
+      find.descendant(of: find.text('Saved'), matching: find.byType(RichText)),
+    );
+    expect(text.text.style?.fontFamily, 'Cairo');
+    await t.pump(const Duration(seconds: 5));
+    await t.pumpAndSettle();
+  }, variant: ios);
+
   testWidgets('the glass is at least minHeight tall', (t) async {
     shaderEnv();
     await t.pumpWidget(_messengerApp());

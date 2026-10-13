@@ -1,5 +1,11 @@
 ## Unreleased
 
+- `GlassSegmentedControl.height`: the control is this tall on both
+  paths; the Material `SegmentedButton` is compact without the padded
+  tap target, so a fixed-extent header fits either.
+- Segmented control labels, toasts and glass pages keep the inherited
+  font family (an app's custom font) instead of falling back to the
+  default.
 - Every animated control (toggle, slider, segmented control, refresh,
   tab bar and sidebar, progress, toast, swipe actions, search, sheet,
   full-screen cover) creates its animation controllers in `initState`;
