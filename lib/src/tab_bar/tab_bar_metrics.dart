@@ -356,4 +356,26 @@ abstract final class TabBarMetrics {
     response: 0.35,
     dampingFraction: 0.7,
   );
+
+  /// Vibrant labels (shader glass), fitted per pixel to iOS 26.4 over a
+  /// photo: a glyph's lightness is its own plus this gain times the glass
+  /// lightness's distance from [vibrancyReference] (the glass over a plain
+  /// page, where a glyph has its own colour; both 0-1), and it takes
+  /// [vibrancyChromaGain] of the glass's hue.
+  static const double vibrancyLightnessGain = 0.065;
+
+  /// See [vibrancyLightnessGain].
+  static const double vibrancyReference = 0.992;
+
+  /// See [vibrancyLightnessGain].
+  static const double vibrancyChromaGain = 1;
+
+  /// [vibrancyLightnessGain] in dark mode.
+  static const double vibrancyLightnessGainDark = -0.03;
+
+  /// [vibrancyReference] in dark mode.
+  static const double vibrancyReferenceDark = 0.075;
+
+  /// [vibrancyChromaGain] in dark mode.
+  static const double vibrancyChromaGainDark = 0.37;
 }

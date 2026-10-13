@@ -47,6 +47,7 @@ import 'tab_bar_minimize_scope.dart';
 import 'tab_lens.dart';
 import 'tab_lens_content.dart';
 import 'tab_lens_program.dart';
+import 'vibrant_blend.dart';
 
 /// iOS 26's floating tab bar: a glass capsule with the selected tab on a
 /// pill.
@@ -1463,50 +1464,61 @@ class _GlassTabBarState extends State<GlassTabBar>
                     scale,
                     Builder(
                       builder: (context) {
-                        final c = colorOf(i) ?? _labelColor(context);
-                        return Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // The glyph overhangs the bottom of its slot: iOS sets
-                            // the icon and label closer than a 28 pt box allows.
-                            SizedBox(
-                              height: TabBarMetrics.iconSlot,
-                              child: OverflowBox(
-                                maxHeight:
-                                    TabBarMetrics.iconSize +
-                                    TabBarMetrics.iconDrop,
-                                alignment: Alignment.topCenter,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                    top: TabBarMetrics.iconDrop,
-                                  ),
-                                  child: _icon(
-                                    widget.items[i],
-                                    i == widget.selectedIndex,
-                                    c,
+                        final tint = colorOf(i);
+                        final c = tint ?? _labelColor(context);
+                        // iOS's untinted labels are vibrant: over shader
+                        // glass they keep its hue and take their lightness.
+                        return VibrantBlend(
+                          enabled: tint == null && _shaderBar,
+                          dark:
+                              GlassGroupScope.brightnessOf(context) ==
+                              Brightness.dark,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // The glyph overhangs the bottom of its slot: iOS sets
+                              // the icon and label closer than a 28 pt box allows.
+                              SizedBox(
+                                height: TabBarMetrics.iconSlot,
+                                child: OverflowBox(
+                                  maxHeight:
+                                      TabBarMetrics.iconSize +
+                                      TabBarMetrics.iconDrop,
+                                  alignment: Alignment.topCenter,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(
+                                      top: TabBarMetrics.iconDrop,
+                                    ),
+                                    child: _icon(
+                                      widget.items[i],
+                                      i == widget.selectedIndex,
+                                      c,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: TabBarMetrics.labelGap),
-                            // UIKit sizes a label to whole points and sets
-                            // its text at the start, so the ink sits a little
-                            // towards the start of the tab. Beside the search
-                            // tab it sets them further towards the end.
-                            Transform.translate(
-                              offset: Offset(labelShift, 0),
-                              child: IntrinsicWidth(
-                                stepWidth: 1,
-                                child: Text(
-                                  widget.items[i].label,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.fade,
-                                  softWrap: false,
-                                  style: TabBarMetrics.label.copyWith(color: c),
+                              const SizedBox(height: TabBarMetrics.labelGap),
+                              // UIKit sizes a label to whole points and sets
+                              // its text at the start, so the ink sits a little
+                              // towards the start of the tab. Beside the search
+                              // tab it sets them further towards the end.
+                              Transform.translate(
+                                offset: Offset(labelShift, 0),
+                                child: IntrinsicWidth(
+                                  stepWidth: 1,
+                                  child: Text(
+                                    widget.items[i].label,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.fade,
+                                    softWrap: false,
+                                    style: TabBarMetrics.label.copyWith(
+                                      color: c,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         );
                       },
                     ),
