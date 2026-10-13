@@ -1114,6 +1114,24 @@ class _GlassTabBarState extends State<GlassTabBar>
               ),
             ),
           ),
+          // UIKit's clear glass casts no shadow; iOS's light tab lens does.
+          if (lensShown &&
+              !_shaderLens &&
+              GlassGroupScope.brightnessOf(context) != Brightness.dark)
+            Positioned.fromRect(
+              rect: lens.shift(
+                const Offset(TabBarMetrics.inset, TabBarMetrics.inset),
+              ),
+              child: const IgnorePointer(
+                child: CustomPaint(
+                  painter: BarShadow(
+                    opacity: TabBarMetrics.nativeLensShadowOpacity,
+                    offset: TabBarMetrics.nativeLensShadowOffset,
+                    sigma: TabBarMetrics.nativeLensShadowSigma,
+                  ),
+                ),
+              ),
+            ),
           if (lensShown)
             Positioned.fromRect(
               rect: lens.shift(
@@ -1229,10 +1247,12 @@ class _GlassTabBarState extends State<GlassTabBar>
       TabBarMetrics.nativeLensShade * (1 - light.clamp(0.0, 1.0)),
       TabBarMetrics.nativeLensDragShade * (light - 1).clamp(0.0, 1.0),
     );
-    if (shade < 0.01 ||
-        GlassGroupScope.brightnessOf(context) != Brightness.dark) {
-      return Glass.clear;
+    if (GlassGroupScope.brightnessOf(context) != Brightness.dark) {
+      return Glass.clear.tint(
+        GlassColors.black.withValues(alpha: TabBarMetrics.nativeLensLightShade),
+      );
     }
+    if (shade < 0.01) return Glass.clear;
     return Glass.clear.tint(GlassColors.black.withValues(alpha: shade));
   }
 

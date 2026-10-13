@@ -1,5 +1,8 @@
 ## Unreleased
 
+- `GlassTabBar` (light, native): the lens is tinted to iOS's grey (247
+  over the white bar, was 255) and casts a soft shadow below it, as
+  SwiftUI's `TabView` lens does.
 - `GlassTabBar` (light, shader): the lens is light-grey glass with a soft
   shadow below it and a neutral rim, as iOS 26's (was near-invisible with
   a teal rim). New `GlassVariantConstants.shadowOffsetY` moves a shadow
