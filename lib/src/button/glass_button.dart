@@ -18,8 +18,11 @@ import 'glass_button_style.dart';
 import 'glass_control_size.dart';
 import 'glass_control_size_scope.dart';
 import 'material_glass_button.dart';
+import 'system_style_button.dart';
 
-/// A SwiftUI glass button: `.buttonStyle(.glass)` or `.glassProminent`.
+/// A SwiftUI button: `.buttonStyle(.glass)` or `.glassProminent`, or one of
+/// the system styles without glass (`.bordered`, `.borderedProminent`,
+/// `.borderless`, `.plain`) chosen with [style].
 ///
 /// ```dart
 /// GlassButton(onPressed: save, child: const Text('Save'))
@@ -30,8 +33,9 @@ import 'material_glass_button.dart';
 /// )
 /// ```
 ///
-/// Built on [LiquidGlass], so it joins an enclosing `GlassGroup` and morphs
-/// with [glassId]. On the Material path it is a Material 3 button.
+/// The glass styles are built on [LiquidGlass], so they join an enclosing
+/// `GlassGroup` and morph with [glassId]; the other styles draw no glass
+/// and ignore [glassId]. On the Material path it is a Material 3 button.
 class GlassButton extends StatelessWidget {
   /// A button with [child] as its label.
   const GlassButton({
@@ -72,7 +76,8 @@ class GlassButton extends StatelessWidget {
   /// Called on tap; null disables the button.
   final VoidCallback? onPressed;
 
-  /// Plain or prominent glass.
+  /// The SwiftUI button style: glass, prominent glass, or a style without
+  /// glass.
   final GlassButtonStyle style;
 
   /// The role, which can change the colour or weight.
@@ -90,8 +95,9 @@ class GlassButton extends StatelessWidget {
   /// Read after the label while [loading].
   final String loadingLabel;
 
-  /// The prominent fill; defaults to the accent colour. A destructive role
-  /// uses red instead.
+  /// The accent: the prominent fill, the `.bordered` fill (at low opacity)
+  /// and the `.bordered` and `.borderless` label. Defaults to the theme's
+  /// accent colour; a destructive role uses red instead.
   final Color? tint;
 
   /// Rendering mode; see [GlassRenderMode].
@@ -129,8 +135,19 @@ class GlassButton extends StatelessWidget {
     mode: mode,
     builder: (context, effective) => effective == EffectiveGlassMode.material
         ? MaterialGlassButton(button: this, size: resolvedSize(context))
-        : _glass(context),
+        : _isGlass
+        ? _glass(context)
+        : SystemStyleButton(
+            button: this,
+            metrics:
+                GlassButtonMetricsScope.maybeOf(context) ??
+                glassButtonMetrics(resolvedSize(context)),
+          ),
   );
+
+  bool get _isGlass =>
+      style == GlassButtonStyle.glass ||
+      style == GlassButtonStyle.glassProminent;
 
   Widget _glass(BuildContext context) {
     final m =

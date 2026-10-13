@@ -46,7 +46,7 @@ entrypoint (fidelity constants, not stable API).
 |---|---|---|---|---|---|
 | Glass button | `.buttonStyle(.glass)` | **yes** — `GlassButton` | high | — | variants/roles/sizes/shapes complete |
 | Prominent glass | `.buttonStyle(.glassProminent)` | **yes** — `GlassButton(style: .glassProminent)` | high | — | tint + role aware |
-| Bordered / borderless / plain | `.bordered`, `.borderless`, `.plain` | **no** | med | S | iOS 26 defaults most bars to glass; plain styles only matter for dense content rows |
+| Bordered / borderless / plain | `.bordered`, `.borderedProminent`, `.borderless`, `.plain` | **yes** — `GlassButton(style: .bordered / .borderedProminent / .borderless / .plain)` | med | — | no glass; role + disabled aware; fills and press dim estimated |
 | Button role | `.destructive` / `.cancel` | **yes** — `GlassButtonRole` | high | — | |
 | Control size | `.controlSize(_:)` | **yes** — `GlassControlSize` + `GlassControlSizeScope` | med | — | `mini`→small, `extraLarge`→large collapse |
 | Label | `Label(_:systemImage:)` | **partial** — `GlassListTile` leading / `GlassButton.icon` | high | S | no standalone icon+title text widget with vibrant label styling (`GlassLabelStyle` is internal) |

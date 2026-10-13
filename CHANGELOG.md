@@ -1,5 +1,13 @@
 ## Unreleased
 
+- `GlassButtonStyle` gains SwiftUI's styles without glass: `bordered`
+  (grey fill, or the tint at 15% / 20% dark, accent label),
+  `borderedProminent` (solid accent fill, white label), `borderless`
+  (accent label) and `plain` (primary label colour). They support
+  `GlassButton.icon`, roles (destructive is red), sizes, shapes, loading,
+  and iOS's grey disabled state, and dim while pressed. On Android they
+  map to `FilledButton.tonal`, `FilledButton` and `TextButton`. Fills and
+  press dimming are estimated, not measured.
 - `GlassTabBar`, native mode, dark: a quick tap's travelling lens no
   longer shows a grey veil. UIKit's clear glass lifted black to about 40
   grey levels under the lens; it is now shaded as the bar's light fades,

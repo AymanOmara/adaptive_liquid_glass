@@ -229,6 +229,48 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                     ),
                   ),
                   const SizedBox(height: 24),
+                  // SwiftUI's button styles without glass.
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      GlassButton(
+                        onPressed: () => _snack('Bordered'),
+                        style: GlassButtonStyle.bordered,
+                        child: const Text('Bordered'),
+                      ),
+                      GlassButton(
+                        onPressed: () => _snack('Prominent'),
+                        style: GlassButtonStyle.borderedProminent,
+                        child: const Text('Prominent'),
+                      ),
+                      GlassButton.icon(
+                        onPressed: () => _snack('Delete'),
+                        style: GlassButtonStyle.bordered,
+                        role: GlassButtonRole.destructive,
+                        icon: CupertinoIcons.trash,
+                        label: const Text('Delete'),
+                      ),
+                      GlassButton(
+                        onPressed: () => _snack('Borderless'),
+                        style: GlassButtonStyle.borderless,
+                        child: const Text('Borderless'),
+                      ),
+                      GlassButton(
+                        onPressed: () => _snack('Plain'),
+                        style: GlassButtonStyle.plain,
+                        child: const Text('Plain'),
+                      ),
+                      const GlassButton(
+                        onPressed: null,
+                        style: GlassButtonStyle.bordered,
+                        child: Text('Disabled'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
                   Wrap(
                     alignment: WrapAlignment.center,
                     spacing: 12,

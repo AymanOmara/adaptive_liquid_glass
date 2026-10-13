@@ -251,7 +251,7 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `GlassAdaptive` | Your own widget on the Material path, the glass one elsewhere | your `material` builder |
 | `GlassBackdropSource`, `GlassForeground` | Adaptive label colour over busy content | — |
 | `GlassSystemColors` | iOS 26's red, blue, orange and green | — |
-| `GlassButton` (`+ .icon`), `GlassButtonRole`, `GlassButtonStyle`, `GlassButtonShape`, `GlassControlSize`, `GlassControlSizeScope` | SwiftUI's glass and prominent buttons, roles, sizes, shapes, loading | `FilledButton` / `IconButton` / `TextButton` |
+| `GlassButton` (`+ .icon`), `GlassButtonRole`, `GlassButtonStyle`, `GlassButtonShape`, `GlassControlSize`, `GlassControlSizeScope` | SwiftUI's glass, prominent, bordered, borderless and plain buttons, roles, sizes, shapes, loading | `FilledButton` / `IconButton` / `TextButton` |
 | `GlassFloatingActionButton` (`+ .extended`) | The screen's primary action: a large prominent glass circle, or capsule with a label | `FloatingActionButton` |
 | `GlassBackButton` | Circular glass chevron that pops the route | `BackButton` |
 | `GlassNavigationBar`, `SliverGlassNavigationBar`, `GlassScrollEdgeStyle` | Inline and large-title nav bars, no bar background; `scrollEdgeStyle` blurs content scrolled under | `AppBar` / `SliverAppBar.large` |
@@ -318,6 +318,19 @@ GlassButton(
 )
 GlassButton.icon(onPressed: share, icon: CupertinoIcons.share, semanticLabel: 'Share')
 GlassButton(onPressed: upload, loading: uploading, child: const Text('Upload'))
+```
+
+The system styles without glass are there too: `GlassButtonStyle.bordered`
+(a grey fill, or the tint at low opacity, behind an accent label),
+`.borderedProminent` (a solid accent fill), `.borderless` (accent text) and
+`.plain` (label-coloured text). A destructive role turns them red, a null
+`onPressed` greys them out, and they dim while pressed. On Android they are
+`FilledButton.tonal`, `FilledButton` and `TextButton`. Their fills and press
+dimming are estimated, not measured.
+
+```dart
+GlassButton(onPressed: edit, style: GlassButtonStyle.bordered, child: const Text('Edit'))
+GlassButton(onPressed: more, style: GlassButtonStyle.borderless, child: const Text('Show more'))
 ```
 
 Sizes are measured from SwiftUI on iOS 26.4 (iOS 26 draws mini as small and

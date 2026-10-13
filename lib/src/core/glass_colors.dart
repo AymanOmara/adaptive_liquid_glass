@@ -137,6 +137,18 @@ abstract final class GlassColors {
   /// draws its label 0,0,0 over white; 85% black read 38,38,38).
   static const Color buttonLabelOnLight = black;
 
+  /// A `.bordered` button's fill without a tint, and the fill of a
+  /// disabled bordered button (estimated: iOS's tertiarySystemFill).
+  static const CupertinoDynamicColor borderedButtonFill =
+      CupertinoColors.tertiarySystemFill;
+
+  /// A disabled button's label without glass (iOS's tertiaryLabel).
+  static const CupertinoDynamicColor buttonDisabledLabel =
+      CupertinoColors.tertiaryLabel;
+
+  /// A `.plain` button's label (iOS's primary label).
+  static const CupertinoDynamicColor plainButtonLabel = CupertinoColors.label;
+
   // Menu
 
   /// The row under a gliding finger in a glass menu (estimated, not

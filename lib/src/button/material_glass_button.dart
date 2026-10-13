@@ -16,8 +16,9 @@ const materialButtonHeights = <GlassControlSize, double>{
 };
 
 /// A [GlassButton] as a stock Material 3 button: `FilledButton.tonal` for
-/// glass, `FilledButton` for prominent, `TextButton` for cancel, and the
-/// matching `IconButton` for icon-only buttons.
+/// glass and bordered, `FilledButton` for the prominent styles,
+/// `TextButton` for borderless, plain (in the on-surface colour) and
+/// cancel, and the matching `IconButton` for icon-only buttons.
 class MaterialGlassButton extends StatelessWidget {
   /// Creates the Material button.
   const MaterialGlassButton({
@@ -38,13 +39,28 @@ class MaterialGlassButton extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final h = materialButtonHeights[size]!;
     final destructive = b.role == GlassButtonRole.destructive;
-    final prominent = b.style == GlassButtonStyle.glassProminent;
-    final Color? background = destructive
+    final prominent =
+        b.style == GlassButtonStyle.glassProminent ||
+        b.style == GlassButtonStyle.borderedProminent;
+    // Borderless and plain have no background: text buttons.
+    final textStyle =
+        b.style == GlassButtonStyle.borderless ||
+        b.style == GlassButtonStyle.plain;
+    final plain = b.style == GlassButtonStyle.plain;
+    final Color? background = textStyle
+        ? null
+        : destructive
         ? (prominent ? scheme.error : scheme.errorContainer)
         : prominent
         ? b.tint
         : null;
-    final Color? foreground = destructive
+    final Color? foreground = textStyle
+        ? (destructive
+              ? scheme.error
+              : plain
+              ? scheme.onSurface
+              : b.tint)
+        : destructive
         ? (prominent ? scheme.onError : scheme.onErrorContainer)
         : null;
     final OutlinedBorder? border = switch (b.shape) {
@@ -57,15 +73,16 @@ class MaterialGlassButton extends StatelessWidget {
     // Loading disables the button but keeps its enabled colours.
     final VoidCallback? onPressed = b.loading ? null : b.onPressed;
     final iconOnly = b.icon != null && b.label == null;
-    final cancel = b.role == GlassButtonRole.cancel;
-    final Color? loadingBackground = !b.loading || cancel
+    // Cancel, borderless and plain are text buttons.
+    final text = b.role == GlassButtonRole.cancel || textStyle;
+    final Color? loadingBackground = !b.loading || text
         ? null
         : background ??
               (prominent ? scheme.primary : scheme.secondaryContainer);
     final Color? loadingForeground = !b.loading
         ? null
         : foreground ??
-              (cancel
+              (text
                   ? (iconOnly ? scheme.onSurfaceVariant : scheme.primary)
                   : prominent
                   ? scheme.onPrimary
@@ -102,13 +119,13 @@ class MaterialGlassButton extends StatelessWidget {
         shape: border,
       );
       final icon = withLoading(Icon(b.icon));
-      result = switch ((b.role, b.style)) {
-        (GlassButtonRole.cancel, _) => IconButton(
+      result = switch (b.style) {
+        _ when text => IconButton(
           onPressed: onPressed,
           style: style,
           icon: icon,
         ),
-        (_, GlassButtonStyle.glassProminent) => IconButton.filled(
+        _ when prominent => IconButton.filled(
           onPressed: onPressed,
           style: style,
           icon: icon,
@@ -137,13 +154,13 @@ class MaterialGlassButton extends StatelessWidget {
               ],
             ),
       );
-      result = switch ((b.role, b.style)) {
-        (GlassButtonRole.cancel, _) => TextButton(
+      result = switch (b.style) {
+        _ when text => TextButton(
           onPressed: onPressed,
           style: style,
           child: content,
         ),
-        (_, GlassButtonStyle.glassProminent) => FilledButton(
+        _ when prominent => FilledButton(
           onPressed: onPressed,
           style: style,
           child: content,
