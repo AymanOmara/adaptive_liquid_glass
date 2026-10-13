@@ -59,3 +59,4 @@ flutter:
     - shaders/liquid_glass.frag
     - shaders/progressive_blur.frag
     - shaders/tab_lens_content.frag
+    - shaders/tab_vibrancy.frag

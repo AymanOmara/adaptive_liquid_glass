@@ -74,12 +74,10 @@ and CHANGELOG.md.
   0.8), light lens (grey glass + shadow, shader and native), held lens
   size, arrival dip, drag follow, selected pill (53 vs iOS 53).
   Open:
-  - vibrancy over photos (shader 4.5 light / 3.3 dark is mostly this):
-    iOS tints each glyph pixel with the colour behind it (gear +24 red
-    over the red patch, selected blue G -44). Per-tab average tint does
-    not fit (fitted k -1.45..+0.78); a luminosity blend cannot see the
-    glass layer. Needs a backdrop-sampling glyph shader (shader mode only;
-    native glass is invisible to Flutter)
+  - vibrancy: done over shader glass (tab_vibrancy.frag): untinted
+    glyph |diff| over the photo 12.4 -> 8.7 light, 11.2 -> 10.1 dark; the
+    selected tint 24.4 -> 16.2 light, 22.4 -> 12.6 dark. Native mode keeps
+    flat colours (Flutter cannot see UIKit glass)
   - lens fringe: iOS's bands at the lens top/bottom carry a rainbow fringe
     warm on one end, cool on the other; our dispersion is symmetric
     (stronger dispersion / lensVertical / normal radius tried, held-lens
@@ -103,3 +101,12 @@ and CHANGELOG.md.
 
 10- refactor backlog P3 items (docs/superpowers/notes/refactor-backlog.md),
   opportunistic (P3-1 constants split only).
+
+11- new SwiftUI components (2026-10-13): built on branch feat/new-components
+  (bordered/borderedProminent/borderless/plain buttons, vertical GlassSlider,
+  GlassRangeSlider, GlassPhotosPicker; 1079 tests pass). Open:
+  - open the photo picker for real on an iOS simulator and an Android
+    emulator (only unit tests with a mocked channel and the builds ran)
+  - SwiftPM build of the iOS plugin (only CocoaPods was built)
+  - measure the bordered fill, press dim and disabled colours vs SwiftUI
+  - merge feat/new-components into main

@@ -1271,8 +1271,9 @@ Stack(
 - **Native interactive glass:** pressing native glass gets this package's
   stretch and growth, but not SwiftUI's own touch glow.
 - **Tab bar:** close to iOS 26.4's `TabView`, not identical. Over photos
-  the shader-drawn bar differs most: iOS tints each glyph with the colour
-  behind it (vibrancy), ours keeps flat label colours. The native-mode
+  the shader-drawn bar draws untinted labels vibrant, as iOS does (each
+  glyph takes the hue of the glass behind it); the selected tint and
+  native-mode labels keep flat colours. The native-mode
   lens is UIKit glass and does not bend the bar's edges as iOS's does.
   Icons are CupertinoIcons unless you use `GlassTabBarItem.symbol` (SF
   Symbols drawn by iOS).

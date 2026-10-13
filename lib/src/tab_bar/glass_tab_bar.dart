@@ -47,6 +47,7 @@ import 'tab_bar_minimize_scope.dart';
 import 'tab_lens.dart';
 import 'tab_lens_content.dart';
 import 'tab_lens_program.dart';
+import 'vibrant_blend.dart';
 
 /// iOS 26's floating tab bar: a glass capsule with the selected tab on a
 /// pill.
@@ -1169,6 +1170,7 @@ class _GlassTabBarState extends State<GlassTabBar>
         // zero several times and would flicker the tint off and on.
         (i) => !lensShown && i == widget.selectedIndex ? selected : null,
         semantics: true,
+        vibrantTint: true,
       ),
     );
     final m = _magnify.value.clamp(0.0, 1.0);
@@ -1436,6 +1438,7 @@ class _GlassTabBarState extends State<GlassTabBar>
   Widget _row(
     Color? Function(int index) colorOf, {
     required bool semantics,
+    bool vibrantTint = false,
     Offset scale = const Offset(1, 1),
   }) {
     final labelShift = widget.onSearch == null
@@ -1463,50 +1466,64 @@ class _GlassTabBarState extends State<GlassTabBar>
                     scale,
                     Builder(
                       builder: (context) {
-                        final c = colorOf(i) ?? _labelColor(context);
-                        return Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // The glyph overhangs the bottom of its slot: iOS sets
-                            // the icon and label closer than a 28 pt box allows.
-                            SizedBox(
-                              height: TabBarMetrics.iconSlot,
-                              child: OverflowBox(
-                                maxHeight:
-                                    TabBarMetrics.iconSize +
-                                    TabBarMetrics.iconDrop,
-                                alignment: Alignment.topCenter,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                    top: TabBarMetrics.iconDrop,
-                                  ),
-                                  child: _icon(
-                                    widget.items[i],
-                                    i == widget.selectedIndex,
-                                    c,
+                        final tint = colorOf(i);
+                        final c = tint ?? _labelColor(context);
+                        // iOS's untinted labels are vibrant: over shader
+                        // glass they keep its hue and take their lightness.
+                        // The selected tint follows the glass too, less
+                        // (only in the plain row: lens copies are filtered).
+                        return VibrantBlend(
+                          enabled: _shaderBar && (tint == null || vibrantTint),
+                          tinted: tint != null,
+                          dark:
+                              GlassGroupScope.brightnessOf(context) ==
+                              Brightness.dark,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // The glyph overhangs the bottom of its slot: iOS sets
+                              // the icon and label closer than a 28 pt box allows.
+                              SizedBox(
+                                height: TabBarMetrics.iconSlot,
+                                child: OverflowBox(
+                                  maxHeight:
+                                      TabBarMetrics.iconSize +
+                                      TabBarMetrics.iconDrop,
+                                  alignment: Alignment.topCenter,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(
+                                      top: TabBarMetrics.iconDrop,
+                                    ),
+                                    child: _icon(
+                                      widget.items[i],
+                                      i == widget.selectedIndex,
+                                      c,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: TabBarMetrics.labelGap),
-                            // UIKit sizes a label to whole points and sets
-                            // its text at the start, so the ink sits a little
-                            // towards the start of the tab. Beside the search
-                            // tab it sets them further towards the end.
-                            Transform.translate(
-                              offset: Offset(labelShift, 0),
-                              child: IntrinsicWidth(
-                                stepWidth: 1,
-                                child: Text(
-                                  widget.items[i].label,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.fade,
-                                  softWrap: false,
-                                  style: TabBarMetrics.label.copyWith(color: c),
+                              const SizedBox(height: TabBarMetrics.labelGap),
+                              // UIKit sizes a label to whole points and sets
+                              // its text at the start, so the ink sits a little
+                              // towards the start of the tab. Beside the search
+                              // tab it sets them further towards the end.
+                              Transform.translate(
+                                offset: Offset(labelShift, 0),
+                                child: IntrinsicWidth(
+                                  stepWidth: 1,
+                                  child: Text(
+                                    widget.items[i].label,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.fade,
+                                    softWrap: false,
+                                    style: TabBarMetrics.label.copyWith(
+                                      color: c,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         );
                       },
                     ),
