@@ -79,6 +79,16 @@
   the nearest one (on overlapping thumbs the drag direction picks),
   `divisions` snap with haptics, each thumb is its own semantics slider,
   and `axis` makes it vertical. Material: `RangeSlider`.
+- New: `GlassPhotosPicker`, SwiftUI's `PhotosPicker`: a glass trigger that
+  opens the system photo picker (`PHPickerViewController` on iOS, the
+  Android Photo Picker or document picker on Android) with
+  `maxSelection` and a `GlassPhotosPickerFilter` (images, videos, any).
+  `pickGlassPhotos()` opens it from any trigger. Picks arrive as
+  `GlassPickedPhoto` local copies (path, video flag, MIME type, image
+  size). No new dependencies and no permissions.
+- Android: the package now ships a small Kotlin plugin
+  (`AdaptiveLiquidGlassPlugin`) that only hosts the photo picker; the
+  Material 3 path stays pure Dart.
 - `GlassTabBar`, native mode, dark: a quick tap's travelling lens no
   longer shows a grey veil. UIKit's clear glass lifted black to about 40
   grey levels under the lens; it is now shaded as the bar's light fades,

@@ -232,6 +232,11 @@ The tab bar floats in a capsule on Android too. For Material 3's own
 full-width bar, pass `materialStyle: GlassMaterialTabBarStyle.edgeToEdge`
 (see [Tab bar](#tab-bar)).
 
+The package has a small Kotlin plugin on Android for one job: the system
+photo picker behind `GlassPhotosPicker` (see [Photos picker](#photos-picker)).
+Everything else is drawn in Dart; it adds no Gradle dependencies and no
+permissions.
+
 ## Which widget?
 
 Every component is iOS 26's own on iOS and gets a Material 3 counterpart on
@@ -290,6 +295,7 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `GlassProgressIndicator`, `GlassProgressStyle` | Linear bar on a glass track, or ring/spinner | `LinearProgressIndicator` / `CircularProgressIndicator` |
 | `GlassGauge`, `GlassGaugeStyle` | SwiftUI's Gauge: linear capacity, accessoryCircular, accessoryCircularCapacity | `LinearProgressIndicator` / `CircularProgressIndicator` |
 | `GlassSwipeActions`, `GlassSwipeAction` | List swipe actions: tinted capsules, full swipe, haptic | iOS layout, Material colour |
+| `GlassPhotosPicker`, `pickGlassPhotos`, `GlassPickedPhoto` | SwiftUI's `PhotosPicker`: a glass trigger opening the system photo picker; items come back as local files | Material 3 button, Android Photo Picker |
 
 ## Cookbook
 
@@ -1102,6 +1108,34 @@ instead of sliding, and it is announced as a live region. On Android it is a
 `SnackBar` through the nearest `ScaffoldMessenger`, otherwise a Material 3
 snackbar-styled surface at the bottom of the screen.
 
+### Photos picker
+
+```dart
+GlassPhotosPicker(
+  label: 'Select Photos',
+  maxSelection: 0, // unlimited; 1 (the default) picks one
+  filter: GlassPhotosPickerFilter.any, // images (default), videos, any
+  onPicked: (photos) => setState(() => _photos = photos),
+)
+
+// A custom trigger:
+final photos = await pickGlassPhotos(maxSelection: 3);
+Image.file(File(photos.first.path));
+```
+
+SwiftUI's `PhotosPicker(selection:maxSelectionCount:matching:)`. The
+trigger is a `GlassButton` (pass `child` for your own label, or `label`
+and `icon`); tapping presents the system picker. On iOS that is
+`PHPickerViewController`, on Android the system Photo Picker
+(`MediaStore.ACTION_PICK_IMAGES`, Android 13+ and 11-12 with the SDK
+extension) or the document picker on older versions. Neither needs a
+photo library or storage permission, and the package adds no
+dependencies. Each `GlassPickedPhoto` is a copy in the app's temporary
+(iOS) or cache (Android) directory with `path`, `isVideo`, `mimeType` and,
+for images, `width` and `height`. Cancelling returns an empty list
+(`onPicked` is not called); the app owns the copies and should move or
+delete them.
+
 ### Swipe actions
 
 ```dart
@@ -1242,6 +1276,13 @@ Stack(
   lens is UIKit glass and does not bend the bar's edges as iOS's does.
   Icons are CupertinoIcons unless you use `GlassTabBarItem.symbol` (SF
   Symbols drawn by iOS).
+- **Photos picker:** items are copied into a temporary or cache directory
+  before `onPicked` runs, so very large videos take time to arrive and the
+  copies are not deleted for you. iOS returns the original format (HEIC
+  photos, HEVC videos); no transcoding or downscaling options yet. Video
+  width and height are not reported. The Android document-picker fallback
+  (before Android 11, or without the SDK extension) cannot enforce
+  `maxSelection` in its UI; extra items are dropped.
 - **Unmeasured geometry:** `GlassLabel`, `GlassLink`/`GlassShareLink`, the
   `GlassColorPicker` sheet, `GlassRefresh`, `GlassSearchable`, the
   `GlassDatePicker` wheel and time styles, `GlassWheelPicker` and the

@@ -3,6 +3,8 @@ import UIKit
 
 public class AdaptiveLiquidGlassPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
   private var sink: FlutterEventSink?
+  /// The open photo picker; one at a time.
+  private var photosPicker: GlassPhotosPicker?
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let instance = AdaptiveLiquidGlassPlugin()
@@ -27,6 +29,15 @@ public class AdaptiveLiquidGlassPlugin: NSObject, FlutterPlugin, FlutterStreamHa
       ])
     case "symbol":
       result(Self.symbol(call.arguments as? [String: Any] ?? [:]))
+    case "pickPhotos":
+      if photosPicker != nil {
+        result(FlutterError(
+          code: "already_active", message: "A photo picker is already open.", details: nil))
+        return
+      }
+      photosPicker = GlassPhotosPicker.present(arguments: call.arguments, result: result) {
+        [weak self] in self?.photosPicker = nil
+      }
     default:
       result(FlutterMethodNotImplemented)
     }

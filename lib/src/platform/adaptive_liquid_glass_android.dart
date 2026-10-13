@@ -1,8 +1,9 @@
-/// The Android implementation, which is Dart only.
+/// The Dart half of the Android implementation.
 ///
-/// Android renders Material 3 surfaces and needs no native code; declaring
-/// this class in `pubspec.yaml` (`flutter.plugin.platforms.android`) is
-/// what lists Android as supported. Not exported.
+/// Android renders Material 3 surfaces in Dart. The Kotlin plugin
+/// (`AdaptiveLiquidGlassPlugin`) only answers `pickPhotos` on the method
+/// channel; `GlassPlatform` still reads nothing from it off iOS. Not
+/// exported.
 abstract final class AdaptiveLiquidGlassAndroid {
   /// Called by the generated plugin registrant; nothing to register.
   static void registerWith() {}

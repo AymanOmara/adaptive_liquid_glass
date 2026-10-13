@@ -52,7 +52,7 @@ entrypoint (fidelity constants, not stable API).
 | Label | `Label(_:systemImage:)` | **partial** — `GlassListTile` leading / `GlassButton.icon` | high | S | no standalone icon+title text widget with vibrant label styling (`GlassLabelStyle` is internal) |
 | Link | `Link(destination:)` | **no** | med | S | url_launcher wrapper in glass capsule |
 | Share link | `ShareLink(item:)` | **no** | med | S | native share sheet via `share_plus`; glass pill trigger |
-| PhotosPicker | `PhotosPicker` (PhotosUI) | **no** | low | L | needs platform plugin + asset transfer |
+| PhotosPicker | `PhotosPicker` (PhotosUI) | yes | low | L | `GlassPhotosPicker` / `pickGlassPhotos`: PHPicker on iOS, Photo Picker on Android, files copied to temp |
 | Keyboard toolbar | `ToolbarItem(placement: .keyboard)` | **no** | med | M | glass accessory bar above keyboard (done/next); measure vs iOS 26 quick-type bar glass |
 | ToolbarSpacer | `ToolbarSpacer(.flexible)` | **yes** — `GlassToolbarSpacer` | med | — | bottom toolbar only |
 
