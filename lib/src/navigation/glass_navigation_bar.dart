@@ -7,6 +7,7 @@ import 'glass_scroll_edge.dart';
 import 'glass_scroll_edge_style.dart';
 import 'nav_bar_content.dart';
 import 'nav_bar_metrics.dart';
+import 'nav_bar_status_style.dart';
 
 /// iOS 26's navigation bar with an inline title: no bar background, a glass
 /// back button when the route can pop, a centred title and the actions
@@ -105,30 +106,32 @@ class _GlassNavigationBarState extends State<GlassNavigationBar> {
         );
       }
       final top = MediaQuery.paddingOf(context).top;
-      return Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 0,
-            child: GlassScrollEdge(
-              visible: _scrolledUnder,
-              style: widget.scrollEdgeStyle,
-              height: top + NavBarMetrics.barHeight + 16,
+      return NavBarStatusStyle(
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              child: GlassScrollEdge(
+                visible: _scrolledUnder,
+                style: widget.scrollEdgeStyle,
+                height: top + NavBarMetrics.barHeight + 16,
+              ),
             ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(top: top),
-            child: NavBarContent(
-              leading: widget.leading,
-              automaticallyImplyLeading: widget.automaticallyImplyLeading,
-              title: widget.title,
-              actions: widget.actions,
-              mode: widget.mode,
+            Padding(
+              padding: EdgeInsets.only(top: top),
+              child: NavBarContent(
+                leading: widget.leading,
+                automaticallyImplyLeading: widget.automaticallyImplyLeading,
+                title: widget.title,
+                actions: widget.actions,
+                mode: widget.mode,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     },
   );

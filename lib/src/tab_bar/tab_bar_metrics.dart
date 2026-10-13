@@ -389,4 +389,25 @@ abstract final class TabBarMetrics {
 
   /// [tintVibrancyReference] in dark mode.
   static const double tintVibrancyReferenceDark = 0.208;
+
+  /// The selected pill over shader glass: the glass under it becomes
+  /// [pillVibrancyScale] times itself raised to [pillVibrancyGamma], so it
+  /// darkens more where the glass is darker (iOS 26.4: 235 over white, ~15
+  /// darker than a flat grey over a photo; the scale puts the pill over a
+  /// white page at iOS's 235).
+  static const double pillVibrancyScale = 0.932;
+
+  /// See [pillVibrancyScale].
+  static const double pillVibrancyGamma = 1.3;
+
+  /// In dark mode the pill lifts the glass: scale, gamma and an added
+  /// [pillVibrancyLiftDark] (iOS 26.4 over a photo: 0.877 x + 0.159, the lift set so the pill over
+  /// a black page reads iOS's 53).
+  static const double pillVibrancyScaleDark = 0.877;
+
+  /// See [pillVibrancyScaleDark].
+  static const double pillVibrancyGammaDark = 1;
+
+  /// See [pillVibrancyScaleDark].
+  static const double pillVibrancyLiftDark = 0.139;
 }

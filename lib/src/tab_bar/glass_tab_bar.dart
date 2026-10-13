@@ -1,6 +1,6 @@
 import 'dart:async' show Timer;
 import 'dart:math' as math;
-import 'dart:ui' show lerpDouble;
+import 'dart:ui' show FragmentProgram, lerpDouble;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
@@ -47,6 +47,8 @@ import 'tab_bar_minimize_scope.dart';
 import 'tab_lens.dart';
 import 'tab_lens_content.dart';
 import 'tab_lens_program.dart';
+import 'tab_vibrancy_program.dart';
+import 'vibrancy_kind.dart';
 import 'vibrant_blend.dart';
 
 /// iOS 26's floating tab bar: a glass capsule with the selected tab on a
@@ -1248,20 +1250,14 @@ class _GlassTabBarState extends State<GlassTabBar>
                             // leaves its pill faster, as it grows.
                             Positioned.fromRect(
                               rect: lens,
-                              child: Opacity(
-                                opacity:
-                                    (1 -
+                              child: _pill(
+                                indicator,
+                                (1 -
                                         math.max(
                                           light.clamp(0.0, 1.0),
                                           t * _travelling.clamp(0.0, 1.0),
                                         )) *
                                     _pillInCurve.transform(_pillIn.value),
-                                child: DecoratedBox(
-                                  decoration: ShapeDecoration(
-                                    shape: const StadiumBorder(),
-                                    color: indicator,
-                                  ),
-                                ),
                               ),
                             ),
                             // Under a held lens the row has a hole filled by a
@@ -1435,6 +1431,38 @@ class _GlassTabBarState extends State<GlassTabBar>
   }
 
   /// The tabs; [colorOf] null leaves a tab to the tab bar's label colour.
+  // The selected pill. Over shader glass with the default colour it darkens
+  // the glass as iOS's does (more where the glass is darker), so it is
+  // drawn as coverage for the vibrancy shader.
+  Widget _pill(Color indicator, double opacity) {
+    final plain = Opacity(
+      opacity: opacity,
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          shape: const StadiumBorder(),
+          color: indicator,
+        ),
+      ),
+    );
+    if (!_shaderBar || widget.indicatorColor != null) return plain;
+    TabVibrancyProgram.instance.load();
+    return ValueListenableBuilder<FragmentProgram?>(
+      valueListenable: TabVibrancyProgram.instance.program,
+      builder: (context, program, _) => program == null
+          ? plain
+          : VibrantBlend(
+              kind: VibrancyKind.pill,
+              dark: GlassGroupScope.brightnessOf(context) == Brightness.dark,
+              child: DecoratedBox(
+                decoration: ShapeDecoration(
+                  shape: const StadiumBorder(),
+                  color: const Color(0xFF000000).withValues(alpha: opacity),
+                ),
+              ),
+            ),
+    );
+  }
+
   Widget _row(
     Color? Function(int index) colorOf, {
     required bool semantics,
@@ -1474,7 +1502,9 @@ class _GlassTabBarState extends State<GlassTabBar>
                         // (only in the plain row: lens copies are filtered).
                         return VibrantBlend(
                           enabled: _shaderBar && (tint == null || vibrantTint),
-                          tinted: tint != null,
+                          kind: tint == null
+                              ? VibrancyKind.label
+                              : VibrancyKind.tint,
                           dark:
                               GlassGroupScope.brightnessOf(context) ==
                               Brightness.dark,

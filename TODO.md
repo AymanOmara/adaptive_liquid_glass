@@ -67,8 +67,8 @@ and CHANGELOG.md.
 
 7- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
   Still scenes, whole-crop mean |diff| native/shader (2026-10-13, with
-  GlassTabBarItem.symbol): white 0.33/0.45, dark 0.34/0.71, photo
-  1.30/4.54, dark photo 1.60/3.28, searchtab 0.71/0.81, accessory
+  GlassTabBarItem.symbol, vibrancy): white 0.33/0.45, dark 0.34/0.63, photo
+  1.30/3.81, dark photo 1.60/3.13, searchtab 0.71/0.81, accessory
   1.66/1.43 (were 1.24/1.35, 1.23/1.60, 1.93/5.14, 2.27/3.95, 1.47/1.56,
   2.04/2.44). Done 2026-10-13: SF Symbols at run time (icon region 4.8 ->
   0.8), light lens (grey glass + shadow, shader and native), held lens
@@ -76,7 +76,8 @@ and CHANGELOG.md.
   Open:
   - vibrancy: done over shader glass (tab_vibrancy.frag): untinted
     glyph |diff| over the photo 12.4 -> 8.7 light, 11.2 -> 10.1 dark; the
-    selected tint 24.4 -> 16.2 light, 22.4 -> 12.6 dark. Native mode keeps
+    selected tint 24.4 -> 16.2 light, 22.4 -> 12.6 dark; the pill (photo
+    whole crop 4.39 -> 3.81). Native mode keeps
     flat colours (Flutter cannot see UIKit glass)
   - lens fringe: iOS's bands at the lens top/bottom carry a rainbow fringe
     warm on one end, cool on the other; our dispersion is symmetric

@@ -11,7 +11,8 @@
 - `GlassTabBar` over shader glass: untinted labels are vibrant, as iOS
   26.4's (each glyph pixel takes the hue of the glass behind it and a
   lightness fitted per pixel; `tab_vibrancy.frag`); the selected tint
-  follows the glass by half, as iOS's does.
+  follows the glass by half, and the selected pill darkens the glass
+  more where it is darker, as iOS's do.
 - New `GlassTabBar.style` (`GlassTabBarStyle.sidebarAdaptable`): on an
   iPad the bar floats at the top as text tabs with a sidebar button and an
   overlay sidebar, as iOS 26.4's `.sidebarAdaptable` (measured on iPad Pro

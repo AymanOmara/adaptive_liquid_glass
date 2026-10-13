@@ -70,10 +70,9 @@ Color? _labelColor(WidgetTester t, String label) =>
     t.widget<Text>(find.text(label).first).style?.color;
 
 /// The clear glass lens is shown only while the bar is held.
-Finder get _lens =>
-    find.byWidgetPredicate(
-      (w) => w is LiquidGlass && w.glass?.variant == GlassVariant.clear,
-    );
+Finder get _lens => find.byWidgetPredicate(
+  (w) => w is LiquidGlass && w.glass?.variant == GlassVariant.clear,
+);
 
 void main() {
   setUp(() => GlassProgram.instance.debugReset(skipLoad: true));

@@ -30,10 +30,9 @@ Widget bar() => plainHost(
   ),
 );
 
-Finder get lens =>
-    find.byWidgetPredicate(
-      (w) => w is LiquidGlass && w.glass?.variant == GlassVariant.clear,
-    );
+Finder get lens => find.byWidgetPredicate(
+  (w) => w is LiquidGlass && w.glass?.variant == GlassVariant.clear,
+);
 
 Future<TestGesture> hold(WidgetTester t) async {
   final g = await t.startGesture(t.getCenter(find.text('History')));
