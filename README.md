@@ -23,6 +23,23 @@ on Medium.
   <img src="https://raw.githubusercontent.com/AymanOmara/adaptive_liquid_glass/main/screenshots/tabbar-light.gif" width="400" alt="GlassTabBar in light mode: white glass bar with a blue tint on a white page" />
 </p>
 
+### Tab bar against SwiftUI
+
+`GlassTabBar` recorded beside SwiftUI's own `TabView` on iOS 26.4: top row
+SwiftUI, then this package in native mode, then in shader mode; light on the
+left, dark on the right; press, drag and tap, aligned on the gesture's start.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/AymanOmara/adaptive_liquid_glass/main/screenshots/tabbar-compare.gif" width="880" alt="GlassTabBar beside SwiftUI's TabView: press, drag and tap in light and dark, native and shader modes" />
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/AymanOmara/adaptive_liquid_glass/main/screenshots/tabbar-compare-slowmo.gif" width="880" alt="The same comparison at a quarter speed" />
+</p>
+
+Videos: [real time](https://github.com/AymanOmara/adaptive_liquid_glass/raw/main/screenshots/tabbar-compare.mp4),
+[4x slow motion](https://github.com/AymanOmara/adaptive_liquid_glass/raw/main/screenshots/tabbar-compare-slowmo.mp4).
+
 ## Screenshots
 
 The screenshot gallery shows the example app on iOS 26.4 in light and dark
@@ -65,7 +82,7 @@ documented there), then score with
 
 ```yaml
 dependencies:
-  adaptive_liquid_glass: ^0.1.9
+  adaptive_liquid_glass: ^0.1.10
 ```
 
 ```dart

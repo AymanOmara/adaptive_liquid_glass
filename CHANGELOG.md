@@ -1,5 +1,21 @@
-## Unreleased
+## 0.1.10 (2026-10-14)
 
+- `GlassTabBar`, native mode: SwiftUI draws the selected pill inside the
+  glass, shifting it by a fixed amount as iOS does, so a photo keeps its
+  colour beneath (pill error vs SwiftUI's `TabView`: plain 17 / 33 -> 0,
+  photo 8.7 / 10.4 -> 5.6 / 3.4, light / dark). The lens leads the finger
+  and its tap travel by UIKit's frame of latency (drag centre 199 -> 208
+  pt, iOS 208; tap error 18.5 -> 5.3 pt), stays mounted so a press shows
+  it on iOS's frame, darkens its overhang past the bar, shows the bar's
+  edge 3.3 pt in as iOS's squeezes it, and rims bright in dark mode
+  (held-lens error 2.51 / 6.52 -> 2.01 / 4.70).
+- `GlassTabBar`, shader mode: the dark lens's overhang stays near black
+  (it read blue); the light lens's shadow is soft beside it; the held lens
+  shows the bar's edge 3.3 pt in, as iOS's (held-lens error 3.52 / 5.64
+  -> 2.46 / 5.17). The bar's glass follows iOS's tone over photos and
+  text (ambient lift), the light lens fringes in rainbow colours, and the
+  lens refracts only the bar (no page text in its bands).
+- README: `GlassTabBar` recorded beside SwiftUI's `TabView`.
 - `package:adaptive_liquid_glass/glass_testing.dart`: `GlassTesting.setUp`
   pins the platform, iOS version and fallbacks for an app's widget tests
   and stops the shaders loading; `GlassTesting.reset` restores the
