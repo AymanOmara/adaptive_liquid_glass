@@ -676,7 +676,7 @@ class _GlassTabBarState extends State<GlassTabBar>
     _reliftAt = null;
     _x.removeListener(_reliftOnArrival);
     if (!_held) return;
-    _springPress(TabBarMetrics.release, 0);
+    _springPress(TabBarMetrics.arrive, 0);
     _reliftTimer = Timer(TabBarMetrics.relift, () {
       _reliftTimer = null;
       if (mounted && _held) _springPress(TabBarMetrics.press, 1);
@@ -1140,7 +1140,9 @@ class _GlassTabBarState extends State<GlassTabBar>
               child: _shaderLens
                   ? withTabLens(
                       context,
-                      bend: t,
+                      // iOS keeps a held lens fully glass while it settles
+                      // on arrival and lifts again.
+                      bend: _held ? 1 : t,
                       const GlassGroup(
                         mode: GlassRenderMode.shader,
                         child: LiquidGlass(

@@ -28,8 +28,10 @@ abstract final class TabBarMetrics {
   /// top-aligned with the count badges (measured, iOS 26.4).
   static const double emptyBadge = 18;
 
-  /// The held lens over the pill: 114.3 by 74 against 93.7 by 54.
-  static const double lensGrowX = 20.6;
+  /// The held lens over the pill: 112.3 by 76 against 93.7 by 54 (SwiftUI
+  /// `TabView`, iOS 26.4, outline at frame 30 of a press; 20.6 stood
+  /// 2.7 pt wider).
+  static const double lensGrowX = 17.9;
 
   /// See [lensGrowX]. 22.6 rather than Kept's 20: SwiftUI's `TabView`
   /// (iOS 26.4) holds its lens 6.0 pt over the grown bar, ours stood 4.7
@@ -218,7 +220,16 @@ abstract final class TabBarMetrics {
   /// lets it settle into the pill and lifts it again (SwiftUI `TabView`:
   /// gone 2–4 frames after arriving, growing again 6 frames later, full
   /// 12 frames after that with [press]).
-  static const Duration relift = Duration(milliseconds: 100);
+  static const Duration relift = Duration(milliseconds: 60);
+
+  /// The held lens settling on arrival (before [relift]): without the
+  /// release spring's undershoot, so it shrinks to its resting size but no
+  /// smaller (SwiftUI `TabView`, iOS 26.4: 65 pt tall at the dip, held
+  /// 76).
+  static final SpringDescription arrive = swiftUISpring(
+    response: 0.2,
+    dampingFraction: 1,
+  );
 
   /// Pill to lens.
   static final SpringDescription press = swiftUISpring(

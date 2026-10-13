@@ -1,5 +1,9 @@
 ## Unreleased
 
+- `GlassTabBar`: a held lens is 2.7 pt narrower (iOS's outline, within
+  1 px), and on arriving at a held tab it settles to its resting size
+  and lifts again without vanishing (it went invisible for ~6 frames),
+  as iOS 26's does.
 - `GlassTabBar` (light, native): the lens is tinted to iOS's grey (247
   over the white bar, was 255) and casts a soft shadow below it, as
   SwiftUI's `TabView` lens does.
