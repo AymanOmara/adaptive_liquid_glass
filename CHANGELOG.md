@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Motion measured against SwiftUI on iOS 26.4: `GlassDisclosureGroup`
+  springs with response 0.29 (was 0.35, damping 1.0); `GlassRefresh`
+  snaps back with 0.47 / 0.77 (was 0.35 / 0.8); `GlassColorPicker`'s grid
+  ring swaps at once (was a 150 ms fade). New
+  `tool/fidelity/record_component_motion.sh` and `component_motion.py`.
 - `GlassTabBar`, native mode, dark: a quick tap's travelling lens no
   longer shows a grey veil. UIKit's clear glass lifted black to about 40
   grey levels under the lens; it is now shaded as the bar's light fades,

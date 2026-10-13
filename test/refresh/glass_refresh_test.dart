@@ -1,9 +1,12 @@
 import 'dart:async';
 
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/core/swiftui_spring.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
+import 'package:adaptive_liquid_glass/src/refresh/refresh_metrics.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../api/hosts.dart';
@@ -117,6 +120,49 @@ void main() {
     expect(done.refreshing, isFalse);
     // Exactly 0: a spring stopping just above it left a tiny disk shown.
     expect(done.progress, 0);
+  }, variant: ios);
+
+  test("the snap-back is SwiftUI's measured spring (0.47 / 0.77)", () {
+    expect(RefreshMetrics.snapResponse, 0.47);
+    expect(RefreshMetrics.snapDamping, 0.77);
+  });
+
+  testWidgets('the snap-back follows the measured spring', (t) async {
+    shaderEnv();
+    final completer = Completer<void>();
+    await t.pumpWidget(
+      _host(GlassRefresh(onRefresh: () => completer.future, child: _list)),
+    );
+    await t.pump();
+    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await t.pump();
+    await t.pump(_frame);
+    // The list settles back while the spinner keeps turning.
+    await t.pump(const Duration(seconds: 1));
+    completer.complete();
+    await t.pump();
+    const elapsed = Duration(milliseconds: 150);
+    await t.pump(elapsed);
+    final spring = SpringSimulation(
+      swiftUISpring(
+        response: RefreshMetrics.snapResponse,
+        dampingFraction: RefreshMetrics.snapDamping,
+      ),
+      1,
+      0,
+      0,
+    );
+    final progress = t
+        .widget<GlassRefreshIndicator>(find.byType(GlassRefreshIndicator))
+        .progress;
+    expect(
+      progress,
+      closeTo(
+        spring.x(elapsed.inMicroseconds / Duration.microsecondsPerSecond),
+        0.03,
+      ),
+    );
+    await t.pumpAndSettle();
   }, variant: ios);
 
   testWidgets('Android uses Material RefreshIndicator', (t) async {

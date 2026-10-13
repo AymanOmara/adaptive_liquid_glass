@@ -12,6 +12,7 @@ Widget? newComponentTwin(String scene) => switch (scene) {
   'fullscreencover' => const _FullScreenCover(),
   'covertiming' => const _CoverTiming(),
   'gauge' => const _Gauge(),
+  'refreshmotion' => const _RefreshMotion(),
   _ => null,
 };
 
@@ -247,6 +248,29 @@ class _Gauge extends StatelessWidget {
           ),
         ),
       ],
+    ),
+  );
+}
+
+/// A plain list of 30 rows under a [GlassRefresh] whose action takes 1 s,
+/// for recording the pull, hold and snap-back.
+class _RefreshMotion extends StatelessWidget {
+  const _RefreshMotion();
+
+  static Future<void> _refresh() =>
+      Future<void>.delayed(const Duration(seconds: 1));
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: Colors.white,
+    child: GlassRefresh(
+      onRefresh: _refresh,
+      child: ListView(
+        padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
+        children: [
+          for (var i = 0; i < 30; i++) GlassListTile(title: Text('Row $i')),
+        ],
+      ),
     ),
   );
 }

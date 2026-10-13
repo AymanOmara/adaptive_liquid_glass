@@ -73,6 +73,8 @@ abstract final class ColorPickerMetrics {
   /// The checkerboard's cell size under a translucent swatch (estimated).
   static const double checker = 6;
 
-  /// The selection ring's animation (estimated).
-  static const Duration selectionDuration = Duration(milliseconds: 150);
+  /// The selection ring's animation: none. UIColorPickerViewController's
+  /// grid (iOS 26.4) swaps the ring between two display frames (measured,
+  /// two takes, no in-between frame).
+  static const Duration selectionDuration = Duration.zero;
 }

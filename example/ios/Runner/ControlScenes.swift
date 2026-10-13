@@ -50,6 +50,8 @@ enum ControlScenes {
     case "covertiming": root = AnyView(CoverTimingReference())
     case "fullscreencover": root = AnyView(FullScreenCoverReference())
     case "gauge": root = AnyView(GaugeReference())
+    case "refreshmotion": root = AnyView(RefreshMotionReference())
+    case "colormotion": root = AnyView(ColorMotionReference())
     default: return false
     }
     window?.rootViewController = UIHostingController(rootView: root)
