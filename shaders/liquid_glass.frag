@@ -11,7 +11,7 @@ uniform vec4 uTouch;       // x, y, glow, glowRadius px
 uniform vec4 uRects[16];   // x, y, w, h px
 uniform vec4 uInfo[16];    // radius px, variant(0 regular, 1 clear), cornerExponent (0 = global), fill scale
 uniform vec4 uTints[16];   // rgb, strength
-uniform vec4 uVar[32];     // per variant (regular A-L, then clear A-L, then
+uniform vec4 uVar[34];     // per variant (regular A-L, then clear A-L, then
                            // regular M-O, then clear M-O, then regular P,
                            // then clear P):
                            //   A(lens decay px, band px, lens strength, disp) B(rimW, rimI, fillOpacity, dim)
@@ -29,6 +29,7 @@ uniform vec4 uVar[32];     // per variant (regular A-L, then clear A-L, then
                            //   clamp (fidelity group 4)
                            //   P(ambient mix, ambient reach px, luma-keyed tone mix, shadow y offset px) (item 8;
                            //   P.z item 8 round 3)
+                           //   Q(sideways dispersion, -, -, -), regular then clear
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -202,6 +203,7 @@ void main() {
   vec4 J = mix(uVar[9], uVar[21], clearMix);
   vec4 K = mix(uVar[10], uVar[22], clearMix);
   vec4 L4 = mix(uVar[11], uVar[23], clearMix);
+  vec4 Q4 = mix(uVar[32], uVar[33], clearMix);
   vec4 M = mix(uVar[24], uVar[27], clearMix);
   vec4 N = mix(uVar[25], uVar[28], clearMix);
   vec4 O = mix(uVar[26], uVar[29], clearMix);
@@ -360,9 +362,12 @@ void main() {
   // (post-lens blur + wide mix), so dispersion 0 is an exact no-op and a
   // grey backdrop stays grey (the offset must be measured after the wide
   // mix, not before it).
-  if (A.w != 0.0) {
+  if (A.w != 0.0 || Q4.x != 0.0) {
     vec3 coreOff = col - base;
-    vec2 disp = nrm * lensAmt * abs(A.w);
+    // Along the normal, plus sideways along the rim (Q.x): red and blue
+    // move apart along the outline, warm at one end of a band, cool at
+    // the other.
+    vec2 disp = nrm * lensAmt * abs(A.w) + vec2(-nrm.y, nrm.x) * lensAmt * Q4.x;
     float dw = v;
     col.r = mix(col.r, tex(sp + disp).r + coreOff.r, dw);
     // Negative dispersion (iOS's tab lens) moves green with blue, so a

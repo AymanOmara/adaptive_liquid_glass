@@ -36,6 +36,7 @@ class GlassVariantConstants {
     this.ambientMix = 0,
     this.ambientReach = 0,
     this.shadowOffsetY = 0,
+    this.dispersionTangent = 0,
     this.toneLumaMix = 0,
     this.glowStrength = 0.25,
     this.postBlurShare = 0,
@@ -112,6 +113,11 @@ class GlassVariantConstants {
     ambientMix: GlassJson.number(j, 'ambientMix', base.ambientMix),
     ambientReach: GlassJson.number(j, 'ambientReach', base.ambientReach),
     shadowOffsetY: GlassJson.number(j, 'shadowOffsetY', base.shadowOffsetY),
+    dispersionTangent: GlassJson.number(
+      j,
+      'dispersionTangent',
+      base.dispersionTangent,
+    ),
     toneLumaMix: GlassJson.number(j, 'toneLumaMix', base.toneLumaMix),
     glowStrength: GlassJson.number(j, 'glowStrength', base.glowStrength),
     postBlurShare: GlassJson.number(j, 'postBlurShare', base.postBlurShare),
@@ -282,6 +288,12 @@ class GlassVariantConstants {
   /// on the shape.
   final double shadowOffsetY;
 
+  /// A sideways colour split along the outline, as a share of the lens's
+  /// displacement: red and blue taps move in opposite directions along the
+  /// rim, so a band's fringe is warm at one end and cool at the other (iOS
+  /// 26.4's tab lens). 0 splits only along the normal ([dispersion]).
+  final double dispersionTangent;
+
   /// How far the tone LUT is keyed on luma instead of applied per channel
   /// (item 8 round 3): at 1 the LUT moves the frosted backdrop's luma and
   /// its chroma rides along unchanged; 0 = per channel, as before.
@@ -428,6 +440,7 @@ class GlassVariantConstants {
     'ambientMix': ambientMix,
     'ambientReach': ambientReach,
     'shadowOffsetY': shadowOffsetY,
+    'dispersionTangent': dispersionTangent,
     'toneLumaMix': toneLumaMix,
     'glowStrength': glowStrength,
     'postBlurShare': postBlurShare,

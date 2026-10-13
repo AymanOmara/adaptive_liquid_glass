@@ -50,7 +50,7 @@ void main() {
         }),
       ),
     );
-    expect(f.length, 336);
+    expect(f.length, 344);
     expect(f.sublist(0, 4), [1, 3, -2, 0]);
     expect(f.sublist(4, 8), [
       60,
@@ -456,6 +456,16 @@ void main() {
     expect(f[320], 0.5);
     expect(f[324], 1.0);
     expect(f.sublist(325, 328), [0, 0, 1.15]);
+  });
+
+  test('sideways dispersion packs into Q after P', () {
+    final c = GlassConstants.fromJson({
+      'regular': {'dispersionTangent': 0.5},
+      'clear': {'dispersionTangent': -3.0},
+    });
+    final f = packGlassUniforms(frame(const [], constants: c));
+    expect(f.sublist(336, 340), [0.5, 0, 0, 0]);
+    expect(f.sublist(340, 344), [-3, 0, 0, 0]);
   });
 
   test('ambient colour packs into P after the M-O blocks (item 8)', () {

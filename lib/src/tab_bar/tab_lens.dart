@@ -30,6 +30,7 @@ const tabLensLight = GlassVariantConstants(
   lensDecay: 1000,
   lensSizeRef: 0,
   dispersion: 0.3,
+  dispersionTangent: tabLensDispersionTangent,
   normalRadiusScale: 1,
   lensEdge: -6.7,
   lensEdgeDecay: 8,
@@ -74,6 +75,7 @@ const tabLensDark = GlassVariantConstants(
   lensDecay: 1000,
   lensSizeRef: 0,
   dispersion: 0.3,
+  dispersionTangent: tabLensDispersionTangent,
   normalRadiusScale: 1,
   lensEdge: -6.7,
   lensEdgeDecay: 8,
@@ -105,6 +107,11 @@ const tabLensDark = GlassVariantConstants(
   shadowOpacity: 0,
   tintStrength: 0.35,
 );
+
+/// The tab lens's sideways colour split (iOS 26.4, held over black: the
+/// band above the bar fringes warm at its left end and cool at its right,
+/// flipped below; -3 matches the direction and about the size).
+const tabLensDispersionTangent = -3.0;
 
 /// Colour split of the tinted tabs under the lens (TabLensContent); the
 /// glass splits the backdrop less.
@@ -151,6 +158,7 @@ GlassVariantConstants _bent(GlassVariantConstants c, double bend) => bend >= 1
         'lensStrength': c.lensStrength * bend,
         'lensEdge': c.lensEdge * bend,
         'dispersion': c.dispersion * bend,
+        'dispersionTangent': c.dispersionTangent * bend,
         'rimMix': c.rimMix * bend,
       }, c);
 
