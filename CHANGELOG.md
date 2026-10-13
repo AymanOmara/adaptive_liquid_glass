@@ -69,6 +69,16 @@
   springs the thumb back to the selected segment.
 - `GlassActivityIndicator.semanticLabel` defaults to none, not the
   English 'Loading'; pass a label in the app's language.
+- Shader glass on Android (`GlassRenderMode.shader`, Impeller on OpenGL
+  ES): glass sampled the backdrop upside down and drew flat grey away
+  from the screen's middle. `liquid_glass.frag` and
+  `tab_lens_content.frag` now flip only on engines that still store GLES
+  targets bottom-up, as `progressive_blur.frag` does.
+- Glass navigation bars (`GlassNavigationBar`, `SliverGlassNavigationBar`)
+  set the status bar glyphs to match the page (dark on light), as iOS's
+  do; on Android they kept the previous route's style.
+- README: the iOS look on Android, and its known limitations.
+
 - `GlassButtonStyle` gains SwiftUI's styles without glass: `bordered`
   (grey fill, or the tint at 15% / 20% dark, accent label),
   `borderedProminent` (solid accent fill, white label), `borderless`

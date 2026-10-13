@@ -26,7 +26,10 @@ float field(vec2 p) {
 
 vec4 tex0(vec2 p) {
   vec2 uv = p / uBox;
-#ifdef IMPELLER_TARGET_OPENGLES
+  // Engines before Flutter 3.46 stored GLES render targets bottom-up;
+  // impellerc defines the UNFLIPPED macro where that is no longer so
+  // (flipping there mirrors the backdrop: grey glass on Android GLES).
+#if defined(IMPELLER_TARGET_OPENGLES) && !defined(IMPELLER_OPENGLES_UNFLIPPED_DEPRECATED)
   uv.y = 1.0 - uv.y;
 #endif
   return texture(uTexture, clamp(uv, vec2(0.0), vec2(1.0)));

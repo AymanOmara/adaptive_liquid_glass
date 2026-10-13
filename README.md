@@ -254,6 +254,33 @@ photo picker behind `GlassPhotosPicker` (see [Photos picker](#photos-picker)).
 Everything else is drawn in Dart; it adds no Gradle dependencies and no
 permissions.
 
+#### The iOS look on Android
+
+Components choose by render mode, not platform, so the shader glass runs on
+Android too. Set the mode app-wide and preload the shaders with the same mode
+(`initialize` skips them on Android otherwise):
+
+```dart
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AdaptiveLiquidGlass.initialize(mode: GlassRenderMode.shader);
+  runApp(
+    const LiquidGlassTheme(
+      data: LiquidGlassThemeData(defaultMode: GlassRenderMode.shader),
+      child: MaterialApp(home: HomePage()),
+    ),
+  );
+}
+```
+
+The example app takes `--dart-define=MODE=shader` (or `material`) for both
+the gallery and `lib/components_demo.dart`. Checked on an Android 15
+emulator (Impeller, OpenGL ES): glass, sheets, dialogs, menus, popovers,
+toasts, pickers, lists and the navigation bar render as on iOS. The shader
+needs Impeller (Flutter's default on Android); without it the glass falls
+back to a plain blur (see [Known limitations](#known-limitations)). Fonts,
+scroll physics, the back gesture and haptics stay Android's.
+
 ## Which widget?
 
 Every component is iOS 26's own on iOS and gets a Material 3 counterpart on
@@ -1315,8 +1342,8 @@ testWidgets('pays', (tester) async {
   stretch and growth, but not SwiftUI's own touch glow.
 - **Tab bar:** close to iOS 26.4's `TabView`, not identical. Over photos
   the shader-drawn bar draws untinted labels vibrant, as iOS does (each
-  glyph takes the hue of the glass behind it); the selected tint and
-  native-mode labels keep flat colours. The native-mode
+  glyph takes the hue of the glass behind it); the selected tint follows
+  the glass only by half, and native-mode labels keep flat colours. The native-mode
   lens is UIKit glass and does not bend the bar's edges as iOS's does.
   Icons are CupertinoIcons unless you use `GlassTabBarItem.symbol` (SF
   Symbols drawn by iOS).
@@ -1327,6 +1354,17 @@ testWidgets('pays', (tester) async {
   width and height are not reported. The Android document-picker fallback
   (before Android 11, or without the SDK extension) cannot enforce
   `maxSelection` in its UI; extra items are dropped.
+- **iOS look on Android (`GlassRenderMode.shader`):** needs Impeller.
+  Where `ImageFilter.isShaderFilterSupported` is false (Skia, or
+  `--no-enable-impeller`, an opt-out Flutter is removing), glass falls
+  back to a frosted blur with no lens, rim or merging. Speed on mid-range
+  phones is not measured: each glass group runs a blur and a fragment
+  shader over its bounds every frame, so profile on target devices and
+  keep groups few. Shader-drawn tab labels over glass (vibrancy) still
+  sample the backdrop upside down on Android's OpenGL ES backend. Fonts
+  stay Roboto (not SF Pro), and scroll physics, the back gesture and
+  haptics stay Android's; making those iOS-like is not part of the
+  package.
 - **Unmeasured geometry:** `GlassLabel`, `GlassLink`/`GlassShareLink`, the
   `GlassColorPicker` sheet, `GlassRefresh`, `GlassSearchable`, the
   `GlassDatePicker` wheel and time styles, `GlassWheelPicker` and the

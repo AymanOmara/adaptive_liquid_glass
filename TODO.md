@@ -9,17 +9,6 @@ and CHANGELOG.md.
   to do if a device shows lag: measure in profile on hardware.
 
 2- Android options (requested 2026-10-09):
-  - iOS look on Android (~1 h, later): already wired. Components choose by
-    render mode, not platform, and `initialize(mode: shader)` loads the
-    shaders on Android; `LiquidGlassThemeData(defaultMode:
-    GlassRenderMode.shader)` should give the iOS glass app-wide. To do: run
-    the gallery and components demo in shader mode on an emulator, fix what
-    breaks, document with caveats:
-    - shader needs Impeller; on GLES `isShaderFilterSupported` may be false
-      (falls back to a plain blur)
-    - shader speed on mid-range phones
-    - still Android: Roboto not SF, scroll physics, back gesture, haptics
-      (making those iOS-like is a separate, bigger job)
   - custom Android widget: the code side is easy (each of ~33 components
     has one point where it picks the Material widget); the API is the work.
     - option 1: done (`GlassAdaptive`, 2026-10-10)
@@ -125,3 +114,9 @@ and CHANGELOG.md.
     emulator (only unit tests with a mocked channel and the builds ran)
   - SwiftPM build of the iOS plugin (only CocoaPods was built)
   - measure the bordered fill, press dim and disabled colours vs SwiftUI
+
+12- CashRoot report P2 API requests (2026-10-13; bugs W1-W31 and W15
+  done): button corner radius and text colour; sheet max height; alert
+  custom content; menu item colour; chip and dialog-action subtitles;
+  `LiquidGlass` size; calendar first day of week; a public way to ask
+  which render mode is in effect
