@@ -97,9 +97,11 @@ and CHANGELOG.md.
     71); no motion blur (iOS keeps the tabs crisp; ours ghosted)
   - native mode (open): the lens is UIKit glass, so it cannot bend the
     bar's edges or darken only its overhang (the shader cannot see
-    native glass); labels and icons keep flat colours (no vibrancy:
-    Flutter cannot see UIKit glass). Look for a platform-view or
-    UIKit-side route for each
+    native glass). Selected pill done 2026-10-13: SwiftUI draws it inside
+    the glass (GlassContentFill), a fixed shift as iOS's; pill |d| plain
+    0, photo 5.6 / 3.4 (was 17 / 33 flat), photo scenes 1.02 / 1.03.
+    Labels and icons keep flat colours (bar |d| on photos 1.5 / 1.3;
+    would need glyph masks sent to SwiftUI)
   - motion is measured in debug builds (profile is not available on the
     simulator): onset timing within +-2 frames of iOS, below take noise
   Features (see also 9):
