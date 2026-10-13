@@ -66,76 +66,30 @@ and CHANGELOG.md.
   components.
 
 7- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
-  Bar-region mean |diff| native/shader: white 1.24/1.35, photo 1.93/5.14,
-  dark 1.23/1.60, dark photo 2.27/3.95, badge 1.65/1.77, searchtab
-  1.47/1.56, accessory 2.04/2.44
-  Done 2026-10-09: lens size (press, tap, drag, idle pill within ~1 pt);
-  tapped lens travel, lift (7.0 pt peak) and late pill fade-in; labels
-  beside the search tab (searchLabelShift).
-  Open (small), measured 2026-10-09 against SwiftUI TabView (tabbardark):
-  - tap brightness (2026-10-13, tabbar_motion.py's brightness line,
-    medians): native 0-10 4.4 -> 4.0 (veil shaded, nativeLensShade);
-    shader 5.2 -> 3.7 (10-60 2.3 -> 2.1): tabs magnified on their own
-    spring (1.14 on a tap, was 1.18-1.20 at once), thin grey rim in dark,
-    tapHold 165 ms + tapLift 0.93 (lens height per frame within ~0.5 pt
-    of iOS's), content bend -0.4. Left: magnification while crossing
-    Music 1.14 vs iOS's 1.02-1.09; iOS's motion blur on the tabs; the
-    native lens's blue halo (UIKit glass refracting the tinted copy)
-  - tap timing: closed 2026-10-13. Shader lens first shows at frame 2-5
-    (iOS 3-6), centre track +1.1 frames (median of 8 takes, spread
-    +0.4..+3.1); native 2-7, -1.3 (-0.3..-1.6). Below what onset-aligned
-    debug-build takes resolve (the same code reads +3.5 or -1.2 between
-    batches); before the lens fix shader read +3.5 (-1.0..+9.8)
-  - native lens over the black page (dark, tap): 21 grey levels where iOS
-    shows 3-17 (over the bar 21-29, iOS 19-32). UIKit's clear glass reads
-    as one flat grey over both (overhang = interior every frame), so a
-    tint cannot darken one without the other: nativeLensShade 0.7 gave
-    overhang 14 but tap 0-10 4.56 vs 3.97 (kept 0.5). Would need a
-    Flutter fill over the lens's bar band with a darker tint
-  - light mode (2026-10-13, white page, `SCENE=tabbar`): mean |diff|
-    0-10 / 10-60, native / shader: tap 5.1 / 1.8 and 3.9 / 1.7, press
-    5.8 / 6.9 and 5.2 / 6.1, drag 5.4 / 8.1 and 4.8 / 7.0. iOS's lens
-    over white is a visible light-grey glass with a soft shadow and a
-    coloured edge; ours (shader) is nearly invisible with a faint cyan
-    rim, the native one a white blob with a blue halo. No leak of the
-    dark-only fixes (nativeLensShade, dark rim)
-  - tapped lens at its end: 47 pt wide on its last visible frame (was 35;
-    iOS 51)
-  - lens fill every frame (tabbar_fill.py, 2026-10-13): max per-frame
-    RGB error tap/press/drag shader bar 5.5/3.6/5.8, native 2.0/4.8/4.5;
-    native overhang over black 17-49 (UIKit flat veil, not tintable
-    apart). Open (sheets tabbar_sheet.py): iOS's iridescent rim top/
-    bottom, motion blur and dispersion of the glyph while settling,
-    dragged lens shape flatter than a capsule
-  - selected pill over black: 54 grey levels against iOS's 50-51
-  - press brightness (2026-10-13, dark, medians of 4 takes): the held
-    gap was the tabs beside the lens: iOS scales the tab row with the
-    bar's growth (Home 344 -> 331 px, Settings 860 -> 874 px, x1.05 as
-    the bar), ours stayed put. Row now scales with the bar: press shader
-    6.2 / 5.8 -> 5.1 / 4.4, native 7.6 / 6.3 -> 6.3 / 4.2; matched-lens
-    rest |diff| 6.1 -> 3.1. Lens geometry: peak while travelling 5.3-5.7
-    pt vs iOS 6.3-7.3, relift 2-4 frames later than iOS
-  - drag brightness (2026-10-13, dark, medians of 3 takes, 0-10 /
-    10-60): native 7.0 / 9.1 -> 6.4 / 8.2 (bar glow now drawn in native
-    too, cut out under the lens; nativeLensDragShade 0.2), shader 5.6 /
-    7.6 unchanged. At matched lens positions what is left is the glyphs
-    beside the lens (Home/Settings columns read |diff| 22-26: shapes and
-    placement, see glyph shapes) and the native lens itself (|d| 10).
-    Native blue halo gone (no tinted copy under the native lens: tap 0-10
-    3.85 -> 3.64, matched lens 8.3 -> 7.7, drag 10-60 8.2 -> 7.7). Not
-    done: iOS's sideways motion blur of the moving tabs (would need a
-    velocity blur in tab_lens_content.frag)
-    Lag (2026-10-13, load < 10, 3 takes): follow 0.35 -> 0.25; lens
-    centre frames 20-50 vs iOS -12 -> -3 pt (shader), native -8 pt;
-    shader 10-60 5.4 -> 5.2. The earlier 5.9 was host load, not
-    0d9b17a's 300 ms light hold (5.4 with it, 5.3 without).
-  - icons beside the search tab ~0.4 pt right of iOS's on Music/Settings
-    (Home matches); plain-bar labels +0.4 px, Home +1.1-1.3 px
-  - glyph shapes: CupertinoIcons stand-ins vs SF Symbols (house, gear)
-  Hard:
-  - retune the shader-mode glass over photos (5.14 light, 3.95 dark): the
-    biggest visible gap left
-  - selected blue shifting with the colours behind it, as native's does
+  Still scenes, whole-crop mean |diff| native/shader (2026-10-13, with
+  GlassTabBarItem.symbol): white 0.33/0.45, dark 0.34/0.71, photo
+  1.30/4.54, dark photo 1.60/3.28, searchtab 0.71/0.81, accessory
+  1.66/1.43 (were 1.24/1.35, 1.23/1.60, 1.93/5.14, 2.27/3.95, 1.47/1.56,
+  2.04/2.44). Done 2026-10-13: SF Symbols at run time (icon region 4.8 ->
+  0.8), light lens (grey glass + shadow, shader and native), held lens
+  size, arrival dip, drag follow, selected pill (53 vs iOS 53).
+  Open:
+  - vibrancy over photos (shader 4.5 light / 3.3 dark is mostly this):
+    iOS tints each glyph pixel with the colour behind it (gear +24 red
+    over the red patch, selected blue G -44). Per-tab average tint does
+    not fit (fitted k -1.45..+0.78); a luminosity blend cannot see the
+    glass layer. Needs a backdrop-sampling glyph shader (shader mode only;
+    native glass is invisible to Flutter)
+  - lens fringe: iOS's bands at the lens top/bottom carry a rainbow fringe
+    warm on one end, cool on the other; our dispersion is symmetric
+    (stronger dispersion / lensVertical / normal radius tried, held-lens
+    SSIM 0.810 -> 0.80-0.81, reverted)
+  - motion blur of moving tabs (needs a velocity blur in
+    tab_lens_content.frag)
+  - native mode's lens is UIKit glass: it cannot bend the bar's edges or
+    darken only its overhang (the shader cannot see native glass)
+  - motion is measured in debug builds (profile is not available on the
+    simulator): onset timing within +-2 frames of iOS, below take noise
   Features (see also 9):
   - tabBarMinimizeBehavior: the bar shrinking to its selected tab on scroll
   - sidebarAdaptable: the tab bar becoming a sidebar on wide screens
