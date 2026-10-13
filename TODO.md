@@ -102,11 +102,10 @@ and CHANGELOG.md.
 10- refactor backlog P3 items (docs/superpowers/notes/refactor-backlog.md),
   opportunistic (P3-1 constants split only).
 
-11- new SwiftUI components (2026-10-13): built on branch feat/new-components
+11- new SwiftUI components (2026-10-13), merged to main
   (bordered/borderedProminent/borderless/plain buttons, vertical GlassSlider,
-  GlassRangeSlider, GlassPhotosPicker; 1079 tests pass). Open:
+  GlassRangeSlider, GlassPhotosPicker; 1081 tests pass). Open:
   - open the photo picker for real on an iOS simulator and an Android
     emulator (only unit tests with a mocked channel and the builds ran)
   - SwiftPM build of the iOS plugin (only CocoaPods was built)
   - measure the bordered fill, press dim and disabled colours vs SwiftUI
-  - merge feat/new-components into main
