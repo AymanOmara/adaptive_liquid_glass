@@ -83,8 +83,8 @@ and CHANGELOG.md.
     warm on one end, cool on the other; our dispersion is symmetric
     (stronger dispersion / lensVertical / normal radius tried, held-lens
     SSIM 0.810 -> 0.80-0.81, reverted)
-  - motion blur of moving tabs (needs a velocity blur in
-    tab_lens_content.frag)
+  - motion blur: done (lens content smears by 3x its per-frame travel;
+    drag edge ratio dips to 0.88 of rest vs iOS 0.84, 0.92 before)
   - native mode's lens is UIKit glass: it cannot bend the bar's edges or
     darken only its overhang (the shader cannot see native glass)
   - motion is measured in debug builds (profile is not available on the
