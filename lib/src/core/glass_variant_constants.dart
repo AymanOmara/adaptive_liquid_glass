@@ -40,7 +40,7 @@ class GlassVariantConstants {
     this.lensEllipse = 0,
     this.backdropInset = 0,
     this.ambientLift = 0,
-    this.backdropOutside = 0,
+    this.backdropReach = 0,
     this.toneLumaMix = 0,
     this.glowStrength = 0.25,
     this.postBlurShare = 0,
@@ -125,11 +125,7 @@ class GlassVariantConstants {
     lensEllipse: GlassJson.number(j, 'lensEllipse', base.lensEllipse),
     backdropInset: GlassJson.number(j, 'backdropInset', base.backdropInset),
     ambientLift: GlassJson.number(j, 'ambientLift', base.ambientLift),
-    backdropOutside: GlassJson.number(
-      j,
-      'backdropOutside',
-      base.backdropOutside,
-    ),
+    backdropReach: GlassJson.number(j, 'backdropReach', base.backdropReach),
     toneLumaMix: GlassJson.number(j, 'toneLumaMix', base.toneLumaMix),
     glowStrength: GlassJson.number(j, 'glowStrength', base.glowStrength),
     postBlurShare: GlassJson.number(j, 'postBlurShare', base.postBlurShare),
@@ -325,10 +321,11 @@ class GlassVariantConstants {
   /// dark glass lightens as a whole. 0 = off.
   final double ambientLift;
 
-  /// The grey (0-1) the glass refracts in from beyond [backdropInset]:
-  /// iOS 26.4's tab lens shows the page's background there (black in
-  /// dark mode, white in light), never the page's content.
-  final double backdropOutside;
+  /// How far (logical px) beyond the band [backdropInset] leaves the glass
+  /// still refracts: iOS 26.4's tab lens shows the bar's edge, its shadow
+  /// and the page right by it (their fringes are its rainbow in light
+  /// mode), never the page further out.
+  final double backdropReach;
 
   /// How far the tone LUT is keyed on luma instead of applied per channel
   /// (item 8 round 3): at 1 the LUT moves the frosted backdrop's luma and
@@ -415,9 +412,10 @@ class GlassVariantConstants {
 
   /// How far the isotropic rim ([rimMix]) turns from white towards
   /// [rimHue] (0 = white, the default; iOS 26's tab lens has a teal rim).
-  /// Negative splits the rim's colour by side instead: cooler where the
-  /// outline faces left, warmer where it faces right, by this much (iOS
-  /// 26's dark tab lens).
+  /// Negative splits the rim's colour by side instead, by this much:
+  /// with [rimHue] 180, cooler where the outline faces left and warmer
+  /// where it faces right (iOS 26's dark tab lens); with 0, the reverse
+  /// (its light lens).
   final double rimTint;
 
   /// Hue of [rimTint], in degrees.
@@ -480,7 +478,7 @@ class GlassVariantConstants {
     'lensEllipse': lensEllipse,
     'backdropInset': backdropInset,
     'ambientLift': ambientLift,
-    'backdropOutside': backdropOutside,
+    'backdropReach': backdropReach,
     'toneLumaMix': toneLumaMix,
     'glowStrength': glowStrength,
     'postBlurShare': postBlurShare,

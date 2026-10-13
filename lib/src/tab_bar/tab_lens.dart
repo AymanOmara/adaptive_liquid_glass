@@ -39,9 +39,10 @@ const tabLensLight = GlassVariantConstants(
   // ends bend half as much (Kept: clear mid-bar, a rainbow crescent past
   // the bar's end).
   lensVertical: 1.0,
-  // Kept's rim: teal-cyan (hue ~180), about 0.2 saturated.
-  rimTint: -0.2,
-  rimHue: 180,
+  // iOS 26.4's light rim: warm where it faces left, cool where it faces
+  // right, faintly (chroma ~9 of 255).
+  rimTint: -0.06,
+  rimHue: 0,
   rimMix: 0.85,
   rimMixWidth: 1.4,
   rimMixCut: 3,
@@ -120,6 +121,12 @@ const tabLensDispersionTangent = -3.0;
 /// to nothing at the round ends).
 const tabLensEllipse = 1.0;
 
+/// How far beyond the bar (logical px) the held tab lens still refracts:
+/// the bar's edge, its shadow and the page right by it, whose fringes are
+/// iOS 26.4's rainbow in light mode (see
+/// [GlassVariantConstants.backdropReach]).
+const tabLensBackdropReach = 3.0;
+
 /// Colour split of the tinted tabs under the lens (TabLensContent); the
 /// glass splits the backdrop less.
 const tabLensContentDispersion = 0.15;
@@ -156,25 +163,22 @@ Widget withTabLens(
   return LiquidGlassTheme(
     data: theme.copyWith(
       constants: theme.constants.copyWith(
-        clear: _inset(_bent(tabLensLight, bend), overhang, 1),
-        clearDark: _inset(_bent(tabLensDark, bend), overhang, 0),
+        clear: _inset(_bent(tabLensLight, bend), overhang),
+        clearDark: _inset(_bent(tabLensDark, bend), overhang),
       ),
     ),
     child: child,
   );
 }
 
-/// [c] refracting only the bar under a lens overhanging it by [overhang];
-/// beyond it, the page's background ([outside]: 1 white, 0 black).
-GlassVariantConstants _inset(
-  GlassVariantConstants c,
-  double overhang,
-  double outside,
-) => overhang <= 0
+/// [c] refracting only the bar under a lens overhanging it by [overhang],
+/// and [tabLensBackdropReach] beyond it.
+GlassVariantConstants _inset(GlassVariantConstants c, double overhang) =>
+    overhang <= 0
     ? c
     : GlassVariantConstants.fromJson({
         'backdropInset': overhang,
-        'backdropOutside': outside,
+        'backdropReach': tabLensBackdropReach,
       }, c);
 
 GlassVariantConstants _bent(GlassVariantConstants c, double bend) => bend >= 1

@@ -159,7 +159,7 @@ const int kGlassUniformFloats = 352;
 /// P = (ambientMix, ambientReach px, toneLumaMix, shadowOffsetY px) (item 8;
 /// P.z round 3),
 /// Q = (dispersionTangent, lensEllipse, backdropInset px, ambientLift).
-/// R = (backdropOutside, 0, 0, 0).
+/// R = (backdropReach px, 0, 0, 0).
 List<double> packGlassUniforms(GlassFrameUniforms u) {
   final dpr = u.devicePixelRatio;
   final shapes = u.shapes.where(_drawable).take(_maxShapes).toList();
@@ -318,7 +318,7 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
   }
   // What lies beyond the backdrop inset: R per variant (uVar[34..35]).
   for (final v in variantSets) {
-    f.setAll(k, [v.backdropOutside, 0, 0, 0]);
+    f.setAll(k, [v.backdropReach * dpr, 0, 0, 0]);
     k += 4;
   }
   return f;

@@ -54,7 +54,7 @@ VARIANT_DEFAULTS = {
     "lensEllipse": 0.0,
     "backdropInset": 0.0,
     "ambientLift": 0.0,
-    "backdropOutside": 0.0,
+    "backdropReach": 0.0,
     "glowStrength": 0.25,
     "postBlurShare": 0.0,
     "normalRadiusScale": 1.0,

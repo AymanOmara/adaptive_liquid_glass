@@ -30,7 +30,7 @@ uniform vec4 uVar[36];     // per variant (regular A-L, then clear A-L, then
                            //   P(ambient mix, ambient reach px, luma-keyed tone mix, shadow y offset px) (item 8;
                            //   P.z item 8 round 3)
                            //   Q(sideways dispersion, ellipse normal mix, backdrop inset px, ambient lift), regular then clear
-                           //   R(backdrop outside grey, -, -, -), regular then clear
+                           //   R(backdrop reach px, -, -, -), regular then clear
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -39,11 +39,11 @@ uniform sampler2D uTexture;
 
 out vec4 fragColor;
 
-// 1 inside the backdrop band [band.x, band.y] (Q.z backdrop inset),
-// fading to 0 within 1.5 px beyond it; always 1 when inset <= 0.
-float inBand(float y, vec2 band, float inset) {
-  if (inset <= 0.0) return 1.0;
-  return 1.0 - smoothstep(-1.5, 1.5, max(band.x - y, y - band.y));
+// [p] with its y clamped into the backdrop band [band.x, band.y] (Q.z
+// backdrop inset); unchanged when inset <= 0.
+vec2 inBand(vec2 p, vec2 band, float inset) {
+  if (inset > 0.0) p.y = clamp(p.y, band.x, band.y);
+  return p;
 }
 
 vec4 tex(vec2 px) {
@@ -314,12 +314,14 @@ void main() {
     dLens *= wv;
   }
   vec2 sp = px + nrm * lensAmt;
-  // Backdrop inset (Q.z, iOS 26.4's tab lens): only the backdrop between
-  // the shape's top and bottom inset by Q.z is refracted (the bar under
-  // an overhanging lens); what the lens would bend in from beyond reads
-  // the grey R.x (the page's background: black bands in dark mode, white
-  // in light). Each tap is masked on its own, so the bar's edge fringes.
-  vec2 bandY = vec2(rcB.y + Q4.z, rcB.y + rcB.w - Q4.z);
+  // Backdrop inset (Q.z, iOS 26.4's tab lens): the lens refracts the
+  // backdrop only between the shape's top and bottom inset by Q.z (the bar
+  // under an overhanging lens) and R.x px beyond (the bar's edge, its
+  // shadow and the page right by it); it never reaches the page further
+  // out (text there showed, sharp and colour-split). Each tap is clamped
+  // on its own, so the bar's edge still fringes.
+  vec2 bandY = vec2(rcB.y + Q4.z - R4.x, rcB.y + rcB.w - Q4.z + R4.x);
+  sp = inBand(sp, bandY, Q4.z);
 
   // Frost v2, measured from SwiftUI (Task 17c, tool/fidelity/measure_frost.py):
   // a sharp core plus a wide tail, (1 - w) G(core) + w G(core + wide). The
@@ -340,7 +342,6 @@ void main() {
   // plain lens sample `base`, reused by dispersion.
   vec3 base = tex(sp).rgb;
   vec3 col = base;
-  float mk = inBand(sp.y, bandY, Q4.z);
   float sPost = K.z * (K.w > 0.0 ? min(1.0, halfMin / K.w) : 1.0);
   if (sPost >= 0.25) {
     // The lens field equals the outline's field when no variant rounds it
@@ -390,9 +391,6 @@ void main() {
   // (post-lens blur + wide mix), so dispersion 0 is an exact no-op and a
   // grey backdrop stays grey (the offset must be measured after the wide
   // mix, not before it).
-  vec3 outside = vec3(R4.x);
-  col = mix(outside, col, mk);
-  base = mix(outside, base, mk);
   if (A.w != 0.0 || Q4.x != 0.0) {
     vec3 coreOff = col - base;
     // Along the normal, plus sideways along the rim (Q.x): red and blue
@@ -400,12 +398,10 @@ void main() {
     // the other.
     vec2 disp = nrm * lensAmt * abs(A.w) + vec2(-nrmO.y, nrmO.x) * lensAmt * Q4.x;
     float dw = v;
-    float mr = inBand(sp.y + disp.y, bandY, Q4.z);
-    col.r = mix(col.r, mix(outside.r, tex(sp + disp).r, mr) + coreOff.r, dw);
+    col.r = mix(col.r, tex(inBand(sp + disp, bandY, Q4.z)).r + coreOff.r, dw);
     // Negative dispersion (iOS's tab lens) moves green with blue, so a
     // blue tint fringes in shades of blue instead of green.
-    float mb = inBand(sp.y - disp.y, bandY, Q4.z);
-    vec3 sm = mix(outside, tex(sp - disp).rgb, mb) + coreOff;
+    vec3 sm = tex(inBand(sp - disp, bandY, Q4.z)).rgb + coreOff;
     col.b = mix(col.b, sm.b, dw);
     if (A.w < 0.0) col.g = mix(col.g, sm.g, dw);
   }
@@ -505,9 +501,10 @@ void main() {
   // teal-cyan rim): the rim's white turns towards that hue.
   vec3 rimTarget = vec3(1.0);
   if (L4.z < 0.0) {
-    // Negative: a colour split by side instead (iOS 26's tab lens, dark:
-    // cool where the rim faces left, warm where it faces right).
-    float sx = -L4.z * nrm.x;
+    // Negative: a colour split by side instead (iOS 26's tab lens), its
+    // direction set by the hue: 0.5 (180 deg) cool where the rim faces left
+    // and warm where it faces right (dark), 0 the reverse (light).
+    float sx = L4.z * nrm.x * cos(6.2831853 * L4.w);
     rimTarget = vec3(1.0 + sx, 1.0, 1.0 - sx);
   } else if (L4.z > 0.0) {
     vec3 rgb = clamp(abs(fract(L4.w + vec3(0.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0

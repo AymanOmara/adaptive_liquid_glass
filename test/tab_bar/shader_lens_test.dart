@@ -99,14 +99,14 @@ void main() {
       theme.constants.clear,
       GlassVariantConstants.fromJson({
         'backdropInset': inset,
-        'backdropOutside': 1,
+        'backdropReach': tabLensBackdropReach,
       }, tabLensLight),
     );
     expect(
       theme.constants.clearDark,
       GlassVariantConstants.fromJson({
         'backdropInset': inset,
-        'backdropOutside': 0,
+        'backdropReach': tabLensBackdropReach,
       }, tabLensDark),
     );
     // The bar is shader glass too, so the lens can refract it (native glass
