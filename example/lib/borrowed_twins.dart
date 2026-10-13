@@ -19,6 +19,20 @@ Widget? borrowedTwin(String scene) => switch (scene) {
   'tabbarphoto' => const _TabBar(photo: true, dark: false),
   'tabbardark' => const _TabBar(photo: false, dark: true),
   'tabbarphotodark' => const _TabBar(photo: true, dark: true),
+  'tabbargreys' => const _TabBar(photo: false, dark: false, greys: true),
+  'tabbargreysdark' => const _TabBar(photo: false, dark: true, greys: true),
+  'tabbarlowgreys' => const _TabBar(
+    photo: false,
+    dark: false,
+    greys: true,
+    low: true,
+  ),
+  'tabbarlowgreysdark' => const _TabBar(
+    photo: false,
+    dark: true,
+    greys: true,
+    low: true,
+  ),
   'accessorytext' => const _AccessoryText(accessory: true),
   'tabbartext' => const _AccessoryText(accessory: false),
   'lensreach' => const _LensReach(),
@@ -289,9 +303,19 @@ class _TabBar extends StatefulWidget {
     required this.dark,
     this.minimize = false,
     this.sidebar = false,
+    this.greys = false,
+    this.low = false,
   });
 
   final bool photo;
+
+  /// `-controls tabbargreys(dark)`: 16 grey stripes, black to white, for
+  /// the bar's tone response.
+  final bool greys;
+
+  /// `-controls tabbarlowgreys(dark)`: the stripes run 120 down to 0 in
+  /// steps of 8 instead (the dark end under the bar's unselected tabs).
+  final bool low;
   final bool dark;
 
   /// `-controls tabbarminimize`: `.onScrollDown` over 60 rows of 44 pt.
@@ -308,6 +332,8 @@ class _TabBar extends StatefulWidget {
 /// ends on the same tab in both.
 class _TabBarState extends State<_TabBar> {
   int _tab = 0;
+
+  int _grey(int i) => widget.low ? (15 - i) * 8 : i * 17;
 
   @override
   Widget build(BuildContext context) {
@@ -359,6 +385,18 @@ class _TabBarState extends State<_TabBar> {
                           ),
                         ),
                       ),
+                    ),
+                  ),
+              ],
+            )
+          : widget.greys
+          ? Row(
+              children: [
+                for (var i = 0; i < 16; i++)
+                  Expanded(
+                    child: ColoredBox(
+                      color: Color.fromARGB(255, _grey(i), _grey(i), _grey(i)),
+                      child: const SizedBox.expand(),
                     ),
                   ),
               ],

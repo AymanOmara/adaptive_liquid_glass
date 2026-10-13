@@ -24,6 +24,10 @@ enum ControlScenes {
     case "tabbarphoto": root = AnyView(TabBarBackdropReference(photo: true, dark: false))
     case "tabbardark": root = AnyView(TabBarBackdropReference(photo: false, dark: true))
     case "tabbarphotodark": root = AnyView(TabBarBackdropReference(photo: true, dark: true))
+    case "tabbargreys": root = AnyView(TabBarBackdropReference(photo: false, dark: false, greys: true))
+    case "tabbargreysdark": root = AnyView(TabBarBackdropReference(photo: false, dark: true, greys: true))
+    case "tabbarlowgreys": root = AnyView(TabBarBackdropReference(photo: false, dark: false, greys: true, low: true))
+    case "tabbarlowgreysdark": root = AnyView(TabBarBackdropReference(photo: false, dark: true, greys: true, low: true))
     case "accessorytext": root = AnyView(AccessoryTextReference(accessory: true))
     case "tabbartext": root = AnyView(AccessoryTextReference(accessory: false))
     case "lensreach": root = AnyView(LensReachReference())
@@ -296,6 +300,10 @@ struct LensReachReference: View {
 struct TabBarBackdropReference: View {
   let photo: Bool
   let dark: Bool
+  /// 16 grey stripes, black to white (`tabbargreys`): the bar's tone response.
+  var greys = false
+  /// The stripes run 120 down to 0 in steps of 8 (`tabbarlowgreys`).
+  var low = false
   var body: some View {
     TabView {
       Tab("Home", systemImage: "house.fill") { page }
@@ -306,7 +314,14 @@ struct TabBarBackdropReference: View {
   }
 
   @ViewBuilder var page: some View {
-    if photo, let image = ReferenceAssets.image("photo") {
+    if greys {
+      HStack(spacing: 0) {
+        ForEach(0..<16, id: \.self) { i in
+          Color(.sRGB, white: Double(low ? (15 - i) * 8 : i * 17) / 255, opacity: 1)
+        }
+      }
+      .ignoresSafeArea()
+    } else if photo, let image = ReferenceAssets.image("photo") {
       // Resizable fills the proposal, which is the whole screen once the
       // safe area is ignored (a fixed 402 x 874 frame sat 10 pt high).
       Image(uiImage: image).resizable().interpolation(.none).ignoresSafeArea()
