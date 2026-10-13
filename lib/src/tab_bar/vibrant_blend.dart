@@ -109,14 +109,29 @@ class RenderVibrantBlend extends RenderProxyBox {
   set devicePixelRatio(double value) {
     if (value == _devicePixelRatio) return;
     _devicePixelRatio = value;
+    _stale = true;
     markNeedsPaint();
   }
 
   final LayerHandle<OpacityLayer> _hidden = LayerHandle<OpacityLayer>();
+  final LayerHandle<OffsetLayer> _glyphs = LayerHandle<OffsetLayer>();
   final LayerHandle<ClipRectLayer> _clip = LayerHandle<ClipRectLayer>();
   final LayerHandle<BackdropFilterLayer> _backdrop =
       LayerHandle<BackdropFilterLayer>();
   ui.Image? _image;
+
+  // Whether [_image] must be rasterised again: the glyphs are reused while
+  // only the backdrop or this box's position changes (a lens or the bar
+  // moving over them), as rasterising every frame drops frames.
+  bool _stale = true;
+  Size? _imageSize;
+
+  @override
+  void markNeedsPaint() {
+    // A repaint of the child reaches here (it is no repaint boundary).
+    _stale = true;
+    super.markNeedsPaint();
+  }
 
   ui.FragmentProgram? get _program => TabVibrancyProgram.instance.program.value;
 
@@ -147,10 +162,12 @@ class RenderVibrantBlend extends RenderProxyBox {
     _backdrop.layer = null;
     _image?.dispose();
     _image = null;
+    _glyphs.layer = null;
     super.dispose();
   }
 
   void _plain(PaintingContext context, Offset offset) {
+    _stale = true;
     _hidden.layer = null;
     _clip.layer = null;
     _backdrop.layer = null;
@@ -171,21 +188,26 @@ class RenderVibrantBlend extends RenderProxyBox {
     final bounds = (offset & size).inflate(pad);
     final dpr = _devicePixelRatio;
     // The glyphs, painted into a hidden layer and rasterised.
-    final glyphs = OffsetLayer();
-    _hidden.layer = context.pushOpacity(offset, 0, (context, offset) {
-      context.pushLayer(
-        glyphs,
-        (context, offset) => context.paintChild(child, offset),
-        offset,
+    var image = _image;
+    if (image == null || _stale || _imageSize != size) {
+      final glyphs = _glyphs.layer = OffsetLayer();
+      _hidden.layer = context.pushOpacity(offset, 0, (context, offset) {
+        context.pushLayer(
+          glyphs,
+          (context, offset) => context.paintChild(child, offset),
+          offset,
+        );
+      }, oldLayer: _hidden.layer);
+      // The opacity layer sits at [offset]: the glyphs lie at its origin.
+      image = glyphs.toImageSync(
+        (Offset.zero & size).inflate(pad),
+        pixelRatio: dpr,
       );
-    }, oldLayer: _hidden.layer);
-    // The opacity layer sits at [offset]: the glyphs lie at its origin.
-    final image = glyphs.toImageSync(
-      (Offset.zero & size).inflate(pad),
-      pixelRatio: dpr,
-    );
-    _image?.dispose();
-    _image = image;
+      _image?.dispose();
+      _image = image;
+      _imageSize = size;
+      _stale = false;
+    }
     final origin = localToGlobal(Offset(-pad, -pad)) * dpr;
     final (a, b, c) = switch (_kind) {
       VibrancyKind.tint => (
