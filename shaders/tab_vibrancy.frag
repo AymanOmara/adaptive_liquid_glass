@@ -18,7 +18,8 @@ out vec4 fragColor;
 float lum(vec3 c) { return dot(c, vec3(0.3, 0.59, 0.11)); }
 
 vec2 flip(vec2 uv) {
-#ifdef IMPELLER_TARGET_OPENGLES
+  // Engines before Flutter 3.46 stored GLES render targets bottom-up.
+#if defined(IMPELLER_TARGET_OPENGLES) && !defined(IMPELLER_OPENGLES_UNFLIPPED_DEPRECATED)
   uv.y = 1.0 - uv.y;
 #endif
   return uv;
