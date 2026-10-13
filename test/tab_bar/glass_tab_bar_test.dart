@@ -71,7 +71,9 @@ Color? _labelColor(WidgetTester t, String label) =>
 
 /// The clear glass lens is shown only while the bar is held.
 Finder get _lens =>
-    find.byWidgetPredicate((w) => w is LiquidGlass && w.glass == Glass.clear);
+    find.byWidgetPredicate(
+      (w) => w is LiquidGlass && w.glass?.variant == GlassVariant.clear,
+    );
 
 void main() {
   setUp(() => GlassProgram.instance.debugReset(skipLoad: true));
