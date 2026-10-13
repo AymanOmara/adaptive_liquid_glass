@@ -182,6 +182,30 @@ abstract final class TabBarMetrics {
   /// (SwiftUI `TabView`, iOS 26.4: 2 px @3x above ours at 0).
   static const double symbolRise = 2 / 3;
 
+  /// GlassTabBarMinimizeBehavior.onScrollDown: scrolled this far down
+  /// since the bar was expanded, it minimizes (SwiftUI `TabView`, iOS
+  /// 26.4: 70 pt kept it, 80 pt minimized).
+  static const double minimizeDistance = 75;
+
+  /// Within this of the top the minimized bar expands again (iOS 26.4: 22
+  /// pt kept it minimized, ~10 pt expanded).
+  static const double minimizeExpandOffset = 15;
+
+  /// The minimized bar: a circle this wide (iOS 26.4: 48 pt), centred
+  /// on the bar's middle row ...
+  static const double minimizedSize = 48;
+
+  /// ... and this far from the screen's leading edge (its centre; iOS
+  /// 26.4: 51.8 pt).
+  static const double minimizedCentre = 52;
+
+  /// The bar shrinking to its selected tab and back (iOS 26.4: the
+  /// selected icon settles ~0.3 s after it starts).
+  static final SpringDescription minimize = swiftUISpring(
+    response: 0.4,
+    dampingFraction: 1,
+  );
+
   /// The height a tab's icon takes in the tab's column, less than
   /// [iconSize]: icon centre 60.8 pt and label ink top 78.7 pt below the
   /// bar's crop line, as SwiftUI's `TabView` (iOS 26.4, measured).

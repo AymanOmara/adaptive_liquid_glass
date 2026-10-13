@@ -497,6 +497,12 @@ Each tab is a selectable button for VoiceOver and TalkBack, the order follows
 the reading direction, and with Reduce Motion the pill moves without
 animating.
 
+To shrink the bar to its selected tab as the page scrolls down (SwiftUI's
+`.tabBarMinimizeBehavior(.onScrollDown)`), pass
+`minimizeBehavior: GlassTabBarMinimizeBehavior.onScrollDown` to a bar inside
+a `GlassScaffold`. It expands again near the top of the page or when the
+circle is tapped.
+
 For the exact icons iOS draws, use `GlassTabBarItem.symbol` with an SF
 Symbol name. iOS renders the symbol at run time (nothing is bundled), at
 `TabView`'s size and position; other platforms show `fallback`.
@@ -1202,11 +1208,11 @@ Stack(
 - **Native interactive glass:** pressing native glass gets this package's
   stretch and growth, but not SwiftUI's own touch glow.
 - **Tab bar:** close to iOS 26.4's `TabView`, not identical. Over photos
-  the shader-drawn bar differs most from native; the tapped lens runs about
-  a frame ahead of iOS's and is a little brighter early on; icons are
-  CupertinoIcons unless you use `GlassTabBarItem.symbol` (SF Symbols
-  drawn by iOS). `tabBarMinimizeBehavior` and
-  `sidebarAdaptable` are not implemented.
+  the shader-drawn bar differs most: iOS tints each glyph with the colour
+  behind it (vibrancy), ours keeps flat label colours. The native-mode
+  lens is UIKit glass and does not bend the bar's edges as iOS's does.
+  Icons are CupertinoIcons unless you use `GlassTabBarItem.symbol` (SF
+  Symbols drawn by iOS). `sidebarAdaptable` is not implemented.
 - **Unmeasured geometry:** `GlassLabel`, `GlassLink`/`GlassShareLink`, the
   `GlassColorPicker` sheet, `GlassRefresh`, `GlassSearchable`, the
   `GlassDatePicker` wheel and time styles, `GlassWheelPicker` and the

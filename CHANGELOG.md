@@ -1,5 +1,13 @@
 ## Unreleased
 
+- New `GlassTabBar.minimizeBehavior` (`GlassTabBarMinimizeBehavior`):
+  `.onScrollDown` shrinks the bar into a 48 pt circle holding the
+  selected tab after ~75 pt of scrolling down, and expands it within
+  ~15 pt of the top or on a tap, as iOS 26.4's `TabView` does (measured).
+  Default `.automatic` (never on iPhone) keeps today's bar.
+- `GlassScaffold`: a scrolling body fades into the page colour behind the
+  tab bar, iOS 26's scroll edge under a tab bar (text ink within ~10
+  levels of SwiftUI's).
 - New `GlassTabBarItem.symbol(name, fallback:, label:)` and `GlassSymbol`:
   SF Symbols drawn by iOS at run time (never bundled), in the icon
   colour, at `TabView`'s size (18 pt, medium, large scale) and position;

@@ -225,7 +225,12 @@ const _barPressedFillOpacity = 0.35;
 
 /// [child] with regular glass drawn as the tab bar. [light] blends the dark
 /// bar from rest (0) to its held look (1) and its dragged look (2).
-Widget withTabBarGlass(BuildContext context, Widget child, {double light = 0}) {
+Widget withTabBarGlass(
+  BuildContext context,
+  Widget child, {
+  double light = 0,
+  double sizeScale = 1,
+}) {
   final theme = LiquidGlassTheme.of(context);
   final c = theme.constants;
   final p = light.clamp(0.0, 1.0);
@@ -262,16 +267,28 @@ Widget withTabBarGlass(BuildContext context, Widget child, {double light = 0}) {
   return LiquidGlassTheme(
     data: theme.copyWith(
       constants: c.copyWith(
-        regular: GlassVariantConstants.fromJson(
-          _tabBarLightOverrides,
-          c.regular,
+        regular: _sized(
+          GlassVariantConstants.fromJson(_tabBarLightOverrides, c.regular),
+          sizeScale,
         ),
-        regularDark: dark,
+        regularDark: _sized(dark, sizeScale),
       ),
     ),
     child: child,
   );
 }
+
+/// [v] with its size references scaled by [k], so a shape [k] times the
+/// bar's size is drawn with the bar's own material (the minimized bar).
+GlassVariantConstants _sized(GlassVariantConstants v, double k) => k == 1
+    ? v
+    : GlassVariantConstants.fromJson({
+        'blurSizeRef': v.blurSizeRef * k,
+        'frostWideSizeRef': v.frostWideSizeRef * k,
+        'lensSizeRef': v.lensSizeRef * k,
+        'toneLiftSizeRef': v.toneLiftSizeRef * k,
+        'fillSizeRef': v.fillSizeRef * k,
+      }, v);
 
 String _hex(Color c) =>
     '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';

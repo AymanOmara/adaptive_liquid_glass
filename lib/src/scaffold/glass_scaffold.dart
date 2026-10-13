@@ -6,11 +6,14 @@ import '../core/liquid_glass_theme.dart';
 import '../foreground/glass_backdrop_source.dart';
 import '../platform/glass_platform.dart';
 import '../tab_bar/glass_tab_bar.dart';
+import '../tab_bar/glass_tab_bar_minimize_behavior.dart';
 import '../tab_bar/tab_bar_edge_to_edge.dart';
 import '../tab_bar/tab_bar_fill_scope.dart';
+import '../tab_bar/tab_bar_minimize_scope.dart';
 import '../tab_bar/tab_lens.dart';
 import '../toolbar/toolbar_metrics.dart';
 import 'scaffold_metrics.dart';
+import 'tab_bar_scroll_edge.dart';
 
 /// An iOS 26 screen in one widget: content running under a
 /// [navigationBar] at the top and a floating [tabBar] or [toolbar] (with an
@@ -132,10 +135,38 @@ class _GlassScaffoldState extends State<GlassScaffold> {
     skipTraversal: true,
   );
 
+  /// Shrinks the tab bar on scroll (GlassTabBar.minimizeBehavior).
+  final _minimize = TabBarMinimizeController();
+
   @override
   void dispose() {
     _barsFocus.dispose();
+    _minimize.dispose();
     super.dispose();
+  }
+
+  /// Whether the body scrolls (shows the tab bar's scroll edge).
+  bool _scrolls = false;
+
+  bool _onMetrics(ScrollMetricsNotification n) {
+    if (n.depth == 0 &&
+        n.metrics.axis == Axis.vertical &&
+        n.metrics.maxScrollExtent > n.metrics.minScrollExtent &&
+        !_scrolls) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _scrolls = true);
+      });
+    }
+    return false;
+  }
+
+  bool _onScroll(ScrollNotification n) {
+    if (n.depth == 0 &&
+        n.metrics.axis == Axis.vertical &&
+        (n is ScrollUpdateNotification || n is ScrollEndNotification)) {
+      _minimize.scrolled(n.metrics.pixels, n.metrics.minScrollExtent);
+    }
+    return false;
   }
 
   @override
@@ -178,6 +209,18 @@ class _GlassScaffoldState extends State<GlassScaffold> {
     final bottomInset = bars > 0 && !hidden ? gap + bars : safeBottom;
     final fab = widget.floatingActionButton;
     Widget content = widget.body;
+    if (tabBar?.minimizeBehavior == GlassTabBarMinimizeBehavior.onScrollDown) {
+      content = NotificationListener<ScrollNotification>(
+        onNotification: _onScroll,
+        child: content,
+      );
+    }
+    if (tabBar != null && !edgeToEdge) {
+      content = NotificationListener<ScrollMetricsNotification>(
+        onNotification: _onMetrics,
+        child: content,
+      );
+    }
     if (widget.sampleBackdrop) {
       // The page colour is part of what glass floats over: without it the
       // sampler reads a transparent body as dark, and labels on glass over
@@ -211,6 +254,17 @@ class _GlassScaffoldState extends State<GlassScaffold> {
               child: content,
             ),
           ),
+          if (_scrolls && tabBar != null && !edgeToEdge && !hidden)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: TabBarScrollEdge(
+                color:
+                    widget.backgroundColor ??
+                    Theme.of(context).scaffoldBackgroundColor,
+              ),
+            ),
           if (bars > 0)
             PositionedDirectional(
               start: 0,
@@ -231,68 +285,74 @@ class _GlassScaffoldState extends State<GlassScaffold> {
                     // backdrop (what was painted before it) holds the page but
                     // not the accessory: iOS's lens never bends the accessory's
                     // content into its rim.
-                    child: Stack(
-                      children: [
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (accessory != null)
-                              SizedBox(height: accessory.preferredSize.height),
-                            if (accessory != null && bottomBar)
-                              const SizedBox(
-                                height: ScaffoldMetrics.accessoryGap,
-                              ),
-                            if (tabBar != null)
-                              edgeToEdge
-                                  ? MediaQuery(
-                                      data: media.removePadding(
-                                        removeTop: true,
-                                      ),
-                                      child: SizedBox(
-                                        width: double.infinity,
+                    child: TabBarMinimizeScope(
+                      controller: _minimize,
+                      child: Stack(
+                        children: [
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (accessory != null)
+                                SizedBox(
+                                  height: accessory.preferredSize.height,
+                                ),
+                              if (accessory != null && bottomBar)
+                                const SizedBox(
+                                  height: ScaffoldMetrics.accessoryGap,
+                                ),
+                              if (tabBar != null)
+                                edgeToEdge
+                                    ? MediaQuery(
+                                        data: media.removePadding(
+                                          removeTop: true,
+                                        ),
+                                        child: SizedBox(
+                                          width: double.infinity,
+                                          child: tabBar,
+                                        ),
+                                      )
+                                    : accessory == null &&
+                                          tabBar.onSearch == null
+                                    ? Center(child: tabBar)
+                                    : tabBar.onSearch != null
+                                    // The search tab spreads the bar across.
+                                    ? Padding(
+                                        padding:
+                                            const EdgeInsetsDirectional.symmetric(
+                                              horizontal: ScaffoldMetrics
+                                                  .accessoryInset,
+                                            ),
                                         child: tabBar,
+                                      )
+                                    // As iOS 26: with an accessory the tab bar
+                                    // widens to the accessory's width.
+                                    : Padding(
+                                        padding:
+                                            const EdgeInsetsDirectional.symmetric(
+                                              horizontal: ScaffoldMetrics
+                                                  .accessoryInset,
+                                            ),
+                                        child: TabBarFillScope(child: tabBar),
                                       ),
-                                    )
-                                  : accessory == null && tabBar.onSearch == null
-                                  ? Center(child: tabBar)
-                                  : tabBar.onSearch != null
-                                  // The search tab spreads the bar across.
-                                  ? Padding(
-                                      padding:
-                                          const EdgeInsetsDirectional.symmetric(
-                                            horizontal:
-                                                ScaffoldMetrics.accessoryInset,
-                                          ),
-                                      child: tabBar,
-                                    )
-                                  // As iOS 26: with an accessory the tab bar
-                                  // widens to the accessory's width.
-                                  : Padding(
-                                      padding:
-                                          const EdgeInsetsDirectional.symmetric(
-                                            horizontal:
-                                                ScaffoldMetrics.accessoryInset,
-                                          ),
-                                      child: TabBarFillScope(child: tabBar),
-                                    ),
-                            ?toolbar,
-                          ],
-                        ),
-                        if (accessory != null)
-                          PositionedDirectional(
-                            top: 0,
-                            start: ScaffoldMetrics.accessoryInset,
-                            end: ScaffoldMetrics.accessoryInset,
-                            height: accessory.preferredSize.height,
-                            child: tabBar == null
-                                ? accessory
-                                : GlassScaffold._sameGlassAsTabBar(
-                                    context,
-                                    tabBar,
-                                    accessory,
-                                  ),
+                              ?toolbar,
+                            ],
                           ),
-                      ],
+                          if (accessory != null)
+                            PositionedDirectional(
+                              top: 0,
+                              start: ScaffoldMetrics.accessoryInset,
+                              end: ScaffoldMetrics.accessoryInset,
+                              height: accessory.preferredSize.height,
+                              child: tabBar == null
+                                  ? accessory
+                                  : GlassScaffold._sameGlassAsTabBar(
+                                      context,
+                                      tabBar,
+                                      accessory,
+                                    ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

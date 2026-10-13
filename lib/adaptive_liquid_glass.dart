@@ -106,6 +106,7 @@ export 'src/symbol/glass_symbol.dart';
 export 'src/tab_bar/glass_material_tab_bar_style.dart';
 export 'src/tab_bar/glass_tab_bar.dart';
 export 'src/tab_bar/glass_tab_bar_item.dart';
+export 'src/tab_bar/glass_tab_bar_minimize_behavior.dart';
 export 'src/text_field/glass_text_field.dart';
 export 'src/toast/glass_toast_action.dart';
 export 'src/toast/glass_toast_handle.dart';

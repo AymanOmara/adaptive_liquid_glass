@@ -14,6 +14,7 @@ Widget? borrowedTwin(String scene) => switch (scene) {
   'badge' => const _Badge(),
   'badgemore' => const _Badge(more: true),
   'tabbar' => const _TabBar(photo: false, dark: false),
+  'tabbarminimize' => const _TabBar(photo: false, dark: false, minimize: true),
   'tabbarphoto' => const _TabBar(photo: true, dark: false),
   'tabbardark' => const _TabBar(photo: false, dark: true),
   'tabbarphotodark' => const _TabBar(photo: true, dark: true),
@@ -282,10 +283,17 @@ class _BadgeState extends State<_Badge> {
 /// Home, Music, Settings with Home selected, over a white (or, dark, black)
 /// page or the full-screen `photo.png`.
 class _TabBar extends StatefulWidget {
-  const _TabBar({required this.photo, required this.dark});
+  const _TabBar({
+    required this.photo,
+    required this.dark,
+    this.minimize = false,
+  });
 
   final bool photo;
   final bool dark;
+
+  /// `-controls tabbarminimize`: `.onScrollDown` over 60 rows of 44 pt.
+  final bool minimize;
 
   @override
   State<_TabBar> createState() => _TabBarState();
@@ -321,8 +329,33 @@ class _TabBarState extends State<_TabBar> {
         selectedIndex: _tab,
         onSelected: (i) => setState(() => _tab = i),
         mode: twinBarMode(context),
+        minimizeBehavior: widget.minimize
+            ? GlassTabBarMinimizeBehavior.onScrollDown
+            : GlassTabBarMinimizeBehavior.automatic,
       ),
-      body: widget.photo
+      body: widget.minimize
+          ? ListView(
+              children: [
+                for (var i = 0; i < 60; i++)
+                  SizedBox(
+                    height: 44,
+                    child: Padding(
+                      padding: const EdgeInsetsDirectional.only(start: 20),
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          'Row $i',
+                          style: const TextStyle(
+                            fontSize: 17,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            )
+          : widget.photo
           ? Image.asset(
               'assets/backgrounds/photo.png',
               fit: BoxFit.fill,

@@ -17,6 +17,8 @@ enum ControlScenes {
     case "toolbar": root = AnyView(ToolbarReference())
     case "accessory": root = AnyView(AccessoryReference(accessory: true))
     case "tabbar": root = AnyView(AccessoryReference(accessory: false))
+    case "tabbarminimize": root = AnyView(MinimizeReference(accessory: false))
+    case "tabbarminimizeacc": root = AnyView(MinimizeReference(accessory: true))
     case "tabbarphoto": root = AnyView(TabBarBackdropReference(photo: true, dark: false))
     case "tabbardark": root = AnyView(TabBarBackdropReference(photo: false, dark: true))
     case "tabbarphotodark": root = AnyView(TabBarBackdropReference(photo: true, dark: true))
@@ -696,5 +698,49 @@ struct BadgeReference: View {
       Tab("Settings", systemImage: "gear") { Color.white }
     }
     .statusBarHidden(true)
+  }
+}
+
+/// `.tabBarMinimizeBehavior(.onScrollDown)` over a scrolling list of 60
+/// rows (44 pt each), white page; with `accessory`, a bottom accessory too.
+@available(iOS 26.0, *)
+struct MinimizeReference: View {
+  let accessory: Bool
+  var body: some View {
+    if accessory { tabs.tabViewBottomAccessory { bar } } else { tabs }
+  }
+
+  var tabs: some View {
+    TabView {
+      Tab("Home", systemImage: "house.fill") { list }
+      Tab("Music", systemImage: "music.note") { list }
+      Tab("Settings", systemImage: "gearshape.fill") { list }
+    }
+    .tabBarMinimizeBehavior(.onScrollDown)
+    .environment(\.colorScheme, .light)
+  }
+
+  var list: some View {
+    ScrollView {
+      VStack(alignment: .leading, spacing: 0) {
+        ForEach(0..<60, id: \.self) { i in
+          Text("Row \(i)")
+            .font(.system(size: 17))
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .padding(.leading, 20)
+        }
+      }
+    }
+    .background(Color.white)
+  }
+
+  var bar: some View {
+    HStack {
+      Image(systemName: "music.note")
+      Text("Now Playing")
+      Spacer()
+      Image(systemName: "play.fill")
+    }
+    .padding(.horizontal, 16)
   }
 }

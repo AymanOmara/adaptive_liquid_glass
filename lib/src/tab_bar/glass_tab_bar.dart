@@ -36,11 +36,13 @@ import 'capsule_clipper.dart';
 import 'glass_material_tab_bar_style.dart';
 import 'glass_search_tab_button.dart';
 import 'glass_tab_bar_item.dart';
+import 'glass_tab_bar_minimize_behavior.dart';
 import 'hole_clipper.dart';
 import 'rim_fade.dart';
 import 'tab_bar_edge_to_edge.dart';
 import 'tab_bar_fill_scope.dart';
 import 'tab_bar_metrics.dart';
+import 'tab_bar_minimize_scope.dart';
 import 'tab_lens.dart';
 import 'tab_lens_content.dart';
 import 'tab_lens_program.dart';
@@ -92,6 +94,7 @@ class GlassTabBar extends StatefulWidget {
     this.onSearch,
     this.searchLabel,
     this.materialStyle = GlassMaterialTabBarStyle.floating,
+    this.minimizeBehavior = GlassTabBarMinimizeBehavior.automatic,
   }) : assert(items.length >= 2, 'A tab bar needs at least two tabs.');
 
   /// The tabs, in reading order.
@@ -147,6 +150,11 @@ class GlassTabBar extends StatefulWidget {
   /// the glass paths.
   final GlassMaterialTabBarStyle materialStyle;
 
+  /// Whether the bar shrinks to its selected tab as the page scrolls, as
+  /// SwiftUI's `tabBarMinimizeBehavior`. Needs a [GlassScaffold] (it
+  /// follows the scaffold's body); glass paths only.
+  final GlassTabBarMinimizeBehavior minimizeBehavior;
+
   @override
   State<GlassTabBar> createState() => _GlassTabBarState();
 }
@@ -188,6 +196,35 @@ class _GlassTabBarState extends State<GlassTabBar>
   late final AnimationController _grow = AnimationController.unbounded(
     vsync: this,
   );
+
+  /// 0 full, 1 shrunk to the selected tab (GlassTabBar.minimizeBehavior).
+  late final AnimationController _min = AnimationController.unbounded(
+    vsync: this,
+  );
+  TabBarMinimizeController? _minimizer;
+
+  /// The bar's leading edge on screen, for the minimized circle's place.
+  double _barLeft = 0;
+
+  void _onMinimize() {
+    final target =
+        widget.minimizeBehavior == GlassTabBarMinimizeBehavior.onScrollDown &&
+            (_minimizer?.minimized ?? false)
+        ? 1.0
+        : 0.0;
+    if (_reduceMotion) {
+      _min.value = target;
+      return;
+    }
+    _min.animateWith(
+      SpringSimulation(
+        TabBarMetrics.minimize,
+        _min.value,
+        target,
+        _min.velocity,
+      ),
+    );
+  }
 
   void _springGrow(double target) {
     if (_reduceMotion) {
@@ -473,6 +510,12 @@ class _GlassTabBarState extends State<GlassTabBar>
     // re-places the pill too.
     if (!_placed || !_held) _x.value = _slot(widget.selectedIndex).toDouble();
     _placed = true;
+    final m = TabBarMinimizeScope.maybeOf(context);
+    if (m != _minimizer) {
+      _minimizer?.removeListener(_onMinimize);
+      _minimizer = m?..addListener(_onMinimize);
+      _onMinimize();
+    }
   }
 
   @override
@@ -498,6 +541,8 @@ class _GlassTabBarState extends State<GlassTabBar>
     _reliftTimer?.cancel();
     _followTicker.dispose();
     _grow.dispose();
+    _minimizer?.removeListener(_onMinimize);
+    _min.dispose();
     _light.dispose();
     _magnify.dispose();
     _wobbleTicker.dispose();
@@ -916,7 +961,7 @@ class _GlassTabBarState extends State<GlassTabBar>
       widget.indicatorColor ?? GlassColors.tabBarPill,
       context,
     );
-    return Semantics(
+    final full = Semantics(
       container: true,
       explicitChildNodes: true,
       child: GestureDetector(
@@ -937,6 +982,128 @@ class _GlassTabBarState extends State<GlassTabBar>
             _pillIn,
           ]),
           builder: (context, _) => _bar(_press.value, selected, indicator),
+        ),
+      ),
+    );
+    return AnimatedBuilder(
+      animation: _min,
+      builder: (context, _) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final box = context.findRenderObject();
+          if (mounted && box is RenderBox && box.attached) {
+            _barLeft = box.localToGlobal(Offset.zero).dx;
+          }
+        });
+        final m = _min.value;
+        return m <= 0.001 ? full : _minimized(m, selected);
+      },
+    );
+  }
+
+  /// The bar shrinking into a circle that holds the selected tab's icon
+  /// (GlassTabBarMinimizeBehavior.onScrollDown): its glass draws in from
+  /// the bar's bounds, the other tabs and the labels fade, and the
+  /// selected icon moves into the circle. A tap on the circle expands it.
+  Widget _minimized(double m, Color selected) {
+    final width = _rowWidth + TabBarMetrics.inset * 2;
+    final height = widget.height;
+    final screen = MediaQuery.sizeOf(context).width;
+    // At iOS's place on the screen, kept within the bar (on a wide screen
+    // the bar's leading end), where it can take a tap.
+    const r = TabBarMetrics.minimizedSize / 2;
+    final cx =
+        (_rtl
+                ? screen - TabBarMetrics.minimizedCentre - _barLeft
+                : TabBarMetrics.minimizedCentre - _barLeft)
+            .clamp(r, width - r);
+    final circle = Rect.fromCenter(
+      center: Offset(cx, height / 2),
+      width: TabBarMetrics.minimizedSize,
+      height: TabBarMetrics.minimizedSize,
+    );
+    final glass = Rect.lerp(Offset.zero & Size(width, height), circle, m)!;
+    final sel = widget.selectedIndex;
+    final labelHeight =
+        (TabBarMetrics.label.fontSize ?? 10) *
+        (TabBarMetrics.label.height ?? 1.2);
+    final column =
+        TabBarMetrics.iconSlot + TabBarMetrics.labelGap + labelHeight;
+    final iconStart = Offset(
+      TabBarMetrics.inset + _toPixels(_slot(sel).toDouble()),
+      TabBarMetrics.inset +
+          (_contentHeight - column) / 2 +
+          TabBarMetrics.iconDrop +
+          TabBarMetrics.iconSize / 2,
+    );
+    final fade = (1 - m * 2).clamp(0.0, 1.0);
+    return Semantics(
+      button: true,
+      label: widget.items[sel].label,
+      onTap: () => _minimizer?.expand(),
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fromRect(
+              rect: glass,
+              child: CustomPaint(
+                painter: _shaderBar ? const BarShadow() : null,
+                child: withTabBarGlass(
+                  context,
+                  // The circle keeps the bar's material, not a smaller
+                  // shape's (iOS 26.4: the same frosted white).
+                  sizeScale: glass.shortestSide / height,
+                  GlassGroup(
+                    mode: _barMode,
+                    child: LiquidGlass(
+                      glass: widget.glass,
+                      mode: _barMode,
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (fade > 0)
+              Positioned(
+                left: TabBarMetrics.inset,
+                top: TabBarMetrics.inset,
+                width: _rowWidth,
+                height: _contentHeight,
+                child: IgnorePointer(
+                  child: Opacity(
+                    opacity: fade,
+                    child: _row(
+                      (i) => i == sel ? selected : null,
+                      semantics: false,
+                    ),
+                  ),
+                ),
+              ),
+            Positioned.fromRect(
+              rect: Rect.fromCenter(
+                center: Offset.lerp(iconStart, circle.center, m)!,
+                width: TabBarMetrics.iconSize,
+                height: TabBarMetrics.iconSize,
+              ),
+              child: IgnorePointer(
+                child: Opacity(
+                  opacity: (1 - fade).clamp(0.0, 1.0),
+                  child: _icon(widget.items[sel], true, selected),
+                ),
+              ),
+            ),
+            Positioned.fromRect(
+              rect: circle,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                excludeFromSemantics: true,
+                onTap: () => _minimizer?.expand(),
+              ),
+            ),
+          ],
         ),
       ),
     );
