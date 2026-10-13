@@ -15,6 +15,7 @@ Widget? borrowedTwin(String scene) => switch (scene) {
   'badgemore' => const _Badge(more: true),
   'tabbar' => const _TabBar(photo: false, dark: false),
   'tabbarminimize' => const _TabBar(photo: false, dark: false, minimize: true),
+  'tabbarsidebar' => const _TabBar(photo: false, dark: false, sidebar: true),
   'tabbarphoto' => const _TabBar(photo: true, dark: false),
   'tabbardark' => const _TabBar(photo: false, dark: true),
   'tabbarphotodark' => const _TabBar(photo: true, dark: true),
@@ -287,6 +288,7 @@ class _TabBar extends StatefulWidget {
     required this.photo,
     required this.dark,
     this.minimize = false,
+    this.sidebar = false,
   });
 
   final bool photo;
@@ -294,6 +296,9 @@ class _TabBar extends StatefulWidget {
 
   /// `-controls tabbarminimize`: `.onScrollDown` over 60 rows of 44 pt.
   final bool minimize;
+
+  /// `-controls tabbarsidebar`: `.sidebarAdaptable` (run on an iPad).
+  final bool sidebar;
 
   @override
   State<_TabBar> createState() => _TabBarState();
@@ -332,6 +337,9 @@ class _TabBarState extends State<_TabBar> {
         minimizeBehavior: widget.minimize
             ? GlassTabBarMinimizeBehavior.onScrollDown
             : GlassTabBarMinimizeBehavior.automatic,
+        style: widget.sidebar
+            ? GlassTabBarStyle.sidebarAdaptable
+            : GlassTabBarStyle.automatic,
       ),
       body: widget.minimize
           ? ListView(

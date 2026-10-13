@@ -37,6 +37,7 @@ import 'glass_material_tab_bar_style.dart';
 import 'glass_search_tab_button.dart';
 import 'glass_tab_bar_item.dart';
 import 'glass_tab_bar_minimize_behavior.dart';
+import 'glass_tab_bar_style.dart';
 import 'hole_clipper.dart';
 import 'rim_fade.dart';
 import 'tab_bar_edge_to_edge.dart';
@@ -95,6 +96,7 @@ class GlassTabBar extends StatefulWidget {
     this.searchLabel,
     this.materialStyle = GlassMaterialTabBarStyle.floating,
     this.minimizeBehavior = GlassTabBarMinimizeBehavior.automatic,
+    this.style = GlassTabBarStyle.automatic,
   }) : assert(items.length >= 2, 'A tab bar needs at least two tabs.');
 
   /// The tabs, in reading order.
@@ -154,6 +156,11 @@ class GlassTabBar extends StatefulWidget {
   /// SwiftUI's `tabBarMinimizeBehavior`. Needs a [GlassScaffold] (it
   /// follows the scaffold's body); glass paths only.
   final GlassTabBarMinimizeBehavior minimizeBehavior;
+
+  /// The bar's form on a wide screen; [GlassTabBarStyle.sidebarAdaptable]
+  /// moves it to the top with a sidebar on an iPad, inside a
+  /// [GlassScaffold] (SwiftUI `tabViewStyle(.sidebarAdaptable)`).
+  final GlassTabBarStyle style;
 
   @override
   State<GlassTabBar> createState() => _GlassTabBarState();

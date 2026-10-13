@@ -1,4 +1,5 @@
 import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/material.dart';
 
 import '../core/glass_environment.dart';
@@ -8,11 +9,14 @@ import '../foreground/glass_backdrop_source.dart';
 import '../platform/glass_platform.dart';
 import '../tab_bar/glass_tab_bar.dart';
 import '../tab_bar/glass_tab_bar_minimize_behavior.dart';
+import '../tab_bar/glass_tab_bar_style.dart';
+import '../tab_bar/glass_tab_sidebar.dart';
 import '../tab_bar/tab_bar_edge_to_edge.dart';
 import '../tab_bar/tab_bar_fill_scope.dart';
 import '../tab_bar/tab_bar_metrics.dart';
 import '../tab_bar/tab_bar_minimize_scope.dart';
 import '../tab_bar/tab_lens.dart';
+import '../tab_bar/tab_sidebar_metrics.dart';
 import '../toolbar/toolbar_metrics.dart';
 import 'scaffold_metrics.dart';
 import 'tab_bar_scroll_edge.dart';
@@ -237,7 +241,13 @@ class _GlassScaffoldState extends State<GlassScaffold> {
         widget.hideBottomBarsWithKeyboard &&
         media.viewInsets.bottom > 0 &&
         !_barsFocus.hasFocus;
-    final tabBar = widget.tabBar;
+    // `.sidebarAdaptable` on a regular width: the bar sits at the top.
+    final sidebarBar =
+        widget.tabBar?.style == GlassTabBarStyle.sidebarAdaptable &&
+            media.size.width >= TabSidebarMetrics.regularWidth
+        ? widget.tabBar
+        : null;
+    final tabBar = sidebarBar == null ? widget.tabBar : null;
     final toolbar = widget.toolbar;
     final accessory = widget.bottomAccessory;
     // Material's full-width bar sits on the bottom edge, safe area inside.
@@ -272,6 +282,9 @@ class _GlassScaffoldState extends State<GlassScaffold> {
         onNotification: _onMetrics,
         child: content,
       );
+    }
+    if (sidebarBar != null) {
+      content = GlassTabSidebar(tabBar: sidebarBar, child: content);
     }
     if (widget.sampleBackdrop) {
       // The page colour is part of what glass floats over: without it the

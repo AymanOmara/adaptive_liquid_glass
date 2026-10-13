@@ -1,5 +1,11 @@
 ## Unreleased
 
+- New `GlassTabBar.style` (`GlassTabBarStyle.sidebarAdaptable`): on an
+  iPad the bar floats at the top as text tabs with a sidebar button and an
+  overlay sidebar, as iOS 26.4's `.sidebarAdaptable` (measured on iPad Pro
+  11-inch; top bar within ~3.5 mean levels, open sidebar ~0.5).
+- `GlassScaffold`: with the tab bar minimized, the bottom accessory moves
+  beside the circle, as iOS 26.4 does.
 - New `GlassTabBar.minimizeBehavior` (`GlassTabBarMinimizeBehavior`):
   `.onScrollDown` shrinks the bar into a 48 pt circle holding the
   selected tab after ~75 pt of scrolling down, and expands it within

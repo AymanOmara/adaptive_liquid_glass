@@ -91,12 +91,11 @@ and CHANGELOG.md.
   - motion is measured in debug builds (profile is not available on the
     simulator): onset timing within +-2 frames of iOS, below take noise
   Features (see also 9):
-  - sidebarAdaptable: the tab bar becoming a sidebar on wide screens
 
 8- match the flutter shader with the native navigation bar
 
 9- more SwiftUI components (docs/superpowers/notes/component-gap.md):
-  keyboard toolbar, sidebarAdaptable, zoom
+  keyboard toolbar, zoom
   transitions, TipKit tips; then re-check the gap list for anything new.
   Candidate from app use (2026-10-10): a sliver pinned under the nav bar
   (the app's PinnedBelowBarSliver). Kept app-side for now: sticky bottom

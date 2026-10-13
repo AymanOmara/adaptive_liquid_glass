@@ -17,6 +17,8 @@ enum ControlScenes {
     case "toolbar": root = AnyView(ToolbarReference())
     case "accessory": root = AnyView(AccessoryReference(accessory: true))
     case "tabbar": root = AnyView(AccessoryReference(accessory: false))
+    case "tabbarsidebar": root = AnyView(SidebarReference(open: false))
+    case "tabbarsidebaropen": root = AnyView(SidebarReference(open: true))
     case "tabbarminimize": root = AnyView(MinimizeReference(accessory: false))
     case "tabbarminimizeacc": root = AnyView(MinimizeReference(accessory: true))
     case "tabbarphoto": root = AnyView(TabBarBackdropReference(photo: true, dark: false))
@@ -743,4 +745,20 @@ struct MinimizeReference: View {
     }
     .padding(.horizontal, 16)
   }
+}
+
+@available(iOS 26.0, *)
+struct SidebarReference: View {
+  let open: Bool
+  var body: some View {
+    TabView {
+      Tab("Home", systemImage: "house.fill") { page }
+      Tab("Music", systemImage: "music.note") { page }
+      Tab("Settings", systemImage: "gearshape.fill") { page }
+    }
+    .tabViewStyle(.sidebarAdaptable)
+    .environment(\.colorScheme, .light)
+  }
+
+  var page: some View { Color.white.ignoresSafeArea() }
 }
