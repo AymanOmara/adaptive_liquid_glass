@@ -14,11 +14,22 @@
     spinner is 30 pt with no glass disk behind it and does not scale; its
     spokes fade in with the pull (was a 36-pt disk and a 20-pt spinner).
     `SliverGlassRefresh` uses the same 173-pt threshold.
+  - `GlassRefresh` gives a scrollable that inherits bouncing physics
+    UIScrollView's rubber band under the pull: for 50-300 pt of finger
+    travel the content moves 36-165 pt (UIKit 40-168; was 25-133). New
+    `GlassRefreshScrollPhysics` for scrollables that set their own physics
+    and for `SliverGlassRefresh`. Clamping platforms keep theirs.
+  - The refresh spinner's dark-mode spokes are measured: #888893 (was an
+    estimated #AEAEB2), the head spoke matching UIKit's on black exactly.
   - `GlassSearchable`: the close button's reveal is fitted to SwiftUI's
     (three recordings, rms 1.95 pt): the field narrows over the first 13%
     of the spring (was 50%), the button grows from 0.32 (0.28) on a
     0.53 / 0.69 spring (was the sheet's 0.4 / 0.86) and overshoots
-    slightly before settling.
+    slightly before settling. Its hide is fitted too (three recordings,
+    rms 1.85 pt): the row jumps to the idle insets at once, the button
+    fades within ~4 frames and the field springs over its room on a
+    0.26 / 0.56 spring, ~7 pt past its rest and back (was the reveal's
+    spring run backwards; 23 pt rms from SwiftUI's curve, now 5).
   - `GlassColorPicker`'s sheet is laid out as UIColorPickerViewController:
     600 pt, floating, no grabber; the row's label as title and a close
     button; a Grid / Spectrum / Sliders segmented control; red, green and

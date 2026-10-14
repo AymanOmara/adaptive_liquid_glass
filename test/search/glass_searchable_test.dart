@@ -129,6 +129,102 @@ void main() {
     expect(width(), moreOrLessEquals(SearchMetrics.cancelSize));
   }, variant: ios);
 
+  test("the close button's hide is the fitted one", () {
+    // Fitted to three SwiftUI recordings (iOS 26.4), rms 1.85 pt.
+    final spring = SearchMetrics.hide;
+    // swiftUISpring(response: 0.26, dampingFraction: 0.56), unit mass.
+    expect(spring.stiffness, closeTo(math.pow(2 * math.pi / 0.26, 2), 1e-6));
+    expect(spring.damping, closeTo(4 * math.pi * 0.56 / 0.26, 1e-6));
+    expect(SearchMetrics.hideFade, 0.12);
+  });
+
+  testWidgets('dismissing: the row jumps to the idle insets, the button '
+      'fades and the field springs over its room, past it and back', (t) async {
+    shaderEnv();
+    final controller = GlassSearchController();
+    addTearDown(controller.dispose);
+    await t.pumpWidget(_app(controller: controller));
+    controller.activate();
+    await t.pumpAndSettle();
+    final field = find.byType(GlassSearchField);
+    final screen = t.getSize(find.byType(Scaffold)).width;
+    final activeWidth = t.getSize(field).width;
+    expect(t.getTopLeft(field).dx, moreOrLessEquals(SearchMetrics.inset));
+
+    controller.cancel();
+    await t.pump();
+    // First frame: the whole row at the idle insets, the button still in
+    // its room, so the field narrows by the inset change.
+    expect(t.getTopLeft(field).dx, moreOrLessEquals(SearchMetrics.idleInset));
+    const room = SearchMetrics.cancelGap + SearchMetrics.cancelSize;
+    expect(
+      t.getSize(field).width,
+      moreOrLessEquals(screen - 2 * SearchMetrics.idleInset - room),
+    );
+    expect(activeWidth, greaterThan(t.getSize(field).width));
+
+    final simulation = SpringSimulation(SearchMetrics.hide, 0, 1, 0);
+    var elapsed = Duration.zero;
+    var widest = 0.0;
+    for (var frame = 1; frame <= 40; frame++) {
+      await t.pump(const Duration(milliseconds: 16));
+      elapsed += const Duration(milliseconds: 16);
+      final s = elapsed.inMicroseconds / 1e6;
+      if (simulation.isDone(s)) break;
+      final p = simulation.x(s);
+      final end = t.getTopRight(field).dx;
+      expect(
+        end,
+        closeTo(screen - SearchMetrics.idleInset - room * (1 - p), 0.5),
+        reason: 'frame $frame',
+      );
+      widest = math.max(widest, end);
+      final button = find.byType(SearchCancelButton);
+      if (button.evaluate().isNotEmpty) {
+        final opacity = t
+            .widget<Opacity>(
+              find.ancestor(of: button, matching: find.byType(Opacity)).first,
+            )
+            .opacity;
+        expect(
+          opacity,
+          closeTo((1 - p / SearchMetrics.hideFade).clamp(0.0, 1.0), 0.01),
+          reason: 'frame $frame',
+        );
+      }
+    }
+    // SwiftUI's field overshoots its idle end by ~7 pt.
+    expect(widest, greaterThan(screen - SearchMetrics.idleInset + 5));
+    await t.pumpAndSettle();
+    expect(find.byType(SearchCancelButton), findsNothing);
+    expect(
+      t.getTopRight(field).dx,
+      moreOrLessEquals(screen - SearchMetrics.idleInset),
+    );
+  }, variant: ios);
+
+  testWidgets('re-activating mid-hide reveals the button again', (t) async {
+    shaderEnv();
+    final controller = GlassSearchController();
+    addTearDown(controller.dispose);
+    await t.pumpWidget(_app(controller: controller));
+    controller.activate();
+    await t.pumpAndSettle();
+    controller.cancel();
+    await t.pump(const Duration(milliseconds: 50));
+    controller.activate();
+    await t.pumpAndSettle();
+    expect(find.byType(SearchCancelButton), findsOneWidget);
+    expect(
+      t.getSize(find.byType(SearchCancelButton)).width,
+      moreOrLessEquals(SearchMetrics.cancelSize),
+    );
+    expect(
+      t.getTopLeft(find.byType(GlassSearchField)).dx,
+      moreOrLessEquals(SearchMetrics.inset),
+    );
+  }, variant: ios);
+
   testWidgets('navigation bar placement: the field clears the status bar', (
     t,
   ) async {

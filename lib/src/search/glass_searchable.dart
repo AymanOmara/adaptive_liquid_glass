@@ -140,6 +140,14 @@ class _GlassSearchableState extends State<GlassSearchable>
   /// 0 with Cancel hidden, 1 shown; a spring in between.
   late final AnimationController _reveal;
 
+  /// The hide's progress, 0 to 1 on [SearchMetrics.hide] (past 1 as the
+  /// field overshoots); drives the row while [_hiding].
+  late final AnimationController _hide;
+
+  /// From dismissal until the hide settles: the row sits at the idle
+  /// insets and the close button fades as the field takes its room.
+  bool _hiding = false;
+
   /// Whether search is active, as last seen from the controller.
   bool _wasActive = false;
 
@@ -155,6 +163,7 @@ class _GlassSearchableState extends State<GlassSearchable>
   void initState() {
     super.initState();
     _reveal = AnimationController.unbounded(vsync: this);
+    _hide = AnimationController.unbounded(vsync: this);
     _wasActive = _controller.isActive;
     _reveal.value = _wasActive ? 1 : 0;
     _cancelMounted = _reveal.value > 0;
@@ -170,6 +179,7 @@ class _GlassSearchableState extends State<GlassSearchable>
       (old.controller ?? _own)?.removeListener(_controllerChanged);
       _own?.dispose();
       _own = null;
+      _endHide();
       _wasActive = _controller.isActive;
       _reveal.value = _wasActive ? 1 : 0;
       _cancelMounted = _reveal.value > 0;
@@ -183,6 +193,7 @@ class _GlassSearchableState extends State<GlassSearchable>
     _focusNode.dispose();
     _reveal.removeListener(_revealChanged);
     _reveal.dispose();
+    _hide.dispose();
     _controller.removeListener(_controllerChanged);
     _own?.dispose();
     super.dispose();
@@ -198,7 +209,12 @@ class _GlassSearchableState extends State<GlassSearchable>
   void _controllerChanged() {
     if (_controller.isActive != _wasActive) {
       _wasActive = _controller.isActive;
-      _spring(_reveal, SearchMetrics.activation, _wasActive ? 1 : 0);
+      if (_wasActive) {
+        _endHide();
+        _spring(_reveal, SearchMetrics.activation, 1);
+      } else {
+        _startHide();
+      }
       if (!_wasActive) {
         _focusNode.unfocus();
         // An outside cancel ends the Material path's open view too.
@@ -209,6 +225,37 @@ class _GlassSearchableState extends State<GlassSearchable>
     setState(() {});
   }
 
+  /// Dismissal, as SwiftUI's (iOS 26.4, fitted): the row jumps to the idle
+  /// insets with the close button still in its room, then the field's
+  /// end springs over the room on [SearchMetrics.hide] while the button
+  /// fades. Without motion the button just goes.
+  void _startHide() {
+    _reveal.stop();
+    if (_reveal.value <= 0 ||
+        (MediaQuery.maybeDisableAnimationsOf(context) ?? false)) {
+      _reveal.value = 0;
+      return;
+    }
+    // The flag first: the reveal at 0 must not unmount the button.
+    _hiding = true;
+    _reveal.value = 0;
+    _hide.value = 0;
+    _hide
+        .animateWith(SpringSimulation(SearchMetrics.hide, 0, 1, 0))
+        .whenCompleteOrCancel(() {
+          if (mounted && _hiding) _endHide();
+        });
+  }
+
+  /// Ends the hide (settled, or interrupted by a new activation).
+  void _endHide() {
+    if (!_hiding) return;
+    _hiding = false;
+    _hide.stop();
+    _hide.value = 0;
+    if (mounted) setState(() => _cancelMounted = _reveal.value > 0);
+  }
+
   /// The Cancel button leaves the tree once fully hidden; the spring also
   /// lands exactly on its end, so the last frame drops the button from
   /// layout, hit-testing and semantics.
@@ -217,8 +264,9 @@ class _GlassSearchableState extends State<GlassSearchable>
       final end = _wasActive ? 1.0 : 0.0;
       if (_reveal.value != end) _reveal.value = end;
     }
-    if (_cancelMounted != _reveal.value > 0) {
-      setState(() => _cancelMounted = _reveal.value > 0);
+    final mounted = _reveal.value > 0 || _hiding;
+    if (_cancelMounted != mounted) {
+      setState(() => _cancelMounted = mounted);
     }
   }
 
@@ -324,19 +372,23 @@ class _GlassSearchableState extends State<GlassSearchable>
             child: _scopeSegments(),
           ),
         AnimatedBuilder(
-          animation: _reveal,
+          animation: Listenable.merge([_reveal, _hide]),
           // Idle, SwiftUI floats the field like the toolbar (28 pt from
           // the screen's sides and bottom); active, it widens to 12 pt
-          // from the sides and sits 12 pt above the keyboard.
+          // from the sides and sits 12 pt above the keyboard. Hiding, the
+          // field's overshoot past its room reaches beyond the idle end.
           builder: (context, child) {
             final side = lerpDouble(
               SearchMetrics.idleInset,
               SearchMetrics.inset,
               _reveal.value.clamp(0.0, 1.0),
             )!;
+            final overshoot = _hiding
+                ? math.max(0.0, _hide.value - 1) * _cancelRoom
+                : 0.0;
             return PositionedDirectional(
               start: side,
-              end: side,
+              end: side - overshoot,
               bottom: math.max(
                 SearchMetrics.idleBottom,
                 MediaQuery.viewInsetsOf(context).bottom +
@@ -369,8 +421,9 @@ class _GlassSearchableState extends State<GlassSearchable>
       ),
       if (_cancelMounted)
         AnimatedBuilder(
-          animation: _reveal,
+          animation: Listenable.merge([_reveal, _hide]),
           builder: (context, _) {
+            if (_hiding) return _hidingCancel(context);
             // iOS 26.4 (fitted, `-controls search` tapped): the field
             // narrows first, then the close button grows in place from
             // about a third of its size as it fades in, overshooting a
@@ -393,13 +446,7 @@ class _GlassSearchableState extends State<GlassSearchable>
                     ),
                     child: Transform.scale(
                       scale: lerpDouble(SearchMetrics.revealScale, 1, grow),
-                      child: SearchCancelButton(
-                        onPressed: _cancel,
-                        label:
-                            widget.cancelLabel ??
-                            cupertinoL10n(context).cancelButtonLabel,
-                        mode: widget.mode,
-                      ),
+                      child: _cancelButton(context),
                     ),
                   ),
                 ),
@@ -408,6 +455,37 @@ class _GlassSearchableState extends State<GlassSearchable>
           },
         ),
     ],
+  );
+
+  /// The close button's room: its gap and its diameter.
+  static const double _cancelRoom =
+      SearchMetrics.cancelGap + SearchMetrics.cancelSize;
+
+  /// The close button while hiding: full size, fading over the first
+  /// [SearchMetrics.hideFade] of the hide as its room closes.
+  Widget _hidingCancel(BuildContext context) {
+    final p = _hide.value;
+    return ClipRect(
+      child: Align(
+        alignment: AlignmentDirectional.centerStart,
+        widthFactor: (1 - p).clamp(0.0, 1.0),
+        child: Opacity(
+          opacity: (1 - p / SearchMetrics.hideFade).clamp(0.0, 1.0),
+          child: Padding(
+            padding: const EdgeInsetsDirectional.only(
+              start: SearchMetrics.cancelGap,
+            ),
+            child: _cancelButton(context),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _cancelButton(BuildContext context) => SearchCancelButton(
+    onPressed: _cancel,
+    label: widget.cancelLabel ?? cupertinoL10n(context).cancelButtonLabel,
+    mode: widget.mode,
   );
 
   /// The scope segments under the field; [inset] gives them the field's

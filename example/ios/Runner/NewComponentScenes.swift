@@ -191,11 +191,16 @@ struct GaugeReference: View {
 /// (`tool/fidelity/record_component_motion.sh`). Light.
 @available(iOS 26.0, *)
 struct RefreshMotionReference: View {
+  /// Dark mode (`-controls refreshmotiondark`), its refresh taking 3 s so
+  /// the spinner can be sampled.
+  var dark = false
   var body: some View {
     List(0..<30) { i in Text("Row \(i)") }
       .listStyle(.plain)
-      .refreshable { try? await Task.sleep(for: .seconds(1)) }
-      .environment(\.colorScheme, .light)
+      .refreshable { try? await Task.sleep(for: .seconds(dark ? 3 : 1)) }
+      .environment(\.colorScheme, dark ? .dark : .light)
+      // The window's own style too: the pulled gap shows its background.
+      .preferredColorScheme(dark ? .dark : nil)
       .statusBarHidden(true)
   }
 }

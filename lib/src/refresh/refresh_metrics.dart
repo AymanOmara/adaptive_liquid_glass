@@ -11,9 +11,24 @@ abstract final class RefreshMetrics {
   /// The finger's travel past the top that starts the refresh, whichever
   /// of it and [triggerDistance] comes first. Measured: UIScrollView's
   /// rubber band reaches 173 pt after about 315 pt of finger travel (305
-  /// did not refresh, 320 did); Flutter's bouncing friction needs over
-  /// 400 for the same overscroll.
+  /// did not refresh, 320 did). `GlassRefreshScrollPhysics` reaches
+  /// [triggerDistance] there; this catches scrollables with other physics
+  /// (Flutter's bouncing friction needs over 400 for the same overscroll).
   static const double triggerTravel = 315;
+
+  /// UIScrollView's rubber band under a pull from the top, the content's
+  /// travel per finger travel as the pull starts. Fitted to SwiftUI's
+  /// List on iOS 26.4 with [rubberBandReach] (`-controls refreshmotion`,
+  /// six `idb ui swipe --delta 5` pulls of 50-300 pt moved it 40.0, 73.7,
+  /// 99.3, 123.7, 146.7 and 168.3 pt; rms 1.4 pt). The constant usually
+  /// quoted for UIKit, 0.55 with the whole viewport as reach, gives 139 pt
+  /// at 300; Flutter's bouncing friction (0.52) gives 133.
+  static const double rubberBandStiffness = 0.84;
+
+  /// The rubber band's reach, the most the content can be pulled, as a
+  /// fraction of the viewport's height (fitted with [rubberBandStiffness]:
+  /// 491 pt in the 874-pt List).
+  static const double rubberBandReach = 0.562;
 
   /// The room the indicator keeps while refreshing: the content is held
   /// this far down and the spinner centred in it. Measured from SwiftUI's

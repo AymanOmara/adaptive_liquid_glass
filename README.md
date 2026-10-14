@@ -352,7 +352,7 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `GlassLabel` (`+ .text`) | SwiftUI's `Label`: icon and title, coloured like a vibrant label on glass | icon and text row, Material 3 sizes |
 | `GlassLink`, `GlassShareLink` | SwiftUI's `Link` and `ShareLink`: glass triggers; your app opens the URL or share sheet | Material 3 button |
 | `GlassColorPicker` | SwiftUI's `ColorPicker` row opening a glass sheet laid out as UIKit's: grid, spectrum and RGB/hex sliders, opacity, saved colours, eyedropper | `ListTile` and modal bottom sheet |
-| `GlassRefresh`, `SliverGlassRefresh` | `.refreshable`: pull to refresh around a scrollable, or as a sliver | `RefreshIndicator` |
+| `GlassRefresh`, `SliverGlassRefresh`, `GlassRefreshScrollPhysics` | `.refreshable`: pull to refresh around a scrollable, or as a sliver; UIScrollView's rubber band under the pull | `RefreshIndicator` |
 | `GlassSymbol` | An SF Symbol drawn by iOS at run time (never bundled) | its `fallback` |
 
 ## Cookbook
@@ -1378,9 +1378,10 @@ testWidgets('pays', (tester) async {
 - **Context menu not measured:** synthetic touches on the simulator do
   not open SwiftUI's `.contextMenu`, so `GlassContextMenu` follows the
   system's look but has not been measured. Of the newer components'
-  motion, the disclosure spring, the refresh snap-back and threshold, the
-  colour grid's ring and `GlassSearchable`'s close-button reveal are
-  measured; the wheel picker's VoiceOver step is not.
+  motion, the disclosure spring, the refresh snap-back, threshold and
+  rubber band, the colour grid's ring and `GlassSearchable`'s
+  close-button reveal and hide are measured; the wheel picker's
+  VoiceOver step is not.
 - **Native mode, runtime light→dark flip:** on iOS 26, 71 of 72 measured
   brightness flips at runtime match SwiftUI. One does not: a regular glass
   capsule over a photo, flipped from light to dark, keeps part of Apple's
@@ -1425,11 +1426,15 @@ testWidgets('pays', (tester) async {
   stores them; a long press removes one (UIKit uses a context menu). The
   loupe's size and magnification are estimated, and the grid is 2 pt
   narrower than UIKit's (its cells are square).
-- **Pull to refresh:** the refresh starts under the finger once the
-  content is pulled 173 pt or the finger has travelled 315 pt past the
-  top (UIKit reaches both together). Flutter's `BouncingScrollPhysics`
-  resists harder than UIScrollView, so the content shows less of the pull
-  at the moment it starts.
+- **Pull to refresh:** `GlassRefresh` gives a scrollable that inherits
+  bouncing physics UIScrollView's rubber band under the pull (measured
+  within 4 pt of UIKit's for 50-300 pt of finger travel). A scrollable
+  that sets its own `BouncingScrollPhysics` keeps Flutter's harder
+  friction (about 35 pt less at 300 pt of travel) unless it uses
+  `GlassRefreshScrollPhysics`; the refresh still starts at UIKit's
+  finger travel (315 pt). `SliverGlassRefresh` needs
+  `GlassRefreshScrollPhysics` on its `CustomScrollView` for the same
+  curve. The release's bounce back is Flutter's.
 
 ## License
 
