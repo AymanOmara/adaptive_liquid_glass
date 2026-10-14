@@ -122,6 +122,22 @@ abstract final class ColorPickerMetrics {
   /// The current colour's swatch (measured: 75 x 75).
   static const double swatch = 75;
 
+  /// A saved colour's circle, and the "+" beside them (measured: 29).
+  static const double savedSwatch = 29;
+
+  /// The gap from the current colour's swatch to the first saved colour
+  /// (measured: 18.33).
+  static const double savedStart = 18.33;
+
+  /// The saved colours' pitch (measured: 46.07, centre to centre).
+  static const double savedPitch = 46.07;
+
+  /// The "+" glyph's length (measured: 13.67).
+  static const double savedPlus = 13.67;
+
+  /// The "+" glyph's stroke (measured: 2.33).
+  static const double savedPlusStroke = 2.33;
+
   /// The swatch's corner radius (measured, about 10).
   static const double swatchRadius = 10;
 

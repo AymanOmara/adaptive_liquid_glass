@@ -51,6 +51,10 @@ class GlassColorPicker extends StatefulWidget {
     this.opacityLabel = 'Opacity',
     this.hexLabel = 'sRGB Hex Color #',
     this.closeLabel = 'Close',
+    this.savedColors,
+    this.onSavedColorsChanged,
+    this.savedColorLabel = 'Saved colour',
+    this.addColorLabel = 'Add to saved colours',
   });
 
   /// The selected colour.
@@ -92,6 +96,22 @@ class GlassColorPicker extends StatefulWidget {
   /// The sheet's hex field label.
   final String hexLabel;
 
+  /// The saved colours beside the current one in the sheet. Null shares
+  /// one in-memory list between every picker, starting with UIKit's
+  /// (black, blue, green, yellow, red), kept until the app quits.
+  final List<Color>? savedColors;
+
+  /// Called with the new saved colours when the sheet's "+" saves the
+  /// current colour or a long press removes one. With [savedColors],
+  /// store the list (persist it if you like) and pass it back.
+  final ValueChanged<List<Color>>? onSavedColorsChanged;
+
+  /// A saved colour's screen-reader label, before its hex code.
+  final String savedColorLabel;
+
+  /// The sheet's "+" (save the colour) screen-reader label.
+  final String addColorLabel;
+
   @override
   State<GlassColorPicker> createState() => _GlassColorPickerState();
 }
@@ -115,6 +135,10 @@ class _GlassColorPickerState extends State<GlassColorPicker> {
     hueLabel: widget.hueLabel,
     opacityLabel: widget.opacityLabel,
     hexLabel: widget.hexLabel,
+    savedColors: widget.savedColors,
+    onSavedColorsChanged: widget.onSavedColorsChanged,
+    savedColorLabel: widget.savedColorLabel,
+    addColorLabel: widget.addColorLabel,
   );
 
   /// UIColorPickerViewController's sheet: 601 pt tall (less the opacity

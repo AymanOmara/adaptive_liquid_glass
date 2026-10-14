@@ -383,6 +383,22 @@ abstract final class GlassColors {
         darkColor: Color(0xFF38383A),
       );
 
+  /// The saved colours' "+" circle (measured light #D9D9D9 on the sheet's
+  /// #ECECEF; dark estimated).
+  static const CupertinoDynamicColor colorPickerAddFill =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFFD9D9D9),
+        darkColor: Color(0xFF3A3A3C),
+      );
+
+  /// The saved colours' "+" glyph (measured light #4A4A4A; dark
+  /// estimated).
+  static const CupertinoDynamicColor colorPickerAddGlyph =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFF4A4A4A),
+        darkColor: Color(0xFFC7C7CC),
+      );
+
   /// The hex row's label (measured: the system blue).
   static const CupertinoDynamicColor colorPickerHexLabel = systemBlue;
 }
