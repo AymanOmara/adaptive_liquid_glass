@@ -23,7 +23,8 @@ import 'refresh_metrics.dart';
 /// ```
 ///
 /// The indicator floats over the top of the content (the child keeps its
-/// own layout), scales in with the pull and plays a haptic when armed.
+/// own layout), reveals its spokes with the pull and starts the refresh
+/// with a haptic as soon as the pull passes the threshold.
 /// While the refresh runs the content is held down by the spinner's room,
 /// as `UIRefreshControl` holds a list, and it snaps back on SwiftUI's
 /// spring once refresh completes; `BouncingScrollPhysics`
@@ -86,7 +87,9 @@ class _GlassRefreshState extends State<GlassRefresh>
   final _overscroll = ValueNotifier<double>(0);
 
   bool _dragging = false;
-  bool _armed = false;
+
+  /// The refresh started under the finger: the release settles the hold.
+  bool _settlePending = false;
   bool _refreshing = false;
 
   /// From the trigger until the snap-back settles: the content is held
@@ -155,40 +158,53 @@ class _GlassRefreshState extends State<GlassRefresh>
     return false;
   }
 
-  /// While dragging and not refreshing, the pull drives the progress and
-  /// the arm; a haptic plays the first time it arms.
+  /// While dragging and not refreshing, the pull drives the progress;
+  /// past the threshold the refresh starts at once, finger still down, as
+  /// `UIRefreshControl`'s does (measured), with a haptic.
   void _updateProgress() {
     if (!_dragging || _holding) return;
     final progress = _pull / RefreshMetrics.triggerDistance;
     _controller.value = progress;
-    final armed = progress >= 1;
-    if (armed && !_armed && widget.enableFeedback) {
-      HapticFeedback.mediumImpact();
+    if (progress >= 1) {
+      if (widget.enableFeedback) HapticFeedback.mediumImpact();
+      _trigger();
     }
-    _armed = armed;
   }
 
   void _endDrag() {
-    if (_holding) return;
-    if (_armed) {
-      _trigger();
-    } else if (!_refreshing) {
+    if (_settlePending) {
+      _settlePending = false;
+      _settle();
+    } else if (!_holding && !_refreshing) {
       _snapBack();
     }
   }
 
-  /// Arms the refresh: the indicator spins at full pull until
-  /// [GlassRefresh.onRefresh] completes.
+  /// Starts the refresh: the indicator spins at full pull until
+  /// [GlassRefresh.onRefresh] completes. Under the finger the content
+  /// stays where it is pulled to (held no higher than the spinner's
+  /// room); the release eases it into the hold.
   void _trigger() {
     setState(() {
       _refreshing = true;
       _holding = true;
-      _armed = false;
       _controller.value = 1;
     });
-    // The released content eases into the hold, as UIScrollView's
-    // bounce settles on its refresh inset.
-    _holdDepth.value = _pull;
+    _holdDepth.value = RefreshMetrics.indicatorExtent;
+    if (_dragging) {
+      _settlePending = true;
+    } else {
+      _settle();
+    }
+    widget.onRefresh().whenComplete(() {
+      if (mounted) _snapBack();
+    });
+  }
+
+  /// The released content eases into the hold, as UIScrollView's bounce
+  /// settles on its refresh inset.
+  void _settle() {
+    _holdDepth.value = math.max(_pull, RefreshMetrics.indicatorExtent);
     if (_reduceMotion) {
       _holdDepth.value = RefreshMetrics.indicatorExtent;
     } else {
@@ -198,13 +214,11 @@ class _GlassRefreshState extends State<GlassRefresh>
         RefreshMetrics.indicatorExtent,
       );
     }
-    widget.onRefresh().whenComplete(() {
-      if (mounted) _snapBack();
-    });
   }
 
   /// Springs the progress back to 0, ending the refresh.
   void _snapBack() {
+    _settlePending = false;
     if (_reduceMotion) {
       setState(() {
         _refreshing = false;

@@ -366,21 +366,22 @@ class _GlassSearchableState extends State<GlassSearchable>
         AnimatedBuilder(
           animation: _reveal,
           builder: (context, _) {
-            // iOS 26.4 (measured, `-controls search` tapped): the field
+            // iOS 26.4 (fitted, `-controls search` tapped): the field
             // narrows first, then the close button grows in place from
-            // about a third of its size as it fades in.
-            final t = _reveal.value.clamp(0.0, 1.0);
+            // about a third of its size as it fades in, overshooting a
+            // little with the spring.
+            final t = _reveal.value;
             final slot = (t / SearchMetrics.revealSplit).clamp(0.0, 1.0);
-            final grow =
-                ((t - SearchMetrics.revealSplit) /
-                        (1 - SearchMetrics.revealSplit))
-                    .clamp(0.0, 1.0);
+            final grow = math.max(
+              0.0,
+              (t - SearchMetrics.revealSplit) / (1 - SearchMetrics.revealSplit),
+            );
             return ClipRect(
               child: Align(
                 alignment: AlignmentDirectional.centerStart,
                 widthFactor: slot,
                 child: Opacity(
-                  opacity: grow,
+                  opacity: math.min(grow, 1.0),
                   child: Padding(
                     padding: const EdgeInsetsDirectional.only(
                       start: SearchMetrics.cancelGap,

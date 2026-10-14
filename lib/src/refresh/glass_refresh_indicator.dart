@@ -1,5 +1,3 @@
-import 'dart:ui' show lerpDouble;
-
 import 'package:flutter/cupertino.dart' show CupertinoActivityIndicator;
 import 'package:flutter/material.dart' show CircularProgressIndicator;
 import 'package:flutter/widgets.dart';
@@ -7,22 +5,20 @@ import 'package:flutter/widgets.dart';
 import '../core/effective_glass_mode.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
-import '../core/glass_shape.dart';
-import '../liquid_glass.dart';
 import 'refresh_metrics.dart';
 
-/// iOS 26's pull to refresh indicator: a glass disk that scales in with
-/// the pull, the spinner's spokes revealed one by one as it nears the
-/// threshold (as `UIRefreshControl` does), and the spinner turning once
-/// refresh starts. Shown by [GlassRefresh] and
-/// [SliverGlassRefresh]; rarely built directly.
+/// iOS 26's pull to refresh indicator: the spinner's spokes revealed one
+/// by one and fading in with the pull (as `UIRefreshControl` does), and
+/// turning once refresh starts. Like SwiftUI's, it has no disk behind it
+/// and does not scale. Shown by [GlassRefresh] and [SliverGlassRefresh];
+/// rarely built directly.
 ///
 /// ```dart
 /// GlassRefreshIndicator(progress: 0.5, refreshing: false)
 /// ```
 ///
-/// With Reduce Motion the disk does not scale in. On the Material path
-/// the disk is a Material 3 [CircularProgressIndicator] instead.
+/// With Reduce Motion the spinner does not turn. On the Material path
+/// it is a Material 3 [CircularProgressIndicator] instead.
 class GlassRefreshIndicator extends StatelessWidget {
   /// Creates the indicator.
   const GlassRefreshIndicator({
@@ -34,7 +30,7 @@ class GlassRefreshIndicator extends StatelessWidget {
     this.mode,
   });
 
-  /// Pull progress, 0 to 1 (clamped); drives the spokes and the scale-in.
+  /// Pull progress, 0 to 1 (clamped); drives the spokes and the fade-in.
   final double progress;
 
   /// Whether onRefresh is pending: the spinner spins.
@@ -58,32 +54,29 @@ class GlassRefreshIndicator extends StatelessWidget {
     return Semantics(
       liveRegion: refreshing,
       label: refreshing ? semanticLabel ?? 'Refreshing' : null,
-      child: Transform.scale(
-        scale: reduceMotion || refreshing
-            ? 1
-            : lerpDouble(RefreshMetrics.minScale, 1, value),
-        child: Opacity(
-          opacity: progress <= 0 && !refreshing ? 0 : 1,
-          child: GlassModeBuilder(
-            mode: mode,
-            builder: (context, effective) =>
-                effective == EffectiveGlassMode.material
-                ? _material()
-                : _glass(reduceMotion),
-          ),
+      // SwiftUI's spokes darken with the pull (measured: about the pull's
+      // fraction of the threshold in opacity).
+      child: Opacity(
+        opacity: refreshing ? 1 : value,
+        child: GlassModeBuilder(
+          mode: mode,
+          builder: (context, effective) =>
+              effective == EffectiveGlassMode.material
+              ? _material(value)
+              : _spinner(value, reduceMotion),
         ),
       ),
     );
   }
 
-  Widget _material() => ExcludeSemantics(
+  Widget _material(double value) => ExcludeSemantics(
     child: SizedBox.square(
       dimension: RefreshMetrics.diskSize,
       child: Center(
         child: SizedBox.square(
-          dimension: RefreshMetrics.spinnerSize,
+          dimension: RefreshMetrics.ringSize,
           child: CircularProgressIndicator(
-            value: refreshing ? null : progress.clamp(0.0, 1.0),
+            value: refreshing ? null : value,
             color: color,
             strokeWidth: 2.5,
           ),
@@ -92,26 +85,20 @@ class GlassRefreshIndicator extends StatelessWidget {
     ),
   );
 
-  Widget _glass(bool reduceMotion) => LiquidGlass(
-    shape: const GlassShape.circle(),
-    mode: mode,
+  Widget _spinner(double value, bool reduceMotion) => ExcludeSemantics(
     child: SizedBox.square(
-      dimension: RefreshMetrics.diskSize,
-      child: Center(
-        child: ExcludeSemantics(
-          child: refreshing
-              ? CupertinoActivityIndicator(
-                  color: color,
-                  radius: RefreshMetrics.spinnerSize / 2,
-                  animating: !reduceMotion,
-                )
-              : CupertinoActivityIndicator.partiallyRevealed(
-                  color: color,
-                  radius: RefreshMetrics.spinnerSize / 2,
-                  progress: progress.clamp(0.0, 1.0),
-                ),
-        ),
-      ),
+      dimension: RefreshMetrics.spinnerSize,
+      child: refreshing
+          ? CupertinoActivityIndicator(
+              color: color,
+              radius: RefreshMetrics.spinnerSize / 2,
+              animating: !reduceMotion,
+            )
+          : CupertinoActivityIndicator.partiallyRevealed(
+              color: color,
+              radius: RefreshMetrics.spinnerSize / 2,
+              progress: value,
+            ),
     ),
   );
 }
