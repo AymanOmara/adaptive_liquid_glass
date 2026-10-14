@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 // A small app built from the package's main widgets, shown on pub.dev's
 // Example tab: `flutter run -t lib/quick_start.dart`.
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
   await AdaptiveLiquidGlass.initialize();
   runApp(const QuickStartApp());
 }

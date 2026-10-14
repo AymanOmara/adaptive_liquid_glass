@@ -14,8 +14,8 @@ import 'scenes/scene_view.dart';
 // `lib/native_demo.dart` has its own entry point:
 // `flutter run -t lib/native_demo.dart`.
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await LiquidGlass.precache();
+  // Preloads the shaders on any platform, as MODE may force them.
+  await AdaptiveLiquidGlass.initialize(mode: GlassRenderMode.shader);
   final args = await LaunchArgs.read();
   if (args.twin != null) {
     return runApp(ReferenceTwin(scene: args.twin!, mode: args.mode));

@@ -8,8 +8,8 @@ import 'package:flutter/material.dart';
 /// `GlassScaffold`, over a photo. Add `--dart-define=MODE=shader` (or
 /// `native`, `material`) to force a rendering path.
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await LiquidGlass.precache();
+  // Preloads the shaders on any platform, as MODE may force them.
+  await AdaptiveLiquidGlass.initialize(mode: GlassRenderMode.shader);
   const mode = String.fromEnvironment('MODE');
   runApp(
     LiquidGlassTheme(

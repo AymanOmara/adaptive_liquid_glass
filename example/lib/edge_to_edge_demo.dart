@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 // Tab 1: the fix (title collapses). Tab 2: the old trap (list in
 // SliverFillRemaining, title stays). The FAB toggles floating/edge to edge.
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
   await AdaptiveLiquidGlass.initialize();
   runApp(
     MaterialApp(
