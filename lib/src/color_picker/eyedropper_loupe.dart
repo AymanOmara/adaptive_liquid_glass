@@ -57,6 +57,14 @@ class _LoupePainter extends CustomPainter {
     );
     final circle = Path()..addOval(rect);
     canvas
+      // A soft shadow keeps the loupe visible over any colour.
+      ..drawCircle(
+        centre.translate(0, 2),
+        size.width / 2,
+        Paint()
+          ..color = GlassColors.colorPickerLoupeShade
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+      )
       ..save()
       ..clipPath(circle)
       ..drawRect(rect, Paint()..color = GlassColors.white)
@@ -67,6 +75,13 @@ class _LoupePainter extends CustomPainter {
         Paint()..filterQuality = FilterQuality.none,
       )
       ..restore()
+      ..drawRect(
+        Rect.fromCenter(center: centre, width: cell + 2, height: cell + 2),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = GlassColors.colorPickerLoupeShade,
+      )
       ..drawRect(
         Rect.fromCenter(center: centre, width: cell, height: cell),
         Paint()
@@ -87,7 +102,7 @@ class _LoupePainter extends CustomPainter {
         size.width / 2,
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1
+          ..strokeWidth = 1.5
           ..color = GlassColors.white,
       );
   }

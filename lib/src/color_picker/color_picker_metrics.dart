@@ -43,8 +43,9 @@ abstract final class ColorPickerMetrics {
   /// The eyedropper glyph's ink box (measured: 22 x 22 pt).
   static const double eyedropperInk = 22;
 
-  /// CupertinoIcons.eyedropper's size for a 22-pt ink box.
-  static const double eyedropperGlyph = 24;
+  /// CupertinoIcons.eyedropper's size for UIKit's 22-pt ink box (24 drew
+  /// 20.67 pt).
+  static const double eyedropperGlyph = 25.5;
 
   /// The eyedropper glyph's centre from the sheet's start edge (measured:
   /// ink 17.67-39.67 pt in).

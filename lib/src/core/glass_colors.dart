@@ -96,11 +96,13 @@ abstract final class GlassColors {
         darkColor: Color(0xFF191919),
       );
 
-  /// The segmented control's track.
+  /// The segmented control's track: iOS's tertiary system fill,
+  /// translucent (measured: #EEEEEF on white and #1C1C1F on black from
+  /// SwiftUI, #DDDDE1 on UIColorPickerViewController's #ECECEF sheet).
   static const CupertinoDynamicColor segmentTrack =
       CupertinoDynamicColor.withBrightness(
-        color: Color(0xFFEEEEEF),
-        darkColor: Color(0xFF1C1C1F),
+        color: Color(0x1F767680),
+        darkColor: Color(0x3D767680),
       );
 
   /// The segmented control's thumb at rest.
@@ -398,6 +400,10 @@ abstract final class GlassColors {
         color: Color(0xFF4A4A4A),
         darkColor: Color(0xFFC7C7CC),
       );
+
+  /// The eyedropper loupe's shadow and its centre pixel's outer outline
+  /// (estimated: black at 25%).
+  static const Color colorPickerLoupeShade = Color(0x40000000);
 
   /// The hex row's label (measured: the system blue).
   static const CupertinoDynamicColor colorPickerHexLabel = systemBlue;
