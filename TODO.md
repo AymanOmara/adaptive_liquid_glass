@@ -50,7 +50,6 @@ and CHANGELOG.md.
 6- still unmeasured vs SwiftUI (label, links, wheels, searchable, cover
   close button and colour row measured 2026-10-13): GlassColorPicker sheet
   (UIColorPickerViewController captured blank on the simulator),
-  GlassRefresh (needs a real pull; beginRefreshing showed no spinner),
   searchable scope bar and suggestions platter (keyboard tutorial covered
   them), date wheel time-column spacing (UIKit packs them unevenly), cover
   drag thresholds (SwiftUI's cover has no drag), context menu (synthetic
@@ -59,9 +58,11 @@ and CHANGELOG.md.
   disclosure spring, refresh snap-back, colour grid ring. Motion still
   open: GlassSearchable's reveal (iOS 26.4 rides the field up with the
   keyboard and shows an xmark button, not Cancel; not separable), the
-  wheel's step (VoiceOver-only, no touch drives it), context menu; and
-  GlassRefresh does not hold the list ~60 pt down while refreshing as
-  SwiftUI does (behaviour, not a constant).
+  wheel's step (VoiceOver-only, no touch drives it), context menu.
+  GlassRefresh hold measured 2026-10-14 (idb swipe with --delta 5; the
+  default delta does not drag SwiftUI's List): hold 60.0 vs 60.3 pt,
+  settle into it fitted 0.30 / 1.43, spinner centre 90.5 vs 92 pt; still
+  estimated: trigger distance, disk and spinner size.
 
 7- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
   Still scenes, whole-crop mean |diff| native/shader (2026-10-13, with

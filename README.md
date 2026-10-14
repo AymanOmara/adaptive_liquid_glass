@@ -1364,8 +1364,7 @@ testWidgets('pays', (tester) async {
   motion, the disclosure spring, the refresh snap-back and the colour
   grid's ring are measured; `GlassSearchable`'s Cancel reveal (iOS rides
   the field up with the keyboard) and the wheel picker's VoiceOver step
-  are not, and `GlassRefresh` does not hold the list down while
-  refreshing as SwiftUI does.
+  are not.
 - **Native mode, runtime light→dark flip:** on iOS 26, 71 of 72 measured
   brightness flips at runtime match SwiftUI. One does not: a regular glass
   capsule over a photo, flipped from light to dark, keeps part of Apple's
@@ -1399,7 +1398,8 @@ testWidgets('pays', (tester) async {
   stay Roboto (not SF Pro), and scroll physics, the back gesture and
   haptics stay Android's; making those iOS-like is not part of the
   package.
-- **Unmeasured geometry:** the `GlassColorPicker` sheet, `GlassRefresh`,
+- **Unmeasured geometry:** the `GlassColorPicker` sheet, `GlassRefresh`'s
+  trigger distance and disk size,
   `GlassSearchable`'s scope bar and suggestions, the date wheel's time
   columns and the full-screen cover's drag thresholds follow iOS by eye,
   not by measurement.
