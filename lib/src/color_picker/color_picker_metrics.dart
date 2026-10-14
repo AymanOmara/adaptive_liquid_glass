@@ -40,6 +40,30 @@ abstract final class ColorPickerMetrics {
   /// The close button's touch target.
   static const double closeTarget = 44;
 
+  /// The eyedropper glyph's ink box (measured: 22 x 22 pt).
+  static const double eyedropperInk = 22;
+
+  /// CupertinoIcons.eyedropper's size for a 22-pt ink box.
+  static const double eyedropperGlyph = 24;
+
+  /// The eyedropper glyph's centre from the sheet's start edge (measured:
+  /// ink 17.67-39.67 pt in).
+  static const double eyedropperInset = 28.67;
+
+  /// The eyedropper glyph's centre below the sheet's top (measured: ink
+  /// 16-38 pt down).
+  static const double eyedropperCentre = 27;
+
+  /// The eyedropper's loupe diameter (estimated; UIKit's samples the
+  /// whole screen, which a simulator capture cannot show mid-drag).
+  static const double loupe = 120;
+
+  /// The pixels across the loupe (estimated).
+  static const int loupeCells = 11;
+
+  /// The loupe's ring of the colour under it (estimated).
+  static const double loupeRing = 8;
+
   /// The segmented control's top (measured: 53).
   static const double segmentTop = 53;
 

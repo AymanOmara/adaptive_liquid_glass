@@ -38,8 +38,8 @@ enum _Page { grid, spectrum, sliders }
 /// ```
 ///
 /// The panel keeps its own colour while open and follows a new [value]
-/// from its parent. UIKit's eyedropper and saved colours are not drawn
-/// (Flutter cannot sample the screen outside its own view).
+/// from its parent. The current colour sits beside the saved colours and
+/// a "+" that saves it; [onEyedropper] adds UIKit's eyedropper.
 class GlassColorPickerPanel extends StatefulWidget {
   /// Creates the panel.
   const GlassColorPickerPanel({
@@ -64,6 +64,8 @@ class GlassColorPickerPanel extends StatefulWidget {
     this.onSavedColorsChanged,
     this.savedColorLabel = 'Saved colour',
     this.addColorLabel = 'Add to saved colours',
+    this.onEyedropper,
+    this.eyedropperLabel = 'Eyedropper',
   });
 
   /// The colour shown.
@@ -129,6 +131,13 @@ class GlassColorPickerPanel extends StatefulWidget {
 
   /// The "+" button's screen-reader label.
   final String addColorLabel;
+
+  /// Called by the eyedropper at the top start; no eyedropper when null.
+  /// `GlassColorPicker` hides its sheet and runs `pickColorFromApp`.
+  final VoidCallback? onEyedropper;
+
+  /// The eyedropper's screen-reader label.
+  final String eyedropperLabel;
 
   @override
   State<GlassColorPickerPanel> createState() => _GlassColorPickerPanelState();
@@ -416,6 +425,37 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   child: Semantics(header: true, child: widget.title!),
+                ),
+              ),
+            ),
+          ),
+        if (widget.onEyedropper != null)
+          PositionedDirectional(
+            start:
+                ColorPickerMetrics.eyedropperInset -
+                ColorPickerMetrics.closeTarget / 2,
+            top:
+                ColorPickerMetrics.eyedropperCentre -
+                ColorPickerMetrics.closeTarget / 2,
+            width: ColorPickerMetrics.closeTarget,
+            height: ColorPickerMetrics.closeTarget,
+            child: Semantics(
+              button: true,
+              label: widget.eyedropperLabel,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: widget.onEyedropper,
+                child: Center(
+                  child: ExcludeSemantics(
+                    child: Icon(
+                      CupertinoIcons.eyedropper,
+                      size: ColorPickerMetrics.eyedropperGlyph,
+                      color: CupertinoDynamicColor.resolve(
+                        GlassColors.label,
+                        context,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
