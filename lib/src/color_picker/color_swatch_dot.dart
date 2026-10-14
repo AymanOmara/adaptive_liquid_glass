@@ -43,7 +43,9 @@ class ColorSwatchDot extends StatelessWidget {
         padding: EdgeInsets.all(ringWidth + ringGap),
         child: ClipOval(
           child: CustomPaint(
-            painter: color.a < 1 ? const CheckerboardPainter() : null,
+            painter: color.a < 1
+                ? const CheckerboardPainter(cell: ColorPickerMetrics.rowChecker)
+                : null,
             child: ColoredBox(color: color),
           ),
         ),

@@ -8,12 +8,15 @@ import '../list/glass_list_tile.dart';
 import '../sheet/glass_sheet_detent.dart';
 import '../sheet/show_glass_sheet.dart';
 import 'color_hex.dart';
+import 'color_picker_metrics.dart';
 import 'color_swatch_dot.dart';
 import 'glass_color_picker_panel.dart';
 
 /// iOS 26's colour picker row, like SwiftUI's `ColorPicker`: a label at
-/// the start and a round swatch at the end, opening a glass sheet with a
-/// preset grid, a spectrum, an opacity slider and a hex field.
+/// the start and a round swatch at the end, opening a glass sheet laid out
+/// as UIColorPickerViewController's: the label as its title, a close
+/// button, Grid / Spectrum / Sliders pages, an opacity slider and the
+/// current colour.
 ///
 /// ```dart
 /// GlassColorPicker(
@@ -28,8 +31,9 @@ import 'glass_color_picker_panel.dart';
 /// opacity slider and the colour is always opaque. Null [onChanged]
 /// disables the row. Put the row in a `GlassListSection` for a platter.
 /// On the Material path it is a Material 3 [ListTile] opening a modal
-/// bottom sheet with the same content. The geometry is estimated, not
-/// yet measured against SwiftUI.
+/// bottom sheet with the same content. The sheet's geometry is measured
+/// from UIKit on iOS 26.4; the spectrum page keeps a saturation-value
+/// square and hue bar where UIKit draws one hue-by-brightness map.
 class GlassColorPicker extends StatefulWidget {
   /// Creates a colour picker row.
   const GlassColorPicker({
@@ -42,9 +46,11 @@ class GlassColorPicker extends StatefulWidget {
     this.semanticLabel,
     this.gridLabel = 'Grid',
     this.spectrumLabel = 'Spectrum',
+    this.slidersLabel = 'Sliders',
     this.hueLabel = 'Hue',
     this.opacityLabel = 'Opacity',
-    this.hexLabel = 'Hex',
+    this.hexLabel = 'sRGB Hex Color #',
+    this.closeLabel = 'Close',
   });
 
   /// The selected colour.
@@ -65,19 +71,25 @@ class GlassColorPicker extends StatefulWidget {
   /// What assistive tech reads as the row's label instead of [label].
   final String? semanticLabel;
 
-  /// The sheet's preset grid title.
+  /// The sheet's preset grid segment.
   final String gridLabel;
 
-  /// The sheet's spectrum title.
+  /// The sheet's spectrum segment.
   final String spectrumLabel;
+
+  /// The sheet's sliders segment (red, green, blue and the hex code).
+  final String slidersLabel;
+
+  /// The sheet's close button screen-reader label.
+  final String closeLabel;
 
   /// The hue bar's screen-reader label.
   final String hueLabel;
 
-  /// The sheet's opacity row label.
+  /// The sheet's opacity caption.
   final String opacityLabel;
 
-  /// The sheet's hex row label.
+  /// The sheet's hex field label.
   final String hexLabel;
 
   @override
@@ -94,16 +106,28 @@ class _GlassColorPickerState extends State<GlassColorPicker> {
     onChanged: (c) => widget.onChanged?.call(c),
     supportsOpacity: widget.supportsOpacity,
     mode: widget.mode,
+    title: widget.label,
+    onClose: () => Navigator.of(context).maybePop(),
+    closeLabel: widget.closeLabel,
     gridLabel: widget.gridLabel,
     spectrumLabel: widget.spectrumLabel,
+    slidersLabel: widget.slidersLabel,
     hueLabel: widget.hueLabel,
     opacityLabel: widget.opacityLabel,
     hexLabel: widget.hexLabel,
   );
 
+  /// UIColorPickerViewController's sheet: 601 pt tall (less the opacity
+  /// row without opacity), floating, no grabber (measured).
   Future<void> _showGlass() => showGlassSheet<void>(
     context: context,
-    detents: const [GlassSheetDetent.large],
+    detents: [
+      GlassSheetDetent.contentHeight(
+        ColorPickerMetrics.sheetHeight -
+            (widget.supportsOpacity ? 0 : ColorPickerMetrics.opacityBlock),
+      ),
+    ],
+    showGrabber: false,
     mode: widget.mode,
     builder: _panel,
   );

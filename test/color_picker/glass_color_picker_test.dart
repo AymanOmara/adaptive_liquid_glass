@@ -1,7 +1,9 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/color_picker/color_channel_slider.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/color_hex.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/color_picker_metrics.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/color_swatch_dot.dart';
+import 'package:adaptive_liquid_glass/src/color_picker/color_value_field.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/glass_color_picker_panel.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
@@ -47,9 +49,9 @@ class _HarnessState extends State<_Harness> {
   );
 }
 
-/// A tall screen so the whole sheet content is on screen.
+/// An iPhone-wide, tall screen so the whole sheet content is on screen.
 void _tall(WidgetTester t) {
-  t.view.physicalSize = const Size(800, 1400);
+  t.view.physicalSize = const Size(402, 1400);
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.resetPhysicalSize);
   addTearDown(t.view.resetDevicePixelRatio);
@@ -60,8 +62,21 @@ Future<void> _open(WidgetTester t) async {
   await t.pumpAndSettle();
 }
 
+/// The value field of [width] (hex: 96, opacity and channels: 73).
+Finder _field(double width) => find.descendant(
+  of: find.byWidgetPredicate((w) => w is ColorValueField && w.width == width),
+  matching: find.byType(EditableText),
+);
+
+Finder get _hexField => _field(ColorPickerMetrics.hexFieldWidth);
+
+Future<void> _sliders(WidgetTester t) async {
+  await t.tap(find.text('Sliders'));
+  await t.pumpAndSettle();
+}
+
 Future<void> _enterHex(WidgetTester t, String text) async {
-  await t.enterText(find.byType(EditableText), text);
+  await t.enterText(_hexField, text);
   await t.pumpAndSettle();
 }
 
@@ -129,8 +144,16 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.byType(GlassSlider), findsOneWidget);
-    expect(find.byType(GlassTextField), findsOneWidget);
+    // UIKit's layout: the label as title, a close button, the opacity
+    // slider with its percentage.
+    expect(find.text('Accent'), findsNWidgets(2));
+    expect(find.bySemanticsLabel('Close'), findsOneWidget);
+    expect(find.byType(ColorChannelSlider), findsOneWidget);
+    expect(find.text('100%'), findsOneWidget);
+    // The close button dismisses the sheet.
+    await t.tap(find.bySemanticsLabel('Close'));
+    await t.pumpAndSettle();
+    expect(find.byType(GlassColorPickerPanel), findsNothing);
   }, variant: ios);
 
   testWidgets('Material: a list tile opening a bottom sheet', (t) async {
@@ -141,7 +164,7 @@ void main() {
     await _open(t);
     expect(find.byType(BottomSheet), findsOneWidget);
     expect(find.byType(GlassColorPickerPanel), findsOneWidget);
-    expect(find.byType(Slider), findsOneWidget);
+    expect(find.byType(ColorChannelSlider), findsOneWidget);
   }, variant: android);
 
   testWidgets('tapping a grid swatch applies it live', (t) async {
@@ -155,10 +178,8 @@ void main() {
     expect(picked, [const Color(0xFFFFFFFF)]);
     expect(find.byType(GlassColorPickerPanel), findsOneWidget);
     expect(_swatchColor(t), const Color(0xFFFFFFFF));
-    expect(
-      t.widget<EditableText>(find.byType(EditableText)).controller.text,
-      '#FFFFFF',
-    );
+    await _sliders(t);
+    expect(t.widget<EditableText>(_hexField).controller.text, 'FFFFFF');
   }, variant: ios);
 
   testWidgets('the hex field parses #RRGGBB and #AARRGGBB', (t) async {
@@ -167,6 +188,7 @@ void main() {
     final picked = <Color>[];
     await t.pumpWidget(appHost(_Harness(onChanged: picked.add)));
     await _open(t);
+    await _sliders(t);
     await _enterHex(t, '#FF0000');
     expect(picked.last, const Color(0xFFFF0000));
     await _enterHex(t, '80FF0000');
@@ -187,8 +209,9 @@ void main() {
       appHost(_Harness(supportsOpacity: false, onChanged: picked.add)),
     );
     await _open(t);
-    expect(find.byType(GlassSlider), findsNothing);
-    expect(find.text('Opacity'), findsNothing);
+    expect(find.byType(ColorChannelSlider), findsNothing);
+    expect(find.text('OPACITY'), findsNothing);
+    await _sliders(t);
     await _enterHex(t, '#80FF0000');
     expect(picked.last, const Color(0xFFFF0000));
   }, variant: ios);
@@ -199,12 +222,55 @@ void main() {
     final picked = <Color>[];
     await t.pumpWidget(appHost(_Harness(onChanged: picked.add)));
     await _open(t);
-    final slider = t.getRect(find.byType(GlassSlider));
+    final slider = t.getRect(find.byType(ColorChannelSlider));
     await t.tapAt(Offset(slider.left + slider.width / 2, slider.center.dy));
     await t.pumpAndSettle();
     expect(picked, isNotEmpty);
     expect(picked.last.a, closeTo(0.5, 0.05));
     expect(picked.last.withValues(alpha: 1), _blue);
+  }, variant: ios);
+
+  testWidgets('the Sliders page sets each channel', (t) async {
+    shaderEnv();
+    _tall(t);
+    final picked = <Color>[];
+    await t.pumpWidget(appHost(_Harness(onChanged: picked.add)));
+    await _open(t);
+    await _sliders(t);
+    expect(find.text('RED'), findsOneWidget);
+    expect(find.byType(ColorChannelSlider), findsNWidgets(4));
+    // Red, green, blue fields read the colour (#007AFF).
+    final fields = _field(ColorPickerMetrics.fieldWidth);
+    expect(
+      [
+        for (final e in fields.evaluate())
+          (e.widget as EditableText).controller.text,
+      ],
+      ['0', '122', '255', '100%'],
+    );
+    await t.enterText(fields.first, '255');
+    await t.pumpAndSettle();
+    expect(picked.last, const Color(0xFFFF7AFF));
+    // The red slider's end sets 255 too; its start 0.
+    final red = t.getRect(find.byType(ColorChannelSlider).first);
+    await t.tapAt(Offset(red.left + 1, red.center.dy));
+    await t.pumpAndSettle();
+    expect(picked.last, const Color(0xFF007AFF));
+  }, variant: ios);
+
+  testWidgets("the sheet is UIColorPickerViewController's height, no "
+      'grabber', (t) async {
+    shaderEnv();
+    _tall(t);
+    await t.pumpWidget(appHost(const _Harness()));
+    await _open(t);
+    final sheet = t.getRect(find.byType(GlassSheet));
+    final panel = t.getRect(find.byType(GlassColorPickerPanel));
+    // No grabber: the content starts at the sheet's top edge, and the
+    // sheet floats 8 pt above the screen's bottom.
+    expect(panel.top, moreOrLessEquals(sheet.top));
+    expect(panel.height, moreOrLessEquals(ColorPickerMetrics.sheetHeight));
+    expect(panel.bottom, moreOrLessEquals(1400 - 8));
   }, variant: ios);
 
   testWidgets('null onChanged disables the row', (t) async {

@@ -356,4 +356,23 @@ abstract final class GlassColors {
 
   /// The checkerboard's dark cell under a translucent swatch.
   static const Color colorPickerCheckerDark = Color(0xFFCCCCCC);
+
+  /// A value field's fill (measured light: white on UIKit's sheet; dark
+  /// estimated).
+  static const CupertinoDynamicColor colorPickerField =
+      CupertinoDynamicColor.withBrightness(
+        color: white,
+        darkColor: Color(0xFF2C2C2E),
+      );
+
+  /// The line above the current colour (measured light: #D7D7DA; dark
+  /// estimated).
+  static const CupertinoDynamicColor colorPickerSeparator =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFFD7D7DA),
+        darkColor: Color(0xFF38383A),
+      );
+
+  /// The hex row's label (measured: the system blue).
+  static const CupertinoDynamicColor colorPickerHexLabel = systemBlue;
 }

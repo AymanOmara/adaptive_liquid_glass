@@ -583,7 +583,8 @@ def last_components(d):
             "title_colour": hexc(a[:int(300 * S)][blue[:int(300 * S)]].min(axis=0)),
         }
     # Colour picker sheet (UIColorPickerViewController after a tap on the
-    # colorrow scene's swatch): the 12 x 10 grid.
+    # colorrow scene's swatch; colorsheet_spectrum / _sliders after a tap
+    # on those segments). Positions are pt from the sheet's top edge.
     if (d / "colorsheet_tap.png").exists():
         a = load(d, "colorsheet_tap.png")
         bg = a[2500, 600]  # the sheet's fill, under the saved swatches
@@ -593,11 +594,74 @@ def last_components(d):
         gx = [q for q in runs(nonbg) if q[1] - q[0] > 300][0]
         gy = runs(np.abs(a[:, int(200 * S)] - bg).max(axis=-1) > 6)
         gy = [q for q in gy if q[0] > 300 and q[1] - q[0] > 250][0]
+        # The sheet's top edge and bottom: where the dimmed page ends.
+        col = np.abs(a[:, int(201 * S)] - bg).max(axis=-1) <= 20
+        top = [q for q in runs(col) if q[0] > 100][0][0] - 1 / S  # rim
+        side = runs(np.abs(a[int(476 * S)] - bg).max(axis=-1) <= 20)
+        edge = side[0][0]
+        bot = runs(np.abs(a[:, int(60 * S)] - bg).max(axis=-1) <= 20)[-1][1]
+        ink = lambda c: c.max(axis=-1) < 120
+        title = ink_box(a, 120, top + 5, 290, top + 45, ink)
+        close = ink_box(a, 330, top + 5, 385, top + 45, ink)
+        drop = ink_box(a, 15, top + 5, 70, top + 45, ink)
+        segcol = np.abs(a[:, int(201 * S)] - bg).max(axis=-1) > 6
+        seg = [q for q in runs(segcol) if q[0] > top + 40][0]
+        segx = runs(np.abs(a[int((seg[0] + seg[1]) / 2 * S)] - bg).max(axis=-1) > 6)
+        segx = [q for q in segx if q[0] > edge + 2][0]
+        cap = ink_box(a, 20, gy[1] + 10, 120, gy[1] + 32,
+                      lambda c: c.max(axis=-1) < 160)
+        track = runs(np.abs(a[:, int(60 * S)] - bg).max(axis=-1) > 6)
+        track = [q for q in track if q[0] > cap[3]][0]
+        white = a.min(axis=-1) >= 252
+        fy = runs(np.abs(a[:, int(316 * S)] - bg).max(axis=-1) > 6)
+        fy = [q for q in fy if q[0] > cap[3]][0]
+        fx = runs(np.abs(a[int((fy[0] + 9) * S)] - bg).max(axis=-1) > 6)
+        fx = [q for q in fx if q[0] > 295][0]
+        # The track ends where the thumb (at 100%) does, left of the field.
+        trow = np.abs(a[int((track[0] + track[1]) / 2 * S)] - bg).max(axis=-1) > 6
+        track_end = [q for q in runs(trow) if q[1] < fx[0]][-1][1]
+        sep = runs(np.abs(a[:, int(201 * S)] - bg).max(axis=-1) > 6)
+        sep = [q for q in sep if q[0] > fy[1]][0]
+        sw = runs(np.abs(a[:, int(60 * S)] - bg).max(axis=-1) > 40)
+        sw = [q for q in sw if q[0] > sep[1]][0]
         out["color_sheet"] = {
             "sheet_inset": r(sx[0][0]), "grid_inset": r(gx[0] - sx[0][0]),
             "grid_width": r(gx[1] - gx[0]), "grid_top": r(gy[0]),
             "grid_height": r(gy[1] - gy[0]), "columns": 12, "rows": 10,
+            "sheet_edge": r(edge), "sheet_top": r(top),
+            "sheet_height": r(bot - top),
+            "content_inset": r(segx[0] - edge),
+            "title_centre": r((title[1] + title[3]) / 2 - top),
+            "title_cap": r(title[3] - title[1]),
+            "close_glyph": r(close[2] - close[0]),
+            "close_inset": r(W - edge - (close[0] + close[2]) / 2),
+            "close_centre": r((close[1] + close[3]) / 2 - top),
+            "eyedropper": [r(drop[0] - edge), r(drop[1] - top),
+                           r(drop[2] - edge), r(drop[3] - top)],
+            "segment_top": r(seg[0] - top), "segment_height": r(seg[1] - seg[0]),
+            "page_top": r(gy[0] - top),
+            "caption_cap_top": r(cap[1] - top), "caption_cap": r(cap[3] - cap[1]),
+            "track_top": r(track[0] - top), "track_height": r(track[1] - track[0]),
+            "field_top": r(fy[0] - top), "field_height": r(fy[1] - fy[0]),
+            "field_width": r(fx[1] - fx[0]),
+            "field_gap": r(fx[0] - track_end),
+            "separator_top": r(sep[0] - top),
+            "swatch_top": r(sw[0] - top), "swatch": r(sw[1] - sw[0]),
+            "bottom_padding": r(bot - sw[1]),
         }
+        if (d / "colorsheet_sliders.png").exists():
+            b = load(d, "colorsheet_sliders.png")
+            tr = runs(np.abs(b[:, int(60 * S)] - bg).max(axis=-1) > 6)
+            tr = [q for q in tr if gy[0] < q[0] < gy[1] and q[1] - q[0] > 25]
+            hy = runs(np.abs(b[:, int(342 * S)] - bg).max(axis=-1) > 6)
+            hy = [q for q in hy if q[0] > tr[-1][1] and q[0] < gy[1]][0]
+            hx = runs(np.abs(b[int((hy[0] + hy[1]) / 2 * S)] - bg).max(axis=-1) > 6)
+            hx = [q for q in hx if q[0] > 270][0]
+            out["color_sheet"].update({
+                "channel_track_tops": [r(q[0] - gy[0]) for q in tr],
+                "channel_pitch": r((tr[-1][0] - tr[0][0]) / (len(tr) - 1)),
+                "hex_top": r(hy[0] - gy[0]), "hex_width": r(hx[1] - hx[0]),
+            })
     # Context menu (UIKit interaction opened programmatically).
     cm = {}
     for name, cx in (("contextmenuuikit", 201), ("contextmenuuikitleft", 110),
