@@ -68,6 +68,8 @@ enum ControlScenes {
     case "fullscreencover": root = AnyView(FullScreenCoverReference())
     case "gauge": root = AnyView(GaugeReference())
     case "refreshmotion": root = AnyView(RefreshMotionReference())
+    case "refreshmotiondark": root = AnyView(RefreshMotionReference(dark: true))
+    case "searchmotion": root = AnyView(SearchReference())
     case "colormotion": root = AnyView(ColorMotionReference())
     case "label": root = AnyView(LabelReference())
     case "link": root = AnyView(LinkReference())

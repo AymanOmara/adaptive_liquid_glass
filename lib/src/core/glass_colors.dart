@@ -340,12 +340,13 @@ abstract final class GlassColors {
 
   // Refresh
 
-  /// The pull-to-refresh spinner's spokes (measured light: #6E6E6E at
-  /// the head spoke on white; dark estimated).
+  /// The pull-to-refresh spinner's spokes (measured on iOS 26.4: #6E6E6E
+  /// at the head spoke on white; dark #888893, fitted so the twin's head
+  /// spoke on black matches UIKit's, 78, 78, 85 in the frame dumps).
   static const CupertinoDynamicColor refreshSpinner =
       CupertinoDynamicColor.withBrightness(
         color: Color(0xFF6E6E6E),
-        darkColor: Color(0xFFAEAEB2),
+        darkColor: Color(0xFF888893),
       );
 
   // Toast

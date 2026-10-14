@@ -10,6 +10,7 @@ import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/swiftui_spring.dart';
 import 'glass_refresh_indicator.dart';
+import 'glass_refresh_scroll_physics.dart';
 import 'refresh_metrics.dart';
 
 /// iOS 26's pull to refresh around any scrollable, like SwiftUI's
@@ -27,9 +28,13 @@ import 'refresh_metrics.dart';
 /// with a haptic as soon as the pull passes the threshold.
 /// While the refresh runs the content is held down by the spinner's room,
 /// as `UIRefreshControl` holds a list, and it snaps back on SwiftUI's
-/// spring once refresh completes; `BouncingScrollPhysics`
-/// is the natural fit, though clamping physics also work (the pull is then
-/// tracked from the overscroll). On the Material path this is Material's
+/// spring once refresh completes. A scrollable that inherits bouncing
+/// physics (iOS's default) gets UIScrollView's rubber band under the pull
+/// ([GlassRefreshScrollPhysics]), so the content travels as far as iOS's
+/// for the same finger travel; one that sets its own `BouncingScrollPhysics`
+/// keeps Flutter's friction unless it uses [GlassRefreshScrollPhysics]
+/// instead. Clamping physics also work (the pull is then tracked from the
+/// overscroll). On the Material path this is Material's
 /// own [RefreshIndicator].
 class GlassRefresh extends StatefulWidget {
   /// Creates the wrapper.
@@ -170,9 +175,9 @@ class _GlassRefreshState extends State<GlassRefresh>
   /// `UIRefreshControl`'s does (measured), with a haptic.
   void _updateProgress() {
     if (!_dragging || _holding) return;
-    // Flutter's bouncing friction holds the content back harder than
-    // UIScrollView's: the finger's travel past the top arms it too, at
-    // the travel UIKit needs for its 173 pt.
+    // The finger's travel past the top arms it too, at the travel UIKit
+    // needs for its 173 pt: a scrollable with its own bouncing physics
+    // keeps Flutter's friction, which holds the content back harder.
     final progress = math.max(
       _pull / RefreshMetrics.triggerDistance,
       _travel / RefreshMetrics.triggerTravel,
@@ -300,6 +305,27 @@ class _GlassRefreshState extends State<GlassRefresh>
         : _glass(),
   );
 
+  /// Gives a scrollable that inherits bouncing physics (iOS's default)
+  /// UIScrollView's rubber band under the pull, as
+  /// [GlassRefreshScrollPhysics]; clamping platforms keep theirs.
+  Widget _rubberBand(BuildContext context, Widget child) {
+    final behavior = ScrollConfiguration.of(context);
+    final inherited = behavior.getScrollPhysics(context);
+    if (inherited is! BouncingScrollPhysics ||
+        inherited is GlassRefreshScrollPhysics) {
+      return child;
+    }
+    return ScrollConfiguration(
+      behavior: behavior.copyWith(
+        physics: GlassRefreshScrollPhysics(
+          decelerationRate: inherited.decelerationRate,
+          parent: inherited.parent,
+        ),
+      ),
+      child: child,
+    );
+  }
+
   /// The child is shifted down by what the hold adds beyond the pull
   /// (the release's bounce returns into the hold, not past it), clipped
   /// to the wrapper; while held, the spinner rides up with content
@@ -317,7 +343,7 @@ class _GlassRefreshState extends State<GlassRefresh>
               clipBehavior: shift == 0 ? Clip.none : Clip.hardEdge,
               child: Transform.translate(
                 offset: Offset(0, shift),
-                child: widget.child,
+                child: _rubberBand(context, widget.child),
               ),
             ),
             PositionedDirectional(

@@ -13,6 +13,8 @@ Widget? newComponentTwin(String scene) => switch (scene) {
   'covertiming' => const _CoverTiming(),
   'gauge' => const _Gauge(),
   'refreshmotion' => const _RefreshMotion(),
+  'refreshmotiondark' => const _RefreshMotion(dark: true),
+  'searchmotion' => const _SearchMotion(),
   'colorrow' => const _ColorRow(),
   _ => null,
 };
@@ -253,23 +255,58 @@ class _Gauge extends StatelessWidget {
   );
 }
 
-/// A plain list of 30 rows under a [GlassRefresh] whose action takes 1 s,
-/// for recording the pull, hold and snap-back.
+/// A plain list of 30 rows under a [GlassRefresh] whose action takes 1 s
+/// (3 s in [dark] mode, so the spinner can be sampled), for recording the
+/// pull, hold and snap-back.
 class _RefreshMotion extends StatelessWidget {
-  const _RefreshMotion();
+  const _RefreshMotion({this.dark = false});
 
-  static Future<void> _refresh() =>
-      Future<void>.delayed(const Duration(seconds: 1));
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    final list = ColoredBox(
+      color: dark ? Colors.black : Colors.white,
+      child: GlassRefresh(
+        onRefresh: () => Future<void>.delayed(Duration(seconds: dark ? 3 : 1)),
+        child: ListView(
+          padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
+          children: [
+            for (var i = 0; i < 30; i++) GlassListTile(title: Text('Row $i')),
+          ],
+        ),
+      ),
+    );
+    if (!dark) return list;
+    return MediaQuery(
+      data: MediaQuery.of(
+        context,
+      ).copyWith(platformBrightness: Brightness.dark),
+      child: CupertinoTheme(
+        data: const CupertinoThemeData(brightness: Brightness.dark),
+        child: DefaultTextStyle.merge(
+          style: const TextStyle(color: Colors.white),
+          child: list,
+        ),
+      ),
+    );
+  }
+}
+
+/// `-controls searchmotion`'s twin: 20 rows under a bottom
+/// [GlassSearchable]; tap the field, then its close button, to record the
+/// close button's reveal and hide.
+class _SearchMotion extends StatelessWidget {
+  const _SearchMotion();
 
   @override
   Widget build(BuildContext context) => ColoredBox(
-    color: Colors.white,
-    child: GlassRefresh(
-      onRefresh: _refresh,
+    color: CupertinoColors.systemGroupedBackground.resolveFrom(context),
+    child: GlassSearchable(
       child: ListView(
-        padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
+        padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top + 96),
         children: [
-          for (var i = 0; i < 30; i++) GlassListTile(title: Text('Row $i')),
+          for (var i = 0; i < 20; i++) GlassListTile(title: Text('Row $i')),
         ],
       ),
     ),

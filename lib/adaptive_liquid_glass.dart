@@ -94,6 +94,7 @@ export 'src/progress/glass_progress_indicator.dart';
 export 'src/progress/glass_progress_style.dart';
 export 'src/refresh/glass_refresh.dart';
 export 'src/refresh/glass_refresh_indicator.dart';
+export 'src/refresh/glass_refresh_scroll_physics.dart';
 export 'src/refresh/sliver_glass_refresh.dart';
 export 'src/scaffold/glass_bottom_accessory.dart';
 export 'src/scaffold/glass_scaffold.dart';
