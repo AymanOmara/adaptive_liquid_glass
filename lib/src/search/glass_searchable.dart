@@ -281,7 +281,12 @@ class _GlassSearchableState extends State<GlassSearchable>
                   widget.child,
                   if (suggestions.isNotEmpty)
                     Positioned.fill(
-                      child: _suggestionList(context, suggestions),
+                      // Reads the padding with the top removed: the field
+                      // has already taken the top inset.
+                      child: Builder(
+                        builder: (context) =>
+                            _suggestionList(context, suggestions),
+                      ),
                     ),
                 ],
               ),
