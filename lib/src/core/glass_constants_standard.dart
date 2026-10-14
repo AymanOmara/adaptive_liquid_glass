@@ -1,0 +1,212 @@
+part of 'glass_constants.dart';
+
+/// The frozen fitted data behind [GlassConstants.standard]; its
+/// provenance and certification are documented there.
+const GlassConstants _standard = GlassConstants(
+  // Tinted uses tintStrength.
+  regular: GlassVariantConstants(
+    blurSigma: 5.9236,
+    blurSizeRef: 59.9762,
+    frostWideSigma: 7.0367,
+    frostWideMixEdge: 0.4052,
+    frostWideMixCentre: 0.9298,
+    frostWideSizeRef: 75.4199,
+    frostWideSizeDrop: 1.1423,
+    // Task g13: fitted tone LUT plus a small-shape tone curve (steeper
+    // SwiftUI response below 32 pt half shorter side). Item 8 rounds 2-3:
+    // ambient backdrop chroma (large shapes) and a luma-keyed tone LUT,
+    // with the tone knots and saturation refit.
+    toneKnots: [0, 0.113, 0.25, 0.363, 0.4973, 0.6263, 0.7534, 0.8839, 1],
+    toneLumaMix: 0.6,
+    ambientMix: 0.18,
+    ambientReach: 60,
+    smallToneKnots: [0, 0.1, 0.2, 0.3, 0.5, 0.611, 0.7142, 0.8538, 0.974],
+    smallSizeLo: 32,
+    smallSizeHi: 34,
+    lensBand: 18.2615,
+    lensStrength: -2.6351,
+    lensDecay: 6.1712,
+    lensSizeRef: 38.2208,
+    dispersion: 0.0003,
+    rimWidth: 1.2454,
+    rimIntensity: 0.2315,
+    fillColor: Color(0xFFFEFDFD),
+    fillOpacity: 0.6839,
+    fillSizeRef: 43.9952,
+    fillSizeDrop: 0,
+    saturation: 1.4901,
+    dim: 0.0046,
+    shadowRadius: 20.8906,
+    shadowOpacity: 0.0494,
+    tintStrength: 1.024,
+    // SwiftUI's touch glow lifts luma 0.019 (light) / 0.041 (dark) at
+    // the peak; 0.25 lifted 0.175 / 0.238. Scaled to match; clear
+    // takes the regular values (unmeasured).
+    glowStrength: 0.027,
+  ),
+  clear: GlassVariantConstants(
+    postJacobianMax: 1.15,
+    blurSigma: 1.28,
+    blurSizeRef: 0,
+    frostWideSigma: 1.7973,
+    frostWideMixEdge: -0.0117,
+    frostWideMixCentre: 0.6789,
+    frostWideSizeRef: 85.2463,
+    frostWideSizeDrop: 0.0002,
+    toneKnots: [0, 0.0289, 0.1865, 0.3476, 0.5063, 0.6651, 0.8265, 0.9772, 1],
+    postBlurShare: 0.31,
+    normalRadiusScale: 1.55,
+    lensEdge: 10,
+    rimMix: 0.48,
+    lensBand: 18.442,
+    lensStrength: -2.49,
+    lensDecay: 6.8073,
+    lensSizeRef: 28.8,
+    dispersion: 0,
+    rimWidth: 1.2475,
+    rimIntensity: 0.15,
+    fillColor: Color(0xFFFEFCFC),
+    fillOpacity: 0.1705,
+    fillSizeRef: 0,
+    fillSizeDrop: 0,
+    saturation: 0.9726,
+    dim: 0.0013,
+    shadowRadius: 29.31,
+    shadowOpacity: 0.0015,
+    tintStrength: 0.35,
+    glowStrength: 0.027,
+  ),
+  regularDark: GlassVariantConstants(
+    blurSigma: 8.2468,
+    blurSizeRef: 78.0334,
+    frostWideSigma: 7.556,
+    frostWideMixEdge: 1.0836,
+    frostWideMixCentre: 0.908,
+    frostWideSizeRef: 79.2109,
+    frostWideSizeDrop: 2.7378,
+    // Task g13: fitted tone LUT plus a small-shape tone curve (steeper
+    // SwiftUI response below 32 pt half shorter side).
+    toneKnots: [
+      0,
+      0.1917,
+      0.2754,
+      0.3813,
+      0.4936,
+      0.6408,
+      0.7513,
+      0.8537,
+      0.9861,
+    ],
+    smallToneKnots: [0, 0.0675, 0.3273, 0.4709, 0.8295, 0.92, 0.96, 0.985, 1],
+    smallSizeLo: 32,
+    smallSizeHi: 34,
+    toneLift: 0.7708,
+    toneLiftKnee: 0.9995,
+    toneLiftSizeRef: 48.0387,
+    blurAspectPower: 0.28,
+    lensBand: 18.8261,
+    lensStrength: -2.6267,
+    lensDecay: 5.9001,
+    lensSizeRef: 38.791,
+    dispersion: 0,
+    rimWidth: 1.3623,
+    rimIntensity: 0.3293,
+    fillColor: Color(0xFF191818),
+    fillOpacity: 0.6672,
+    fillSizeRef: 36.0728,
+    fillSizeDrop: 0,
+    saturation: 1.967,
+    dim: 0.001,
+    shadowRadius: 20.3036,
+    shadowOpacity: 0.0264,
+    tintStrength: 1.0054,
+    glowStrength: 0.043,
+  ),
+  clearDark: GlassVariantConstants(
+    postJacobianMax: 1.15,
+    blurSigma: 1.2334,
+    blurSizeRef: 0,
+    frostWideSigma: 1.9152,
+    frostWideMixEdge: 0.0296,
+    frostWideMixCentre: 0.7009,
+    frostWideSizeRef: 84.2326,
+    frostWideSizeDrop: 0.0038,
+    toneKnots: [
+      0,
+      0.0519091586529797,
+      0.213090511337508,
+      0.3630962727280779,
+      0.5198145752907551,
+      0.679180921179765,
+      0.8347696966236444,
+      0.9910065350260904,
+      1,
+    ],
+    postBlurShare: 0.1482,
+    normalRadiusScale: 1.5358,
+    lensEdge: 11.5854,
+    lensEdgeDecay: 0.4954,
+    rimMix: 0.3747,
+    rimMixWidth: 1.1782,
+    rimMixCut: 3.9722,
+    rimMixLumaFloor: 0.05,
+    lensBand: 18.3411,
+    lensStrength: -2.49,
+    lensDecay: 6.8762,
+    lensSizeRef: 28.7,
+    dispersion: 0,
+    rimWidth: 1.2475,
+    rimIntensity: 0.15,
+    fillColor: Color(0xFFFDFAFB),
+    fillOpacity: 0.1581,
+    fillSizeRef: 0,
+    fillSizeDrop: 0,
+    saturation: 0.9633,
+    dim: 0.0006,
+    shadowRadius: 13.0732,
+    shadowOpacity: 0.0017,
+    tintStrength: 0.35,
+    glowStrength: 0.043,
+  ),
+  cornerExponent: 2,
+  // Task A1 (model sweep 1.0-1.6 against SwiftUI's `.continuous` rects,
+  // then device): outline only; the lens normals keep circular corners.
+  cornerZone: 1.2,
+  // Merge scenes (device): median SSIM 0.979, ΔE 2.01.
+  mergeFactor: 0.8,
+  // Fitted to SwiftUI recordings (Task 16, iOS 26.4 simulator; bounding
+  // box over time of press/morph clips, tool/fidelity/compare_motion.py).
+  motion: GlassMotionConstants(
+    // Task 16b: lossless captures (in-app render-server crop, identical
+    // to screenshots), iOS 26.4 simulator, compare_motion.py bboxes.
+    // SwiftUI adds about the same area to every pressed shape: centre
+    // presses of circles 44/72/120 pt and capsules 120×44/200×56/300×72
+    // grow by scale 1.356/1.229/1.069 and 1.136/1.072/1.041. Least
+    // squares on the long-side growth (pt) of sqrt(1 + G/(w·h)), capped:
+    // G 1796, cap 1.356, RMS 2.4 pt (worst: 72 pt circle, 11.5 vs
+    // 16.5 pt). Below 44 pt the cap is unmeasured.
+    pressGrowthArea: 1800,
+    pressScaleMax: 1.36,
+    // SwiftUI (sx − sy)/0.79 = 0.0055 on the 200×56 capsule; Flutter
+    // measured 0.0103 at 0.011.
+    pressStretch: 0.006,
+    // Gaussian σ of the touch glow: SwiftUI 42.3 (light) / 42.5 (dark) pt,
+    // Flutter at 41 measured 46.0 / 40.9. SwiftUI's glow is 6–9× fainter
+    // (lift 0.019 vs 0.175 light, 0.041 vs 0.238 dark at glowStrength
+    // 0.25); each variant's glowStrength fits the amplitude.
+    glowRadius: 40,
+    // Press-in and release differ: SwiftUI (0.280, 0.633) in and
+    // (0.383, 0.545) out (median over 7 clips, bbox height). Circles
+    // release under-damped (ζ ≈ 0.37), capsules at 0.51–0.76. Flutter
+    // at these values measures (0.274, 0.625) and (0.375, 0.554).
+    pressResponse: 0.28,
+    pressDamping: 0.63,
+    releaseResponse: 0.38,
+    releaseDamping: 0.55,
+    // `withAnimation(.bouncy)` morphs measure (0.50, 0.72): `.bouncy`
+    // (response 0.5, bounce 0.3); Flutter at these values measures
+    // (0.50, 0.69).
+    morphResponse: 0.5,
+    morphDamping: 0.7,
+  ),
+);
