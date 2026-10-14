@@ -1370,11 +1370,9 @@ testWidgets('pays', (tester) async {
   back to a frosted blur with no lens, rim or merging. Speed on mid-range
   phones is not measured: each glass group runs a blur and a fragment
   shader over its bounds every frame, so profile on target devices and
-  keep groups few. Shader-drawn tab labels over glass (vibrancy) still
-  sample the backdrop upside down on Android's OpenGL ES backend. Fonts
-  stay Roboto (not SF Pro), and scroll physics, the back gesture and
-  haptics stay Android's; making those iOS-like is not part of the
-  package.
+  keep groups few. Fonts stay Roboto (not SF Pro), and scroll physics,
+  the back gesture and haptics stay Android's; making those iOS-like is
+  not part of the package.
 - **Unmeasured geometry:** the `GlassColorPicker` sheet, `GlassRefresh`,
   `GlassSearchable`'s scope bar and suggestions, the date wheel's time
   columns and the full-screen cover's drag thresholds follow iOS by eye,
