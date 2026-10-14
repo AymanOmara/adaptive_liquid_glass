@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show TargetPlatform;
+import 'package:flutter/widgets.dart' show WidgetsFlutterBinding;
 
 import 'core/glass_render_mode.dart';
 import 'navigation/progressive_blur_program.dart';
@@ -10,11 +11,10 @@ import 'tab_bar/tab_lens_program.dart';
 ///
 /// Not required: without it each shader loads on first use. To have every
 /// shader ready before the first frame instead, await [initialize] in
-/// `main()`:
+/// `main()` (it initialises the Flutter binding itself):
 ///
 /// ```dart
 /// Future<void> main() async {
-///   WidgetsFlutterBinding.ensureInitialized();
 ///   await AdaptiveLiquidGlass.initialize();
 ///   runApp(const MyApp());
 /// }
@@ -55,8 +55,11 @@ abstract final class AdaptiveLiquidGlass {
   ///
   /// The loads never throw (a failure is reported to `FlutterError` and
   /// the widgets use their fallbacks) and are idempotent, so this is safe
-  /// to call more than once.
+  /// to call more than once. It calls
+  /// `WidgetsFlutterBinding.ensureInitialized()` first, so `main()` needs
+  /// no call of its own.
   static Future<void> initialize({GlassRenderMode? mode}) {
+    WidgetsFlutterBinding.ensureInitialized();
     GlassPlatform.instance.ensureStarted();
     final environment = GlassPlatform.instance.environment.value;
     if (!environment.shaderSupported) {
