@@ -17,6 +17,7 @@ class GlassPickedPhoto {
     this.width,
     this.height,
     this.duration,
+    this.conversionFailed = false,
   });
 
   /// Reads the map the platform side sends.
@@ -31,6 +32,7 @@ class GlassPickedPhoto {
           final num ms => Duration(microseconds: (ms * 1000).round()),
           _ => null,
         },
+        conversionFailed: map['conversionFailed'] as bool? ?? false,
       );
 
   /// The absolute path of the local copy.
@@ -53,6 +55,14 @@ class GlassPickedPhoto {
   /// How long a video plays, when known; null for images.
   final Duration? duration;
 
+  /// Whether `compatibleFormat` asked for this item to be converted (an
+  /// HEVC video to H.264) and the conversion failed, so the item arrives
+  /// in its original format.
+  ///
+  /// False when no conversion was needed or it succeeded. Only videos set
+  /// it: a photo that cannot be re-encoded is not reported.
+  final bool conversionFailed;
+
   @override
   bool operator ==(Object other) =>
       other is GlassPickedPhoto &&
@@ -61,15 +71,24 @@ class GlassPickedPhoto {
       other.mimeType == mimeType &&
       other.width == width &&
       other.height == height &&
-      other.duration == duration;
+      other.duration == duration &&
+      other.conversionFailed == conversionFailed;
 
   @override
-  int get hashCode =>
-      Object.hash(path, isVideo, mimeType, width, height, duration);
+  int get hashCode => Object.hash(
+    path,
+    isVideo,
+    mimeType,
+    width,
+    height,
+    duration,
+    conversionFailed,
+  );
 
   @override
   String toString() =>
       'GlassPickedPhoto($path, ${isVideo ? 'video' : 'image'}, $mimeType'
       '${width == null ? '' : ', ${width}x$height'}'
-      '${duration == null ? '' : ', $duration'})';
+      '${duration == null ? '' : ', $duration'}'
+      '${conversionFailed ? ', conversion failed' : ''})';
 }

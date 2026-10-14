@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'glass_photos_picker_filter.dart';
 import 'glass_picked_photo.dart';
+import 'glass_picked_photos.dart';
 
 const MethodChannel _channel = MethodChannel('adaptive_liquid_glass');
 
@@ -24,12 +25,17 @@ const MethodChannel _channel = MethodChannel('adaptive_liquid_glass');
 ///   keeping its aspect ratio; smaller photos are not enlarged.
 /// - [imageQuality] (0-100) re-encodes JPEG and HEIC photos at that
 ///   quality.
-/// - [compatibleFormat] turns HEIC/HEIF photos into JPEG and, on iOS, HEVC
-///   videos into H.264 (`.mp4`).
+/// - [compatibleFormat] turns HEIC/HEIF photos into JPEG and HEVC videos
+///   into H.264 (`.mp4`). A video that fails to convert arrives as it is,
+///   with [GlassPickedPhoto.conversionFailed] set.
 ///
 /// A re-encoded photo keeps its format where the platform can write it
 /// (iOS: HEIC, JPEG, PNG; Android: JPEG, PNG), else becomes JPEG. GIFs are
-/// left as they are, and Android does not transcode videos.
+/// left as they are.
+///
+/// The result is a [GlassPickedPhotos], a list that also reports
+/// [GlassPickedPhotos.droppedCount]: items chosen beyond [maxSelection]
+/// in the Android document-picker fallback, which cannot enforce it.
 ///
 /// iOS presents `PHPickerViewController`, which needs no photo library
 /// permission. Android presents the system Photo Picker
@@ -39,7 +45,7 @@ const MethodChannel _channel = MethodChannel('adaptive_liquid_glass');
 /// [clearGlassPickedPhotos]. Throws an [UnsupportedError] on other
 /// platforms and a [PlatformException] when the platform fails (another
 /// picker already open, no window to present from).
-Future<List<GlassPickedPhoto>> pickGlassPhotos({
+Future<GlassPickedPhotos> pickGlassPhotos({
   int maxSelection = 1,
   GlassPhotosPickerFilter filter = GlassPhotosPickerFilter.images,
   int? maxWidth,
@@ -57,7 +63,8 @@ Future<List<GlassPickedPhoto>> pickGlassPhotos({
   if (!_supported) {
     throw UnsupportedError('pickGlassPhotos supports iOS and Android only');
   }
-  final items = await _channel.invokeListMethod<Object?>('pickPhotos', {
+  // A list of items, or {items, dropped}.
+  final reply = await _channel.invokeMethod<Object?>('pickPhotos', {
     'maxSelection': maxSelection,
     'filter': filter.name,
     'maxWidth': ?maxWidth,
@@ -65,10 +72,18 @@ Future<List<GlassPickedPhoto>> pickGlassPhotos({
     'imageQuality': ?imageQuality,
     if (compatibleFormat) 'compatibleFormat': true,
   });
-  return [
+  final (items, dropped) = switch (reply) {
+    final Map<Object?, Object?> map => (
+      map['items'] as List<Object?>?,
+      (map['dropped'] as num?)?.toInt() ?? 0,
+    ),
+    final List<Object?> list => (list, 0),
+    _ => (null, 0),
+  };
+  return GlassPickedPhotos([
     for (final item in items ?? const <Object?>[])
       GlassPickedPhoto.fromMap(item! as Map<Object?, Object?>),
-  ];
+  ], droppedCount: dropped);
 }
 
 /// Deletes every copy [pickGlassPhotos] has made: the

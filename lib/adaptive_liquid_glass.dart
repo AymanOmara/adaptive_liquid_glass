@@ -83,6 +83,7 @@ export 'src/page_control/glass_page_control.dart';
 export 'src/photos_picker/glass_photos_picker.dart';
 export 'src/photos_picker/glass_photos_picker_filter.dart';
 export 'src/photos_picker/glass_picked_photo.dart';
+export 'src/photos_picker/glass_picked_photos.dart';
 export 'src/photos_picker/pick_glass_photos.dart';
 export 'src/picker/glass_picker.dart';
 export 'src/picker/glass_picker_item.dart';

@@ -1201,6 +1201,10 @@ photo library or storage permission, and the package adds no
 dependencies. Cancelling returns an empty list (`onPicked` is not
 called).
 
+The result is a `GlassPickedPhotos`: an ordinary `List<GlassPickedPhoto>`
+that also has `droppedCount`, the items chosen beyond `maxSelection` and
+left out (only the Android document-picker fallback lets that happen).
+
 Each `GlassPickedPhoto` is a copy in the `adaptive_liquid_glass_picker`
 folder of the app's temporary (iOS) or cache (Android) directory, with
 `path`, `isVideo`, `mimeType`, the upright `width` and `height` (photos
@@ -1210,13 +1214,16 @@ format unless asked otherwise (both on `GlassPhotosPicker` and
 - `maxWidth` / `maxHeight` (pixels) scale larger photos down to fit,
   keeping the aspect ratio.
 - `imageQuality` (0-100) re-encodes JPEG and HEIC photos at that quality.
-- `compatibleFormat: true` turns HEIC/HEIF photos into JPEG and, on iOS,
-  HEVC videos into H.264 `.mp4`.
+- `compatibleFormat: true` turns HEIC/HEIF photos into JPEG and HEVC
+  videos into H.264 `.mp4` (iOS: `AVAssetExportSession`; Android:
+  `MediaCodec`, audio copied as is, rotation kept). A video that fails to
+  convert (no H.264 encoder for its size, an unsupported audio track)
+  arrives as HEVC with `conversionFailed: true`.
 
 A re-encoded photo is upright and keeps its format where the platform can
 write it (iOS: HEIC, JPEG, PNG; Android: JPEG, PNG), else becomes JPEG;
-its metadata (EXIF, location) is dropped. GIFs are left as they are, and
-Android does not transcode videos. The app owns the copies: move what it
+its metadata (EXIF, location) is dropped. GIFs are left as they are. The
+app owns the copies: move what it
 keeps, and call `clearGlassPickedPhotos()` to delete the folder.
 
 ### Swipe actions
@@ -1392,10 +1399,11 @@ testWidgets('pays', (tester) async {
 - **Photos picker:** items are copied into a temporary or cache directory
   before `onPicked` runs, so very large videos (and H.264 conversions) take
   time to arrive, and the copies stay until `clearGlassPickedPhotos()` or
-  the OS deletes them. Android does not transcode videos. The Android
+  the OS deletes them. Android re-encodes videos on the device's codecs,
+  slower than real time on low-end phones and emulators. The Android
   document-picker fallback (before Android 11, or without the SDK
   extension) cannot enforce `maxSelection` in its UI; extra items are
-  dropped.
+  dropped from the end and counted in `GlassPickedPhotos.droppedCount`.
 - **iOS look on Android (`GlassRenderMode.shader`):** needs Impeller.
   Where `ImageFilter.isShaderFilterSupported` is false (Skia, or
   `--no-enable-impeller`, an opt-out Flutter is removing), glass falls
