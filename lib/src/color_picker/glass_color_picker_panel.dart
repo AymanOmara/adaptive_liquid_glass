@@ -13,10 +13,9 @@ import 'color_hex.dart';
 import 'color_picker_metrics.dart';
 import 'color_swatch_grid.dart';
 import 'color_value_field.dart';
-import 'hsv_spectrum.dart';
-import 'hue_bar.dart';
 import 'saved_colors.dart';
 import 'saved_colors_row.dart';
+import 'spectrum_map.dart';
 
 /// The pages of [GlassColorPickerPanel], as UIColorPickerViewController's
 /// segmented control.
@@ -97,7 +96,7 @@ class GlassColorPickerPanel extends StatefulWidget {
   /// The sliders' segment.
   final String slidersLabel;
 
-  /// The hue bar's screen-reader label.
+  /// The word for hue in the spectrum's screen-reader value.
   final String hueLabel;
 
   /// The red slider's caption (shown upper case).
@@ -460,22 +459,11 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
     ),
   );
 
-  Widget _spectrum() => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      HsvSpectrum(
-        color: _hsv,
-        height: ColorPickerMetrics.spectrumHeight,
-        onChanged: (c) => _set(hsv: c),
-        semanticLabel: widget.spectrumLabel,
-      ),
-      const SizedBox(height: ColorPickerMetrics.hueBarGap),
-      HueBar(
-        color: _hsv,
-        onChanged: (c) => _set(hsv: c),
-        semanticLabel: widget.hueLabel,
-      ),
-    ],
+  Widget _spectrum() => SpectrumMap(
+    color: _hsv,
+    onChanged: (c) => _set(hsv: c),
+    semanticLabel: widget.spectrumLabel,
+    hueLabel: widget.hueLabel,
   );
 
   Widget _channel(

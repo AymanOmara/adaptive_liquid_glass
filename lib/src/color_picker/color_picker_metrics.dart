@@ -157,22 +157,11 @@ abstract final class ColorPickerMetrics {
   /// The selected grid swatch's ring thickness (estimated).
   static const double gridSelectionRing = 2;
 
-  /// The spectrum and hue bar's corner radius (estimated, as the grid's).
+  /// The spectrum map's corner radius (measured, about 8, as the grid's).
   static const double spectrumRadius = 8;
 
-  /// The hue bar's height (estimated: UIKit's spectrum is one hue by
-  /// brightness map without a bar; this one keeps a saturation-value
-  /// square and a hue bar within the measured page).
-  static const double hueBarHeight = 24;
-
-  /// The gap between the spectrum square and the hue bar (estimated).
-  static const double hueBarGap = 12;
-
-  /// The spectrum square's height: the page less the hue bar.
-  static const double spectrumHeight = pageHeight - hueBarGap - hueBarHeight;
-
-  /// The spectrum and hue bar thumb's diameter (estimated).
-  static const double thumb = 24;
+  /// The spectrum thumb's diameter (measured: 28, its ring included).
+  static const double thumb = 28;
 
   /// The thumb's ring thickness (measured: 2.67, as the sliders').
   static const double thumbRing = trackThumbRing;

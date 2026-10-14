@@ -2,6 +2,8 @@ import 'package:adaptive_liquid_glass/src/color_picker/color_hex.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/color_picker_metrics.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/glass_color_picker_panel.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/saved_colors.dart';
+import 'package:adaptive_liquid_glass/src/color_picker/spectrum_map.dart';
+import 'package:adaptive_liquid_glass/src/color_picker/spectrum_thumb.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/material.dart';
@@ -134,6 +136,26 @@ void main() {
     await t.pump();
     expect(_saved(SavedColors.defaults.first), findsNothing);
     expect(SavedColors.shared.value, SavedColors.defaults.sublist(1));
+  }, variant: ios);
+
+  testWidgets('Spectrum: one map the height of the page; a tap picks the '
+      'colour under it', (t) async {
+    shaderEnv();
+    _screen(t);
+    await t.pumpWidget(appHost(const _Panel()));
+    await t.tap(find.text('Spectrum'));
+    await t.pumpAndSettle();
+    final map = t.getRect(find.byType(SpectrumMap));
+    expect(map.height, moreOrLessEquals(ColorPickerMetrics.pageHeight));
+    // The pure green at the centre, a third of the way down.
+    await t.tapAt(Offset(map.center.dx, map.top + map.height / 3));
+    await t.pump();
+    final state = t.state<_PanelState>(find.byType(_Panel));
+    expect(state.picks.last, const Color(0xFF00FF00));
+    // The thumb follows it.
+    final thumb = t.getCenter(find.byType(SpectrumThumb));
+    expect(thumb.dx, moreOrLessEquals(map.center.dx, epsilon: 0.5));
+    expect(thumb.dy, moreOrLessEquals(map.top + map.height / 3, epsilon: 0.5));
   }, variant: ios);
 
   testWidgets('savedColors and onSavedColorsChanged replace the shared list', (

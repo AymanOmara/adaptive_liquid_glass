@@ -87,7 +87,7 @@ class GlassColorPicker extends StatefulWidget {
   /// The sheet's close button screen-reader label.
   final String closeLabel;
 
-  /// The hue bar's screen-reader label.
+  /// The word for hue in the spectrum's screen-reader value.
   final String hueLabel;
 
   /// The sheet's opacity caption.
