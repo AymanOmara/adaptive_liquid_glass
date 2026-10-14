@@ -4,6 +4,8 @@ import '../core/glass_colors.dart';
 import 'color_picker_metrics.dart';
 import 'spectrum_thumb.dart';
 
+part 'spectrum_painter.dart';
+
 /// The saturation-value square of a colour picker: the hue fades to white
 /// toward the left and to black toward the bottom, with a round thumb at
 /// the colour. Like the spectrum, it is not mirrored in RTL.
@@ -78,37 +80,4 @@ class HsvSpectrum extends StatelessWidget {
       ),
     ),
   );
-}
-
-class _SpectrumPainter extends CustomPainter {
-  const _SpectrumPainter(this.hue);
-
-  final double hue;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..shader = LinearGradient(
-          colors: [
-            GlassColors.white,
-            HSVColor.fromAHSV(1, hue, 1, 1).toColor(),
-          ],
-        ).createShader(rect),
-    );
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [GlassColors.transparent, GlassColors.black],
-        ).createShader(rect),
-    );
-  }
-
-  @override
-  bool shouldRepaint(_SpectrumPainter oldDelegate) => oldDelegate.hue != hue;
 }

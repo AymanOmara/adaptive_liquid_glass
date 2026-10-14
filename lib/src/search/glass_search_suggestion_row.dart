@@ -40,7 +40,7 @@ class GlassSearchSuggestionRow extends StatelessWidget {
       context,
     );
     final secondary = CupertinoDynamicColor.resolve(
-      CupertinoColors.secondaryLabel,
+      GlassColors.secondaryLabel,
       context,
     );
     return Semantics(

@@ -3,8 +3,8 @@ import 'package:flutter/rendering.dart';
 
 import '../core/glass.dart';
 import '../core/glass_shape.dart';
-import 'glass_content_fill.dart';
 import 'glass_press_geometry.dart';
+import 'render_glass_content_fill.dart';
 
 /// One `LiquidGlass` registered with a group.
 class GlassEntry {

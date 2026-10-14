@@ -12,6 +12,8 @@ import 'glass_swipe_action.dart';
 import 'swipe_action_button.dart';
 import 'swipe_metrics.dart';
 
+part 'swipe_approach.dart';
+
 /// iOS 26's list swipe actions: swipe a row aside to reveal tinted
 /// capsules at its [leading] or [trailing] edge, laid out as SwiftUI's
 /// `.swipeActions` (`SwipeMetrics`): icon and label inside the capsule in
@@ -789,27 +791,4 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
     }
     return buttons;
   }
-}
-
-/// [from] approaching [to] exponentially, with SwiftUI's platter time
-/// constant ([SwipeMetrics.platterTau]).
-class _Approach extends Simulation {
-  _Approach(this.from, this.to);
-
-  final double from;
-  final double to;
-
-  @override
-  double x(double time) =>
-      to + (from - to) * math.exp(-time / SwipeMetrics.platterTau);
-
-  @override
-  double dx(double time) =>
-      -(from - to) /
-      SwipeMetrics.platterTau *
-      math.exp(-time / SwipeMetrics.platterTau);
-
-  @override
-  bool isDone(double time) =>
-      time * 1000 >= SwipeMetrics.platterFade.inMilliseconds;
 }

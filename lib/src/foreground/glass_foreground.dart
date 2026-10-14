@@ -3,6 +3,11 @@ import '../core/glass_brightness.dart';
 import '../core/glass_colors.dart';
 
 /// Brightness of the content behind the nearest glass group.
+///
+/// Exported as helper API: apps read [labelColorOf] and
+/// [backgroundBrightnessOf] (the README documents them). `GlassGroup`
+/// inserts the scope itself; constructing one directly is supported but
+/// rarely needed.
 class GlassForeground extends InheritedWidget {
   /// Creates the scope.
   const GlassForeground({

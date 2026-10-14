@@ -17,6 +17,7 @@ import '../tab_bar/glass_tab_sidebar.dart';
 import '../tab_bar/tab_bar_edge_to_edge.dart';
 import '../tab_bar/tab_bar_fill_scope.dart';
 import '../tab_bar/tab_bar_metrics.dart';
+import '../tab_bar/tab_bar_minimize_controller.dart';
 import '../tab_bar/tab_bar_minimize_scope.dart';
 import '../tab_bar/tab_lens.dart';
 import '../tab_bar/tab_sidebar_metrics.dart';

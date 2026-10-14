@@ -29,6 +29,11 @@
   keeps every backdrop shader on that guard.
 - `example/lib/vibrancy_flip_probe.dart`: the tab bar over a red page
   with a blue band behind the labels, to check the orientation by eye.
+- Internal: one class per file across `lib/` (private helpers as `part`
+  files), colour literals and stray `CupertinoColors` uses routed through
+  `GlassColors` (convention documented there), and the frozen
+  `GlassConstants.standard` data in its own file. No behaviour or public
+  API change.
 
 ## 0.2.1 (2026-10-14)
 

@@ -5,6 +5,8 @@ import '../core/glass_shape.dart';
 import '../core/shape_border.dart';
 import 'focus_ring_metrics.dart';
 
+part 'focus_ring_painter.dart';
+
 /// Draws a focus ring around [child] in [shape] while the nearest
 /// enclosing `Focus` has primary focus and focus is being driven by a
 /// keyboard ([FocusHighlightMode.traditional]). Touch focus draws nothing.
@@ -81,26 +83,3 @@ OutlinedBorder _ringBorder(GlassShape shape) => switch (shape) {
   ),
   _ => sizeIndependentBorder(shape),
 };
-
-class _FocusRingPainter extends CustomPainter {
-  _FocusRingPainter({required this.border, required this.color});
-
-  final OutlinedBorder border;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = (Offset.zero & size).inflate(_outset);
-    canvas.drawPath(
-      border.getOuterPath(rect),
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = FocusRingMetrics.width
-        ..color = color,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_FocusRingPainter old) =>
-      old.border != border || old.color != color;
-}

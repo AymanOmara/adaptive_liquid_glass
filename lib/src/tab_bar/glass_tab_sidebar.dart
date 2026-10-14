@@ -66,7 +66,7 @@ class _GlassTabSidebarState extends State<GlassTabSidebar>
   );
 
   Color _ink(BuildContext context) =>
-      CupertinoDynamicColor.resolve(CupertinoColors.label, context);
+      CupertinoDynamicColor.resolve(GlassColors.label, context);
 
   Widget _toggleButton(BuildContext context, String label) => Semantics(
     button: true,
@@ -153,9 +153,9 @@ class _GlassTabSidebarState extends State<GlassTabSidebar>
           decoration: selected
               ? ShapeDecoration(
                   shape: const StadiumBorder(),
-                  color: const Color(
-                    0xFF000000,
-                  ).withValues(alpha: TabSidebarMetrics.pillFill),
+                  color: GlassColors.black.withValues(
+                    alpha: TabSidebarMetrics.pillFill,
+                  ),
                 )
               : null,
           child: Text(
@@ -236,9 +236,9 @@ class _GlassTabSidebarState extends State<GlassTabSidebar>
           decoration: selected
               ? ShapeDecoration(
                   shape: const StadiumBorder(),
-                  color: const Color(
-                    0xFF000000,
-                  ).withValues(alpha: TabSidebarMetrics.rowFill),
+                  color: GlassColors.black.withValues(
+                    alpha: TabSidebarMetrics.rowFill,
+                  ),
                 )
               : const BoxDecoration(),
           child: Stack(
@@ -323,9 +323,9 @@ class _GlassTabSidebarState extends State<GlassTabSidebar>
                     child: GestureDetector(
                       onTap: _open.reverse,
                       child: ColoredBox(
-                        color: const Color(
-                          0xFF000000,
-                        ).withValues(alpha: TabSidebarMetrics.dim * t),
+                        color: GlassColors.black.withValues(
+                          alpha: TabSidebarMetrics.dim * t,
+                        ),
                       ),
                     ),
                   ),

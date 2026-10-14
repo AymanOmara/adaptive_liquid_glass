@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/group/glass_content_fill.dart';
+import 'package:adaptive_liquid_glass/src/group/glass_fill_style.dart';
 import 'package:adaptive_liquid_glass/src/native/native_glass_layer.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_backdrop.dart';

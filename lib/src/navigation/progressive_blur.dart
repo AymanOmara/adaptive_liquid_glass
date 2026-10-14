@@ -5,6 +5,8 @@ import 'package:flutter/widgets.dart';
 import 'progressive_blur_program.dart';
 import 'render_progressive_blur.dart';
 
+part 'progressive_blur_layer.dart';
+
 /// A backdrop blur strongest at its top edge and sharp at its bottom.
 ///
 /// Draws [fallback] instead while `progressive_blur.frag` is not loaded
@@ -45,37 +47,4 @@ class ProgressiveBlur extends StatelessWidget {
             ),
     );
   }
-}
-
-class _ProgressiveBlurLayer extends SingleChildRenderObjectWidget {
-  const _ProgressiveBlurLayer({
-    required this.program,
-    required this.maxSigma,
-    required this.falloff,
-    required this.devicePixelRatio,
-  }) : super(child: const SizedBox.expand());
-
-  final ui.FragmentProgram program;
-  final double maxSigma;
-  final double falloff;
-  final double devicePixelRatio;
-
-  @override
-  RenderProgressiveBlur createRenderObject(BuildContext context) =>
-      RenderProgressiveBlur(
-        program: program,
-        maxSigma: maxSigma,
-        falloff: falloff,
-        devicePixelRatio: devicePixelRatio,
-      );
-
-  @override
-  void updateRenderObject(
-    BuildContext context,
-    RenderProgressiveBlur renderObject,
-  ) => renderObject
-    ..program = program
-    ..maxSigma = maxSigma
-    ..falloff = falloff
-    ..devicePixelRatio = devicePixelRatio;
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 
 import '../core/swiftui_spring.dart';
-import '../group/glass_content_fill.dart';
+import '../group/glass_fill_style.dart';
 
 /// Measured from iOS 26.4's tab bar (Kept, iPhone 17 Pro) by frame-by-frame
 /// tracking of press, hold, drag and release (`example/lib/tab_bar_probe.dart`

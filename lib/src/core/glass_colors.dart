@@ -1,9 +1,15 @@
 import 'package:flutter/cupertino.dart'
     show Color, CupertinoColors, CupertinoDynamicColor;
 
-/// The package's fixed colours. Fitted glass colours live in
-/// `GlassConstants`; system colours that adapt to the theme come from
-/// `CupertinoColors`.
+/// The package's fixed colours.
+///
+/// Convention: every colour a component draws with is a named constant
+/// here, grouped by component under a `// Section` comment, never a
+/// `Color(0x…)` / `Colors.x` literal at the call site. iOS's semantic
+/// colours are aliased from `CupertinoColors` (they adapt to the theme);
+/// measured or fitted values keep their source in the doc comment. The
+/// one exception is the fitted glass fill (`GlassVariantConstants.fillColor`),
+/// which stays with the rest of the fitted data in `GlassConstants.standard`.
 abstract final class GlassColors {
   /// Opaque white: highlights, prominent labels, the lens fill.
   static const Color white = Color(0xFFFFFFFF);
@@ -206,6 +212,11 @@ abstract final class GlassColors {
   /// secondarySystemGroupedBackground).
   static const CupertinoDynamicColor listSectionBackground =
       CupertinoColors.secondarySystemGroupedBackground;
+
+  /// A picker's navigation-link page behind its list (iOS's
+  /// systemGroupedBackground).
+  static const CupertinoDynamicColor pickerPageBackground =
+      CupertinoColors.systemGroupedBackground;
 
   /// CupertinoTheme's default primary colour. A list row's icon uses
   /// [listIcon] while the theme keeps this default.
