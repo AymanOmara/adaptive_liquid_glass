@@ -1558,7 +1558,7 @@ class _GlassTabBarState extends State<GlassTabBar>
               child: DecoratedBox(
                 decoration: ShapeDecoration(
                   shape: const StadiumBorder(),
-                  color: const Color(0xFF000000).withValues(alpha: opacity),
+                  color: GlassColors.black.withValues(alpha: opacity),
                 ),
               ),
             ),

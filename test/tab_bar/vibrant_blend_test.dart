@@ -2,6 +2,7 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
+import 'package:adaptive_liquid_glass/src/tab_bar/render_vibrant_blend.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/vibrancy_kind.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/vibrant_blend.dart';
 import 'package:flutter/cupertino.dart';
