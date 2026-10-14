@@ -4,6 +4,8 @@ import '../core/glass_colors.dart';
 import 'color_hex.dart';
 import 'color_picker_metrics.dart';
 
+part 'color_swatch.dart';
+
 /// The preset grid of iOS's colour picker: a row of greys from white to
 /// black, then rows of hues from light to dark (estimated against iOS
 /// 26's 12 × 10 grid; see [ColorPickerMetrics.gridRows]).
@@ -86,49 +88,6 @@ class ColorSwatchGrid extends StatelessWidget {
               ),
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _Swatch extends StatelessWidget {
-  const _Swatch({
-    required this.color,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final Color color;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: formatHexColor(color),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: AnimatedContainer(
-            duration: reduceMotion
-                ? Duration.zero
-                : ColorPickerMetrics.selectionDuration,
-            decoration: BoxDecoration(
-              color: color,
-              border: selected
-                  ? Border.all(
-                      color: GlassColors.colorPickerSelection,
-                      width: ColorPickerMetrics.gridSelectionRing,
-                    )
-                  : null,
-            ),
-          ),
-        ),
       ),
     );
   }

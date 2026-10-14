@@ -1,7 +1,7 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/scaffold/tab_bar_scroll_edge.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
-import 'package:adaptive_liquid_glass/src/tab_bar/tab_bar_minimize_scope.dart';
+import 'package:adaptive_liquid_glass/src/tab_bar/tab_bar_minimize_controller.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Colors, MaterialApp;
 import 'package:flutter_test/flutter_test.dart';

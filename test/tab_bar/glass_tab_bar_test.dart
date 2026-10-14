@@ -3,6 +3,7 @@ import 'package:adaptive_liquid_glass/src/badge/badge_metrics.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/group/glass_content_fill.dart';
+import 'package:adaptive_liquid_glass/src/group/glass_fill_style.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:adaptive_liquid_glass/src/tab_bar/bar_shadow.dart';
