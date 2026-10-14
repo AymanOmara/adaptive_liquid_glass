@@ -8,6 +8,7 @@ import '../core/glass_brightness.dart';
 import '../core/glass_constants.dart';
 import '../core/glass_render_mode.dart';
 import '../core/liquid_glass_theme.dart';
+import '../core/liquid_glass_theme_data.dart';
 import '../core/render_mode_resolver.dart';
 import '../core/shape_border.dart';
 import '../foreground/foreground_brightness.dart';
@@ -20,6 +21,7 @@ import '../shader/glass_backdrop.dart';
 import '../shader/glass_backdrop_config.dart';
 import '../shader/glass_program.dart';
 import '../shader/raster_snapshot_gate.dart';
+import '../shader/shader_glass_budget.dart';
 import 'glass_group_scope.dart';
 import 'glass_member_rendering.dart';
 import 'glass_morph_controller.dart';
@@ -84,6 +86,10 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
   /// False between deactivate and activate/dispose: ancestor and render
   /// object lookups are not allowed then, and no ghost should start.
   bool _active = true;
+
+  /// This group's place in the Android shader budget, while it wants the
+  /// shader there.
+  ShaderGlassTicket? _budgetTicket;
 
   Timer? _sampler;
   Brightness? _sampled;
@@ -241,9 +247,38 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
     GlassPlatform.instance.environment.removeListener(_onEnvironment);
     GlassBackdropSources.instance.revision.removeListener(_onSources);
     _sampler?.cancel();
+    _budgetTicket?.release();
     _morph.dispose();
     _registry.dispose();
     super.dispose();
+  }
+
+  /// On Android, shader glass past the theme's `androidShaderBudget` draws
+  /// the frosted fallback (see [ShaderGlassBudget]).
+  GlassMemberRendering _withinBudget(
+    GlassMemberRendering rendering,
+    TargetPlatform platform,
+    LiquidGlassThemeData theme,
+  ) {
+    if (rendering != GlassMemberRendering.backdrop ||
+        platform != TargetPlatform.android) {
+      _budgetTicket?.release();
+      _budgetTicket = null;
+      return rendering;
+    }
+    final budget = ShaderGlassBudget.of(context);
+    if (_budgetTicket?.budget != budget) {
+      _budgetTicket?.release();
+      _budgetTicket = budget.register(() {
+        if (mounted && _active) setState(() {});
+      });
+    }
+    final granted = _budgetTicket!.resolve(
+      limit: theme.androidShaderBudget,
+      priority: ShaderBudgetPriority.of(context),
+      active: TickerMode.valuesOf(context).enabled,
+    );
+    return granted ? rendering : GlassMemberRendering.degraded;
   }
 
   @override
@@ -261,7 +296,7 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
     final opaque = mode == EffectiveGlassMode.opaque
         ? opaqueGlassColor(brightness!)
         : null;
-    final rendering = switch (mode) {
+    var rendering = switch (mode) {
       EffectiveGlassMode.material => GlassMemberRendering.material,
       EffectiveGlassMode.degraded => GlassMemberRendering.degraded,
       EffectiveGlassMode.opaque =>
@@ -271,6 +306,7 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
       EffectiveGlassMode.shader => GlassMemberRendering.backdrop,
       EffectiveGlassMode.native => GlassMemberRendering.native,
     };
+    rendering = _withinBudget(rendering, environment.platform, theme);
 
     _updateSampler(rendering);
     // Only the shader path needs the program; the Material, degraded and

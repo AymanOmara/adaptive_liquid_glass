@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import '../core/glass_colors.dart';
 import '../core/glass_variant_constants.dart';
 import '../core/liquid_glass_theme.dart';
+import '../shader/shader_glass_budget.dart';
 
 /// The tab bar's lens, fitted to iOS 26.4's tab bar (Kept) frame by frame.
 ///
@@ -268,7 +269,8 @@ const _barLitToneKnots = [
 /// (GlassColors.tabBarPressedFill at this opacity).
 const _barPressedFillOpacity = 0.35;
 
-/// [child] with regular glass drawn as the tab bar. [light] blends the dark
+/// [child] with regular glass drawn as the tab bar, first in the Android
+/// shader budget. [light] blends the dark
 /// bar from rest (0) to its held look (1) and its dragged look (2).
 Widget withTabBarGlass(
   BuildContext context,
@@ -319,7 +321,8 @@ Widget withTabBarGlass(
         regularDark: _sized(dark, sizeScale),
       ),
     ),
-    child: child,
+    // The bar is permanent chrome: it keeps the shader first on Android.
+    child: ShaderBudgetPriority(child: child),
   );
 }
 
