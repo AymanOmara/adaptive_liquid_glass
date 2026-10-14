@@ -1,4 +1,5 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/controls/control_metrics.dart';
 import 'package:adaptive_liquid_glass/src/controls/glass_thumb.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
@@ -161,6 +162,31 @@ void main() {
       );
     }, variant: platform);
   }
+
+  testWidgets('trackHeight sets the glass track and thumb height', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      appHost(
+        GlassSegmentedControl<String>(
+          trackHeight: 30.67,
+          selected: 'd',
+          onChanged: (_) {},
+          segments: const [
+            GlassSegment(value: 'd', label: Text('Day')),
+            GlassSegment(value: 'w', label: Text('Week')),
+          ],
+        ),
+      ),
+    );
+    expect(
+      t.getSize(find.byType(GlassSegmentedControl<String>)).height,
+      moreOrLessEquals(30.67),
+    );
+    expect(
+      t.getSize(find.byType(GlassThumb)).height,
+      moreOrLessEquals(30.67 - 2 * ControlMetrics.thumbInset),
+    );
+  }, variant: ios);
 
   testWidgets('Material: a Material 3 segmented button', (t) async {
     shaderEnv();

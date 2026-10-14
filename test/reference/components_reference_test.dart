@@ -716,6 +716,7 @@ void main() {
       (ColorPickerMetrics.closeGlyph, 'close_glyph'),
       (ColorPickerMetrics.closeInset, 'close_inset'),
       (ColorPickerMetrics.segmentTop, 'segment_top'),
+      (ColorPickerMetrics.segmentHeight, 'segment_height'),
       (ColorPickerMetrics.pageTop, 'page_top'),
       (ColorPickerMetrics.pageHeight, 'grid_height'),
       (ColorPickerMetrics.trackHeight, 'track_height'),

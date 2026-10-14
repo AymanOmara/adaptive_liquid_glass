@@ -136,9 +136,7 @@ void main() {
     expect(t.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
   }, variant: android);
 
-  testWidgets('a tinted prominent button labels for contrast (W20)', (
-    t,
-  ) async {
+  testWidgets('a tinted prominent button labels for contrast (W20)', (t) async {
     shaderEnv();
     Color? labelOf(String text) =>
         DefaultTextStyle.of(t.element(find.text(text))).style.color;

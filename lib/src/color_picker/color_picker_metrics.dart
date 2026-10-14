@@ -43,6 +43,10 @@ abstract final class ColorPickerMetrics {
   /// The segmented control's top (measured: 53).
   static const double segmentTop = 53;
 
+  /// The segmented control's track height (measured: 30.67, UIKit's
+  /// UISegmentedControl; SwiftUI's segmented picker is 32).
+  static const double segmentHeight = 30.67;
+
   /// The page (grid, spectrum or sliders) top (measured: 98.33, the grid's
   /// and the spectrum's top edge).
   static const double pageTop = 98.33;

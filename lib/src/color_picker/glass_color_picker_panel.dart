@@ -227,6 +227,7 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
                 child: GlassSegmentedControl<_Page>(
                   selected: _page,
                   mode: widget.mode,
+                  trackHeight: ColorPickerMetrics.segmentHeight,
                   onChanged: (p) => setState(() => _page = p),
                   segments: [
                     GlassSegment(

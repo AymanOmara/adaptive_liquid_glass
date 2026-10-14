@@ -290,6 +290,13 @@ void main() {
       t.getSize(find.byType(ColorSwatchGrid)).height,
       moreOrLessEquals(ColorPickerMetrics.pageHeight, epsilon: 0.34),
     );
+    // UIKit's segmented control is 30.67 tall here, not SwiftUI's 32.
+    expect(
+      t
+          .getSize(find.byWidgetPredicate((w) => w is GlassSegmentedControl))
+          .height,
+      moreOrLessEquals(30.67),
+    );
   }, variant: ios);
 
   testWidgets('null onChanged disables the row', (t) async {
