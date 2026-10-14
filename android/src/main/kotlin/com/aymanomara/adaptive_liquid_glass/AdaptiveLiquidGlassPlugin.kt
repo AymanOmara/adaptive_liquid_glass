@@ -9,7 +9,7 @@ import io.flutter.plugin.common.MethodChannel
 /**
  * The Android side of `adaptive_liquid_glass`. Android draws Material 3 in
  * Dart; the only native work is the system photo picker behind
- * `pickGlassPhotos`. Every other method is not implemented, as before.
+ * `pickGlassPhotos` (and `clearGlassPickedPhotos`). Every other method is not implemented, as before.
  */
 class AdaptiveLiquidGlassPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCallHandler {
     private var channel: MethodChannel? = null
@@ -40,8 +40,22 @@ class AdaptiveLiquidGlassPlugin : FlutterPlugin, ActivityAware, MethodChannel.Me
                 picker.pick(
                     maxSelection = call.argument<Int>("maxSelection") ?: 1,
                     filter = call.argument<String>("filter") ?: "images",
+                    options = GlassPhotosPicker.Options(
+                        maxWidth = call.argument<Int>("maxWidth"),
+                        maxHeight = call.argument<Int>("maxHeight"),
+                        quality = call.argument<Int>("imageQuality"),
+                        compatible = call.argument<Boolean>("compatibleFormat") ?: false,
+                    ),
                     result = result,
                 )
+            }
+            "clearPickedPhotos" -> {
+                val picker = photosPicker
+                if (picker == null) {
+                    result.error("no_activity", "The plugin is detached.", null)
+                    return
+                }
+                picker.clearCopies(result)
             }
             else -> result.notImplemented()
         }

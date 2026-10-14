@@ -24,7 +24,14 @@ final _image = {
   'width': 4032,
   'height': 3024,
 };
-final _video = {'path': '/tmp/b.mov', 'isVideo': true, 'mimeType': null};
+final _video = {
+  'path': '/tmp/b.mov',
+  'isVideo': true,
+  'mimeType': null,
+  'width': 1080,
+  'height': 1920,
+  'durationMs': 12345.5,
+};
 
 /// Answers `pickPhotos` with [reply] and records each call.
 List<MethodCall> _mock(Future<Object?> Function(MethodCall) reply) {
@@ -63,7 +70,13 @@ void main() {
           width: 4032,
           height: 3024,
         ),
-        GlassPickedPhoto(path: '/tmp/b.mov', isVideo: true),
+        GlassPickedPhoto(
+          path: '/tmp/b.mov',
+          isVideo: true,
+          width: 1080,
+          height: 1920,
+          duration: Duration(microseconds: 12345500),
+        ),
       ]);
     }, variant: _both);
 
@@ -72,6 +85,40 @@ void main() {
       await pickGlassPhotos();
       expect(calls.single.arguments, {'maxSelection': 1, 'filter': 'images'});
     }, variant: _both);
+
+    testWidgets('sends downscaling and format options only when set', (
+      t,
+    ) async {
+      final calls = _mock((_) async => const <Object?>[]);
+      await pickGlassPhotos(
+        maxWidth: 1024,
+        maxHeight: 768,
+        imageQuality: 80,
+        compatibleFormat: true,
+      );
+      expect(calls.single.arguments, {
+        'maxSelection': 1,
+        'filter': 'images',
+        'maxWidth': 1024,
+        'maxHeight': 768,
+        'imageQuality': 80,
+        'compatibleFormat': true,
+      });
+    }, variant: _both);
+
+    test('a video without size or duration parses as unknown', () {
+      final p = GlassPickedPhoto.fromMap(const {'path': '/v', 'isVideo': true});
+      expect(p.width, isNull);
+      expect(p.duration, isNull);
+      expect(
+        GlassPickedPhoto.fromMap(const {'path': '/v', 'durationMs': 1500}),
+        const GlassPickedPhoto(
+          path: '/v',
+          isVideo: false,
+          duration: Duration(milliseconds: 1500),
+        ),
+      );
+    });
 
     testWidgets('cancel (empty or null reply) is an empty list', (t) async {
       _mock((_) async => const <Object?>[]);
@@ -89,6 +136,22 @@ void main() {
       debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
       addTearDown(() => debugDefaultTargetPlatformOverride = null);
       await expectLater(pickGlassPhotos(), throwsUnsupportedError);
+    });
+  });
+
+  group('clearGlassPickedPhotos', () {
+    testWidgets('asks the platform to delete the copies', (t) async {
+      final calls = _mock((_) async => null);
+      await clearGlassPickedPhotos();
+      expect(calls.single.method, 'clearPickedPhotos');
+    }, variant: _both);
+
+    test('does nothing off iOS and Android', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final calls = _mock((_) async => null);
+      await clearGlassPickedPhotos();
+      expect(calls, isEmpty);
     });
   });
 
@@ -115,6 +178,31 @@ void main() {
       expect(picked, hasLength(1));
       expect(picked!.single.path, '/tmp/a.heic');
     }, variant: _both);
+
+    testWidgets('passes the downscaling and format options', (t) async {
+      shaderEnv();
+      final calls = _mock((_) async => const <Object?>[]);
+      await t.pumpWidget(
+        plainHost(
+          GlassPhotosPicker(
+            label: 'Pick',
+            maxWidth: 2048,
+            imageQuality: 70,
+            compatibleFormat: true,
+            onPicked: (_) {},
+          ),
+        ),
+      );
+      await t.tap(find.text('Pick'));
+      await t.pump();
+      expect(calls.single.arguments, {
+        'maxSelection': 1,
+        'filter': 'images',
+        'maxWidth': 2048,
+        'imageQuality': 70,
+        'compatibleFormat': true,
+      });
+    }, variant: ios);
 
     testWidgets('cancel does not call onPicked', (t) async {
       shaderEnv();

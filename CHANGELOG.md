@@ -1,3 +1,16 @@
+## Unreleased
+
+- Photos picker: picked videos report their upright `width` and `height`
+  and a new `GlassPickedPhoto.duration` (both platforms); Android photo
+  sizes now account for EXIF rotation.
+- `GlassPhotosPicker` and `pickGlassPhotos` take `maxWidth`, `maxHeight`
+  and `imageQuality` to downscale or re-encode photos, and
+  `compatibleFormat` for JPEG instead of HEIC (and, on iOS, H.264 instead
+  of HEVC videos). Defaults keep the original files.
+- `clearGlassPickedPhotos()` deletes the picker's copies (the
+  `adaptive_liquid_glass_picker` folder in the temporary or cache
+  directory).
+
 ## 0.2.1 (2026-10-14)
 
 - Debug builds print a one-time warning when more than 8 native glass

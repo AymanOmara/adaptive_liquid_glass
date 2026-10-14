@@ -23,7 +23,9 @@ import 'pick_glass_photos.dart';
 /// ```
 ///
 /// Tapping presents the picker (see [pickGlassPhotos]); when it closes
-/// with a choice, [onPicked] receives the items as local files. Cancelling
+/// with a choice, [onPicked] receives the items as local files, optionally
+/// downscaled or converted ([maxWidth], [maxHeight], [imageQuality],
+/// [compatibleFormat]). Delete them with [clearGlassPickedPhotos]. Cancelling
 /// does not call [onPicked]. A null [onPicked] disables the trigger, and
 /// taps are ignored while the picker is open.
 ///
@@ -42,6 +44,10 @@ class GlassPhotosPicker extends StatefulWidget {
     this.icon = PhotosPickerMetrics.icon,
     this.maxSelection = 1,
     this.filter = GlassPhotosPickerFilter.images,
+    this.maxWidth,
+    this.maxHeight,
+    this.imageQuality,
+    this.compatibleFormat = false,
     this.onError,
     this.style = GlassButtonStyle.glass,
     this.size,
@@ -50,7 +56,13 @@ class GlassPhotosPicker extends StatefulWidget {
     this.mode,
     this.glassId,
     this.semanticLabel,
-  }) : assert(maxSelection >= 0, 'maxSelection is 0 (unlimited) or more');
+  }) : assert(maxSelection >= 0, 'maxSelection is 0 (unlimited) or more'),
+       assert(maxWidth == null || maxWidth > 0, 'maxWidth is positive'),
+       assert(maxHeight == null || maxHeight > 0, 'maxHeight is positive'),
+       assert(
+         imageQuality == null || (imageQuality >= 0 && imageQuality <= 100),
+         'imageQuality is 0 to 100',
+       );
 
   /// Called with the chosen items when the picker closes with a choice;
   /// null disables the trigger.
@@ -72,6 +84,20 @@ class GlassPhotosPicker extends StatefulWidget {
 
   /// What the picker offers (SwiftUI's `matching:`).
   final GlassPhotosPickerFilter filter;
+
+  /// Scales wider photos down to this many pixels; see [pickGlassPhotos].
+  final int? maxWidth;
+
+  /// Scales taller photos down to this many pixels; see [pickGlassPhotos].
+  final int? maxHeight;
+
+  /// Re-encodes JPEG and HEIC photos at this quality (0-100); see
+  /// [pickGlassPhotos].
+  final int? imageQuality;
+
+  /// Delivers HEIC photos as JPEG and, on iOS, HEVC videos as H.264; see
+  /// [pickGlassPhotos].
+  final bool compatibleFormat;
 
   /// Called when the platform fails to present or load; when null the
   /// error is reported to [FlutterError.reportError].
@@ -112,6 +138,10 @@ class _GlassPhotosPickerState extends State<GlassPhotosPicker> {
       final photos = await pickGlassPhotos(
         maxSelection: widget.maxSelection,
         filter: widget.filter,
+        maxWidth: widget.maxWidth,
+        maxHeight: widget.maxHeight,
+        imageQuality: widget.imageQuality,
+        compatibleFormat: widget.compatibleFormat,
       );
       if (!mounted || photos.isEmpty) return;
       widget.onPicked?.call(photos);

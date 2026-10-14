@@ -38,6 +38,11 @@ public class AdaptiveLiquidGlassPlugin: NSObject, FlutterPlugin, FlutterStreamHa
       photosPicker = GlassPhotosPicker.present(arguments: call.arguments, result: result) {
         [weak self] in self?.photosPicker = nil
       }
+    case "clearPickedPhotos":
+      DispatchQueue.global(qos: .utility).async {
+        GlassPhotosPicker.clearCopies()
+        DispatchQueue.main.async { result(nil) }
+      }
     default:
       result(FlutterMethodNotImplemented)
     }

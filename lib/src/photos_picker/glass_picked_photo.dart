@@ -5,7 +5,8 @@ import 'package:flutter/foundation.dart';
 ///
 /// The platform copies each item into the app's temporary (iOS) or cache
 /// (Android) directory, so [path] stays readable after the picker closes.
-/// The app owns the copy: move it somewhere durable or delete it when done.
+/// The app owns the copy: move it somewhere durable, or delete it when
+/// done (`clearGlassPickedPhotos` deletes every copy at once).
 @immutable
 class GlassPickedPhoto {
   /// Creates a picked item.
@@ -15,6 +16,7 @@ class GlassPickedPhoto {
     this.mimeType,
     this.width,
     this.height,
+    this.duration,
   });
 
   /// Reads the map the platform side sends.
@@ -25,6 +27,10 @@ class GlassPickedPhoto {
         mimeType: map['mimeType'] as String?,
         width: (map['width'] as num?)?.toInt(),
         height: (map['height'] as num?)?.toInt(),
+        duration: switch (map['durationMs']) {
+          final num ms => Duration(microseconds: (ms * 1000).round()),
+          _ => null,
+        },
       );
 
   /// The absolute path of the local copy.
@@ -36,11 +42,16 @@ class GlassPickedPhoto {
   /// The MIME type, such as `image/heic` or `video/mp4`, when known.
   final String? mimeType;
 
-  /// The pixel width, for images whose header was readable; null otherwise.
+  /// The upright pixel width (rotation applied), when the platform could
+  /// read it from the image header or the video track; null otherwise.
   final int? width;
 
-  /// The pixel height, for images whose header was readable; null otherwise.
+  /// The upright pixel height (rotation applied), when the platform could
+  /// read it from the image header or the video track; null otherwise.
   final int? height;
+
+  /// How long a video plays, when known; null for images.
+  final Duration? duration;
 
   @override
   bool operator ==(Object other) =>
@@ -49,13 +60,16 @@ class GlassPickedPhoto {
       other.isVideo == isVideo &&
       other.mimeType == mimeType &&
       other.width == width &&
-      other.height == height;
+      other.height == height &&
+      other.duration == duration;
 
   @override
-  int get hashCode => Object.hash(path, isVideo, mimeType, width, height);
+  int get hashCode =>
+      Object.hash(path, isVideo, mimeType, width, height, duration);
 
   @override
   String toString() =>
       'GlassPickedPhoto($path, ${isVideo ? 'video' : 'image'}, $mimeType'
-      '${width == null ? '' : ', ${width}x$height'})';
+      '${width == null ? '' : ', ${width}x$height'}'
+      '${duration == null ? '' : ', $duration'})';
 }

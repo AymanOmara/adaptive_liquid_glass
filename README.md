@@ -1168,9 +1168,18 @@ GlassPhotosPicker(
   onPicked: (photos) => setState(() => _photos = photos),
 )
 
-// A custom trigger:
-final photos = await pickGlassPhotos(maxSelection: 3);
+// A custom trigger, photos at most 2048 px and JPEG instead of HEIC:
+final photos = await pickGlassPhotos(
+  maxSelection: 3,
+  maxWidth: 2048,
+  maxHeight: 2048,
+  imageQuality: 85,
+  compatibleFormat: true,
+);
 Image.file(File(photos.first.path));
+
+// Done with the files (after an upload, or on the next launch):
+await clearGlassPickedPhotos();
 ```
 
 SwiftUI's `PhotosPicker(selection:maxSelectionCount:matching:)`. The
@@ -1180,11 +1189,26 @@ and `icon`); tapping presents the system picker. On iOS that is
 (`MediaStore.ACTION_PICK_IMAGES`, Android 13+ and 11-12 with the SDK
 extension) or the document picker on older versions. Neither needs a
 photo library or storage permission, and the package adds no
-dependencies. Each `GlassPickedPhoto` is a copy in the app's temporary
-(iOS) or cache (Android) directory with `path`, `isVideo`, `mimeType` and,
-for images, `width` and `height`. Cancelling returns an empty list
-(`onPicked` is not called); the app owns the copies and should move or
-delete them.
+dependencies. Cancelling returns an empty list (`onPicked` is not
+called).
+
+Each `GlassPickedPhoto` is a copy in the `adaptive_liquid_glass_picker`
+folder of the app's temporary (iOS) or cache (Android) directory, with
+`path`, `isVideo`, `mimeType`, the upright `width` and `height` (photos
+and videos) and, for videos, `duration`. Items arrive in their original
+format unless asked otherwise (both on `GlassPhotosPicker` and
+`pickGlassPhotos`):
+- `maxWidth` / `maxHeight` (pixels) scale larger photos down to fit,
+  keeping the aspect ratio.
+- `imageQuality` (0-100) re-encodes JPEG and HEIC photos at that quality.
+- `compatibleFormat: true` turns HEIC/HEIF photos into JPEG and, on iOS,
+  HEVC videos into H.264 `.mp4`.
+
+A re-encoded photo is upright and keeps its format where the platform can
+write it (iOS: HEIC, JPEG, PNG; Android: JPEG, PNG), else becomes JPEG;
+its metadata (EXIF, location) is dropped. GIFs are left as they are, and
+Android does not transcode videos. The app owns the copies: move what it
+keeps, and call `clearGlassPickedPhotos()` to delete the folder.
 
 ### Swipe actions
 
@@ -1358,12 +1382,12 @@ testWidgets('pays', (tester) async {
   Icons are CupertinoIcons unless you use `GlassTabBarItem.symbol` (SF
   Symbols drawn by iOS).
 - **Photos picker:** items are copied into a temporary or cache directory
-  before `onPicked` runs, so very large videos take time to arrive and the
-  copies are not deleted for you. iOS returns the original format (HEIC
-  photos, HEVC videos); no transcoding or downscaling options yet. Video
-  width and height are not reported. The Android document-picker fallback
-  (before Android 11, or without the SDK extension) cannot enforce
-  `maxSelection` in its UI; extra items are dropped.
+  before `onPicked` runs, so very large videos (and H.264 conversions) take
+  time to arrive, and the copies stay until `clearGlassPickedPhotos()` or
+  the OS deletes them. Android does not transcode videos. The Android
+  document-picker fallback (before Android 11, or without the SDK
+  extension) cannot enforce `maxSelection` in its UI; extra items are
+  dropped.
 - **iOS look on Android (`GlassRenderMode.shader`):** needs Impeller.
   Where `ImageFilter.isShaderFilterSupported` is false (Skia, or
   `--no-enable-impeller`, an opt-out Flutter is removing), glass falls
