@@ -21,6 +21,14 @@
 - `GlassRefresh.edgeOffset`: where the indicator's room starts; defaults
   to the top media padding, as `UIRefreshControl` sits below the scroll
   view's top inset (it sat at the very top, under a status or nav bar).
+- README: dropped the known limitation that shader-drawn tab labels
+  (vibrancy) sample the backdrop upside down on Android's OpenGL ES
+  backend. Checked on an Android emulator (Impeller, OpenGL ES, Flutter
+  3.47): each label pixel follows the glass right behind it; the shader
+  flips only on engines before 3.46, like the glass shader. A test now
+  keeps every backdrop shader on that guard.
+- `example/lib/vibrancy_flip_probe.dart`: the tab bar over a red page
+  with a blue band behind the labels, to check the orientation by eye.
 
 ## 0.2.1 (2026-10-14)
 
