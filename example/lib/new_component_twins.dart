@@ -279,9 +279,8 @@ class _RefreshMotion extends StatelessWidget {
     );
     if (!dark) return list;
     return MediaQuery(
-      data: MediaQuery.of(
-        context,
-      ).copyWith(platformBrightness: Brightness.dark),
+      data: MediaQuery.of(context)
+          .copyWith(platformBrightness: Brightness.dark),
       child: CupertinoTheme(
         data: const CupertinoThemeData(brightness: Brightness.dark),
         child: DefaultTextStyle.merge(
@@ -293,23 +292,16 @@ class _RefreshMotion extends StatelessWidget {
   }
 }
 
-/// `-controls searchmotion`'s twin: 20 rows under a bottom
-/// [GlassSearchable]; tap the field, then its close button, to record the
-/// close button's reveal and hide.
+/// `-controls searchmotion`'s twin: a bottom [GlassSearchable] over an
+/// empty grouped background; tap the field, then its close button, to
+/// record the close button's reveal and hide.
 class _SearchMotion extends StatelessWidget {
   const _SearchMotion();
 
   @override
   Widget build(BuildContext context) => ColoredBox(
     color: CupertinoColors.systemGroupedBackground.resolveFrom(context),
-    child: GlassSearchable(
-      child: ListView(
-        padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top + 96),
-        children: [
-          for (var i = 0; i < 20; i++) GlassListTile(title: Text('Row $i')),
-        ],
-      ),
-    ),
+    child: const GlassSearchable(child: SizedBox.expand()),
   );
 }
 

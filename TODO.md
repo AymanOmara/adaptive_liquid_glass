@@ -49,7 +49,8 @@ and CHANGELOG.md.
 
 6- still unmeasured vs SwiftUI (label, links, wheels, searchable, cover
   close button and colour row measured 2026-10-13; colour sheet, refresh
-  threshold/spinner and search close-button reveal 2026-10-14):
+  threshold/spinner/rubber band/dark spinner and search close-button
+  reveal and hide 2026-10-14):
   searchable scope bar and suggestions platter (keyboard tutorial covered
   them), date wheel time-column spacing (UIKit packs them unevenly), cover
   drag thresholds (SwiftUI's cover has no drag), context menu (synthetic
@@ -58,9 +59,11 @@ and CHANGELOG.md.
   Colour sheet leftovers: eyedropper and saved colours not drawn; Spectrum
   page is an SV square + hue bar (UIKit: one hue x brightness map); the
   glass sheet at 600 pt interpolates toward large (4.7 pt side inset vs
-  UIKit's 8), so its grid is ~7 pt taller. Refresh: Flutter's bouncing
-  friction shows ~140 pt where UIKit shows 173 at the trigger (finger
-  travel 315 arms it too); a UIKit-like rubber band would close it.
+  UIKit's 8), so its grid is ~7 pt taller. Refresh: the rubber band is
+  UIKit's only for scrollables inheriting bouncing physics (their own
+  BouncingScrollPhysics keeps Flutter's friction); the release bounce
+  without a refresh is Flutter's, unmeasured. Search hide: the button's
+  glass does not merge into the field as SwiftUI's does (it fades).
 
 7- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
   Still scenes, whole-crop mean |diff| native/shader (2026-10-13, with

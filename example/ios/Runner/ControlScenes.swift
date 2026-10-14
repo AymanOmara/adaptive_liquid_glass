@@ -69,7 +69,7 @@ enum ControlScenes {
     case "gauge": root = AnyView(GaugeReference())
     case "refreshmotion": root = AnyView(RefreshMotionReference())
     case "refreshmotiondark": root = AnyView(RefreshMotionReference(dark: true))
-    case "searchmotion": root = AnyView(SearchReference())
+    case "searchmotion": root = AnyView(SearchMotionReference())
     case "colormotion": root = AnyView(ColorMotionReference())
     case "label": root = AnyView(LabelReference())
     case "link": root = AnyView(LinkReference())
@@ -407,6 +407,22 @@ struct SearchReference: View {
     NavigationStack {
       List(0..<20) { i in Text("Row \(i)") }
         .navigationTitle("Search")
+        .searchable(text: $query)
+    }
+    .environment(\.colorScheme, .light)
+  }
+}
+
+/// Motion: the bottom search field over an empty grouped background (no
+/// ink but the field's and the keyboard's); tap the field, then its close
+/// button, to record the close button's reveal and hide. Light.
+@available(iOS 26.0, *)
+struct SearchMotionReference: View {
+  @State private var query = ""
+  var body: some View {
+    NavigationStack {
+      Color(.systemGroupedBackground)
+        .ignoresSafeArea()
         .searchable(text: $query)
     }
     .environment(\.colorScheme, .light)

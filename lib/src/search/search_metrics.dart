@@ -92,11 +92,27 @@ abstract final class SearchMetrics {
   /// first frames show it ~16 of its 48 pt wide).
   static const double revealScale = 0.32;
 
-  /// The close button's reveal / hide spring (fitted: the button
-  /// overshoots to ~50 pt and settles at 48 about 0.6 s after the field
-  /// starts to narrow). The hide reuses it.
+  /// The close button's reveal spring (fitted: the button overshoots to
+  /// ~50 pt and settles at 48 about 0.6 s after the field starts to
+  /// narrow).
   static final SpringDescription activation = swiftUISpring(
     response: 0.53,
     dampingFraction: 0.69,
   );
+
+  /// The close button's hide, fitted to three recordings of SwiftUI's
+  /// (iOS 26.4, `-controls searchmotion`, the close button tapped; 60 fps
+  /// frame dumps): the row jumps to the idle insets in one frame, the
+  /// button keeping its room, then the field's end springs over the room
+  /// on this spring, ~7 pt past its rest and back (rms 1.85 pt), while the
+  /// button fades (see [hideFade]).
+  static final SpringDescription hide = swiftUISpring(
+    response: 0.26,
+    dampingFraction: 0.56,
+  );
+
+  /// The fraction of the [hide] spring over which the close button fades
+  /// out (measured: its glyph is half gone two frames in and gone by the
+  /// fourth, as the field starts to move).
+  static const double hideFade = 0.12;
 }
