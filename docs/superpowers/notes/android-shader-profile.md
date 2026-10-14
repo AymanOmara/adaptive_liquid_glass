@@ -61,3 +61,9 @@ Impeller GLES. Fix: `RasterSnapshotGate` keeps raster snapshots (the glyph
 image, the `GlassBackdropSource` luminance readback) off until the first
 frame is rasterised and while the app is in the background; the labels
 paint flat until then.
+
+Evidence: unmodified probe (profile) 1 crash in 8 cold launches
+(tombstone_17); with the gate 0 in 12. A debug build from before the fix
+(another session's run, tombstone_18, uptime 211 s) died in the same
+`BlitCopyBufferToTextureCommandGLES::Encode`, so the crash is not only a
+launch race.
