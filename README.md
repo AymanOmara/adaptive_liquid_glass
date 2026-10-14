@@ -351,7 +351,7 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `GlassPhotosPicker`, `pickGlassPhotos`, `GlassPickedPhoto` | SwiftUI's `PhotosPicker`: a glass trigger opening the system photo picker; items come back as local files | Material 3 button, Android Photo Picker |
 | `GlassLabel` (`+ .text`) | SwiftUI's `Label`: icon and title, coloured like a vibrant label on glass | icon and text row, Material 3 sizes |
 | `GlassLink`, `GlassShareLink` | SwiftUI's `Link` and `ShareLink`: glass triggers; your app opens the URL or share sheet | Material 3 button |
-| `GlassColorPicker` | SwiftUI's `ColorPicker` row opening a glass sheet laid out as UIKit's: grid, spectrum and RGB/hex sliders, opacity | `ListTile` and modal bottom sheet |
+| `GlassColorPicker` | SwiftUI's `ColorPicker` row opening a glass sheet laid out as UIKit's: grid, spectrum and RGB/hex sliders, opacity, saved colours, eyedropper | `ListTile` and modal bottom sheet |
 | `GlassRefresh`, `SliverGlassRefresh` | `.refreshable`: pull to refresh around a scrollable, or as a sliver | `RefreshIndicator` |
 | `GlassSymbol` | An SF Symbol drawn by iOS at run time (never bundled) | its `fallback` |
 
@@ -947,8 +947,9 @@ showGlassSheet<void>(
 The sheet works like SwiftUI's `presentationDetents`:
 - It follows a drag between its detents, and a drag or fling below the
   lowest one dismisses it.
-- At a partial detent it is floating glass.
-- At `large` it runs edge to edge, opaque, with the screen's own corners.
+- At a partial detent it is floating glass, 8 pt in from the screen's
+  sides at any height (measured from SwiftUI up to `.height(765)`).
+- At `large` (or a detent within ~31 pt of it) it runs edge to edge, opaque, with the screen's own corners.
 - `GlassSheetDetent.fraction(0.6)` and `.height(400)` make custom detents.
 - `cornerRadius` and `grabberSize` change the floating sheet's corners and
   grabber (iOS 26's 38 and 34.67 x 5 by default). On Android
@@ -1416,13 +1417,14 @@ testWidgets('pays', (tester) async {
   the date wheel's time columns and the full-screen cover's drag
   thresholds follow iOS by eye, not by measurement.
 - **Colour picker sheet:** laid out as iOS 26.4's
-  UIColorPickerViewController (measured), but without its eyedropper
-  (Flutter cannot sample the screen outside its own view) or saved
-  colours, and the Spectrum page is a saturation-value square with a hue
-  bar where UIKit draws one hue-by-brightness map. The glass sheet widens
-  toward the screen's edges as it grows taller than the medium detent,
-  so at UIKit's 600 pt it sits 4.7 pt in from the sides instead of 8 and
-  its grid is ~7 pt taller.
+  UIColorPickerViewController (measured, saved colours and Spectrum map
+  included). Its eyedropper reads only what the app itself draws (the
+  page under the sheet): not other apps, the status bar or platform views
+  such as maps, web views and native-mode glass. Saved colours live in
+  memory unless the app passes `savedColors` / `onSavedColorsChanged` and
+  stores them; a long press removes one (UIKit uses a context menu). The
+  loupe's size and magnification are estimated, and the grid is 2 pt
+  narrower than UIKit's (its cells are square).
 - **Pull to refresh:** the refresh starts under the finger once the
   content is pulled 173 pt or the finger has travelled 315 pt past the
   top (UIKit reaches both together). Flutter's `BouncingScrollPhysics`

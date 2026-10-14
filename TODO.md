@@ -55,11 +55,14 @@ and CHANGELOG.md.
   drag thresholds (SwiftUI's cover has no drag), context menu (synthetic
   touches cannot open SwiftUI's). Motion still open: the wheel's step
   (VoiceOver-only, no touch drives it), context menu.
-  Colour sheet leftovers: eyedropper and saved colours not drawn; Spectrum
-  page is an SV square + hue bar (UIKit: one hue x brightness map); the
-  glass sheet at 600 pt interpolates toward large (4.7 pt side inset vs
-  UIKit's 8), so its grid is ~7 pt taller. Refresh: Flutter's bouncing
-  friction shows ~140 pt where UIKit shows 173 at the trigger (finger
+  Colour sheet (2026-10-14, second pass): side inset 8 (partial sheet
+  detents now float at any height, SwiftUI .height(300...765) measured),
+  segmented control 30.67, saved colours row, UIKit's Spectrum map
+  (mean |diff| 1.1/255) and an in-app eyedropper done. Left: the grid is
+  355.33 wide with square cells where UIKit's is 357.33 (cells 29.8 x
+  29.6); the loupe is estimated (UIKit's cannot be captured mid-drag);
+  dark-mode "+" colours estimated.
+  Refresh: Flutter's bouncing friction shows ~140 pt where UIKit shows 173 at the trigger (finger
   travel 315 arms it too); a UIKit-like rubber band would close it.
 
 7- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
