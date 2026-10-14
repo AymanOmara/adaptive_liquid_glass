@@ -37,7 +37,7 @@ export 'src/controls/glass_segment.dart';
 export 'src/controls/glass_segmented_control.dart';
 export 'src/controls/glass_slider.dart';
 export 'src/controls/glass_toggle.dart';
-export 'src/core/glass.dart';
+export 'src/core/glass.dart' hide pressableGlass;
 export 'src/core/glass_render_mode.dart' show GlassRenderMode;
 export 'src/core/glass_shape.dart' hide concentricRadius;
 export 'src/core/glass_system_colors.dart';

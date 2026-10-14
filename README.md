@@ -76,9 +76,7 @@ and `.bouncy` morph) and a size-dependent press growth. To re-run, follow
 documented there), then score with
 `tool/fidelity/.venv/bin/python tool/fidelity/compare.py build/fidelity/<run>`.
 
-## Quick start
-
-### Install
+## Getting started
 
 ```yaml
 dependencies:
@@ -87,28 +85,34 @@ dependencies:
 
 ```dart
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
-```
+import 'package:flutter/material.dart';
 
-No setup is needed: no theme, no initialisation call, no platform checks.
-A complete small app (navigation bar, tab bar, controls, sheet, toast) is
-in [`example/lib/quick_start.dart`](example/lib/quick_start.dart); run it
-with `flutter run -t lib/quick_start.dart` from `example/`.
-
-### Setup (optional)
-
-Without it, the shaders load on first use: glass draws as a plain blur for a
-frame or two before switching over in place, and the scroll edge and tab lens
-use their fallbacks until ready. `AdaptiveLiquidGlass.initialize()` loads
-them all before the first frame; it is a no-op on Android's Material path and
-safe to call twice.
-
-```dart
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await AdaptiveLiquidGlass.initialize();
-  runApp(const MyApp());
+  await AdaptiveLiquidGlass.initialize(); // optional: preloads the shaders
+  runApp(const MaterialApp(home: Scaffold(body: Center(child: Hello()))));
+}
+
+class Hello extends StatelessWidget {
+  const Hello({super.key});
+
+  @override
+  Widget build(BuildContext context) => GlassButton(
+    onPressed: () => showGlassAlert(context: context, title: 'Hello, glass'),
+    child: const Text('Tap me'),
+  );
 }
 ```
+
+That is all the setup there is: no theme and no platform checks. The
+button is iOS 26 Liquid Glass on iOS and a Material 3 button on Android; the
+alert is iOS 26's alert with an OK button, or an `AlertDialog`. Without
+`initialize()` the shaders load on first use, and glass draws as a plain blur
+for a frame or two before switching over in place.
+
+A complete small app (navigation bar, tab bar, controls, sheet, toast) is
+in [`example/lib/quick_start.dart`](example/lib/quick_start.dart); run it
+with `flutter run -t lib/quick_start.dart` from `example/`. The
+[Which widget?](#which-widget) table lists every component.
 
 ### One line
 
@@ -268,7 +272,6 @@ Android too. Set the mode app-wide and preload the shaders with the same mode
 
 ```dart
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
   await AdaptiveLiquidGlass.initialize(mode: GlassRenderMode.shader);
   runApp(
     const LiquidGlassTheme(
@@ -346,6 +349,11 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `GlassGauge`, `GlassGaugeStyle` | SwiftUI's Gauge: linear capacity, accessoryCircular, accessoryCircularCapacity | `LinearProgressIndicator` / `CircularProgressIndicator` |
 | `GlassSwipeActions`, `GlassSwipeAction` | List swipe actions: tinted capsules, full swipe, haptic | iOS layout, Material colour |
 | `GlassPhotosPicker`, `pickGlassPhotos`, `GlassPickedPhoto` | SwiftUI's `PhotosPicker`: a glass trigger opening the system photo picker; items come back as local files | Material 3 button, Android Photo Picker |
+| `GlassLabel` (`+ .text`) | SwiftUI's `Label`: icon and title, coloured like a vibrant label on glass | icon and text row, Material 3 sizes |
+| `GlassLink`, `GlassShareLink` | SwiftUI's `Link` and `ShareLink`: glass triggers; your app opens the URL or share sheet | Material 3 button |
+| `GlassColorPicker` | SwiftUI's `ColorPicker` row opening a glass sheet: grid, spectrum, opacity, hex | `ListTile` and modal bottom sheet |
+| `GlassRefresh`, `SliverGlassRefresh` | `.refreshable`: pull to refresh around a scrollable, or as a sliver | `RefreshIndicator` |
+| `GlassSymbol` | An SF Symbol drawn by iOS at run time (never bundled) | its `fallback` |
 
 ## Cookbook
 
@@ -989,8 +997,6 @@ Material close icon on Android).
 
 ```dart
 GlassMenuButton(
-  icon: CupertinoIcons.ellipsis,
-  semanticLabel: 'More',
   items: [
     GlassMenuItem(label: 'Copy', icon: CupertinoIcons.doc_on_doc,
         onSelected: copy),
@@ -1000,7 +1006,8 @@ GlassMenuButton(
 )
 ```
 
-The menu opens over the button, from its top corner, as SwiftUI's `Menu`
+Without `icon` and `semanticLabel` it is the ellipsis "More" button. The
+menu opens over the button, from its top corner, as SwiftUI's `Menu`
 does; measured from SwiftUI. `GlassMenuController` drives it from an outer
 gesture — iOS's slide-to-select under a long-press:
 
@@ -1107,7 +1114,8 @@ showGlassConfirmationDialog(
 ```
 
 The alert is a 320-pt glass card centred in the safe area, with its
-buttons side by side. The confirmation dialog is a 240-pt card with its
+buttons side by side; without `actions` it has one OK button, as SwiftUI's
+`.alert` does. The confirmation dialog is a 240-pt card with its
 buttons stacked. As in iOS 26, its cancel action isn't drawn: a tap
 outside takes it. On Android they are `AlertDialog`s.
 

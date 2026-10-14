@@ -1,5 +1,28 @@
 ## Unreleased
 
+- Usability pass ahead of 1.0 (audit in
+  `docs/superpowers/notes/usability-audit.md`):
+  - `AdaptiveLiquidGlass.initialize()` initialises the Flutter binding
+    itself; `main()` no longer needs `WidgetsFlutterBinding.ensureInitialized()`.
+  - `tint` is the accent colour's name on every control, as SwiftUI's
+    `.tint`: `GlassToggle`, `GlassSlider` and `GlassRangeSlider` (was
+    `activeColor`), `GlassProgressIndicator` and `GlassPicker` (was
+    `color`), `GlassChip` and `GlassTabBar` (was `selectedColor`). The old
+    names still work, deprecated until 1.0.
+  - `LiquidGlass.precache()` is deprecated: `AdaptiveLiquidGlass.initialize()`
+    is the one setup call (pass `mode: GlassRenderMode.shader` to preload
+    off iOS too).
+  - `GlassMenuButton`'s `icon` and `semanticLabel` default to the ellipsis
+    "More" button; `showGlassAlert`'s `actions` default to one OK button
+    (localised), as SwiftUI's `.alert`.
+  - No longer exported: `DatePickerMetrics`, `DatePickerWheelMetrics` and
+    `WheelPickerMetrics`, the measured constants the widgets use (no public
+    API takes them), and `pressableGlass`, a helper documented as internal.
+  - README: Getting started is one import, one optional setup call and one
+    example; the "Which widget?" table gains the components it missed
+    (`GlassLabel`, `GlassLink`, `GlassShareLink`, `GlassColorPicker`,
+    `GlassRefresh`, `SliverGlassRefresh`, `GlassSymbol`).
+
 - Photos picker: picked videos report their upright `width` and `height`
   and a new `GlassPickedPhoto.duration` (both platforms); Android photo
   sizes now account for EXIF rotation.
