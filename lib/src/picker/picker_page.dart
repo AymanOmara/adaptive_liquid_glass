@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 
+import '../core/glass_colors.dart';
 import '../core/glass_render_mode.dart';
 import '../list/glass_list_section.dart';
 import '../list/list_metrics.dart';
@@ -41,7 +42,7 @@ class PickerPage<T> extends StatelessWidget {
   Widget build(BuildContext context) => GlassScaffold(
     navigationBar: GlassNavigationBar(title: title, mode: mode),
     backgroundColor: CupertinoDynamicColor.resolve(
-      CupertinoColors.systemGroupedBackground,
+      GlassColors.pickerPageBackground,
       context,
     ),
     // The scaffold grows the body's padding by the bar, so the list

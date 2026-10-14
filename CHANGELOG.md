@@ -1,3 +1,11 @@
+## Unreleased
+
+- Internal: one class per file across `lib/` (private helpers as `part`
+  files), colour literals and stray `CupertinoColors` uses routed through
+  `GlassColors` (convention documented there), and the frozen
+  `GlassConstants.standard` data in its own file. No behaviour or public
+  API change.
+
 ## 0.2.1 (2026-10-14)
 
 - Debug builds print a one-time warning when more than 8 native glass

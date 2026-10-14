@@ -94,10 +94,7 @@ class PickerInlineRows<T> extends StatelessWidget {
   /// customized, or a dim grey while disabled; as the list icon's.
   Color _checkColor(BuildContext context) {
     if (!_enabled) {
-      return CupertinoDynamicColor.resolve(
-        CupertinoColors.tertiaryLabel,
-        context,
-      );
+      return CupertinoDynamicColor.resolve(GlassColors.tertiaryLabel, context);
     }
     if (color != null) return CupertinoDynamicColor.resolve(color!, context);
     final theme = CupertinoTheme.of(context);
@@ -107,7 +104,7 @@ class PickerInlineRows<T> extends StatelessWidget {
         ? Theme.of(context).cupertinoOverrideTheme?.primaryColor
         : theme.primaryColor;
     final defaultBlue = CupertinoDynamicColor.resolve(
-      CupertinoColors.activeBlue,
+      GlassColors.listDefaultAccent,
       context,
     );
     if (primary == null || primary == defaultBlue) {

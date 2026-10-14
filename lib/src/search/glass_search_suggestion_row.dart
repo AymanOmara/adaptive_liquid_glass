@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 
+import '../core/glass_colors.dart';
 import '../core/ios_text.dart';
 import '../list/list_metrics.dart';
 import 'glass_search_suggestion.dart';
@@ -34,9 +35,9 @@ class GlassSearchSuggestionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = CupertinoDynamicColor.resolve(CupertinoColors.label, context);
+    final title = CupertinoDynamicColor.resolve(GlassColors.label, context);
     final secondary = CupertinoDynamicColor.resolve(
-      CupertinoColors.secondaryLabel,
+      GlassColors.secondaryLabel,
       context,
     );
     return Semantics(

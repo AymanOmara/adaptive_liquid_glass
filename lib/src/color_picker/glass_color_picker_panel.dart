@@ -4,6 +4,7 @@ import 'package:flutter/services.dart'
 
 import '../controls/glass_slider.dart';
 import '../core/effective_glass_mode.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/ios_text.dart';
@@ -148,7 +149,7 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
           ColorPickerMetrics.titleSize,
           weight: FontWeight.w600,
           color: CupertinoDynamicColor.resolve(
-            CupertinoColors.secondaryLabel,
+            GlassColors.secondaryLabel,
             context,
           ),
         );
@@ -157,7 +158,7 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
       ? null
       : IOSText.style(
           ColorPickerMetrics.labelSize,
-          color: CupertinoDynamicColor.resolve(CupertinoColors.label, context),
+          color: CupertinoDynamicColor.resolve(GlassColors.label, context),
         );
 
   Widget _content(BuildContext context, bool material) => SafeArea(
