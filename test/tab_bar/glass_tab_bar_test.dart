@@ -55,7 +55,7 @@ class _HarnessState extends State<_Harness> {
   Widget build(BuildContext context) => GlassTabBar(
     items: widget.items,
     selectedIndex: _selected,
-    selectedColor: widget.selectedColor,
+    tint: widget.selectedColor,
     mode: widget.mode,
     enableFeedback: widget.enableFeedback,
     onSelected: (i) {
@@ -122,7 +122,7 @@ void main() {
     GlassTabBar(
       items: _items,
       selectedIndex: selected,
-      selectedColor: _blue,
+      tint: _blue,
       mode: mode,
       onSelected: onSelected,
     ),

@@ -61,7 +61,7 @@ class _GlassTabSidebarState extends State<GlassTabSidebar>
   }
 
   Color _selected(BuildContext context) => CupertinoDynamicColor.resolve(
-    widget.tabBar.selectedColor ?? GlassColors.tabBarSelected,
+    widget.tabBar.tint ?? GlassColors.tabBarSelected,
     context,
   );
 

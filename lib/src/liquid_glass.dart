@@ -93,16 +93,10 @@ class LiquidGlass extends StatelessWidget {
   /// two), shader glass draws as a blur-only surface and then switches over
   /// in place. Await this in `main()` to skip that brief fallback.
   ///
-  /// To preload everything (the tab lens and scroll-edge shaders too),
-  /// await `AdaptiveLiquidGlass.initialize()` instead.
-  ///
-  /// ```dart
-  /// Future<void> main() async {
-  ///   WidgetsFlutterBinding.ensureInitialized();
-  ///   await LiquidGlass.precache();
-  ///   runApp(const MyApp());
-  /// }
-  /// ```
+  /// Superseded by `AdaptiveLiquidGlass.initialize()`, the one setup
+  /// call, which also preloads the tab lens and scroll-edge shaders (pass
+  /// `mode: GlassRenderMode.shader` to preload off iOS too, as this does).
+  @Deprecated('Use AdaptiveLiquidGlass.initialize(). Will be removed in 1.0.')
   static Future<void> precache() => GlassProgram.instance.load();
 
   @override

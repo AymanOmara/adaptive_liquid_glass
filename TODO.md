@@ -20,10 +20,10 @@ and CHANGELOG.md.
     limitations (re-check every entry is still true); CHANGELOG
 
 3- release readiness: 0.1.0 shipped 2026-10-08. 1.0 only after:
-  - usability pass: audit the 94 barrel exports for what should be public
-    (e.g. GlassForeground helpers, refactor-backlog P3-6), simplest
-    defaults, naming review (1.0 freezes names; renames after cost
-    deprecation cycles)
+  - usability pass: done 2026-10-14 (additive part); the 1.0 breaks it
+    lists (selected -> value, GlassMenuItem.onPressed, showGlassToast's
+    context, hiding search/refresh pieces, date range defaults) are in
+    docs/superpowers/notes/usability-audit.md
   - item 6 "measure later" components measured vs SwiftUI
   - fidelity items 4 and 5 at a plateau (59/75 today)
   - API unchanged for a release or two

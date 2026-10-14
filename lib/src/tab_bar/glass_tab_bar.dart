@@ -58,7 +58,7 @@ import 'vibrant_blend.dart';
 /// pill.
 ///
 /// Pressing turns the pill into a clear glass lens that overhangs the bar
-/// and magnifies the tabs under it in [selectedColor]; dragging slides the
+/// and magnifies the tabs under it in [tint]; dragging slides the
 /// lens between tabs; letting go springs it to the nearest tab, shrinks it
 /// back into the pill and calls [onSelected]. A tap is a short press.
 ///
@@ -91,7 +91,8 @@ class GlassTabBar extends StatefulWidget {
     required this.items,
     required this.selectedIndex,
     required this.onSelected,
-    this.selectedColor,
+    Color? tint,
+    @Deprecated('Use tint. Will be removed in 1.0.') Color? selectedColor,
     this.indicatorColor,
     this.glass,
     this.mode,
@@ -103,7 +104,12 @@ class GlassTabBar extends StatefulWidget {
     this.materialStyle = GlassMaterialTabBarStyle.floating,
     this.minimizeBehavior = GlassTabBarMinimizeBehavior.automatic,
     this.style = GlassTabBarStyle.automatic,
-  }) : assert(items.length >= 2, 'A tab bar needs at least two tabs.');
+  }) : assert(
+         tint == null || selectedColor == null,
+         'Pass tint only; selectedColor is its old name.',
+       ),
+       tint = tint ?? selectedColor,
+       assert(items.length >= 2, 'A tab bar needs at least two tabs.');
 
   /// The tabs, in reading order.
   final List<GlassTabBarItem> items;
@@ -118,7 +124,11 @@ class GlassTabBar extends StatefulWidget {
   /// The selected tab's icon and label, and the tabs under the lens.
   /// Defaults to iOS 26's tab bar blue, measured from SwiftUI's `TabView`,
   /// or Material 3's colours on the Material path.
-  final Color? selectedColor;
+  final Color? tint;
+
+  /// The old name of [tint].
+  @Deprecated('Use tint. Will be removed in 1.0.')
+  Color? get selectedColor => tint;
 
   /// The pill behind the selected tab at rest. Defaults to the fill
   /// iOS 26.4's tab bar draws (black at 7%, white at 14.5% in dark mode),
@@ -905,7 +915,7 @@ class _GlassTabBarState extends State<GlassTabBar>
   /// Material 3's navigation bar, floating in the same capsule or edge to
   /// edge.
   Widget _materialBar(BuildContext context) {
-    final selected = widget.selectedColor;
+    final selected = widget.tint;
     final label = Theme.of(context).textTheme.labelMedium;
     final onSearch = widget.onSearch;
     final edgeToEdge =
@@ -984,7 +994,7 @@ class _GlassTabBarState extends State<GlassTabBar>
 
   Widget _glassBar(BuildContext context) {
     final selected = CupertinoDynamicColor.resolve(
-      widget.selectedColor ?? GlassColors.tabBarSelected,
+      widget.tint ?? GlassColors.tabBarSelected,
       context,
     );
     final indicator = CupertinoDynamicColor.resolve(

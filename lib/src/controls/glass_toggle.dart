@@ -30,9 +30,14 @@ class GlassToggle extends StatefulWidget {
     super.key,
     required this.value,
     required this.onChanged,
-    this.activeColor,
+    Color? tint,
+    @Deprecated('Use tint. Will be removed in 1.0.') Color? activeColor,
     this.mode,
-  });
+  }) : assert(
+         tint == null || activeColor == null,
+         'Pass tint only; activeColor is its old name.',
+       ),
+       tint = tint ?? activeColor;
 
   /// Whether it is on.
   final bool value;
@@ -44,7 +49,11 @@ class GlassToggle extends StatefulWidget {
 
   /// The track while on. Defaults to system green, or Material 3's colour
   /// on the Material path.
-  final Color? activeColor;
+  final Color? tint;
+
+  /// The old name of [tint].
+  @Deprecated('Use tint. Will be removed in 1.0.')
+  Color? get activeColor => tint;
 
   /// The rendering path for the thumb's lens; see [GlassRenderMode].
   final GlassRenderMode? mode;
@@ -163,14 +172,14 @@ class _GlassToggleState extends State<GlassToggle>
         ? Switch(
             value: widget.value,
             onChanged: widget.onChanged,
-            activeTrackColor: widget.activeColor,
+            activeTrackColor: widget.tint,
           )
         : _glass(context),
   );
 
   Widget _glass(BuildContext context) {
     final on = CupertinoDynamicColor.resolve(
-      widget.activeColor ?? GlassSystemColors.green,
+      widget.tint ?? GlassSystemColors.green,
       context,
     );
     final off = CupertinoDynamicColor.resolve(GlassColors.toggleOff, context);

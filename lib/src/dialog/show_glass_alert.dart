@@ -31,16 +31,24 @@ import 'glass_dialog_route.dart';
 /// ```
 ///
 /// The alert closes when a button is tapped, then runs its `onPressed`;
-/// the returned future completes with that action. On the Material path
+/// the returned future completes with that action. Without [actions] it
+/// has a single OK button, as SwiftUI's `.alert` does. On the Material path
 /// it is a Material 3 [AlertDialog].
 Future<GlassDialogAction?> showGlassAlert({
   required BuildContext context,
   required String title,
   String? message,
-  required List<GlassDialogAction> actions,
+  List<GlassDialogAction>? actions,
   GlassRenderMode? mode,
 }) async {
-  assert(actions.isNotEmpty, 'An alert needs at least one action.');
+  assert(
+    actions == null || actions.isNotEmpty,
+    'An alert needs at least one action.',
+  );
+  final l10n =
+      Localizations.of<MaterialLocalizations>(context, MaterialLocalizations) ??
+      const DefaultMaterialLocalizations();
+  final buttons = actions ?? [GlassDialogAction(label: l10n.okButtonLabel)];
   final effective = resolveGlassMode(
     requested: mode ?? LiquidGlassTheme.of(context).defaultMode,
     environment: GlassPlatform.instance.environment.value,
@@ -56,7 +64,7 @@ Future<GlassDialogAction?> showGlassAlert({
         title: Text(title),
         content: message == null ? null : Text(message),
         actions: [
-          for (final a in actions)
+          for (final a in buttons)
             TextButton(
               onPressed: () => Navigator.of(context).pop(a),
               style: a.role == GlassButtonRole.destructive
@@ -75,7 +83,7 @@ Future<GlassDialogAction?> showGlassAlert({
       GlassDialogRoute(
         title: title,
         message: message,
-        actions: actions,
+        actions: buttons,
         confirmation: false,
         mode: mode,
         capturedThemes: InheritedTheme.capture(

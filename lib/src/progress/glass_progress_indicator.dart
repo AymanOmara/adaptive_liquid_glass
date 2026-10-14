@@ -32,20 +32,31 @@ class GlassProgressIndicator extends StatefulWidget {
     super.key,
     this.value,
     this.style = GlassProgressStyle.linear,
-    this.color,
+    Color? tint,
+    @Deprecated('Use tint. Will be removed in 1.0.') Color? color,
     this.glass,
     this.semanticLabel,
     this.mode,
-  });
+  }) : assert(
+         tint == null || color == null,
+         'Pass tint only; color is its old name.',
+       ),
+       tint = tint ?? color;
 
   /// Creates a circular indicator.
   const GlassProgressIndicator.circular({
     super.key,
     this.value,
-    this.color,
+    Color? tint,
+    @Deprecated('Use tint. Will be removed in 1.0.') Color? color,
     this.semanticLabel,
     this.mode,
-  }) : style = GlassProgressStyle.circular,
+  }) : assert(
+         tint == null || color == null,
+         'Pass tint only; color is its old name.',
+       ),
+       tint = tint ?? color,
+       style = GlassProgressStyle.circular,
        glass = null;
 
   /// The progress, 0 to 1; null is indeterminate.
@@ -55,7 +66,11 @@ class GlassProgressIndicator extends StatefulWidget {
   final GlassProgressStyle style;
 
   /// The fill. Defaults to system blue, or Material 3's primary.
-  final Color? color;
+  final Color? tint;
+
+  /// The old name of [tint].
+  @Deprecated('Use tint. Will be removed in 1.0.')
+  Color? get color => tint;
 
   /// The linear track's glass. Defaults to the theme's default glass.
   final Glass? glass;
@@ -83,7 +98,7 @@ class _GlassProgressIndicatorState extends State<GlassProgressIndicator>
       : '${(widget.value!.clamp(0.0, 1.0) * 100).round()}%';
 
   Color _colour(BuildContext context) => CupertinoDynamicColor.resolve(
-    widget.color ?? GlassSystemColors.blue,
+    widget.tint ?? GlassSystemColors.blue,
     context,
   );
 
@@ -147,13 +162,13 @@ class _GlassProgressIndicatorState extends State<GlassProgressIndicator>
   Widget _material() => widget.style == GlassProgressStyle.linear
       ? LinearProgressIndicator(
           value: widget.value,
-          color: widget.color,
+          color: widget.tint,
           semanticsLabel: widget.semanticLabel,
           semanticsValue: _semanticValue,
         )
       : CircularProgressIndicator(
           value: widget.value,
-          color: widget.color,
+          color: widget.tint,
           semanticsLabel: widget.semanticLabel,
           semanticsValue: _semanticValue,
         );
