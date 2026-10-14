@@ -13,11 +13,21 @@ import 'package:integration_test/integration_test.dart';
 /// the Core Animation work of the platform view.
 /// Profile mode is not available on the iOS simulator, so this runs in
 /// debug: compare the two modes against each other, not against budgets.
+///
+/// The Gallery never settles: its "Saving" button (`loading: true`) spins
+/// for as long as it is on screen, in every mode, so `pumpAndSettle` times
+/// out once a fling brings it into view. Each step pumps for a fixed time
+/// instead.
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   binding.framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.fullyLive;
   const modeName = String.fromEnvironment('GLASS_MODE', defaultValue: 'auto');
   final mode = GlassRenderMode.values.byName(modeName);
+
+  // Lets a fling's scroll run out (at seconds per frame, software GLES on
+  // an emulator, only a frame or two).
+  Future<void> idle(WidgetTester tester) =>
+      tester.pump(const Duration(seconds: 2));
 
   testWidgets('gallery scroll frame times ($modeName)', (tester) async {
     await tester.pumpWidget(
@@ -26,7 +36,7 @@ void main() {
         child: const MaterialApp(home: Gallery()),
       ),
     );
-    await tester.pumpAndSettle();
+    await idle(tester);
     final timings = <FrameTiming>[];
     void collect(List<FrameTiming> t) => timings.addAll(t);
     SchedulerBinding.instance.addTimingsCallback(collect);
@@ -36,7 +46,7 @@ void main() {
         Offset(0, i.isEven ? -300 : 300),
         1500,
       );
-      await tester.pumpAndSettle();
+      await idle(tester);
     }
     // Timings are reported in batches; give the last batch time to arrive.
     await tester.runAsync(
