@@ -157,10 +157,13 @@ final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate {
     if isVideo {
       let asset = AVURLAsset(url: url)
       let track = try? await asset.loadTracks(withMediaType: .video).first
-      if options.compatible, let track = track, await isHEVC(track),
-        let converted = await exportH264(asset, from: url)
-      {
-        url = converted
+      if options.compatible, let track = track, await isHEVC(track) {
+        if let converted = await exportH264(asset, from: url) {
+          url = converted
+        } else {
+          // Delivered as HEVC; `GlassPickedPhoto.conversionFailed`.
+          item["conversionFailed"] = true
+        }
       }
       let delivered = url == asset.url ? asset : AVURLAsset(url: url)
       if let size = await videoSize(delivered) {

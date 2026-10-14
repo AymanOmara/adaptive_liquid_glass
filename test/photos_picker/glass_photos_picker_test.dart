@@ -120,6 +120,56 @@ void main() {
       );
     });
 
+    test('conversionFailed defaults to false and is read from the map', () {
+      expect(
+        GlassPickedPhoto.fromMap(const {'path': '/v'}).conversionFailed,
+        isFalse,
+      );
+      final p = GlassPickedPhoto.fromMap(const {
+        'path': '/v.mov',
+        'isVideo': true,
+        'conversionFailed': true,
+      });
+      expect(p.conversionFailed, isTrue);
+      expect(p, isNot(const GlassPickedPhoto(path: '/v.mov', isVideo: true)));
+      expect(p.toString(), contains('conversion failed'));
+    });
+
+    testWidgets('a plain list reply has nothing dropped', (t) async {
+      _mock((_) async => [_image]);
+      final photos = await pickGlassPhotos();
+      expect(photos, hasLength(1));
+      expect(photos.droppedCount, 0);
+      photos.add(photos.first); // Still a growable list, as before.
+      expect(photos, hasLength(2));
+    }, variant: _both);
+
+    testWidgets('a map reply carries the items and the dropped count', (
+      t,
+    ) async {
+      _mock(
+        (_) async => {
+          'items': [
+            _image,
+            {..._video, 'conversionFailed': true},
+          ],
+          'dropped': 2,
+        },
+      );
+      final photos = await pickGlassPhotos(maxSelection: 2);
+      expect(photos, hasLength(2));
+      expect(photos.droppedCount, 2);
+      expect(photos.first.conversionFailed, isFalse);
+      expect(photos.last.conversionFailed, isTrue);
+    }, variant: _both);
+
+    testWidgets('a map reply without items is empty', (t) async {
+      _mock((_) async => <String, Object?>{});
+      final photos = await pickGlassPhotos();
+      expect(photos, isEmpty);
+      expect(photos.droppedCount, 0);
+    }, variant: _both);
+
     testWidgets('cancel (empty or null reply) is an empty list', (t) async {
       _mock((_) async => const <Object?>[]);
       expect(await pickGlassPhotos(), isEmpty);
@@ -177,6 +227,29 @@ void main() {
       expect(calls.single.arguments, {'maxSelection': 3, 'filter': 'videos'});
       expect(picked, hasLength(1));
       expect(picked!.single.path, '/tmp/a.heic');
+    }, variant: _both);
+
+    testWidgets('onPicked receives the dropped count', (t) async {
+      shaderEnv();
+      _mock(
+        (_) async => {
+          'items': [_image],
+          'dropped': 3,
+        },
+      );
+      GlassPickedPhotos? picked;
+      await t.pumpWidget(
+        plainHost(
+          GlassPhotosPicker(
+            label: 'Select Photos',
+            onPicked: (p) => picked = p,
+          ),
+        ),
+      );
+      await t.tap(find.text('Select Photos'));
+      await t.pump();
+      expect(picked, hasLength(1));
+      expect(picked!.droppedCount, 3);
     }, variant: _both);
 
     testWidgets('passes the downscaling and format options', (t) async {

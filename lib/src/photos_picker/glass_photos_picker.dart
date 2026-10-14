@@ -7,7 +7,7 @@ import '../button/glass_button_style.dart';
 import '../button/glass_control_size.dart';
 import '../core/glass_render_mode.dart';
 import 'glass_photos_picker_filter.dart';
-import 'glass_picked_photo.dart';
+import 'glass_picked_photos.dart';
 import 'photos_picker_metrics.dart';
 import 'pick_glass_photos.dart';
 
@@ -66,7 +66,7 @@ class GlassPhotosPicker extends StatefulWidget {
 
   /// Called with the chosen items when the picker closes with a choice;
   /// null disables the trigger.
-  final ValueChanged<List<GlassPickedPhoto>>? onPicked;
+  final ValueChanged<GlassPickedPhotos>? onPicked;
 
   /// The trigger's content; replaces [icon] and [label].
   final Widget? child;

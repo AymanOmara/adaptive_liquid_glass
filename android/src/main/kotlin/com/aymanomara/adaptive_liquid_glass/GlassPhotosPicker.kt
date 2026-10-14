@@ -33,7 +33,8 @@ import java.util.concurrent.Executors
  * `startActivityForResult`, so it works with a plain `FlutterActivity`
  * (the AndroidX result APIs need a `ComponentActivity`). Each chosen item
  * is copied into `cacheDir/adaptive_liquid_glass_picker`; photos are
- * downscaled or converted to JPEG when asked, videos copied as they are.
+ * downscaled or converted to JPEG, and HEVC videos re-encoded as H.264
+ * ([H264Transcoder]), when asked.
  */
 internal class GlassPhotosPicker(private val context: Context) :
     PluginRegistry.ActivityResultListener {
@@ -43,7 +44,7 @@ internal class GlassPhotosPicker(private val context: Context) :
         val maxHeight: Int? = null,
         /** 0-100. */
         val quality: Int? = null,
-        /** HEIC/HEIF photos as JPEG. */
+        /** HEIC/HEIF photos as JPEG, HEVC videos as H.264. */
         val compatible: Boolean = false,
     )
 
@@ -108,13 +109,18 @@ internal class GlassPhotosPicker(private val context: Context) :
                 data.data?.let { add(it) }
             }
         }
-        // The document picker has no selection limit.
-        if (pendingMax > 0 && uris.size > pendingMax) uris = uris.take(pendingMax)
+        // The document picker has no selection limit: keep the first ones
+        // and report the rest as `GlassPickedPhotos.droppedCount`.
+        var dropped = 0
+        if (pendingMax > 0 && uris.size > pendingMax) {
+            dropped = uris.size - pendingMax
+            uris = uris.take(pendingMax)
+        }
         val options = pendingOptions
         io.execute {
             try {
                 val items = uris.map { copy(it, options) }
-                main.post { result.success(items) }
+                main.post { result.success(mapOf("items" to items, "dropped" to dropped)) }
             } catch (e: Exception) {
                 main.post { result.error("load_failed", e.message, null) }
             }
@@ -134,6 +140,17 @@ internal class GlassPhotosPicker(private val context: Context) :
         val isVideo = mime?.startsWith("video/") == true
         val item = mutableMapOf<String, Any?>("isVideo" to isVideo)
         if (isVideo) {
+            if (options.compatible && H264Transcoder.isHevc(dest)) {
+                val out = File(dir, dest.nameWithoutExtension + ".out.mp4")
+                if (H264Transcoder.transcode(dest, out)) {
+                    dest.delete()
+                    dest = out
+                    mime = "video/mp4"
+                } else {
+                    // Delivered as HEVC; `GlassPickedPhoto.conversionFailed`.
+                    item["conversionFailed"] = true
+                }
+            }
             videoInfo(dest, item)
         } else {
             reencode(dest, mime, options)?.let { (file, type) ->
