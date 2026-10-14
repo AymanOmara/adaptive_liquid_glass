@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 
 import '../shader/raster_snapshot_gate.dart';
+import '../shader/reused_shader.dart';
 import 'tab_bar_metrics.dart';
 import 'tab_vibrancy_program.dart';
 import 'vibrancy_kind.dart';
@@ -69,6 +70,9 @@ class RenderVibrantBlend extends RenderProxyBox {
   final LayerHandle<BackdropFilterLayer> _backdrop =
       LayerHandle<BackdropFilterLayer>();
   ui.Image? _image;
+  // One shader, re-pointed at each new glyph image: a shader per paint
+  // kept every replaced glyph image alive until garbage collection.
+  final _shader = reusedFragmentShader();
 
   // Whether [_image] must be rasterised again: the glyphs are reused while
   // only the backdrop or this box's position changes (a lens or the bar
@@ -112,6 +116,7 @@ class RenderVibrantBlend extends RenderProxyBox {
     _hidden.layer = null;
     _clip.layer = null;
     _backdrop.layer = null;
+    _shader.clear();
     _image?.dispose();
     _image = null;
     _glyphs.layer = null;
@@ -199,7 +204,7 @@ class RenderVibrantBlend extends RenderProxyBox {
                 TabBarMetrics.vibrancyChromaGain,
               ),
     };
-    final shader = program.fragmentShader()
+    final shader = _shader.of(program)
       ..setFloat(2, origin.dx)
       ..setFloat(3, origin.dy)
       ..setFloat(4, bounds.width * dpr)
