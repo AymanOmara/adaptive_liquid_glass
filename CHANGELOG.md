@@ -1,5 +1,13 @@
 ## Unreleased
 
+- Android (Impeller, OpenGL ES): fixed a raster-thread crash at launch
+  with a shader-mode `GlassTabBar`. Its vibrant labels rasterise a glyph
+  image (`toImageSync`), and a snapshot taken before the first frame
+  reaches the screen makes Impeller build a throwaway surface, which
+  crashes on GLES (Flutter 3.47). The labels now stay flat until the first
+  frame is rasterised, and the `GlassBackdropSource` luminance sampler
+  skips its readback until then and while the app is in the background.
+
 - Usability pass ahead of 1.0 (audit in
   `docs/superpowers/notes/usability-audit.md`):
   - `AdaptiveLiquidGlass.initialize()` initialises the Flutter binding

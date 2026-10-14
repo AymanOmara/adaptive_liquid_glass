@@ -33,3 +33,37 @@ Date: 2026-10-14. Flutter 3.47.7, profile build, arm64.
   each group's bounds, every frame). Build time is small in both.
 - Still unmeasured: a real mid-range phone, on Vulkan and on OpenGL ES.
   Re-run the same test there before quoting any frame budget.
+
+## Why `pumpAndSettle` timed out (2026-10-14)
+
+Not the glass: the Gallery's "Saving" button (`GlassButton(loading:
+true)`) spins forever, in every mode, so the scheduler always has a ticker
+once a fling scrolls it into view (a host widget test of the same Gallery
+in shader and material mode stays unsettled after the first fling and
+settles once it scrolls back; with `loading: false` both settle in 8
+pumps). The perf test now pumps a fixed 2 s after each step.
+
+## The launch crash with the forced GLES flip (2026-10-14)
+
+Not the flip, and not a shader or uniform mismatch. Tombstones (profile
+build, BuildId e154c644…, symbolised with the matching unstripped
+`libflutter.so` from the Gradle cache) all show the same raster-thread
+stack: `Layer.toImageSync` → `DlDeferredImageGPUImpeller` →
+`Rasterizer::MakeImpellerSnapshotSync` → no onscreen surface yet, so
+`AndroidSurfaceGLImpeller::CreateSnapshotSurface` builds a new
+`AiksContext`/`ContentContext`, whose setup blit
+(`BlitCopyBufferToTextureCommandGLES::Encode`) dereferences null. The
+only `toImageSync` in the package is `RenderVibrantBlend` (the shader tab
+bar's glyph image), painted in the first frames, before Android's surface
+exists. The unmodified probe crashed the same way (1 cold launch in 8), so
+it was a latent launch race for any app with a shader-mode tab bar on
+Impeller GLES. Fix: `RasterSnapshotGate` keeps raster snapshots (the glyph
+image, the `GlassBackdropSource` luminance readback) off until the first
+frame is rasterised and while the app is in the background; the labels
+paint flat until then.
+
+Evidence: unmodified probe (profile) 1 crash in 8 cold launches
+(tombstone_17); with the gate 0 in 12. A debug build from before the fix
+(another session's run, tombstone_18, uptime 211 s) died in the same
+`BlitCopyBufferToTextureCommandGLES::Encode`, so the crash is not only a
+launch race.
