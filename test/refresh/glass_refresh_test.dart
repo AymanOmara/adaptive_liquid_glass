@@ -165,6 +165,117 @@ void main() {
     await t.pumpAndSettle();
   }, variant: ios);
 
+  /// Where the content's first row sits below the wrapper's top.
+  double contentOffset(WidgetTester t) =>
+      t.getTopLeft(find.text('Row 0')).dy -
+      t.getTopLeft(find.byType(GlassRefresh)).dy;
+
+  testWidgets('the content is held down while the refresh is pending', (
+    t,
+  ) async {
+    shaderEnv();
+    final completer = Completer<void>();
+    await t.pumpWidget(
+      _host(GlassRefresh(onRefresh: () => completer.future, child: _list)),
+    );
+    await t.pump();
+    expect(contentOffset(t), 0);
+    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await t.pump();
+    // As the release's bounce returns, the content never rises above
+    // the hold: it stops at the spinner's room instead of the top.
+    for (var i = 0; i < 60; i++) {
+      await t.pump(_frame);
+      expect(
+        contentOffset(t),
+        greaterThanOrEqualTo(RefreshMetrics.indicatorExtent - 0.01),
+      );
+    }
+    await t.pump(const Duration(seconds: 1));
+    expect(contentOffset(t), moreOrLessEquals(RefreshMetrics.indicatorExtent));
+    // The spinner is shown, turning, within the held room.
+    final indicator = t.widget<GlassRefreshIndicator>(
+      find.byType(GlassRefreshIndicator),
+    );
+    expect(indicator.refreshing, isTrue);
+    expect(indicator.progress, 1);
+    final spinner =
+        t.getCenter(find.byType(GlassRefreshIndicator)).dy -
+        t.getTopLeft(find.byType(GlassRefresh)).dy;
+    expect(spinner, moreOrLessEquals(RefreshMetrics.indicatorExtent / 2));
+    completer.complete();
+    await t.pumpAndSettle();
+    expect(contentOffset(t), 0);
+  }, variant: ios);
+
+  testWidgets('the held content returns on the measured spring', (t) async {
+    shaderEnv();
+    final completer = Completer<void>();
+    await t.pumpWidget(
+      _host(GlassRefresh(onRefresh: () => completer.future, child: _list)),
+    );
+    await t.pump();
+    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await t.pump();
+    await t.pump(const Duration(seconds: 1));
+    completer.complete();
+    await t.pump();
+    const elapsed = Duration(milliseconds: 150);
+    await t.pump(elapsed);
+    final spring = SpringSimulation(
+      swiftUISpring(
+        response: RefreshMetrics.snapResponse,
+        dampingFraction: RefreshMetrics.snapDamping,
+      ),
+      RefreshMetrics.indicatorExtent,
+      0,
+      0,
+    );
+    expect(
+      contentOffset(t),
+      closeTo(
+        spring.x(elapsed.inMicroseconds / Duration.microsecondsPerSecond),
+        2,
+      ),
+    );
+    await t.pumpAndSettle();
+    expect(contentOffset(t), 0);
+  }, variant: ios);
+
+  testWidgets('a short pull is not held', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      _host(GlassRefresh(onRefresh: () async {}, child: _list)),
+    );
+    await t.pump();
+    await t.drag(find.text('Row 0'), const Offset(0, 30));
+    await t.pumpAndSettle();
+    expect(contentOffset(t), 0);
+  }, variant: ios);
+
+  testWidgets('scrolling into the list while refreshing takes the spinner '
+      'along', (t) async {
+    shaderEnv();
+    final completer = Completer<void>();
+    await t.pumpWidget(
+      _host(GlassRefresh(onRefresh: () => completer.future, child: _list)),
+    );
+    await t.pump();
+    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await t.pump();
+    await t.pump(const Duration(seconds: 1));
+    final top = t.getTopLeft(find.byType(GlassRefresh)).dy;
+    final before = t.getCenter(find.byType(GlassRefreshIndicator)).dy - top;
+    await t.drag(find.text('Row 3'), const Offset(0, -40));
+    // Not pumpAndSettle: the spinner turns until the refresh ends.
+    await t.pump(const Duration(seconds: 1));
+    final after = t.getCenter(find.byType(GlassRefreshIndicator)).dy - top;
+    // The spinner rides up with the content, as UIKit's inset does.
+    expect(after, lessThan(before - 20));
+    completer.complete();
+    await t.pumpAndSettle();
+  }, variant: ios);
+
   testWidgets('Android uses Material RefreshIndicator', (t) async {
     shaderEnv();
     await t.pumpWidget(

@@ -1,3 +1,11 @@
+## Unreleased
+
+- `GlassRefresh`: the content stays held down by the spinner's room
+  (60 pt) while `onRefresh` runs, as SwiftUI's `.refreshable` holds its
+  list, and returns on the measured snap-back spring once it completes;
+  the release's bounce stops at the hold instead of the top, and content
+  scrolled into while refreshing carries the spinner up with it.
+
 ## 0.2.1 (2026-10-14)
 
 - Debug builds print a one-time warning when more than 8 native glass

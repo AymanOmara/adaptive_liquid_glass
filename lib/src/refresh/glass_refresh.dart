@@ -23,8 +23,10 @@ import 'refresh_metrics.dart';
 /// ```
 ///
 /// The indicator floats over the top of the content (the child keeps its
-/// own layout), scales in with the pull, plays a haptic when armed, and
-/// snaps back on SwiftUI's spring once refresh completes; `BouncingScrollPhysics`
+/// own layout), scales in with the pull and plays a haptic when armed.
+/// While the refresh runs the content is held down by the spinner's room,
+/// as `UIRefreshControl` holds a list, and it snaps back on SwiftUI's
+/// spring once refresh completes; `BouncingScrollPhysics`
 /// is the natural fit, though clamping physics also work (the pull is then
 /// tracked from the overscroll). On the Material path this is Material's
 /// own [RefreshIndicator].
@@ -72,19 +74,35 @@ class _GlassRefreshState extends State<GlassRefresh>
   /// The overscroll past the top, in pixels.
   double _pull = 0;
 
+  /// The scrollable's signed overscroll past the top: positive while
+  /// pulled, negative once scrolled into the content.
+  final _overscroll = ValueNotifier<double>(0);
+
   bool _dragging = false;
   bool _armed = false;
   bool _refreshing = false;
+
+  /// From the trigger until the snap-back settles: the content is held
+  /// down by [RefreshMetrics.indicatorExtent] times the progress.
+  bool _holding = false;
+
+  /// The hold's current depth, in pixels; follows the snap-back spring.
+  double get _hold =>
+      _holding ? _controller.value * RefreshMetrics.indicatorExtent : 0;
 
   bool get _reduceMotion =>
       MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
   bool _onScroll(ScrollNotification notification) {
     if (notification.depth != 0) return false;
+    _overscroll.value =
+        notification.metrics.minScrollExtent - notification.metrics.pixels;
     if (notification is ScrollStartNotification) {
       if (notification.dragDetails != null) {
         _dragging = true;
-        _controller.stop();
+        // A post-refresh snap-back keeps going under a new drag; the
+        // held content would jump otherwise.
+        if (!_holding) _controller.stop();
         _pull = math.max(
           0,
           notification.metrics.minScrollExtent - notification.metrics.pixels,
@@ -117,7 +135,7 @@ class _GlassRefreshState extends State<GlassRefresh>
   /// While dragging and not refreshing, the pull drives the progress and
   /// the arm; a haptic plays the first time it arms.
   void _updateProgress() {
-    if (!_dragging || _refreshing) return;
+    if (!_dragging || _holding) return;
     final progress = _pull / RefreshMetrics.triggerDistance;
     _controller.value = progress;
     final armed = progress >= 1;
@@ -128,6 +146,7 @@ class _GlassRefreshState extends State<GlassRefresh>
   }
 
   void _endDrag() {
+    if (_holding) return;
     if (_armed) {
       _trigger();
     } else if (!_refreshing) {
@@ -140,6 +159,7 @@ class _GlassRefreshState extends State<GlassRefresh>
   void _trigger() {
     setState(() {
       _refreshing = true;
+      _holding = true;
       _armed = false;
       _controller.value = 1;
     });
@@ -153,6 +173,7 @@ class _GlassRefreshState extends State<GlassRefresh>
     if (_reduceMotion) {
       setState(() {
         _refreshing = false;
+        _holding = false;
         _controller.value = 0;
       });
       return;
@@ -172,7 +193,10 @@ class _GlassRefreshState extends State<GlassRefresh>
         )
         // The spring settles within its tolerance, not at 0; a value just
         // above 0 would leave the disk showing at its smallest scale.
-        .then((_) => _controller.value = 0);
+        .then((_) {
+          _holding = false;
+          _controller.value = 0;
+        });
   }
 
   // Created here, not lazily: one first read in dispose would create
@@ -186,6 +210,7 @@ class _GlassRefreshState extends State<GlassRefresh>
   @override
   void dispose() {
     _controller.dispose();
+    _overscroll.dispose();
     super.dispose();
   }
 
@@ -202,32 +227,46 @@ class _GlassRefreshState extends State<GlassRefresh>
         : _glass(),
   );
 
+  /// The child is shifted down by what the hold adds beyond the pull
+  /// (the release's bounce returns into the hold, not past it), clipped
+  /// to the wrapper; while held, the spinner rides up with content
+  /// scrolled into, as UIKit's content inset carries it.
   Widget _glass() => NotificationListener<ScrollNotification>(
     onNotification: _onScroll,
-    child: Stack(
-      children: [
-        widget.child,
-        PositionedDirectional(
-          top: 0,
-          start: 0,
-          end: 0,
-          height: RefreshMetrics.indicatorExtent,
-          child: IgnorePointer(
-            child: Center(
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) => GlassRefreshIndicator(
-                  progress: _controller.value,
-                  refreshing: _refreshing,
-                  color: widget.color,
-                  semanticLabel: widget.semanticLabel,
-                  mode: widget.mode,
+    child: AnimatedBuilder(
+      animation: Listenable.merge([_controller, _overscroll]),
+      builder: (context, _) {
+        final overscroll = _overscroll.value;
+        final shift = math.max(0.0, _hold - math.max(0.0, overscroll));
+        return Stack(
+          children: [
+            ClipRect(
+              clipBehavior: shift == 0 ? Clip.none : Clip.hardEdge,
+              child: Transform.translate(
+                offset: Offset(0, shift),
+                child: widget.child,
+              ),
+            ),
+            PositionedDirectional(
+              top: _holding ? math.min(0.0, overscroll) : 0,
+              start: 0,
+              end: 0,
+              height: RefreshMetrics.indicatorExtent,
+              child: IgnorePointer(
+                child: Center(
+                  child: GlassRefreshIndicator(
+                    progress: _controller.value,
+                    refreshing: _refreshing,
+                    color: widget.color,
+                    semanticLabel: widget.semanticLabel,
+                    mode: widget.mode,
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     ),
   );
 }

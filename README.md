@@ -1340,8 +1340,7 @@ testWidgets('pays', (tester) async {
   motion, the disclosure spring, the refresh snap-back and the colour
   grid's ring are measured; `GlassSearchable`'s Cancel reveal (iOS rides
   the field up with the keyboard) and the wheel picker's VoiceOver step
-  are not, and `GlassRefresh` does not hold the list down while
-  refreshing as SwiftUI does.
+  are not.
 - **Native mode, runtime light→dark flip:** on iOS 26, 71 of 72 measured
   brightness flips at runtime match SwiftUI. One does not: a regular glass
   capsule over a photo, flipped from light to dark, keeps part of Apple's
