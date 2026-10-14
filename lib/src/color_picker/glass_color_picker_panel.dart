@@ -13,8 +13,9 @@ import 'color_hex.dart';
 import 'color_picker_metrics.dart';
 import 'color_swatch_grid.dart';
 import 'color_value_field.dart';
-import 'hsv_spectrum.dart';
-import 'hue_bar.dart';
+import 'saved_colors.dart';
+import 'saved_colors_row.dart';
+import 'spectrum_map.dart';
 
 /// The pages of [GlassColorPickerPanel], as UIColorPickerViewController's
 /// segmented control.
@@ -37,8 +38,8 @@ enum _Page { grid, spectrum, sliders }
 /// ```
 ///
 /// The panel keeps its own colour while open and follows a new [value]
-/// from its parent. UIKit's eyedropper and saved colours are not drawn
-/// (Flutter cannot sample the screen outside its own view).
+/// from its parent. The current colour sits beside the saved colours and
+/// a "+" that saves it; [onEyedropper] adds UIKit's eyedropper.
 class GlassColorPickerPanel extends StatefulWidget {
   /// Creates the panel.
   const GlassColorPickerPanel({
@@ -59,6 +60,12 @@ class GlassColorPickerPanel extends StatefulWidget {
     this.blueLabel = 'Blue',
     this.opacityLabel = 'Opacity',
     this.hexLabel = 'sRGB Hex Color #',
+    this.savedColors,
+    this.onSavedColorsChanged,
+    this.savedColorLabel = 'Saved colour',
+    this.addColorLabel = 'Add to saved colours',
+    this.onEyedropper,
+    this.eyedropperLabel = 'Eyedropper',
   });
 
   /// The colour shown.
@@ -91,7 +98,7 @@ class GlassColorPickerPanel extends StatefulWidget {
   /// The sliders' segment.
   final String slidersLabel;
 
-  /// The hue bar's screen-reader label.
+  /// The word for hue in the spectrum's screen-reader value.
   final String hueLabel;
 
   /// The red slider's caption (shown upper case).
@@ -109,6 +116,29 @@ class GlassColorPickerPanel extends StatefulWidget {
   /// The hex field's label.
   final String hexLabel;
 
+  /// The saved colours beside the current one. Null shares one in-memory
+  /// list between every picker (UIKit's saved colours on a fresh device
+  /// to begin with), kept until the app quits.
+  final List<Color>? savedColors;
+
+  /// Called with the new list when the "+" saves the current colour or a
+  /// long press removes one; with [savedColors], store it and pass it back
+  /// to keep the change.
+  final ValueChanged<List<Color>>? onSavedColorsChanged;
+
+  /// A saved colour's screen-reader label, before its hex code.
+  final String savedColorLabel;
+
+  /// The "+" button's screen-reader label.
+  final String addColorLabel;
+
+  /// Called by the eyedropper at the top start; no eyedropper when null.
+  /// `GlassColorPicker` hides its sheet and runs `pickColorFromApp`.
+  final VoidCallback? onEyedropper;
+
+  /// The eyedropper's screen-reader label.
+  final String eyedropperLabel;
+
   @override
   State<GlassColorPickerPanel> createState() => _GlassColorPickerPanelState();
 }
@@ -120,6 +150,10 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
 
   /// The last colour given to [GlassColorPickerPanel.onChanged].
   late Color _emitted = widget.value;
+
+  /// The app's saved colours as last changed here; null uses
+  /// [SavedColors.shared].
+  late List<Color>? _saved = widget.savedColors;
 
   Color get _color => _hsv.toColor().withValues(alpha: _alpha);
 
@@ -133,7 +167,29 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
       _alpha = widget.supportsOpacity ? widget.value.a : 1;
       _emitted = widget.value;
     }
+    if (widget.savedColors != old.savedColors) _saved = widget.savedColors;
   }
+
+  void _setSaved(List<Color> next) {
+    if (_saved != null) {
+      setState(() => _saved = next);
+    } else {
+      SavedColors.shared.value = next;
+    }
+    widget.onSavedColorsChanged?.call(next);
+  }
+
+  Widget _savedRow(List<Color> saved) => SavedColorsRow(
+    colors: saved,
+    savedLabel: widget.savedColorLabel,
+    addLabel: widget.addColorLabel,
+    onPick: (c) => _set(
+      hsv: HSVColor.fromColor(c.withValues(alpha: 1)),
+      alpha: widget.supportsOpacity ? c.a : null,
+    ),
+    onAdd: () => _setSaved([...saved, _color]),
+    onRemove: (i) => _setSaved([...saved]..removeAt(i)),
+  );
 
   void _set({HSVColor? hsv, double? alpha}) {
     setState(() {
@@ -227,6 +283,7 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
                 child: GlassSegmentedControl<_Page>(
                   selected: _page,
                   mode: widget.mode,
+                  trackHeight: ColorPickerMetrics.segmentHeight,
                   onChanged: (p) => setState(() => _page = p),
                   segments: [
                     GlassSegment(
@@ -305,24 +362,36 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
                   ),
                 ),
                 const SizedBox(height: ColorPickerMetrics.swatchGap),
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: ExcludeSemantics(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(
-                        ColorPickerMetrics.swatchRadius,
-                      ),
-                      child: CustomPaint(
-                        painter: _alpha < 1
-                            ? const CheckerboardPainter()
-                            : null,
-                        child: SizedBox.square(
-                          dimension: ColorPickerMetrics.swatch,
-                          child: ColoredBox(color: _color),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ExcludeSemantics(
+                      child: ClipRRect(
+                        key: const ValueKey('current-colour'),
+                        borderRadius: BorderRadius.circular(
+                          ColorPickerMetrics.swatchRadius,
+                        ),
+                        child: CustomPaint(
+                          painter: _alpha < 1
+                              ? const CheckerboardPainter()
+                              : null,
+                          child: SizedBox.square(
+                            dimension: ColorPickerMetrics.swatch,
+                            child: ColoredBox(color: _color),
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: ColorPickerMetrics.savedStart),
+                    Expanded(
+                      child: _saved != null
+                          ? _savedRow(_saved!)
+                          : ValueListenableBuilder<List<Color>>(
+                              valueListenable: SavedColors.shared,
+                              builder: (context, saved, _) => _savedRow(saved),
+                            ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: ColorPickerMetrics.bottomPadding),
               ],
@@ -356,6 +425,37 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   child: Semantics(header: true, child: widget.title!),
+                ),
+              ),
+            ),
+          ),
+        if (widget.onEyedropper != null)
+          PositionedDirectional(
+            start:
+                ColorPickerMetrics.eyedropperInset -
+                ColorPickerMetrics.closeTarget / 2,
+            top:
+                ColorPickerMetrics.eyedropperCentre -
+                ColorPickerMetrics.closeTarget / 2,
+            width: ColorPickerMetrics.closeTarget,
+            height: ColorPickerMetrics.closeTarget,
+            child: Semantics(
+              button: true,
+              label: widget.eyedropperLabel,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: widget.onEyedropper,
+                child: Center(
+                  child: ExcludeSemantics(
+                    child: Icon(
+                      CupertinoIcons.eyedropper,
+                      size: ColorPickerMetrics.eyedropperGlyph,
+                      color: CupertinoDynamicColor.resolve(
+                        GlassColors.label,
+                        context,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -399,22 +499,11 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
     ),
   );
 
-  Widget _spectrum() => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      HsvSpectrum(
-        color: _hsv,
-        height: ColorPickerMetrics.spectrumHeight,
-        onChanged: (c) => _set(hsv: c),
-        semanticLabel: widget.spectrumLabel,
-      ),
-      const SizedBox(height: ColorPickerMetrics.hueBarGap),
-      HueBar(
-        color: _hsv,
-        onChanged: (c) => _set(hsv: c),
-        semanticLabel: widget.hueLabel,
-      ),
-    ],
+  Widget _spectrum() => SpectrumMap(
+    color: _hsv,
+    onChanged: (c) => _set(hsv: c),
+    semanticLabel: widget.spectrumLabel,
+    hueLabel: widget.hueLabel,
   );
 
   Widget _channel(

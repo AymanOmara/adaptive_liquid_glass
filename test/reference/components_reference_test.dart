@@ -6,6 +6,7 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart'
 import 'package:adaptive_liquid_glass/src/button/glass_button_metrics.dart';
 import 'package:adaptive_liquid_glass/src/button/glass_control_size.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/color_picker_metrics.dart';
+import 'package:adaptive_liquid_glass/src/color_picker/saved_colors.dart';
 import 'package:adaptive_liquid_glass/src/context_menu/context_menu_metrics.dart';
 import 'package:adaptive_liquid_glass/src/controls/control_metrics.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
@@ -126,10 +127,20 @@ void main() {
       ControlMetrics.segmentedFontSize * 0.74,
       moreOrLessEquals(n(s, 'week_ink'), epsilon: pt),
     );
-    expect(GlassColors.segmentTrack.color, sameColour(hex(s, 'track_colour')));
+    // Translucent: measured over white and black, and over the colour
+    // sheet's #ECECEF (UIKit, #DDDDE1).
+    Color over(Color fill, Color under) => Color.alphaBlend(fill, under);
     expect(
-      GlassColors.segmentTrack.darkColor,
+      over(GlassColors.segmentTrack.color, const Color(0xFFFFFFFF)),
+      sameColour(hex(s, 'track_colour')),
+    );
+    expect(
+      over(GlassColors.segmentTrack.darkColor, const Color(0xFF000000)),
       sameColour(hex(s, 'dark_track_colour')),
+    );
+    expect(
+      over(GlassColors.segmentTrack.color, const Color(0xFFECECEF)),
+      sameColour(hex(m('color_sheet'), 'segment_track')),
     );
     expect(GlassColors.segmentThumb.color, sameColour(hex(s, 'thumb_colour')));
     expect(
@@ -716,6 +727,7 @@ void main() {
       (ColorPickerMetrics.closeGlyph, 'close_glyph'),
       (ColorPickerMetrics.closeInset, 'close_inset'),
       (ColorPickerMetrics.segmentTop, 'segment_top'),
+      (ColorPickerMetrics.segmentHeight, 'segment_height'),
       (ColorPickerMetrics.pageTop, 'page_top'),
       (ColorPickerMetrics.pageHeight, 'grid_height'),
       (ColorPickerMetrics.trackHeight, 'track_height'),
@@ -754,6 +766,42 @@ void main() {
       ColorPickerMetrics.channelTop + ColorPickerMetrics.captionSlot,
       moreOrLessEquals(tops.first.toDouble(), epsilon: pt),
     );
+  });
+
+  test('colour picker sheet: saved colours and eyedropper (UIKit)', () {
+    final c = m('color_sheet');
+    expect(
+      ColorPickerMetrics.savedSwatch,
+      moreOrLessEquals(n(c, 'saved_size'), epsilon: pt),
+    );
+    expect(
+      ColorPickerMetrics.savedStart,
+      moreOrLessEquals(n(c, 'saved_start'), epsilon: pt),
+    );
+    expect(
+      ColorPickerMetrics.savedPitch,
+      moreOrLessEquals(n(c, 'saved_pitch'), epsilon: pt),
+    );
+    expect(SavedColors.defaults.length, n(c, 'saved_count'));
+    expect(
+      GlassColors.colorPickerAddFill.color,
+      sameColour(hex(c, 'plus_fill')),
+    );
+    // Level with the current colour's swatch.
+    expect(
+      n(c, 'saved_top'),
+      moreOrLessEquals(n(c, 'swatch_top'), epsilon: pt),
+    );
+    final drop = (c['eyedropper'] as List).cast<num>();
+    expect(
+      ColorPickerMetrics.eyedropperInset,
+      moreOrLessEquals((drop[0] + drop[2]) / 2, epsilon: pt),
+    );
+    expect(
+      ColorPickerMetrics.eyedropperCentre,
+      moreOrLessEquals((drop[1] + drop[3]) / 2, epsilon: pt),
+    );
+    expect(ColorPickerMetrics.eyedropperInk, drop[2] - drop[0]);
   });
 
   test('context menu', () {

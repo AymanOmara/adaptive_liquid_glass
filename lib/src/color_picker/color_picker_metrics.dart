@@ -40,8 +40,37 @@ abstract final class ColorPickerMetrics {
   /// The close button's touch target.
   static const double closeTarget = 44;
 
+  /// The eyedropper glyph's ink box (measured: 22 x 22 pt).
+  static const double eyedropperInk = 22;
+
+  /// CupertinoIcons.eyedropper's size for UIKit's 22-pt ink box (24 drew
+  /// 20.67 pt).
+  static const double eyedropperGlyph = 25.5;
+
+  /// The eyedropper glyph's centre from the sheet's start edge (measured:
+  /// ink 17.67-39.67 pt in).
+  static const double eyedropperInset = 28.67;
+
+  /// The eyedropper glyph's centre below the sheet's top (measured: ink
+  /// 16-38 pt down).
+  static const double eyedropperCentre = 27;
+
+  /// The eyedropper's loupe diameter (estimated; UIKit's samples the
+  /// whole screen, which a simulator capture cannot show mid-drag).
+  static const double loupe = 120;
+
+  /// The pixels across the loupe (estimated).
+  static const int loupeCells = 11;
+
+  /// The loupe's ring of the colour under it (estimated).
+  static const double loupeRing = 8;
+
   /// The segmented control's top (measured: 53).
   static const double segmentTop = 53;
+
+  /// The segmented control's track height (measured: 30.67, UIKit's
+  /// UISegmentedControl; SwiftUI's segmented picker is 32).
+  static const double segmentHeight = 30.67;
 
   /// The page (grid, spectrum or sliders) top (measured: 98.33, the grid's
   /// and the spectrum's top edge).
@@ -118,6 +147,22 @@ abstract final class ColorPickerMetrics {
   /// The current colour's swatch (measured: 75 x 75).
   static const double swatch = 75;
 
+  /// A saved colour's circle, and the "+" beside them (measured: 29).
+  static const double savedSwatch = 29;
+
+  /// The gap from the current colour's swatch to the first saved colour
+  /// (measured: 18.33).
+  static const double savedStart = 18.33;
+
+  /// The saved colours' pitch (measured: 46.07, centre to centre).
+  static const double savedPitch = 46.07;
+
+  /// The "+" glyph's length (measured: 13.67).
+  static const double savedPlus = 13.67;
+
+  /// The "+" glyph's stroke (measured: 2.33).
+  static const double savedPlusStroke = 2.33;
+
   /// The swatch's corner radius (measured, about 10).
   static const double swatchRadius = 10;
 
@@ -137,22 +182,11 @@ abstract final class ColorPickerMetrics {
   /// The selected grid swatch's ring thickness (estimated).
   static const double gridSelectionRing = 2;
 
-  /// The spectrum and hue bar's corner radius (estimated, as the grid's).
+  /// The spectrum map's corner radius (measured, about 8, as the grid's).
   static const double spectrumRadius = 8;
 
-  /// The hue bar's height (estimated: UIKit's spectrum is one hue by
-  /// brightness map without a bar; this one keeps a saturation-value
-  /// square and a hue bar within the measured page).
-  static const double hueBarHeight = 24;
-
-  /// The gap between the spectrum square and the hue bar (estimated).
-  static const double hueBarGap = 12;
-
-  /// The spectrum square's height: the page less the hue bar.
-  static const double spectrumHeight = pageHeight - hueBarGap - hueBarHeight;
-
-  /// The spectrum and hue bar thumb's diameter (estimated).
-  static const double thumb = 24;
+  /// The spectrum thumb's diameter (measured: 28, its ring included).
+  static const double thumb = 28;
 
   /// The thumb's ring thickness (measured: 2.67, as the sliders').
   static const double thumbRing = trackThumbRing;

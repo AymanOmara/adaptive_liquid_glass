@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../core/glass_colors.dart';
 import 'color_picker_metrics.dart';
 
-/// The round thumb on the spectrum square and the hue bar: the colour
+/// The round thumb on the spectrum map: the colour
 /// under it inside a white ring with a soft shadow.
 class SpectrumThumb extends StatelessWidget {
   /// Creates the thumb.

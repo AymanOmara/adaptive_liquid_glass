@@ -35,6 +35,10 @@ enum ControlScenes {
     case "menu": root = AnyView(MenuReference())
     case "search": root = AnyView(SearchReference())
     case "sheetlarge": root = AnyView(SheetReference(large: true))
+    case "sheetheight":
+      root = AnyView(SheetReference(
+        large: false, height: Double(LaunchArgs.arg("height") ?? "") ?? 600,
+        grabber: LaunchArgs.arg("grabber") != "0"))
     case "alert": root = AnyView(AlertReference())
     case "dialog": root = AnyView(DialogReference())
     case "popover": root = AnyView(PopoverReference())
@@ -360,6 +364,10 @@ struct TabBarBackdropReference: View {
 struct SheetReference: View {
   /// The large detent (`-controls sheetlarge`) instead of the medium one.
   let large: Bool
+  /// A `.height(_:)` detent (`-controls sheetheight -height <pt>`).
+  var height: Double? = nil
+  /// Whether the grabber shows (`-grabber 0` hides it).
+  var grabber = true
   @State private var shown = false
   var body: some View {
     Color(white: 0.5).ignoresSafeArea()
@@ -368,8 +376,8 @@ struct SheetReference: View {
         Text("Glass sheet").font(.title2.bold())
           .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
           .padding(24)
-          .presentationDetents([large ? .large : .medium])
-          .presentationDragIndicator(.visible)
+          .presentationDetents([height.map { .height($0) } ?? (large ? .large : .medium)])
+          .presentationDragIndicator(grabber ? .visible : .hidden)
           .environment(\.colorScheme, .light)
       }
       .environment(\.colorScheme, .light)

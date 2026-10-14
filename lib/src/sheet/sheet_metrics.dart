@@ -26,6 +26,13 @@ abstract final class SheetMetrics {
   /// height above its bottom (459 of 874 pt).
   static const double mediumFraction = 459 / 874;
 
+  /// How close to the large detent a partial detent may come and still
+  /// float: SwiftUI's `.height(765)` floats (its top 98.67 pt down), a
+  /// `.height(775)` runs edge to edge (iOS 26.4, iPhone 17 Pro), so the
+  /// threshold lies 26-37 pt under the large sheet's height (estimated
+  /// midway).
+  static const double edgeToEdgeGap = 31;
+
   /// The grabber.
   static const double grabberWidth = 34.67;
 

@@ -44,6 +44,7 @@ class GlassSegmentedControl<T> extends StatefulWidget {
     required this.selected,
     required this.onChanged,
     this.mode,
+    this.trackHeight,
   }) : assert(segments.length >= 2, 'Needs at least two segments.');
 
   /// The segments, in reading order.
@@ -57,6 +58,12 @@ class GlassSegmentedControl<T> extends StatefulWidget {
 
   /// The rendering path for the thumb's lens; see [GlassRenderMode].
   final GlassRenderMode? mode;
+
+  /// The glass track's height; null keeps SwiftUI's segmented picker's
+  /// ([height], 32). UIKit's UISegmentedControl in a
+  /// UIColorPickerViewController is 30.67 (measured). The Material path
+  /// ignores it.
+  final double? trackHeight;
 
   /// The control's height on every path, for layouts of a fixed extent
   /// (a pinned sliver header, say).
@@ -229,7 +236,7 @@ class _GlassSegmentedControlState<T> extends State<GlassSegmentedControl<T>>
             _segmentWidth = width / _count;
             return SizedBox(
               width: width,
-              height: ControlMetrics.segmentedHeight,
+              height: widget.trackHeight ?? ControlMetrics.segmentedHeight,
               child: DecoratedBox(
                 decoration: ShapeDecoration(
                   shape: const StadiumBorder(),

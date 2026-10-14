@@ -3,6 +3,7 @@ import 'package:adaptive_liquid_glass/src/color_picker/color_channel_slider.dart
 import 'package:adaptive_liquid_glass/src/color_picker/color_hex.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/color_picker_metrics.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/color_swatch_dot.dart';
+import 'package:adaptive_liquid_glass/src/color_picker/color_swatch_grid.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/color_value_field.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/glass_color_picker_panel.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
@@ -271,6 +272,31 @@ void main() {
     expect(panel.top, moreOrLessEquals(sheet.top));
     expect(panel.height, moreOrLessEquals(ColorPickerMetrics.sheetHeight));
     expect(panel.bottom, moreOrLessEquals(1400 - 8));
+  }, variant: ios);
+
+  testWidgets('on an iPhone 17 Pro the sheet floats 8 pt in and the grid '
+      'is 296 pt tall, as UIKit (measured)', (t) async {
+    shaderEnv();
+    t.view.physicalSize = const Size(402, 874);
+    t.view.devicePixelRatio = 1;
+    t.view.padding = const FakeViewPadding(top: 62, bottom: 34);
+    addTearDown(t.view.reset);
+    await t.pumpWidget(appHost(const _Harness()));
+    await _open(t);
+    final panel = t.getRect(find.byType(GlassColorPickerPanel));
+    expect(panel.left, moreOrLessEquals(8));
+    expect(panel.right, moreOrLessEquals(402 - 8));
+    expect(
+      t.getSize(find.byType(ColorSwatchGrid)).height,
+      moreOrLessEquals(ColorPickerMetrics.pageHeight, epsilon: 0.34),
+    );
+    // UIKit's segmented control is 30.67 tall here, not SwiftUI's 32.
+    expect(
+      t
+          .getSize(find.byWidgetPredicate((w) => w is GlassSegmentedControl))
+          .height,
+      moreOrLessEquals(30.67),
+    );
   }, variant: ios);
 
   testWidgets('null onChanged disables the row', (t) async {

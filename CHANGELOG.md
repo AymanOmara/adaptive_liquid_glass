@@ -27,6 +27,27 @@
     separator. New `slidersLabel` and `closeLabel`; `hexLabel` defaults
     to 'sRGB Hex Color #'. `GlassColorPickerPanel` gains `title`,
     `onClose` and per-channel labels.
+  - `GlassColorPicker`'s sheet, second pass against
+    UIColorPickerViewController: it floats 8 pt in from the screen's
+    sides (was 4.7), so the grid is 296 pt as UIKit's (was ~303); the
+    segmented control is 30.67 pt (was 32). New: the saved colours row
+    (29-pt circles 46.07 apart and a "+" that saves the current colour; a
+    tap picks one, a long press removes it), kept in memory and shared
+    between pickers, or the app's own through `savedColors` /
+    `onSavedColorsChanged`; UIKit's Spectrum map (hue down the page,
+    white to hue to black across it, its measured curves; was a
+    saturation-value square and hue bar, mean |diff| 100 -> 1.1 of 255);
+    an eyedropper that hides the sheet, shows a loupe over the app and
+    picks the pixel under it (`supportsEyedropper`, `eyedropperLabel`;
+    the app's own drawing only). New labels `savedColorLabel`,
+    `addColorLabel`.
+- Sheets: every partial detent floats 8 pt in from the screen's sides,
+  whatever its height, as SwiftUI's `.height(300)` to `.height(765)` do
+  (measured); only a detent within ~31 pt of large runs edge to edge.
+  Taller detents used to widen toward the edges past the medium height.
+- `GlassSegmentedControl`: `trackHeight` (default SwiftUI's 32); the
+  track is iOS's translucent tertiary fill, so it shows on grey surfaces
+  such as the colour sheet (same colour as before over white and black).
 
 - Usability pass ahead of 1.0 (audit in
   `docs/superpowers/notes/usability-audit.md`):

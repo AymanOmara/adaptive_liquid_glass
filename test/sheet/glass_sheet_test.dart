@@ -1,6 +1,7 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
+import 'package:adaptive_liquid_glass/src/sheet/sheet_expansion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -259,6 +260,41 @@ void main() {
       findsNothing,
     );
   }, variant: ios);
+
+  // SwiftUI's .height(_:) sheets (300...765 pt, measured 2026-10-14)
+  // float 8 pt in from the sides; only the large detent runs edge to edge.
+  for (final h in [300.0, 600.0, 700.0]) {
+    testWidgets('a $h-pt detent floats 8 pt in from the sides', (t) async {
+      shaderEnv();
+      await openDetents(t, [GlassSheetDetent.height(h)]);
+      final glass = t.getRect(
+        find.descendant(
+          of: find.byType(GlassSheet),
+          matching: find.byType(LiquidGlass),
+        ),
+      );
+      expect(glass.left, moreOrLessEquals(8));
+      expect(glass.right, moreOrLessEquals(402 - 8));
+    }, variant: ios);
+  }
+
+  test('sheetExpansion: floating at every partial stop, edge to edge at '
+      'large', () {
+    // Medium resolves to 459, large to 812 on an 874-pt screen.
+    double e(double h, List<double> stops) =>
+        sheetExpansion(h, stops, medium: 459, large: 812);
+    expect(e(608, [608]), 0);
+    expect(e(459, [459, 812]), 0);
+    expect(e(812, [459, 812]), 1);
+    expect(e(635.5, [459, 812]), moreOrLessEquals(0.5));
+    // Between a 608-pt detent and large the sheet morphs from 608 up.
+    expect(e(608, [608, 812]), 0);
+    expect(e(710, [608, 812]), moreOrLessEquals(0.5));
+    // A large-only sheet dragged down morphs back from medium.
+    expect(e(635.5, [812]), moreOrLessEquals(0.5));
+    // A detent within the measured gap of large is edge to edge.
+    expect(e(800, [800]), 1);
+  });
 
   testWidgets('dragging up moves a medium sheet to large', (t) async {
     shaderEnv();

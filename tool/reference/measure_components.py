@@ -603,7 +603,10 @@ def last_components(d):
         ink = lambda c: c.max(axis=-1) < 120
         title = ink_box(a, 120, top + 5, 290, top + 45, ink)
         close = ink_box(a, 330, top + 5, 385, top + 45, ink)
-        drop = ink_box(a, 15, top + 5, 70, top + 45, ink)
+        try:  # no eyedropper drawn: a capture of an older twin
+            drop = ink_box(a, 15, top + 5, 70, top + 45, ink)
+        except ValueError:
+            drop = (edge, top, edge, top)
         segcol = np.abs(a[:, int(201 * S)] - bg).max(axis=-1) > 6
         seg = [q for q in runs(segcol) if q[0] > top + 40][0]
         segx = runs(np.abs(a[int((seg[0] + seg[1]) / 2 * S)] - bg).max(axis=-1) > 6)
@@ -649,6 +652,28 @@ def last_components(d):
             "swatch_top": r(sw[0] - top), "swatch": r(sw[1] - sw[0]),
             "bottom_padding": r(bot - sw[1]),
         }
+        # Saved colours: circles level with the swatch's top, then a "+".
+        srow = runs(np.abs(a[int((sw[0] + 14.5) * S)] - bg).max(axis=-1) > 6)
+        swx = [q for q in srow if q[0] > edge + 2][0]
+        circ = [q for q in srow if q[0] > swx[1] and q[1] < W - edge - 2]
+        if len(circ) >= 2:
+            cy = runs(np.abs(a[:, int((circ[0][0] + circ[0][1]) / 2 * S)] - bg)
+                      .max(axis=-1) > 6)
+            cy = [q for q in cy if q[0] <= sw[0] + 14.5 <= q[1]][0]
+            plus = circ[-1]
+            out["color_sheet"].update({
+                "saved_count": len(circ) - 1,
+                "saved_size": r(cy[1] - cy[0]),
+                "saved_top": r(cy[0] - top),
+                "saved_start": r(circ[0][0] - swx[1]),
+                "saved_pitch": r((circ[-1][0] - circ[0][0]) / (len(circ) - 1)),
+                "plus_fill": hexc(a[int((sw[0] + 4) * S), int((plus[0] + 14.5) * S)]),
+            })
+        segrow = np.abs(a[int((seg[0] + seg[1]) / 2 * S)] - bg).max(axis=-1) > 6
+        out["color_sheet"]["segment_track"] = hexc(
+            a[int((seg[0] + 3) * S), int(201 * S)])
+        out["color_sheet"]["segment_width"] = r(
+            [q for q in runs(segrow) if edge + 2 < q[0] and q[1] < W - edge - 2][-1][1] - segx[0])
         if (d / "colorsheet_sliders.png").exists():
             b = load(d, "colorsheet_sliders.png")
             tr = runs(np.abs(b[:, int(60 * S)] - bg).max(axis=-1) > 6)
