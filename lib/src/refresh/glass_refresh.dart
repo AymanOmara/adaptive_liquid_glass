@@ -82,6 +82,9 @@ class _GlassRefreshState extends State<GlassRefresh>
   /// The overscroll past the top, in pixels.
   double _pull = 0;
 
+  /// The finger's travel past the top during this drag, in pixels.
+  double _travel = 0;
+
   /// The scrollable's signed overscroll past the top: positive while
   /// pulled, negative once scrolled into the content.
   final _overscroll = ValueNotifier<double>(0);
@@ -129,6 +132,7 @@ class _GlassRefreshState extends State<GlassRefresh>
         // A post-refresh snap-back keeps going under a new drag; the
         // held content would jump otherwise.
         if (!_holding) _controller.stop();
+        _travel = 0;
         _pull = math.max(
           0,
           notification.metrics.minScrollExtent - notification.metrics.pixels,
@@ -143,11 +147,14 @@ class _GlassRefreshState extends State<GlassRefresh>
           0,
           notification.metrics.minScrollExtent - notification.metrics.pixels,
         );
+        final delta = notification.dragDetails?.delta.dy ?? 0;
+        _travel = _pull > 0 ? math.max(0, _travel + delta) : 0;
       }
     } else if (notification is OverscrollNotification) {
       // Clamping physics never move the pixels past the extent; the
       // pull arrives as overscroll instead (negative at the top).
       _pull = math.max(0, _pull - notification.overscroll);
+      _travel = _pull;
     } else if (notification is ScrollEndNotification) {
       if (_dragging) {
         _dragging = false;
@@ -163,7 +170,13 @@ class _GlassRefreshState extends State<GlassRefresh>
   /// `UIRefreshControl`'s does (measured), with a haptic.
   void _updateProgress() {
     if (!_dragging || _holding) return;
-    final progress = _pull / RefreshMetrics.triggerDistance;
+    // Flutter's bouncing friction holds the content back harder than
+    // UIScrollView's: the finger's travel past the top arms it too, at
+    // the travel UIKit needs for its 173 pt.
+    final progress = math.max(
+      _pull / RefreshMetrics.triggerDistance,
+      _travel / RefreshMetrics.triggerTravel,
+    );
     _controller.value = progress;
     if (progress >= 1) {
       if (widget.enableFeedback) HapticFeedback.mediumImpact();

@@ -732,7 +732,8 @@ void main() {
       (ColorPickerMetrics.hexTop, 'hex_top'),
       (ColorPickerMetrics.hexFieldWidth, 'hex_width'),
     ]) {
-      final want = key == 'sheet_height' && got != ColorPickerMetrics.sheetHeight
+      final want =
+          key == 'sheet_height' && got != ColorPickerMetrics.sheetHeight
           ? n(c, key) - ColorPickerMetrics.bottomPadding
           : n(c, key);
       expect(got, moreOrLessEquals(want, epsilon: pt), reason: key);
@@ -750,8 +751,7 @@ void main() {
     // The channel tracks sit as the opacity one under its caption.
     final tops = (c['channel_track_tops'] as List).cast<num>();
     expect(
-      ColorPickerMetrics.channelTop +
-          ColorPickerMetrics.captionSlot,
+      ColorPickerMetrics.channelTop + ColorPickerMetrics.captionSlot,
       moreOrLessEquals(tops.first.toDouble(), epsilon: pt),
     );
   });

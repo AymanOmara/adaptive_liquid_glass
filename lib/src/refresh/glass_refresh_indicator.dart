@@ -1,8 +1,10 @@
-import 'package:flutter/cupertino.dart' show CupertinoActivityIndicator;
+import 'package:flutter/cupertino.dart'
+    show CupertinoActivityIndicator, CupertinoDynamicColor;
 import 'package:flutter/material.dart' show CircularProgressIndicator;
 import 'package:flutter/widgets.dart';
 
 import '../core/effective_glass_mode.dart';
+import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import 'refresh_metrics.dart';
@@ -63,7 +65,7 @@ class GlassRefreshIndicator extends StatelessWidget {
           builder: (context, effective) =>
               effective == EffectiveGlassMode.material
               ? _material(value)
-              : _spinner(value, reduceMotion),
+              : _spinner(context, value, reduceMotion),
         ),
       ),
     );
@@ -85,20 +87,25 @@ class GlassRefreshIndicator extends StatelessWidget {
     ),
   );
 
-  Widget _spinner(double value, bool reduceMotion) => ExcludeSemantics(
-    child: SizedBox.square(
-      dimension: RefreshMetrics.spinnerSize,
-      child: refreshing
-          ? CupertinoActivityIndicator(
-              color: color,
-              radius: RefreshMetrics.spinnerSize / 2,
-              animating: !reduceMotion,
-            )
-          : CupertinoActivityIndicator.partiallyRevealed(
-              color: color,
-              radius: RefreshMetrics.spinnerSize / 2,
-              progress: value,
-            ),
-    ),
-  );
+  Widget _spinner(BuildContext context, double value, bool reduceMotion) {
+    final spokes =
+        color ??
+        CupertinoDynamicColor.resolve(GlassColors.refreshSpinner, context);
+    return ExcludeSemantics(
+      child: SizedBox.square(
+        dimension: RefreshMetrics.spinnerSize,
+        child: refreshing
+            ? CupertinoActivityIndicator(
+                color: spokes,
+                radius: RefreshMetrics.spinnerSize / 2,
+                animating: !reduceMotion,
+              )
+            : CupertinoActivityIndicator.partiallyRevealed(
+                color: spokes,
+                radius: RefreshMetrics.spinnerSize / 2,
+                progress: value,
+              ),
+      ),
+    );
+  }
 }

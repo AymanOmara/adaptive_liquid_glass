@@ -84,10 +84,7 @@ void main() {
     final spring = SearchMetrics.activation;
     // swiftUISpring(response: 0.53, dampingFraction: 0.69), unit mass.
     expect(spring.stiffness, closeTo(math.pow(2 * math.pi / 0.53, 2), 1e-6));
-    expect(
-      spring.damping,
-      closeTo(4 * math.pi * 0.69 / 0.53, 1e-6),
-    );
+    expect(spring.damping, closeTo(4 * math.pi * 0.69 / 0.53, 1e-6));
   });
 
   testWidgets('the field narrows first, then the button grows past its '

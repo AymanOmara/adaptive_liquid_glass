@@ -205,8 +205,11 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
   );
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    top: false,
+  // No bottom safe area: UIKit's swatch sits over the home indicator's
+  // band, 14.67 pt above the floating sheet's bottom edge (measured).
+  Widget build(BuildContext context) => MediaQuery.removePadding(
+    context: context,
+    removeBottom: true,
     child: SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -260,10 +263,7 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
                   child: IndexedStack(
                     index: _page.index,
                     children: [
-                      ColorSwatchGrid(
-                        selected: _color,
-                        onSelected: _setOpaque,
-                      ),
+                      ColorSwatchGrid(selected: _color, onSelected: _setOpaque),
                       _spectrum(),
                       _sliders(context),
                     ],
@@ -339,8 +339,8 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
       children: [
         if (widget.title != null)
           Positioned.fill(
-            bottom: ColorPickerMetrics.segmentTop -
-                ColorPickerMetrics.headerHeight,
+            bottom:
+                ColorPickerMetrics.segmentTop - ColorPickerMetrics.headerHeight,
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -547,11 +547,7 @@ class _XmarkPainter extends CustomPainter {
         Offset(size.width - i, size.height - i),
         paint,
       )
-      ..drawLine(
-        Offset(size.width - i, i),
-        Offset(i, size.height - i),
-        paint,
-      );
+      ..drawLine(Offset(size.width - i, i), Offset(i, size.height - i), paint);
   }
 
   @override

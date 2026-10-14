@@ -338,6 +338,16 @@ abstract final class GlassColors {
   static const CupertinoDynamicColor gaugeTrack =
       CupertinoColors.tertiarySystemFill;
 
+  // Refresh
+
+  /// The pull-to-refresh spinner's spokes (measured light: #6E6E6E at
+  /// the head spoke on white; dark estimated).
+  static const CupertinoDynamicColor refreshSpinner =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFF6E6E6E),
+        darkColor: Color(0xFFAEAEB2),
+      );
+
   // Toast
 
   /// A toast's action button text (iOS's systemBlue).

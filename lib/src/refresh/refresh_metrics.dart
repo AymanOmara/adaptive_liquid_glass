@@ -8,6 +8,13 @@ abstract final class RefreshMetrics {
   /// showing at ~175 pt in every take.
   static const double triggerDistance = 173;
 
+  /// The finger's travel past the top that starts the refresh, whichever
+  /// of it and [triggerDistance] comes first. Measured: UIScrollView's
+  /// rubber band reaches 173 pt after about 315 pt of finger travel (305
+  /// did not refresh, 320 did); Flutter's bouncing friction needs over
+  /// 400 for the same overscroll.
+  static const double triggerTravel = 315;
+
   /// The room the indicator keeps while refreshing: the content is held
   /// this far down and the spinner centred in it. Measured from SwiftUI's
   /// `.refreshable` on iOS 26.4 (a plain List held 60.3 pt below its rest,

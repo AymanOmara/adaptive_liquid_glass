@@ -52,8 +52,7 @@ class ColorChannelSlider extends StatelessWidget {
   /// How assistive tech reads [value]; a percentage by default.
   final String Function(double value)? semanticValue;
 
-  String _read(double v) =>
-      semanticValue?.call(v) ?? '${(v * 100).round()}%';
+  String _read(double v) => semanticValue?.call(v) ?? '${(v * 100).round()}%';
 
   void _pick(double dx, double width) {
     const d = ColorPickerMetrics.trackHeight;

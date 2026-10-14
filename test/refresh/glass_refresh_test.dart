@@ -404,9 +404,7 @@ void main() {
     expect(find.byType(GlassRefreshIndicator), findsNothing);
   }, variant: android);
 
-  testWidgets('Reduce Motion: the refreshing spinner does not turn', (
-    t,
-  ) async {
+  testWidgets('Reduce Motion: the refreshing spinner does not turn', (t) async {
     shaderEnv();
     final completer = Completer<void>();
     await t.pumpWidget(
@@ -441,6 +439,7 @@ void main() {
     // SwiftUI's .refreshable (iOS 26.4): pulls of up to 170.6 pt did not
     // refresh, 174.7 did; the spinner is 30 pt across.
     expect(RefreshMetrics.triggerDistance, 173);
+    expect(RefreshMetrics.triggerTravel, 315);
     expect(RefreshMetrics.spinnerSize, 30);
   });
 
@@ -475,19 +474,24 @@ void main() {
     final gesture = await t.startGesture(
       t.getCenter(find.byType(Scrollable).first),
     );
-    var below = 0.0;
+    var moved = 0.0;
     for (var i = 0; i < 400 && count == 0; i++) {
-      below = -controller.offset;
       await gesture.moveBy(const Offset(0, 5));
+      moved += 5;
       await t.pump(_frame);
     }
-    // Finger still down: it started on the move that passed 173.
+    // Finger still down: it started on the move that passed UIKit's
+    // threshold, 173 pt of overscroll or (Flutter's friction holding the
+    // list back harder) 315 pt of finger travel past the top. The first
+    // move also spends the touch slop, which counts as travel.
     expect(count, 1);
-    expect(below, lessThan(RefreshMetrics.triggerDistance));
     expect(
-      -controller.offset,
-      greaterThanOrEqualTo(RefreshMetrics.triggerDistance),
+      -controller.offset >= RefreshMetrics.triggerDistance ||
+          moved >= RefreshMetrics.triggerTravel - 5,
+      isTrue,
+      reason: 'moved $moved, overscroll ${-controller.offset}',
     );
+    expect(moved, lessThan(RefreshMetrics.triggerTravel + 5));
     expect(
       t
           .widget<GlassRefreshIndicator>(find.byType(GlassRefreshIndicator))
