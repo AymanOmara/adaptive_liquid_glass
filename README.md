@@ -302,7 +302,7 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `Glass` | The material: `regular`, `clear`, `.tint()`, `.interactive()` | Variant mapping (table above) |
 | `GlassShape` | The outline: capsule, circle, `rect(r)`, `concentric()` | Same shape as a border |
 | `GlassGroup` | Neighbouring glass drawn in one pass; blends and morphs | Layout only (no merging) |
-| `LiquidGlassTheme`, `LiquidGlassThemeData` | Optional app-wide defaults (`defaultGlass`, `defaultMode`, `lightAngle`) | — |
+| `LiquidGlassTheme`, `LiquidGlassThemeData` | Optional app-wide defaults (`defaultGlass`, `defaultMode`, `lightAngle`, `androidShaderBudget`) | — |
 | `GlassRenderMode` | Force `auto`, `shader`, `native` or `material` for a subtree | — |
 | `AdaptiveLiquidGlass.initialize` | Optional: preload the shaders in `main()` | no-op |
 | `AdaptiveLiquidGlass.reduceTransparency` | Override the system's Reduce Transparency (null follows it) | already opaque |
@@ -1408,10 +1408,18 @@ testWidgets('pays', (tester) async {
 - **iOS look on Android (`GlassRenderMode.shader`):** needs Impeller.
   Where `ImageFilter.isShaderFilterSupported` is false (Skia, or
   `--no-enable-impeller`, an opt-out Flutter is removing), glass falls
-  back to a frosted blur with no lens, rim or merging. Speed on mid-range
-  phones is not measured: each glass group runs a blur and a fragment
-  shader over its bounds every frame, so profile on target devices and
-  keep groups few. Fonts stay Roboto (not SF Pro), and scroll physics,
+  back to a frosted blur with no lens, rim or merging. GPU memory is the
+  limit: under Impeller every shader glass group renders into full-screen
+  offscreen textures whatever the glass's size, about 110-200 MB each on a
+  1080x2340 phone (Samsung SM-S731B, Vulkan; one standalone `LiquidGlass`
+  386 MB in all against 127 MB with no glass, three 781 MB). A screen with
+  10+ groups reached 1.1-3.2 GB and was killed by Android's low-memory
+  killer. So at most `LiquidGlassThemeData.androidShaderBudget` groups
+  (default 4, per view; null removes the cap) draw the shader at once on
+  Android, and the rest draw that frosted blur; debug builds print a
+  warning the first time. A `GlassGroup` counts once whatever its members
+  and the tab bar is served first, so put neighbouring glass in one group.
+  Fonts stay Roboto (not SF Pro), and scroll physics,
   the back gesture and haptics stay Android's; making those iOS-like is
   not part of the package.
 - **Unmeasured geometry:** `GlassSearchable`'s scope bar and suggestions,

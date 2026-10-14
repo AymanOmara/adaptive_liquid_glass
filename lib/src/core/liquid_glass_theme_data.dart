@@ -7,6 +7,8 @@ import 'glass_constants.dart';
 import 'glass_render_mode.dart';
 import 'liquid_glass_theme.dart';
 
+const Object _unset = Object();
+
 /// App-wide defaults for Liquid Glass. See [LiquidGlassTheme].
 @immutable
 class LiquidGlassThemeData {
@@ -16,6 +18,7 @@ class LiquidGlassThemeData {
     this.defaultGlass = Glass.regular,
     this.defaultMode = GlassRenderMode.auto,
     this.constants = GlassConstants.standard,
+    this.androidShaderBudget = 4,
   });
 
   /// Direction toward the light, radians, y-down screen space.
@@ -37,17 +40,38 @@ class LiquidGlassThemeData {
   /// `package:adaptive_liquid_glass/testing.dart`.
   final GlassConstants constants;
 
-  /// Returns a copy with the given fields replaced.
+  /// How many glass groups may draw the shader at once on Android, per
+  /// view; null removes the cap. Applies to [GlassRenderMode.shader] only
+  /// (the default `auto` mode draws Material on Android) and never on iOS.
+  ///
+  /// Under Impeller each shader glass group renders into full-screen
+  /// offscreen textures whatever the glass's size: about 110-200 MB of GPU
+  /// memory per group on a 1080x2340 phone, measured on a Samsung
+  /// SM-S731B (Vulkan), and enough groups get the app killed by Android's
+  /// low-memory killer. Groups past the budget draw a frosted blur
+  /// instead. A `GlassGroup` counts once whatever its members, a
+  /// `LiquidGlass` outside a group counts once, and `GlassTabBar` glass is
+  /// served first. The first groups to appear keep the shader; when one
+  /// goes, the next waiting group takes its place on the next frame.
+  /// Groups in a route hidden under an opaque route do not count.
+  final int? androidShaderBudget;
+
+  /// Returns a copy with the given fields replaced (`androidShaderBudget`
+  /// takes an `int?`; pass null to remove the cap).
   LiquidGlassThemeData copyWith({
     double? lightAngle,
     Glass? defaultGlass,
     GlassRenderMode? defaultMode,
     GlassConstants? constants,
+    Object? androidShaderBudget = _unset,
   }) => LiquidGlassThemeData(
     lightAngle: lightAngle ?? this.lightAngle,
     defaultGlass: defaultGlass ?? this.defaultGlass,
     defaultMode: defaultMode ?? this.defaultMode,
     constants: constants ?? this.constants,
+    androidShaderBudget: identical(androidShaderBudget, _unset)
+        ? this.androidShaderBudget
+        : androidShaderBudget as int?,
   );
 
   @override
@@ -56,9 +80,15 @@ class LiquidGlassThemeData {
       other.lightAngle == lightAngle &&
       other.defaultGlass == defaultGlass &&
       other.defaultMode == defaultMode &&
-      other.constants == constants;
+      other.constants == constants &&
+      other.androidShaderBudget == androidShaderBudget;
 
   @override
-  int get hashCode =>
-      Object.hash(lightAngle, defaultGlass, defaultMode, constants);
+  int get hashCode => Object.hash(
+    lightAngle,
+    defaultGlass,
+    defaultMode,
+    constants,
+    androidShaderBudget,
+  );
 }
