@@ -7,6 +7,7 @@ import '../core/glass_render_mode.dart';
 import 'glass_sheet.dart';
 import 'glass_sheet_detent.dart';
 import 'measure_height.dart';
+import 'sheet_expansion.dart';
 import 'sheet_metrics.dart';
 
 /// A presented sheet: rests at one of its [detents], follows a vertical
@@ -216,9 +217,12 @@ class _GlassSheetFrameState extends State<GlassSheetFrame>
       animation: _height,
       builder: (context, _) {
         final h = _height.value.clamp(0.0, size.height);
-        final expansion = large <= medium
-            ? 1.0
-            : ((h - medium) / (large - medium)).clamp(0.0, 1.0);
+        final expansion = sheetExpansion(
+          h,
+          _stops,
+          medium: medium,
+          large: large,
+        );
         return Align(
           alignment: Alignment.bottomCenter,
           child: SizedBox(
