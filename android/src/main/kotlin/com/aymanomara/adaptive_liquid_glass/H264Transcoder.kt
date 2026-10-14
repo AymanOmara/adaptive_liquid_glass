@@ -115,6 +115,10 @@ internal object H264Transcoder {
             }
             gl = GlBridge(encoder.createInputSurface())
             encoder.start()
+            val rotation = (rotation(src, inFormat) % 360 + 360) % 360
+            // A decoder rendering to a surface turns the frames itself; keep
+            // them as stored and let the muxer carry the rotation instead.
+            inFormat.setInteger(MediaFormat.KEY_ROTATION, 0)
             decoder = MediaCodec.createDecoderByType(inFormat.getString(MediaFormat.KEY_MIME)!!)
                 .apply {
                     configure(inFormat, gl.decoderSurface, null, 0)
@@ -122,7 +126,7 @@ internal object H264Transcoder {
                 }
 
             muxer = MediaMuxer(dest.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
-            muxer.setOrientationHint(rotation(src, inFormat))
+            muxer.setOrientationHint(rotation)
             val audioIndex = track(audio, "audio/")
             var audioOut = -1
             if (audioIndex >= 0) {

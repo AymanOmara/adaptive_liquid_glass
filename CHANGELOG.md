@@ -30,6 +30,15 @@
   and `imageQuality` to downscale or re-encode photos, and
   `compatibleFormat` for JPEG instead of HEIC (and, on iOS, H.264 instead
   of HEVC videos). Defaults keep the original files.
+- Photos picker `compatibleFormat` now transcodes HEVC videos to H.264
+  on Android too (platform `MediaCodec`/`MediaMuxer`, no new dependency;
+  audio copied, rotation kept). A video whose conversion fails (either
+  platform) arrives unconverted with the new
+  `GlassPickedPhoto.conversionFailed` set, instead of silently.
+- `pickGlassPhotos` returns `GlassPickedPhotos`, still a
+  `List<GlassPickedPhoto>`, with `droppedCount`: items chosen beyond
+  `maxSelection` in the Android document-picker fallback, which cannot
+  enforce the limit. `GlassPhotosPicker.onPicked` receives it too.
 - `clearGlassPickedPhotos()` deletes the picker's copies (the
   `adaptive_liquid_glass_picker` folder in the temporary or cache
   directory).
