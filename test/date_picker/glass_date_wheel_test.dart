@@ -41,6 +41,41 @@ void main() {
     }
   }, variant: ios);
 
+  testWidgets('time columns sit where UIDatePicker packs them (measured)', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(
+      plainHost(
+        Center(
+          child: GlassDateWheel(
+            value: DateTime(2026, 9, 30, 10, 41),
+            firstDate: DateTime(2020),
+            lastDate: DateTime(2030),
+            pickerMode: GlassDatePickerMode.time,
+            onChanged: (_) {},
+          ),
+        ),
+      ),
+    );
+    final surface = t.getRect(find.byType(GlassDateWheel));
+    expect(surface.width, WheelPickerMetrics.width);
+    // Hours end, minutes and AM/PM start at UIKit's lines (label boxes;
+    // the measured ink sits within a point of them).
+    expect(
+      t.getRect(_column(0, '10')).right - surface.left,
+      closeTo(DatePickerWheelMetrics.time12HourEnd, 0.01),
+    );
+    expect(
+      t.getRect(_column(1, '41')).left - surface.left,
+      closeTo(DatePickerWheelMetrics.time12MinuteStart, 0.01),
+    );
+    expect(
+      t.getRect(_column(2, 'AM')).left - surface.left,
+      closeTo(DatePickerWheelMetrics.time12PeriodStart, 0.01),
+    );
+  }, variant: ios);
+
   test('minuteInterval must divide 60', () {
     expect(
       () => GlassDateWheel(

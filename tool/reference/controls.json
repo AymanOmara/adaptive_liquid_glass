@@ -346,6 +346,96 @@
       "swatch": 28.0,
       "ring": 3.33,
       "ring_gap": 1.67
+    },
+    "date_wheel_time": {
+      "time12": {
+        "hour_end": 97.33,
+        "minute_start": 142.0,
+        "period_start": 200.67,
+        "period_centre": 216.83
+      },
+      "time24": {
+        "hour_end": 130.33,
+        "minute_start": 179.0
+      },
+      "date_time": {
+        "date_end": 138.0,
+        "hour_end": 179.33,
+        "minute_start": 214.0,
+        "period_start": 265.67
+      },
+      "band_width_24": 302.0
+    },
+    "search_scopes": {
+      "top": 64.0,
+      "height": 32.0,
+      "end_inset": 16.0,
+      "list_top": 141.0,
+      "list_top_without": 97.0
+    },
+    "search_suggestions": {
+      "first_separator": 62.0,
+      "row_pitch": 53.67,
+      "separator_start": 16.0,
+      "separator_end_inset": 16.0,
+      "title_ink_start": 16.67,
+      "title_colour": "#0088FF"
+    },
+    "color_sheet": {
+      "sheet_inset": 9.0,
+      "grid_inset": 14.33,
+      "grid_width": 357.33,
+      "grid_top": 363.33,
+      "grid_height": 296.0,
+      "columns": 12,
+      "rows": 10
+    },
+    "context_menu": {
+      "contextmenuuikit": {
+        "card": [
+          88.0,
+          294.33,
+          314.0,
+          429.67
+        ],
+        "menu": [
+          76.0,
+          446.0,
+          326.0,
+          592.0
+        ],
+        "dim": "#6A6A6E"
+      },
+      "contextmenuuikitleft": {
+        "card": [
+          16.0,
+          294.33,
+          242.0,
+          429.67
+        ],
+        "menu": [
+          16.0,
+          446.0,
+          266.0,
+          592.0
+        ],
+        "dim": "#6A6A6E"
+      },
+      "contextmenuuikitwide": {
+        "card": [
+          16.67,
+          321.0,
+          385.33,
+          403.33
+        ],
+        "menu": [
+          77.33,
+          419.33,
+          324.67,
+          565.33
+        ],
+        "dim": "#CECED2"
+      }
     }
   }
 }

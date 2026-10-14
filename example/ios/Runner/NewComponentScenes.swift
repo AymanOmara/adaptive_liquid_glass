@@ -407,3 +407,150 @@ struct CoverCloseReference: View {
       .environment(\.colorScheme, .light)
   }
 }
+
+/// en_GB (24-hour) `.wheel` time picker centred at 201, 200 and an en_US
+/// date-and-time `.wheel` picker at 201, 480; 30 Sep 2026 10:41. White
+/// page.
+@available(iOS 26.0, *)
+struct TimeWheelReference: View {
+  @State private var date = Calendar(identifier: .gregorian).date(
+    from: DateComponents(year: 2026, month: 9, day: 30, hour: 10, minute: 41))!
+  var body: some View {
+    Page {
+      DatePicker("", selection: $date, displayedComponents: .hourAndMinute)
+        .datePickerStyle(.wheel).labelsHidden().fixedSize()
+        .environment(\.locale, Locale(identifier: "en_GB"))
+        .position(x: 201, y: 200)
+      DatePicker("", selection: $date, displayedComponents: [.date, .hourAndMinute])
+        .datePickerStyle(.wheel).labelsHidden().fixedSize().position(x: 201, y: 480)
+    }
+  }
+}
+
+/// The search scene with All/Mail/Notes scopes and no suggestions,
+/// activated 0.6 s after launch, `query` already typed. Light.
+@available(iOS 26.0, *)
+struct SearchScopesReference: View {
+  @State private var query: String
+  @State private var active = false
+  @State private var scope = 0
+  init(query: String) { _query = State(initialValue: query) }
+  var body: some View {
+    NavigationStack {
+      List(0..<20) { i in Text("Row \(i)") }
+        .navigationTitle("Search")
+        .searchable(text: $query, isPresented: $active)
+        .searchScopes($scope) {
+          Text("All").tag(0)
+          Text("Mail").tag(1)
+          Text("Notes").tag(2)
+        }
+    }
+    .onAppear { DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { active = true } }
+    .environment(\.colorScheme, .light)
+  }
+}
+
+/// ContextMenuReference's card and menu built on UIKit's own
+/// UIContextMenuInteraction (what SwiftUI's `.contextMenu` rides on), so
+/// ContextMenuOpener can open it: SwiftUI's delegate ignores a
+/// programmatic presentation. Mid-grey page (or `white`), the card
+/// `size` centred at `x`, 300 in the safe area (362 on screen).
+@available(iOS 26.0, *)
+struct UIKitContextMenuReference: View {
+  var x: CGFloat = 201
+  var size = CGSize(width: 200, height: 120)
+  var white = false
+  var body: some View {
+    ZStack {
+      Color(white: white ? 1 : 0.5).ignoresSafeArea()
+      UIKitMenuCard().frame(width: size.width, height: size.height)
+        .border(white ? Color.black : Color.clear, width: white ? 1 : 0)
+        .position(x: x, y: 300)
+    }
+    .environment(\.colorScheme, .light)
+    .onAppear {
+      DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+        ContextMenuOpener.open(at: CGPoint(x: x, y: 362))
+      }
+    }
+  }
+}
+
+@available(iOS 26.0, *)
+private struct UIKitMenuCard: UIViewRepresentable {
+  func makeCoordinator() -> Delegate { Delegate() }
+  func makeUIView(context: Context) -> UIView {
+    let card = UIView()
+    card.backgroundColor = .white
+    card.layer.cornerRadius = 20
+    card.layer.cornerCurve = .continuous
+    let label = UILabel()
+    label.text = "Long-press me"
+    label.textColor = .black
+    label.translatesAutoresizingMaskIntoConstraints = false
+    card.addSubview(label)
+    NSLayoutConstraint.activate([
+      label.centerXAnchor.constraint(equalTo: card.centerXAnchor),
+      label.centerYAnchor.constraint(equalTo: card.centerYAnchor),
+    ])
+    card.addInteraction(UIContextMenuInteraction(delegate: context.coordinator))
+    return card
+  }
+  func updateUIView(_ view: UIView, context: Context) {}
+
+  final class Delegate: NSObject, UIContextMenuInteractionDelegate {
+    func contextMenuInteraction(
+      _ interaction: UIContextMenuInteraction,
+      configurationForMenuAtLocation location: CGPoint
+    ) -> UIContextMenuConfiguration? {
+      UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+        UIMenu(children: [
+          UIAction(title: "Copy", image: UIImage(systemName: "doc.on.doc")) { _ in },
+          UIAction(title: "Share", image: UIImage(systemName: "square.and.arrow.up")) { _ in },
+          UIAction(title: "Delete", image: UIImage(systemName: "trash"),
+                   attributes: .destructive) { _ in },
+        ])
+      }
+    }
+  }
+}
+
+/// Opens the first UIContextMenuInteraction under the key window at
+/// `point` (window coordinates) through UIKit's private
+/// `_presentMenuAtLocation:`: idb's synthetic long press does not open
+/// SwiftUI's `.contextMenu`. Reference harness only.
+enum ContextMenuOpener {
+  static func open(at point: CGPoint) {
+    guard let window = UIApplication.shared.connectedScenes
+      .compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first,
+      let (view, interaction) = find(in: window) else {
+      NSLog("ContextMenuOpener: no UIContextMenuInteraction")
+      return
+    }
+    NSLog("ContextMenuOpener: \(type(of: interaction)) on \(type(of: view))")
+    let sel = NSSelectorFromString("_presentMenuAtLocation:")
+    guard interaction.responds(to: sel) else {
+      var count: UInt32 = 0
+      if let list = class_copyMethodList(UIContextMenuInteraction.self, &count) {
+        for i in 0..<Int(count) {
+          let name = NSStringFromSelector(method_getName(list[i]))
+          if name.lowercased().contains("present") { NSLog("ContextMenuOpener: has \(name)") }
+        }
+        free(list)
+      }
+      return
+    }
+    typealias Fn = @convention(c) (AnyObject, Selector, CGPoint) -> Void
+    let fn = unsafeBitCast(interaction.method(for: sel), to: Fn.self)
+    fn(interaction, sel, view.convert(point, from: window))
+  }
+
+  private static func find(in view: UIView) -> (UIView, UIContextMenuInteraction)? {
+    if let i = view.interactions.compactMap({ $0 as? UIContextMenuInteraction }).first {
+      return (view, i)
+    }
+    for sub in view.subviews { if let f = find(in: sub) { return f } }
+    return nil
+  }
+}

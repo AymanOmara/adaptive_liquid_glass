@@ -58,6 +58,10 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
     Animation<double> secondaryAnimation,
   ) {
     final padding = MediaQuery.paddingOf(context);
+    final lifted = ContextMenuMetrics.lifted(
+      previewRect,
+      MediaQuery.sizeOf(context),
+    );
     final page = iosPageText(
       Stack(
         children: [
@@ -73,8 +77,9 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
                   return BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
                     child: ColoredBox(
-                      color: GlassColors.sheetBarrier.withValues(
-                        alpha: GlassColors.sheetBarrier.a * animation.value,
+                      color: GlassColors.contextMenuBarrier.withValues(
+                        alpha:
+                            GlassColors.contextMenuBarrier.a * animation.value,
                       ),
                     ),
                   );
@@ -85,20 +90,33 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
           Positioned.fromRect(
             rect: previewRect,
             child: IgnorePointer(
-              child: ScaleTransition(
-                scale: Tween(
-                  begin: 1.0,
-                  end: ContextMenuMetrics.lift,
-                ).animate(animation),
+              child: AnimatedBuilder(
+                animation: animation,
+                builder: (context, child) {
+                  // From where the item is to where UIKit lifts it.
+                  final t = animation.value;
+                  final grow = previewRect.width > 0
+                      ? lifted.width / previewRect.width
+                      : 1.0;
+                  final s = 1 + (grow - 1) * t;
+                  return Transform(
+                    transform: Matrix4.identity()
+                      ..translateByDouble(
+                        (lifted.left - previewRect.left) * t,
+                        (lifted.top - previewRect.top) * t,
+                        0,
+                        1,
+                      )
+                      ..scaleByDouble(s, s, 1, 1),
+                    child: child,
+                  );
+                },
                 child: preview,
               ),
             ),
           ),
           CustomSingleChildLayout(
-            delegate: GlassContextMenuLayout(
-              preview: previewRect,
-              padding: padding,
-            ),
+            delegate: GlassContextMenuLayout(preview: lifted, padding: padding),
             child: FadeTransition(
               opacity: animation,
               child: ScaleTransition(

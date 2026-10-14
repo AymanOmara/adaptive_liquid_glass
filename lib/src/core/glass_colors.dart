@@ -108,6 +108,11 @@ abstract final class GlassColors {
   /// goes from 128 to 102).
   static const Color sheetBarrier = Color(0x33000000);
 
+  /// The dimming behind a context menu, light appearance: a blue-black at
+  /// 21% (measured from UIKit's: a mid-grey page goes from 128 to
+  /// 106/106/110 and a white one to 206/206/210).
+  static const Color contextMenuBarrier = Color(0x3618182B);
+
   /// A dialog button's capsule on the glass: black at 12% (measured: the
   /// card's 211 becomes 186).
   static const Color dialogButtonFill = Color(0x1F000000);

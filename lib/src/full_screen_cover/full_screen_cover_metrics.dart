@@ -8,9 +8,12 @@ import '../sheet/sheet_metrics.dart';
 /// recording of SwiftUI's `.fullScreenCover` (iOS 26.4, iPhone 17 Pro,
 /// 60 fps; the cover's top edge per frame, `-controls covertiming`) and
 /// re-checked against a second recording: RMS error 0.6% of the screen's
-/// height sliding up, 0.5% sliding down (worst frame 2.1%). SwiftUI's cover has no drag to
-/// dismiss or close button of its own: drag follows the sheet; the close button is
-/// measured from a close-role toolbar button in the cover.
+/// height sliding up, 0.5% sliding down (worst frame 2.1%). SwiftUI's
+/// cover has no drag to dismiss (re-checked 2026-10-14: a downward drag
+/// leaves it in place), so there is nothing to measure: drag is off by
+/// default (`dragToDismiss`), and opting in borrows the sheet's thresholds
+/// below by design. SwiftUI's cover has no close button of its own
+/// either; ours is measured from a close-role toolbar button in it.
 abstract final class FullScreenCoverMetrics {
   /// The cover sliding up over the page (fitted: settled within a pixel
   /// after about 0.45 s).

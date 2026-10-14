@@ -1,7 +1,9 @@
 /// `GlassColorPicker`'s metrics. The row swatch is measured from SwiftUI's
-/// `ColorPicker` (iOS 26.4, "components" → "color_row"); the sheet's values
-/// are estimated (UIColorPickerViewController, presented from a reference
-/// scene, captured blank on the simulator).
+/// `ColorPicker` (iOS 26.4, "components" → "color_row"). The sheet's grid
+/// and side inset are measured from UIColorPickerViewController opened by
+/// a tap on that row (`-controls colorrow`, "components" → "color_sheet");
+/// the rest of the sheet is estimated: UIKit pages Grid, Spectrum and
+/// Sliders behind a segmented control where this one stacks them.
 abstract final class ColorPickerMetrics {
   /// The row's swatch diameter (measured).
   static const double rowSwatch = 28;
@@ -12,8 +14,12 @@ abstract final class ColorPickerMetrics {
   /// The gap between the row swatch's ring and its colour (measured).
   static const double rowRingGap = 1.67;
 
-  /// The sheet content's inset from the sheet's edges (estimated).
-  static const double padding = 20;
+  /// The sheet content's inset from the sheet's sides (measured: the grid
+  /// sits 14.33 inside UIKit's sheet).
+  static const double padding = 14.33;
+
+  /// The sheet content's inset from its top and bottom (estimated).
+  static const double verticalPadding = 20;
 
   /// The gap between the sheet's sections (estimated).
   static const double sectionGap = 20;
@@ -24,17 +30,17 @@ abstract final class ColorPickerMetrics {
   /// A section title's text size (semibold; estimated).
   static const double titleSize = 15;
 
-  /// The preset grid's column count (estimated: iOS 26 shows 12).
+  /// The preset grid's column count (measured).
   static const int gridColumns = 12;
 
-  /// The preset grid's row count (estimated: iOS 26 shows 10; a grey row
-  /// and five hue rows keep the sheet short).
-  static const int gridRows = 6;
+  /// The preset grid's row count (measured: a grey row and nine hue rows).
+  static const int gridRows = 10;
 
-  /// The gap between grid swatches (estimated).
-  static const double gridGap = 2;
+  /// The gap between grid swatches (measured: none, the swatches touch;
+  /// 29.8 x 29.6 pt each on iPhone 17 Pro).
+  static const double gridGap = 0;
 
-  /// The grid's corner radius (estimated).
+  /// The grid's outer corner radius (measured, continuous corners).
   static const double gridRadius = 8;
 
   /// The selected grid swatch's ring thickness (estimated).
