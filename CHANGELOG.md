@@ -1,10 +1,16 @@
 ## Unreleased
 
 - `GlassRefresh`: the content stays held down by the spinner's room
-  (60 pt) while `onRefresh` runs, as SwiftUI's `.refreshable` holds its
-  list, and returns on the measured snap-back spring once it completes;
-  the release's bounce stops at the hold instead of the top, and content
-  scrolled into while refreshing carries the spinner up with it.
+  while `onRefresh` runs, as SwiftUI's `.refreshable` holds its list, and
+  returns on the measured snap-back spring once it completes. The release
+  eases into the hold on a spring fitted to iOS (response 0.30, damping
+  1.43) instead of bouncing to the top; content scrolled into while
+  refreshing carries the spinner up with it. Against SwiftUI on iOS 26.4:
+  hold 60.0 vs 60.3 pt, spinner centre 30 pt below the list's top inset
+  (90.5 vs 92 pt on screen), snap-back fit 0.445 / 0.79 vs 0.486 / 0.76.
+- `GlassRefresh.edgeOffset`: where the indicator's room starts; defaults
+  to the top media padding, as `UIRefreshControl` sits below the scroll
+  view's top inset (it sat at the very top, under a status or nav bar).
 
 ## 0.2.1 (2026-10-14)
 
