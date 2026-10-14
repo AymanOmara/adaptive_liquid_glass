@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
 
+import '../shader/raster_snapshot_gate.dart';
 import 'tab_bar_metrics.dart';
 import 'tab_vibrancy_program.dart';
 import 'vibrancy_kind.dart';
@@ -88,11 +89,13 @@ class RenderVibrantBlend extends RenderProxyBox {
   void attach(PipelineOwner owner) {
     super.attach(owner);
     TabVibrancyProgram.instance.program.addListener(_programChanged);
+    RasterSnapshotGate.instance.addListener(markNeedsPaint);
   }
 
   @override
   void detach() {
     TabVibrancyProgram.instance.program.removeListener(_programChanged);
+    RasterSnapshotGate.instance.removeListener(markNeedsPaint);
     super.detach();
   }
 
@@ -128,7 +131,12 @@ class RenderVibrantBlend extends RenderProxyBox {
     final child = this.child;
     final program = _program;
     if (child == null) return;
-    if (!_enabled || program == null || child.needsCompositing) {
+    // The glyph image is a raster snapshot: none before the first frame
+    // reaches the screen or in the background (see RasterSnapshotGate).
+    if (!_enabled ||
+        program == null ||
+        child.needsCompositing ||
+        !RasterSnapshotGate.instance.isOpen) {
       _plain(context, offset);
       return;
     }

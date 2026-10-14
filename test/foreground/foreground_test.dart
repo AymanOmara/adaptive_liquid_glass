@@ -2,6 +2,7 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
+import 'package:adaptive_liquid_glass/src/shader/raster_snapshot_gate.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -68,6 +69,14 @@ void main() {
 
   testWidgets('black content → dark background', (t) async {
     expect(await run(t, const Color(0xFF000000)), Brightness.dark);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  // A readback without an onscreen surface crashes Android GLES: no
+  // sampling before the first frame is rasterised or in the background.
+  testWidgets('no sampling while raster snapshots are unsafe', (t) async {
+    RasterSnapshotGate.debugOverride = false;
+    addTearDown(() => RasterSnapshotGate.debugOverride = true);
+    expect(await run(t, const Color(0xFF000000)), Brightness.light);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   const iosEnv = GlassEnvironment(

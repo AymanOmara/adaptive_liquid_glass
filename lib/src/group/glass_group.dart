@@ -19,6 +19,7 @@ import '../platform/glass_platform.dart';
 import '../shader/glass_backdrop.dart';
 import '../shader/glass_backdrop_config.dart';
 import '../shader/glass_program.dart';
+import '../shader/raster_snapshot_gate.dart';
 import 'glass_group_scope.dart';
 import 'glass_member_rendering.dart';
 import 'glass_morph_controller.dart';
@@ -167,6 +168,8 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
 
   Future<void> _sample() async {
     if (_sampling || !mounted || !_active) return;
+    // The sample is a raster snapshot (see RasterSnapshotGate).
+    if (!RasterSnapshotGate.instance.isOpen) return;
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.attached || !box.hasSize) return;
     _sampling = true;
