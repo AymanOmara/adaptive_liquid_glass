@@ -351,7 +351,7 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `GlassPhotosPicker`, `pickGlassPhotos`, `GlassPickedPhoto` | SwiftUI's `PhotosPicker`: a glass trigger opening the system photo picker; items come back as local files | Material 3 button, Android Photo Picker |
 | `GlassLabel` (`+ .text`) | SwiftUI's `Label`: icon and title, coloured like a vibrant label on glass | icon and text row, Material 3 sizes |
 | `GlassLink`, `GlassShareLink` | SwiftUI's `Link` and `ShareLink`: glass triggers; your app opens the URL or share sheet | Material 3 button |
-| `GlassColorPicker` | SwiftUI's `ColorPicker` row opening a glass sheet: grid, spectrum, opacity, hex | `ListTile` and modal bottom sheet |
+| `GlassColorPicker` | SwiftUI's `ColorPicker` row opening a glass sheet laid out as UIKit's: grid, spectrum and RGB/hex sliders, opacity | `ListTile` and modal bottom sheet |
 | `GlassRefresh`, `SliverGlassRefresh` | `.refreshable`: pull to refresh around a scrollable, or as a sliver | `RefreshIndicator` |
 | `GlassSymbol` | An SF Symbol drawn by iOS at run time (never bundled) | its `fallback` |
 
@@ -1377,10 +1377,9 @@ testWidgets('pays', (tester) async {
 - **Context menu not measured:** synthetic touches on the simulator do
   not open SwiftUI's `.contextMenu`, so `GlassContextMenu` follows the
   system's look but has not been measured. Of the newer components'
-  motion, the disclosure spring, the refresh snap-back and the colour
-  grid's ring are measured; `GlassSearchable`'s Cancel reveal (iOS rides
-  the field up with the keyboard) and the wheel picker's VoiceOver step
-  are not.
+  motion, the disclosure spring, the refresh snap-back and threshold, the
+  colour grid's ring and `GlassSearchable`'s close-button reveal are
+  measured; the wheel picker's VoiceOver step is not.
 - **Native mode, runtime light→dark flip:** on iOS 26, 71 of 72 measured
   brightness flips at runtime match SwiftUI. One does not: a regular glass
   capsule over a photo, flipped from light to dark, keeps part of Apple's
@@ -1413,11 +1412,22 @@ testWidgets('pays', (tester) async {
   keep groups few. Fonts stay Roboto (not SF Pro), and scroll physics,
   the back gesture and haptics stay Android's; making those iOS-like is
   not part of the package.
-- **Unmeasured geometry:** the `GlassColorPicker` sheet, `GlassRefresh`'s
-  trigger distance and disk size,
-  `GlassSearchable`'s scope bar and suggestions, the date wheel's time
-  columns and the full-screen cover's drag thresholds follow iOS by eye,
-  not by measurement.
+- **Unmeasured geometry:** `GlassSearchable`'s scope bar and suggestions,
+  the date wheel's time columns and the full-screen cover's drag
+  thresholds follow iOS by eye, not by measurement.
+- **Colour picker sheet:** laid out as iOS 26.4's
+  UIColorPickerViewController (measured), but without its eyedropper
+  (Flutter cannot sample the screen outside its own view) or saved
+  colours, and the Spectrum page is a saturation-value square with a hue
+  bar where UIKit draws one hue-by-brightness map. The glass sheet widens
+  toward the screen's edges as it grows taller than the medium detent,
+  so at UIKit's 600 pt it sits 4.7 pt in from the sides instead of 8 and
+  its grid is ~7 pt taller.
+- **Pull to refresh:** the refresh starts under the finger once the
+  content is pulled 173 pt or the finger has travelled 315 pt past the
+  top (UIKit reaches both together). Flutter's `BouncingScrollPhysics`
+  resists harder than UIScrollView, so the content shows less of the pull
+  at the moment it starts.
 
 ## License
 

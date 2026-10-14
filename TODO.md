@@ -48,21 +48,19 @@ and CHANGELOG.md.
     edge band over sharp text; SSIM on text lines is a phase match)
 
 6- still unmeasured vs SwiftUI (label, links, wheels, searchable, cover
-  close button and colour row measured 2026-10-13): GlassColorPicker sheet
-  (UIColorPickerViewController captured blank on the simulator),
+  close button and colour row measured 2026-10-13; colour sheet, refresh
+  threshold/spinner and search close-button reveal 2026-10-14):
   searchable scope bar and suggestions platter (keyboard tutorial covered
   them), date wheel time-column spacing (UIKit packs them unevenly), cover
   drag thresholds (SwiftUI's cover has no drag), context menu (synthetic
-  touches cannot open SwiftUI's). Motion measured (2026-10-13,
-  tool/fidelity/record_component_motion.sh + component_motion.py):
-  disclosure spring, refresh snap-back, colour grid ring. Motion still
-  open: GlassSearchable's reveal (iOS 26.4 rides the field up with the
-  keyboard and shows an xmark button, not Cancel; not separable), the
-  wheel's step (VoiceOver-only, no touch drives it), context menu.
-  GlassRefresh hold measured 2026-10-14 (idb swipe with --delta 5; the
-  default delta does not drag SwiftUI's List): hold 60.0 vs 60.3 pt,
-  settle into it fitted 0.30 / 1.43, spinner centre 90.5 vs 92 pt; still
-  estimated: trigger distance, disk and spinner size.
+  touches cannot open SwiftUI's). Motion still open: the wheel's step
+  (VoiceOver-only, no touch drives it), context menu.
+  Colour sheet leftovers: eyedropper and saved colours not drawn; Spectrum
+  page is an SV square + hue bar (UIKit: one hue x brightness map); the
+  glass sheet at 600 pt interpolates toward large (4.7 pt side inset vs
+  UIKit's 8), so its grid is ~7 pt taller. Refresh: Flutter's bouncing
+  friction shows ~140 pt where UIKit shows 173 at the trigger (finger
+  travel 315 arms it too); a UIKit-like rubber band would close it.
 
 7- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
   Still scenes, whole-crop mean |diff| native/shader (2026-10-13, with

@@ -2,33 +2,43 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart'
     show FilteringTextInputFormatter, LengthLimitingTextInputFormatter;
 
-import '../controls/glass_slider.dart';
-import '../core/effective_glass_mode.dart';
+import '../controls/glass_segment.dart';
+import '../controls/glass_segmented_control.dart';
 import '../core/glass_colors.dart';
-import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/ios_text.dart';
-import '../text_field/glass_text_field.dart';
+import 'checkerboard_painter.dart';
+import 'color_channel_slider.dart';
 import 'color_hex.dart';
 import 'color_picker_metrics.dart';
 import 'color_swatch_grid.dart';
+import 'color_value_field.dart';
 import 'hsv_spectrum.dart';
 import 'hue_bar.dart';
 
-/// The content of `GlassColorPicker`'s sheet: the preset grid, the
-/// spectrum square with its hue bar, an opacity slider and a hex field.
-/// Every change calls [onChanged] at once.
+/// The pages of [GlassColorPickerPanel], as UIColorPickerViewController's
+/// segmented control.
+enum _Page { grid, spectrum, sliders }
+
+/// The content of `GlassColorPicker`'s sheet, laid out as iOS 26.4's
+/// UIColorPickerViewController (measured): a title with a close button,
+/// a segmented control paging Grid, Spectrum and Sliders (red, green,
+/// blue and the hex code), an opacity slider with its percentage, and the
+/// current colour under a separator. Every change calls [onChanged] at
+/// once.
 ///
 /// ```dart
 /// GlassColorPickerPanel(
 ///   value: colour,
 ///   onChanged: (c) => setState(() => colour = c),
+///   title: const Text('Accent'),
+///   onClose: () => Navigator.pop(context),
 /// )
 /// ```
 ///
 /// The panel keeps its own colour while open and follows a new [value]
-/// from its parent. Its controls are the package's own, so each picks
-/// the glass or Material path by [mode] on its own.
+/// from its parent. UIKit's eyedropper and saved colours are not drawn
+/// (Flutter cannot sample the screen outside its own view).
 class GlassColorPickerPanel extends StatefulWidget {
   /// Creates the panel.
   const GlassColorPickerPanel({
@@ -37,11 +47,18 @@ class GlassColorPickerPanel extends StatefulWidget {
     required this.onChanged,
     this.supportsOpacity = true,
     this.mode,
+    this.title,
+    this.onClose,
+    this.closeLabel = 'Close',
     this.gridLabel = 'Grid',
     this.spectrumLabel = 'Spectrum',
+    this.slidersLabel = 'Sliders',
     this.hueLabel = 'Hue',
+    this.redLabel = 'Red',
+    this.greenLabel = 'Green',
+    this.blueLabel = 'Blue',
     this.opacityLabel = 'Opacity',
-    this.hexLabel = 'Hex',
+    this.hexLabel = 'sRGB Hex Color #',
   });
 
   /// The colour shown.
@@ -56,19 +73,40 @@ class GlassColorPickerPanel extends StatefulWidget {
   /// The rendering path; see [GlassRenderMode].
   final GlassRenderMode? mode;
 
-  /// The preset grid's title and screen-reader label.
+  /// The title centred at the top, usually a [Text]; none when null.
+  final Widget? title;
+
+  /// Called by the close button at the top end; no button when null.
+  final VoidCallback? onClose;
+
+  /// The close button's screen-reader label.
+  final String closeLabel;
+
+  /// The preset grid's segment.
   final String gridLabel;
 
-  /// The spectrum section's title and the square's screen-reader label.
+  /// The spectrum's segment and the square's screen-reader label.
   final String spectrumLabel;
+
+  /// The sliders' segment.
+  final String slidersLabel;
 
   /// The hue bar's screen-reader label.
   final String hueLabel;
 
-  /// The opacity row's label.
+  /// The red slider's caption (shown upper case).
+  final String redLabel;
+
+  /// The green slider's caption (shown upper case).
+  final String greenLabel;
+
+  /// The blue slider's caption (shown upper case).
+  final String blueLabel;
+
+  /// The opacity slider's caption (shown upper case).
   final String opacityLabel;
 
-  /// The hex row's label.
+  /// The hex field's label.
   final String hexLabel;
 
   @override
@@ -78,18 +116,14 @@ class GlassColorPickerPanel extends StatefulWidget {
 class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
   late HSVColor _hsv = HSVColor.fromColor(widget.value.withValues(alpha: 1));
   late double _alpha = widget.supportsOpacity ? widget.value.a : 1;
-  late final TextEditingController _hex = TextEditingController(
-    text: _format(_color),
-  );
-  final FocusNode _hexFocus = FocusNode();
+  _Page _page = _Page.grid;
 
   /// The last colour given to [GlassColorPickerPanel.onChanged].
   late Color _emitted = widget.value;
 
   Color get _color => _hsv.toColor().withValues(alpha: _alpha);
 
-  String _format(Color c) =>
-      formatHexColor(c, withAlpha: widget.supportsOpacity);
+  Color get _opaque => _hsv.toColor();
 
   @override
   void didUpdateWidget(GlassColorPickerPanel old) {
@@ -98,152 +132,424 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
       _hsv = HSVColor.fromColor(widget.value.withValues(alpha: 1));
       _alpha = widget.supportsOpacity ? widget.value.a : 1;
       _emitted = widget.value;
-      _hex.text = _format(_color);
     }
   }
 
-  @override
-  void dispose() {
-    _hex.dispose();
-    _hexFocus.dispose();
-    super.dispose();
-  }
-
-  /// Applies a change from a control other than the hex field.
   void _set({HSVColor? hsv, double? alpha}) {
     setState(() {
       if (hsv != null) _hsv = hsv;
       if (alpha != null) _alpha = alpha;
-      _hex.text = _format(_color);
     });
-    _emit();
-  }
-
-  void _emit() {
     _emitted = _color;
     widget.onChanged(_emitted);
   }
 
+  void _setOpaque(Color c) => _set(hsv: HSVColor.fromColor(c));
+
   void _hexChanged(String text) {
     final parsed = parseHexColor(text);
     if (parsed == null) return;
-    setState(() {
-      _hsv = HSVColor.fromColor(parsed.withValues(alpha: 1));
-      if (widget.supportsOpacity) _alpha = parsed.a;
-    });
-    _emit();
+    _set(
+      hsv: HSVColor.fromColor(parsed.withValues(alpha: 1)),
+      alpha: widget.supportsOpacity ? parsed.a : null,
+    );
   }
 
-  void _hexSubmitted(String _) => _hex.text = _format(_color);
+  String get _hex =>
+      formatHexColor(_color, withAlpha: widget.supportsOpacity).substring(1);
 
-  @override
-  Widget build(BuildContext context) => GlassModeBuilder(
-    mode: widget.mode,
-    builder: (context, effective) =>
-        _content(context, effective == EffectiveGlassMode.material),
+  TextStyle _style(
+    BuildContext context,
+    double size,
+    CupertinoDynamicColor color, {
+    FontWeight weight = FontWeight.w400,
+  }) => IOSText.inFontOf(
+    IOSText.style(
+      size,
+      weight: weight,
+      color: CupertinoDynamicColor.resolve(color, context),
+    ),
+    DefaultTextStyle.of(context).style,
   );
 
-  TextStyle? _title(BuildContext context, bool material) => material
-      ? null
-      : IOSText.style(
-          ColorPickerMetrics.titleSize,
+  Widget _caption(BuildContext context, String text) => SizedBox(
+    // The row below is the field's height; the slider sits 1 pt into it.
+    height:
+        ColorPickerMetrics.captionSlot -
+        (ColorPickerMetrics.fieldHeight - ColorPickerMetrics.trackHeight) / 2,
+    child: Align(
+      alignment: AlignmentDirectional.topStart,
+      child: Text(
+        text.toUpperCase(),
+        maxLines: 1,
+        style: _style(
+          context,
+          ColorPickerMetrics.captionSize,
+          GlassColors.secondaryLabel,
           weight: FontWeight.w600,
-          color: CupertinoDynamicColor.resolve(
-            GlassColors.secondaryLabel,
-            context,
-          ),
-        );
-
-  TextStyle? _label(BuildContext context, bool material) => material
-      ? null
-      : IOSText.style(
-          ColorPickerMetrics.labelSize,
-          color: CupertinoDynamicColor.resolve(GlassColors.label, context),
-        );
-
-  Widget _content(BuildContext context, bool material) => SafeArea(
-    top: false,
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(
-        horizontal: ColorPickerMetrics.padding,
-        vertical: ColorPickerMetrics.verticalPadding,
+        ),
       ),
+    ),
+  );
+
+  /// A slider with its value field after it.
+  Widget _sliderRow(Widget slider, Widget field) => SizedBox(
+    height: ColorPickerMetrics.fieldHeight,
+    child: Row(
+      children: [
+        Expanded(child: slider),
+        const SizedBox(width: ColorPickerMetrics.fieldGap),
+        field,
+      ],
+    ),
+  );
+
+  @override
+  // No bottom safe area: UIKit's swatch sits over the home indicator's
+  // band, 14.67 pt above the floating sheet's bottom edge (measured).
+  Widget build(BuildContext context) => MediaQuery.removePadding(
+    context: context,
+    removeBottom: true,
+    child: SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(widget.gridLabel, style: _title(context, material)),
-          const SizedBox(height: ColorPickerMetrics.titleGap),
-          ColorSwatchGrid(
-            selected: _color,
-            onSelected: (c) => _set(hsv: HSVColor.fromColor(c)),
+          _header(context),
+          SizedBox(
+            height: ColorPickerMetrics.pageTop - ColorPickerMetrics.segmentTop,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: ColorPickerMetrics.padding,
+              ),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: GlassSegmentedControl<_Page>(
+                  selected: _page,
+                  mode: widget.mode,
+                  onChanged: (p) => setState(() => _page = p),
+                  segments: [
+                    GlassSegment(
+                      value: _Page.grid,
+                      label: Text(widget.gridLabel),
+                    ),
+                    GlassSegment(
+                      value: _Page.spectrum,
+                      label: Text(widget.spectrumLabel),
+                    ),
+                    GlassSegment(
+                      value: _Page.sliders,
+                      label: Text(widget.slidersLabel),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-          const SizedBox(height: ColorPickerMetrics.sectionGap),
-          Text(widget.spectrumLabel, style: _title(context, material)),
-          const SizedBox(height: ColorPickerMetrics.titleGap),
-          HsvSpectrum(
-            color: _hsv,
-            onChanged: (c) => _set(hsv: c),
-            semanticLabel: widget.spectrumLabel,
-          ),
-          const SizedBox(height: ColorPickerMetrics.hueBarGap),
-          HueBar(
-            color: _hsv,
-            onChanged: (c) => _set(hsv: c),
-            semanticLabel: widget.hueLabel,
-          ),
-          if (widget.supportsOpacity) ...[
-            const SizedBox(height: ColorPickerMetrics.sectionGap),
-            Row(
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: ColorPickerMetrics.padding,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(
-                  width: ColorPickerMetrics.labelWidth,
-                  child: Text(
-                    widget.opacityLabel,
-                    style: _label(context, material),
+                // At least the measured page; a wider sheet's grid
+                // (square cells) is taller, and every page takes its size.
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: ColorPickerMetrics.pageHeight,
+                  ),
+                  child: IndexedStack(
+                    index: _page.index,
+                    children: [
+                      ColorSwatchGrid(selected: _color, onSelected: _setOpaque),
+                      _spectrum(),
+                      _sliders(context),
+                    ],
                   ),
                 ),
-                const SizedBox(width: ColorPickerMetrics.labelGap),
-                Expanded(
-                  child: GlassSlider(
-                    value: _alpha,
-                    onChanged: (a) => _set(alpha: a),
-                    mode: widget.mode,
+                if (widget.supportsOpacity) ...[
+                  const SizedBox(height: ColorPickerMetrics.opacityGap),
+                  _caption(context, widget.opacityLabel),
+                  _sliderRow(
+                    ColorChannelSlider(
+                      value: _alpha,
+                      checkerboard: true,
+                      colors: [_opaque.withValues(alpha: 0), _opaque],
+                      thumbColor: _color,
+                      semanticLabel: widget.opacityLabel,
+                      onChanged: (a) => _set(alpha: a),
+                    ),
+                    ColorValueField(
+                      text: '${(_alpha * 100).round()}%',
+                      width: ColorPickerMetrics.fieldWidth,
+                      semanticLabel: widget.opacityLabel,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp('[0-9%]')),
+                        LengthLimitingTextInputFormatter(4),
+                      ],
+                      onChanged: (t) {
+                        final v = int.tryParse(t.replaceAll('%', ''));
+                        if (v != null) _set(alpha: v.clamp(0, 100) / 100);
+                      },
+                    ),
+                  ),
+                ],
+                const SizedBox(height: ColorPickerMetrics.separatorGap),
+                Container(
+                  height: 1 / 3,
+                  color: CupertinoDynamicColor.resolve(
+                    GlassColors.colorPickerSeparator,
+                    context,
                   ),
                 ),
+                const SizedBox(height: ColorPickerMetrics.swatchGap),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: ExcludeSemantics(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(
+                        ColorPickerMetrics.swatchRadius,
+                      ),
+                      child: CustomPaint(
+                        painter: _alpha < 1
+                            ? const CheckerboardPainter()
+                            : null,
+                        child: SizedBox.square(
+                          dimension: ColorPickerMetrics.swatch,
+                          child: ColoredBox(color: _color),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: ColorPickerMetrics.bottomPadding),
               ],
             ),
-          ],
-          const SizedBox(height: ColorPickerMetrics.sectionGap),
-          Row(
-            children: [
-              SizedBox(
-                width: ColorPickerMetrics.labelWidth,
-                child: Text(widget.hexLabel, style: _label(context, material)),
-              ),
-              const SizedBox(width: ColorPickerMetrics.labelGap),
-              SizedBox(
-                width: ColorPickerMetrics.hexWidth,
-                child: GlassTextField(
-                  controller: _hex,
-                  focusNode: _hexFocus,
-                  semanticLabel: widget.hexLabel,
-                  keyboardType: TextInputType.text,
-                  autocorrect: false,
-                  textCapitalization: TextCapitalization.characters,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[#0-9a-fA-F]')),
-                    LengthLimitingTextInputFormatter(9),
-                  ],
-                  onChanged: _hexChanged,
-                  onSubmitted: _hexSubmitted,
-                  mode: widget.mode,
-                ),
-              ),
-            ],
           ),
         ],
       ),
     ),
   );
+
+  Widget _header(BuildContext context) => SizedBox(
+    height: ColorPickerMetrics.segmentTop,
+    child: Stack(
+      children: [
+        if (widget.title != null)
+          Positioned.fill(
+            bottom:
+                ColorPickerMetrics.segmentTop - ColorPickerMetrics.headerHeight,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: ColorPickerMetrics.closeTarget,
+                ),
+                child: DefaultTextStyle(
+                  style: _style(
+                    context,
+                    ColorPickerMetrics.titleSize,
+                    GlassColors.label,
+                    weight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  child: Semantics(header: true, child: widget.title!),
+                ),
+              ),
+            ),
+          ),
+        if (widget.onClose != null)
+          PositionedDirectional(
+            end:
+                ColorPickerMetrics.closeInset -
+                ColorPickerMetrics.closeTarget / 2,
+            top:
+                (ColorPickerMetrics.headerHeight -
+                    ColorPickerMetrics.closeTarget) /
+                2,
+            width: ColorPickerMetrics.closeTarget,
+            height: ColorPickerMetrics.closeTarget,
+            child: Semantics(
+              button: true,
+              label: widget.closeLabel,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: widget.onClose,
+                child: Center(
+                  child: ExcludeSemantics(
+                    child: SizedBox.square(
+                      dimension: ColorPickerMetrics.closeGlyph,
+                      child: CustomPaint(
+                        painter: _XmarkPainter(
+                          CupertinoDynamicColor.resolve(
+                            GlassColors.label,
+                            context,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
+
+  Widget _spectrum() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      HsvSpectrum(
+        color: _hsv,
+        height: ColorPickerMetrics.spectrumHeight,
+        onChanged: (c) => _set(hsv: c),
+        semanticLabel: widget.spectrumLabel,
+      ),
+      const SizedBox(height: ColorPickerMetrics.hueBarGap),
+      HueBar(
+        color: _hsv,
+        onChanged: (c) => _set(hsv: c),
+        semanticLabel: widget.hueLabel,
+      ),
+    ],
+  );
+
+  Widget _channel(
+    BuildContext context,
+    String label,
+    int value,
+    Color Function(int v) at,
+  ) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _caption(context, label),
+      _sliderRow(
+        ColorChannelSlider(
+          value: value / 255,
+          colors: [at(0), at(255)],
+          thumbColor: _opaque,
+          semanticLabel: label,
+          semanticValue: (v) => '${(v * 255).round()}',
+          onChanged: (v) => _setOpaque(at((v * 255).round())),
+        ),
+        ColorValueField(
+          text: '$value',
+          width: ColorPickerMetrics.fieldWidth,
+          semanticLabel: label,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(3),
+          ],
+          onChanged: (t) {
+            final v = int.tryParse(t);
+            if (v != null) _setOpaque(at(v.clamp(0, 255)));
+          },
+        ),
+      ),
+    ],
+  );
+
+  Widget _sliders(BuildContext context) {
+    final c = _opaque;
+    final r = (c.r * 255).round();
+    final g = (c.g * 255).round();
+    final b = (c.b * 255).round();
+    const pitchGap =
+        ColorPickerMetrics.channelPitch -
+        ColorPickerMetrics.captionSlot -
+        (ColorPickerMetrics.fieldHeight + ColorPickerMetrics.trackHeight) / 2;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: ColorPickerMetrics.channelTop),
+        _channel(
+          context,
+          widget.redLabel,
+          r,
+          (v) => Color.fromARGB(255, v, g, b),
+        ),
+        const SizedBox(height: pitchGap),
+        _channel(
+          context,
+          widget.greenLabel,
+          g,
+          (v) => Color.fromARGB(255, r, v, b),
+        ),
+        const SizedBox(height: pitchGap),
+        _channel(
+          context,
+          widget.blueLabel,
+          b,
+          (v) => Color.fromARGB(255, r, g, v),
+        ),
+        const SizedBox(
+          height:
+              ColorPickerMetrics.hexTop -
+              ColorPickerMetrics.channelTop -
+              3 * ColorPickerMetrics.channelPitch +
+              pitchGap,
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Flexible(
+              child: Text(
+                widget.hexLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: _style(
+                  context,
+                  ColorPickerMetrics.fieldTextSize,
+                  GlassColors.colorPickerHexLabel,
+                ),
+              ),
+            ),
+            const SizedBox(width: ColorPickerMetrics.fieldGap),
+            ColorValueField(
+              text: _hex,
+              width: ColorPickerMetrics.hexFieldWidth,
+              semanticLabel: widget.hexLabel,
+              keyboardType: TextInputType.text,
+              textCapitalization: TextCapitalization.characters,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp('[#0-9a-fA-F]')),
+                LengthLimitingTextInputFormatter(9),
+              ],
+              onChanged: _hexChanged,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// iOS's plain xmark: two strokes corner to corner.
+class _XmarkPainter extends CustomPainter {
+  const _XmarkPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+    const i = 1.0;
+    canvas
+      ..drawLine(
+        const Offset(i, i),
+        Offset(size.width - i, size.height - i),
+        paint,
+      )
+      ..drawLine(Offset(size.width - i, i), Offset(i, size.height - i), paint);
+  }
+
+  @override
+  bool shouldRepaint(_XmarkPainter old) => old.color != color;
 }

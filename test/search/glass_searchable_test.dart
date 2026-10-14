@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
@@ -5,6 +7,7 @@ import 'package:adaptive_liquid_glass/src/search/search_metrics.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart' show SpringSimulation;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../api/hosts.dart';
@@ -72,6 +75,58 @@ void main() {
     expect(controller.isActive, false);
     expect(find.byType(SearchCancelButton), findsNothing);
     expect(changes.last, '');
+  }, variant: ios);
+
+  test("the close button's reveal is the fitted one", () {
+    // Fitted to three SwiftUI recordings (iOS 26.4), rms 1.95 pt.
+    expect(SearchMetrics.revealSplit, 0.13);
+    expect(SearchMetrics.revealScale, 0.32);
+    final spring = SearchMetrics.activation;
+    // swiftUISpring(response: 0.53, dampingFraction: 0.69), unit mass.
+    expect(spring.stiffness, closeTo(math.pow(2 * math.pi / 0.53, 2), 1e-6));
+    expect(spring.damping, closeTo(4 * math.pi * 0.69 / 0.53, 1e-6));
+  });
+
+  testWidgets('the field narrows first, then the button grows past its '
+      'size and settles', (t) async {
+    shaderEnv();
+    final controller = GlassSearchController();
+    addTearDown(controller.dispose);
+    await t.pumpWidget(_app(controller: controller));
+    controller.activate();
+    await t.pump();
+    final simulation = SpringSimulation(SearchMetrics.activation, 0, 1, 0);
+    double width() {
+      final button = find.byType(SearchCancelButton);
+      return t.getBottomRight(button).dx - t.getTopLeft(button).dx;
+    }
+
+    var elapsed = Duration.zero;
+    var widest = 0.0;
+    for (var frame = 1; frame <= 60; frame++) {
+      await t.pump(const Duration(milliseconds: 16));
+      elapsed += const Duration(milliseconds: 16);
+      final v = simulation.x(elapsed.inMicroseconds / 1e6);
+      if (v > SearchMetrics.revealSplit) {
+        final grow =
+            (v - SearchMetrics.revealSplit) / (1 - SearchMetrics.revealSplit);
+        expect(
+          width(),
+          closeTo(
+            SearchMetrics.cancelSize *
+                (SearchMetrics.revealScale +
+                    (1 - SearchMetrics.revealScale) * grow),
+            0.5,
+          ),
+          reason: 'frame $frame',
+        );
+        widest = math.max(widest, width());
+      }
+    }
+    // SwiftUI's overshoots to ~50 pt before settling at 48.
+    expect(widest, greaterThan(SearchMetrics.cancelSize + 1));
+    await t.pumpAndSettle();
+    expect(width(), moreOrLessEquals(SearchMetrics.cancelSize));
   }, variant: ios);
 
   testWidgets('navigation bar placement: the field clears the status bar', (

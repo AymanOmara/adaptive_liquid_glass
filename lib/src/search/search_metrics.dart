@@ -80,22 +80,23 @@ abstract final class SearchMetrics {
   /// content).
   static const double suggestionRowHeight = 52.67;
 
-  /// The close button's reveal, measured from a recording of SwiftUI's
-  /// (iOS 26.4, `-controls search` tapped, 60 fps): the field narrows to
-  /// make room while it rides up with the keyboard, then the button grows
-  /// in place from 0.28 of its size, fading in, settling ~10 frames later.
-  /// This fraction of [activation] narrows the field; the rest grows the
-  /// button.
-  static const double revealSplit = 0.5;
+  /// The close button's reveal, fitted to three recordings of SwiftUI's
+  /// (iOS 26.4, `-controls search` tapped, 60 fps frame dumps;
+  /// tool/fidelity/record_component_motion.sh): one spring drives it, the
+  /// field narrowing to make room over this first fraction (while it
+  /// rides up with the keyboard) and the button growing over the rest.
+  /// Fitted jointly with [revealScale] and [activation], rms 1.95 pt.
+  static const double revealSplit = 0.13;
 
-  /// The close button's size as it starts to grow in (measured: its glyph
-  /// first shows 5 of 17.7 pt wide).
-  static const double revealScale = 0.28;
+  /// The close button's size as it starts to grow in (fitted: 0.32, the
+  /// first frames show it ~16 of its 48 pt wide).
+  static const double revealScale = 0.32;
 
-  /// The close button's reveal / hide spring (estimated: the sheet's; the
-  /// recording's 0.37 s from tap-out to settled fits it).
+  /// The close button's reveal / hide spring (fitted: the button
+  /// overshoots to ~50 pt and settles at 48 about 0.6 s after the field
+  /// starts to narrow). The hide reuses it.
   static final SpringDescription activation = swiftUISpring(
-    response: 0.4,
-    dampingFraction: 0.86,
+    response: 0.53,
+    dampingFraction: 0.69,
   );
 }

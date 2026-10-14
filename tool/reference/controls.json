@@ -388,7 +388,45 @@
       "grid_top": 363.33,
       "grid_height": 296.0,
       "columns": 12,
-      "rows": 10
+      "rows": 10,
+      "sheet_edge": 8.0,
+      "sheet_top": 265.0,
+      "sheet_height": 600.0,
+      "content_inset": 15.33,
+      "title_centre": 26.0,
+      "title_cap": 12.67,
+      "close_glyph": 16.0,
+      "close_inset": 26.0,
+      "close_centre": 26.67,
+      "eyedropper": [
+        17.67,
+        16.0,
+        39.67,
+        38.0
+      ],
+      "segment_top": 53.0,
+      "segment_height": 30.67,
+      "page_top": 98.33,
+      "caption_cap_top": 415.33,
+      "caption_cap": 9.0,
+      "track_top": 434.33,
+      "track_height": 32.67,
+      "field_top": 433.33,
+      "field_height": 34.67,
+      "field_width": 73.0,
+      "field_gap": 15.0,
+      "separator_top": 489.0,
+      "swatch_top": 510.33,
+      "swatch": 75.0,
+      "bottom_padding": 14.67,
+      "channel_track_tops": [
+        22.67,
+        96.33,
+        169.67
+      ],
+      "channel_pitch": 73.5,
+      "hex_top": 234.0,
+      "hex_width": 96.0
     },
     "context_menu": {
       "contextmenuuikit": {

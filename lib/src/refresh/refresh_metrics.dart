@@ -1,8 +1,19 @@
-/// iOS 26's pull to refresh, from SwiftUI's `.refreshable` (iOS 26.4): the
-/// hold, its settle and the snap-back are measured; the rest estimated.
+/// iOS 26's pull to refresh, measured from SwiftUI's `.refreshable` on
+/// iOS 26.4 (`-controls refreshmotion`, frame dumps of `idb ui swipe
+/// --delta 5` pulls; tool/fidelity/record_component_motion.sh).
 abstract final class RefreshMetrics {
-  /// The overscroll that arms the refresh. Estimated.
-  static const double triggerDistance = 65;
+  /// The overscroll that starts the refresh, while the finger is still
+  /// down. Measured: pulls whose list moved 146.7, 155.6, 162.0 and 170.6
+  /// pt did not refresh; 174.7 and more did, the spinner's last spoke
+  /// showing at ~175 pt in every take.
+  static const double triggerDistance = 173;
+
+  /// The finger's travel past the top that starts the refresh, whichever
+  /// of it and [triggerDistance] comes first. Measured: UIScrollView's
+  /// rubber band reaches 173 pt after about 315 pt of finger travel (305
+  /// did not refresh, 320 did); Flutter's bouncing friction needs over
+  /// 400 for the same overscroll.
+  static const double triggerTravel = 315;
 
   /// The room the indicator keeps while refreshing: the content is held
   /// this far down and the spinner centred in it. Measured from SwiftUI's
@@ -10,11 +21,16 @@ abstract final class RefreshMetrics {
   /// spinner centred 30 pt below the list's top inset, two takes).
   static const double indicatorExtent = 60;
 
-  /// The glass disk's diameter behind the spinner. Estimated.
+  /// The Material path's box around its ring. SwiftUI draws no disk
+  /// behind the spinner (measured: the page around it stays pure white).
   static const double diskSize = 36;
 
-  /// The spinner's / ring's diameter. Estimated.
-  static const double spinnerSize = 20;
+  /// The spinner's diameter, spoke tip to spoke tip (measured: 30 pt,
+  /// 186-216 across, centred 92 pt down on iPhone 17 Pro).
+  static const double spinnerSize = 30;
+
+  /// The Material ring's diameter.
+  static const double ringSize = 20;
 
   /// SwiftUI spring response for the indicator's snap-back once the
   /// refresh ends. Measured from SwiftUI's `.refreshable` on iOS 26.4 (the
@@ -34,7 +50,4 @@ abstract final class RefreshMetrics {
   /// SwiftUI damping fraction for the settle into the hold (overdamped:
   /// a fast start and a long tail, as UIScrollView's bounce).
   static const double holdDamping = 1.43;
-
-  /// The smallest scale the indicator grows from while pulling.
-  static const double minScale = 0.3;
 }

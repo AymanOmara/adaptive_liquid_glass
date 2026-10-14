@@ -13,6 +13,7 @@ Widget? newComponentTwin(String scene) => switch (scene) {
   'covertiming' => const _CoverTiming(),
   'gauge' => const _Gauge(),
   'refreshmotion' => const _RefreshMotion(),
+  'colorrow' => const _ColorRow(),
   _ => null,
 };
 
@@ -271,6 +272,38 @@ class _RefreshMotion extends StatelessWidget {
           for (var i = 0; i < 30; i++) GlassListTile(title: Text('Row $i')),
         ],
       ),
+    ),
+  );
+}
+
+/// `-controls colorrow`'s twin: a grouped list with one colour row (red);
+/// tap its swatch to open the sheet.
+class _ColorRow extends StatefulWidget {
+  const _ColorRow();
+
+  @override
+  State<_ColorRow> createState() => _ColorRowState();
+}
+
+class _ColorRowState extends State<_ColorRow> {
+  Color _colour = const Color(0xFFFF383C);
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: CupertinoColors.systemGroupedBackground.resolveFrom(context),
+    child: ListView(
+      padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top + 10.67),
+      children: [
+        GlassListSection(
+          children: [
+            GlassColorPicker(
+              label: const Text('Colour'),
+              value: _colour,
+              onChanged: (c) => setState(() => _colour = c),
+            ),
+          ],
+        ),
+      ],
     ),
   );
 }

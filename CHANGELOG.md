@@ -7,6 +7,26 @@
   crashes on GLES (Flutter 3.47). The labels now stay flat until the first
   frame is rasterised, and the `GlassBackdropSource` luminance sampler
   skips its readback until then and while the app is in the background.
+- Measured against SwiftUI / UIKit on iOS 26.4 (TODO item 6):
+  - `GlassRefresh`: the refresh starts under the finger once the list is
+    pulled 173 pt (or the finger travels 315 pt past the top), as
+    `.refreshable` does; it armed at 65 pt and fired on release. The
+    spinner is 30 pt with no glass disk behind it and does not scale; its
+    spokes fade in with the pull (was a 36-pt disk and a 20-pt spinner).
+    `SliverGlassRefresh` uses the same 173-pt threshold.
+  - `GlassSearchable`: the close button's reveal is fitted to SwiftUI's
+    (three recordings, rms 1.95 pt): the field narrows over the first 13%
+    of the spring (was 50%), the button grows from 0.32 (0.28) on a
+    0.53 / 0.69 spring (was the sheet's 0.4 / 0.86) and overshoots
+    slightly before settling.
+  - `GlassColorPicker`'s sheet is laid out as UIColorPickerViewController:
+    600 pt, floating, no grabber; the row's label as title and a close
+    button; a Grid / Spectrum / Sliders segmented control; red, green and
+    blue capsule sliders with value fields and an sRGB hex field; an
+    opacity slider with its percentage; the current colour under a
+    separator. New `slidersLabel` and `closeLabel`; `hexLabel` defaults
+    to 'sRGB Hex Color #'. `GlassColorPickerPanel` gains `title`,
+    `onClose` and per-channel labels.
 
 - Usability pass ahead of 1.0 (audit in
   `docs/superpowers/notes/usability-audit.md`):

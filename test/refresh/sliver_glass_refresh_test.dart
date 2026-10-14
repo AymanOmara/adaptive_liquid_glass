@@ -35,6 +35,19 @@ Widget _host(Future<void> Function() onRefresh, {String? semanticLabel}) =>
       ),
     );
 
+/// Pulls the list past the measured threshold (173 pt of overscroll)
+/// against the bouncing friction, in 30-pt finger steps, and lets go.
+Future<void> _pullPast(WidgetTester t) async {
+  final gesture = await t.startGesture(
+    t.getCenter(find.byType(Scrollable).first),
+  );
+  for (var i = 0; i < 30; i++) {
+    await gesture.moveBy(const Offset(0, 30));
+    await t.pump(const Duration(milliseconds: 16));
+  }
+  await gesture.up();
+}
+
 void main() {
   setUp(() => GlassProgram.instance.debugReset(skipLoad: true));
   tearDown(() => GlassPlatform.instance.debugReset());
@@ -50,11 +63,11 @@ void main() {
       }),
     );
     await t.pump();
-    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await _pullPast(t);
     await t.pump();
     expect(count, 1);
     // While the refresh is pending a second pull does not call again.
-    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await _pullPast(t);
     await t.pump();
     expect(count, 1);
     completer.complete();
@@ -86,7 +99,7 @@ void main() {
     await t.pump();
     // Idle: the control builds no child at all.
     expect(find.byType(GlassRefreshIndicator), findsNothing);
-    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await _pullPast(t);
     await t.pump();
     expect(
       t
@@ -105,7 +118,7 @@ void main() {
     final first = Completer<void>();
     await t.pumpWidget(_host(() => first.future));
     await t.pump();
-    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await _pullPast(t);
     await t.pump();
     expect(find.bySemanticsLabel('Refreshing'), findsOneWidget);
     first.complete();
@@ -117,7 +130,7 @@ void main() {
       _host(() => second.future, semanticLabel: 'Loading mail'),
     );
     await t.pump();
-    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await _pullPast(t);
     await t.pump();
     expect(find.bySemanticsLabel('Loading mail'), findsOneWidget);
     second.complete();

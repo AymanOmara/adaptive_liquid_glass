@@ -5,6 +5,7 @@ import 'package:adaptive_liquid_glass/src/core/swiftui_spring.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/refresh/refresh_metrics.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
+import 'package:flutter/cupertino.dart' show CupertinoActivityIndicator;
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -27,11 +28,18 @@ const _frame = Duration(milliseconds: 16);
 Widget _host(Widget child) =>
     plainHost(SizedBox(width: 300, height: 400, child: child));
 
-/// The scale-in of the indicator's disk: the `Transform` between the
-/// indicator and its `LiquidGlass`.
-Finder get _diskScale => find
-    .ancestor(of: find.byType(LiquidGlass), matching: find.byType(Transform))
-    .first;
+/// Pulls the list past the measured threshold (173 pt of overscroll)
+/// against the bouncing friction, in 30-pt finger steps, and lets go.
+Future<void> _pullPast(WidgetTester t) async {
+  final gesture = await t.startGesture(
+    t.getCenter(find.byType(Scrollable).first),
+  );
+  for (var i = 0; i < 30; i++) {
+    await gesture.moveBy(const Offset(0, 30));
+    await t.pump(const Duration(milliseconds: 16));
+  }
+  await gesture.up();
+}
 
 void main() {
   setUp(() => GlassProgram.instance.debugReset(skipLoad: true));
@@ -53,12 +61,12 @@ void main() {
       ),
     );
     await t.pump();
-    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await _pullPast(t);
     await t.pump();
     await t.pump(_frame);
     expect(count, 1);
     // While the refresh is pending a second pull does not call again.
-    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await _pullPast(t);
     await t.pump();
     await t.pump(_frame);
     expect(count, 1);
@@ -103,7 +111,7 @@ void main() {
           .refreshing,
       isFalse,
     );
-    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await _pullPast(t);
     await t.pump();
     await t.pump(_frame);
     expect(
@@ -134,7 +142,7 @@ void main() {
       _host(GlassRefresh(onRefresh: () => completer.future, child: _list)),
     );
     await t.pump();
-    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await _pullPast(t);
     await t.pump();
     await t.pump(_frame);
     // The list settles back while the spinner keeps turning.
@@ -180,7 +188,7 @@ void main() {
     );
     await t.pump();
     expect(contentOffset(t), 0);
-    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await _pullPast(t);
     await t.pump();
     // As the release's bounce returns, the content never rises above
     // the hold: it stops at the spinner's room instead of the top.
@@ -215,7 +223,7 @@ void main() {
       _host(GlassRefresh(onRefresh: () => completer.future, child: _list)),
     );
     await t.pump();
-    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await _pullPast(t);
     await t.pump();
     // The release triggers on its next frame; the hold then settles.
     await t.pump(_frame);
@@ -259,7 +267,7 @@ void main() {
     );
     await t.pump();
     final gesture = await t.startGesture(t.getCenter(find.text('Row 0')));
-    for (var i = 0; i < 10; i++) {
+    for (var i = 0; i < 24; i++) {
       await gesture.moveBy(const Offset(0, 30));
       await t.pump(_frame);
     }
@@ -309,7 +317,7 @@ void main() {
         ),
       );
       await t.pump();
-      await t.drag(find.text('Row 2'), const Offset(0, 150));
+      await _pullPast(t);
       await t.pump();
       await t.pump(const Duration(seconds: 1));
       final y =
@@ -365,7 +373,7 @@ void main() {
       _host(GlassRefresh(onRefresh: () => completer.future, child: _list)),
     );
     await t.pump();
-    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await _pullPast(t);
     await t.pump();
     await t.pump(const Duration(seconds: 1));
     final top = t.getTopLeft(find.byType(GlassRefresh)).dy;
@@ -396,44 +404,131 @@ void main() {
     expect(find.byType(GlassRefreshIndicator), findsNothing);
   }, variant: android);
 
-  testWidgets('Reduce Motion: no scale-in', (t) async {
+  testWidgets('Reduce Motion: the refreshing spinner does not turn', (t) async {
     shaderEnv();
-    Widget host(bool reduceMotion) => plainHost(
-      Builder(
-        builder: (context) => MediaQuery(
-          data: MediaQuery.of(
-            context,
-          ).copyWith(disableAnimations: reduceMotion),
-          child: SizedBox(
-            width: 300,
-            height: 400,
-            child: GlassRefresh(onRefresh: () async {}, child: _list),
+    final completer = Completer<void>();
+    await t.pumpWidget(
+      plainHost(
+        Builder(
+          builder: (context) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: SizedBox(
+              width: 300,
+              height: 400,
+              child: GlassRefresh(
+                onRefresh: () => completer.future,
+                child: _list,
+              ),
+            ),
           ),
         ),
       ),
     );
-
-    double diskScale() => t.widget<Transform>(_diskScale).transform.entry(0, 0);
-
-    // Mid-pull the disk scales in from its minimum...
-    await t.pumpWidget(host(false));
     await t.pump();
-    var gesture = await t.startGesture(t.getCenter(find.text('Row 0')));
-    await gesture.moveBy(const Offset(0, 30));
+    await _pullPast(t);
     await t.pump();
-    expect(diskScale(), lessThan(1));
-    await gesture.up();
+    final spinner = t.widget<CupertinoActivityIndicator>(
+      find.byType(CupertinoActivityIndicator),
+    );
+    expect(spinner.animating, isFalse);
+    completer.complete();
     await t.pumpAndSettle();
+  }, variant: ios);
 
-    // ...and with Reduce Motion it stays at full size.
-    await t.pumpWidget(host(true));
+  test('threshold and spinner are the measured ones', () {
+    // SwiftUI's .refreshable (iOS 26.4): pulls of up to 170.6 pt did not
+    // refresh, 174.7 did; the spinner is 30 pt across.
+    expect(RefreshMetrics.triggerDistance, 173);
+    expect(RefreshMetrics.triggerTravel, 315);
+    expect(RefreshMetrics.spinnerSize, 30);
+  });
+
+  testWidgets('the refresh starts under the finger at the threshold', (
+    t,
+  ) async {
+    shaderEnv();
+    var count = 0;
+    final completer = Completer<void>();
+    final controller = ScrollController();
+    await t.pumpWidget(
+      _host(
+        GlassRefresh(
+          onRefresh: () {
+            count++;
+            return completer.future;
+          },
+          child: ListView(
+            controller: controller,
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            children: List.generate(
+              30,
+              (i) => SizedBox(height: 40, child: Text('Row $i')),
+            ),
+          ),
+        ),
+      ),
+    );
     await t.pump();
-    gesture = await t.startGesture(t.getCenter(find.text('Row 0')));
-    await gesture.moveBy(const Offset(0, 30));
-    await t.pump();
-    expect(diskScale(), moreOrLessEquals(1));
+    final gesture = await t.startGesture(
+      t.getCenter(find.byType(Scrollable).first),
+    );
+    var moved = 0.0;
+    for (var i = 0; i < 400 && count == 0; i++) {
+      await gesture.moveBy(const Offset(0, 5));
+      moved += 5;
+      await t.pump(_frame);
+    }
+    // Finger still down: it started on the move that passed UIKit's
+    // threshold, 173 pt of overscroll or (Flutter's friction holding the
+    // list back harder) 315 pt of finger travel past the top. The first
+    // move also spends the touch slop, which counts as travel.
+    expect(count, 1);
+    expect(
+      -controller.offset >= RefreshMetrics.triggerDistance ||
+          moved >= RefreshMetrics.triggerTravel - 5,
+      isTrue,
+      reason: 'moved $moved, overscroll ${-controller.offset}',
+    );
+    expect(moved, lessThan(RefreshMetrics.triggerTravel + 5));
+    expect(
+      t
+          .widget<GlassRefreshIndicator>(find.byType(GlassRefreshIndicator))
+          .refreshing,
+      isTrue,
+    );
     await gesture.up();
+    completer.complete();
     await t.pumpAndSettle();
+  }, variant: ios);
+
+  testWidgets('the glass path draws the spinner alone: no disk, no scale', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(
+      plainHost(const GlassRefreshIndicator(progress: 0.5, refreshing: false)),
+    );
+    expect(
+      find.descendant(
+        of: find.byType(GlassRefreshIndicator),
+        matching: find.byType(LiquidGlass),
+      ),
+      findsNothing,
+    );
+    expect(
+      t.getSize(find.byType(CupertinoActivityIndicator)),
+      const Size.square(30),
+    );
+    // The spokes fade in with the pull.
+    final opacity = t.widget<Opacity>(
+      find.descendant(
+        of: find.byType(GlassRefreshIndicator),
+        matching: find.byType(Opacity),
+      ),
+    );
+    expect(opacity.opacity, 0.5);
   }, variant: ios);
 
   testWidgets('RTL: the indicator stays centred', (t) async {
@@ -450,7 +545,7 @@ void main() {
       ),
     );
     await t.pump();
-    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await _pullPast(t);
     await t.pump();
     await t.pump(_frame);
     final indicator = find.byType(GlassRefreshIndicator);
@@ -470,7 +565,7 @@ void main() {
       _host(GlassRefresh(onRefresh: () => first.future, child: _list)),
     );
     await t.pump();
-    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await _pullPast(t);
     await t.pump();
     await t.pump(_frame);
     expect(find.bySemanticsLabel('Refreshing'), findsOneWidget);
@@ -489,7 +584,7 @@ void main() {
       ),
     );
     await t.pump();
-    await t.drag(find.text('Row 0'), const Offset(0, 150));
+    await _pullPast(t);
     await t.pump();
     await t.pump(_frame);
     expect(find.bySemanticsLabel('Loading mail'), findsOneWidget);

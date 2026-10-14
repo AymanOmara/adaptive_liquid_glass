@@ -679,7 +679,7 @@ void main() {
     final c = m('color_sheet');
     expect(
       ColorPickerMetrics.padding,
-      moreOrLessEquals(n(c, 'grid_inset'), epsilon: pt),
+      moreOrLessEquals(n(c, 'content_inset'), epsilon: pt),
     );
     expect(ColorPickerMetrics.gridColumns, n(c, 'columns'));
     expect(ColorPickerMetrics.gridRows, n(c, 'rows'));
@@ -689,6 +689,70 @@ void main() {
     expect(
       n(c, 'grid_height') / ColorPickerMetrics.gridRows,
       moreOrLessEquals(cell, epsilon: pt),
+    );
+  });
+
+  test('colour picker sheet layout (UIColorPickerViewController)', () {
+    final c = m('color_sheet');
+    // Positions from the sheet's top edge, as the panel stacks them.
+    const pageBottom =
+        ColorPickerMetrics.pageTop + ColorPickerMetrics.pageHeight;
+    const fieldTop =
+        pageBottom +
+        ColorPickerMetrics.opacityGap +
+        ColorPickerMetrics.captionSlot -
+        (ColorPickerMetrics.fieldHeight - ColorPickerMetrics.trackHeight) / 2;
+    const trackTop =
+        fieldTop +
+        (ColorPickerMetrics.fieldHeight - ColorPickerMetrics.trackHeight) / 2;
+    const separator =
+        fieldTop +
+        ColorPickerMetrics.fieldHeight +
+        ColorPickerMetrics.separatorGap;
+    const swatchTop = separator + 1 / 3 + ColorPickerMetrics.swatchGap;
+    for (final (got, key) in [
+      (ColorPickerMetrics.sheetHeight, 'sheet_height'),
+      (ColorPickerMetrics.headerHeight / 2, 'title_centre'),
+      (ColorPickerMetrics.closeGlyph, 'close_glyph'),
+      (ColorPickerMetrics.closeInset, 'close_inset'),
+      (ColorPickerMetrics.segmentTop, 'segment_top'),
+      (ColorPickerMetrics.pageTop, 'page_top'),
+      (ColorPickerMetrics.pageHeight, 'grid_height'),
+      (ColorPickerMetrics.trackHeight, 'track_height'),
+      (trackTop, 'track_top'),
+      (fieldTop, 'field_top'),
+      (ColorPickerMetrics.fieldHeight, 'field_height'),
+      (ColorPickerMetrics.fieldWidth, 'field_width'),
+      (ColorPickerMetrics.fieldGap, 'field_gap'),
+      (separator, 'separator_top'),
+      (swatchTop, 'swatch_top'),
+      (ColorPickerMetrics.swatch, 'swatch'),
+      (swatchTop + ColorPickerMetrics.swatch, 'sheet_height'),
+      (ColorPickerMetrics.channelPitch, 'channel_pitch'),
+      (ColorPickerMetrics.hexTop, 'hex_top'),
+      (ColorPickerMetrics.hexFieldWidth, 'hex_width'),
+    ]) {
+      final want =
+          key == 'sheet_height' && got != ColorPickerMetrics.sheetHeight
+          ? n(c, key) - ColorPickerMetrics.bottomPadding
+          : n(c, key);
+      expect(got, moreOrLessEquals(want, epsilon: pt), reason: key);
+    }
+    // The caption's 13-pt cap height (9 pt) starts SF Pro's 3.2 pt below
+    // its slot's top.
+    expect(
+      fieldTop -
+          ColorPickerMetrics.captionSlot +
+          (ColorPickerMetrics.fieldHeight - ColorPickerMetrics.trackHeight) /
+              2 +
+          3.2,
+      moreOrLessEquals(n(c, 'caption_cap_top'), epsilon: 1),
+    );
+    // The channel tracks sit as the opacity one under its caption.
+    final tops = (c['channel_track_tops'] as List).cast<num>();
+    expect(
+      ColorPickerMetrics.channelTop + ColorPickerMetrics.captionSlot,
+      moreOrLessEquals(tops.first.toDouble(), epsilon: pt),
     );
   });
 
