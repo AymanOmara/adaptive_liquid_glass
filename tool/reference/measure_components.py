@@ -507,6 +507,119 @@ def more_components(d):
     return out
 
 
+def last_components(d):
+    """The components item 6 left unmeasured, from captures in `d`
+    (build/reference/swiftui/; see capture_last.sh)."""
+    out = {}
+    dark = lambda c: np.asarray(c).max(axis=-1) < 100
+
+    def at_run(v, i):
+        """The run of True in `v` containing index `i`, in pt."""
+        s = e = i
+        while s > 0 and v[s - 1]:
+            s -= 1
+        while e < len(v) - 1 and v[e + 1]:
+            e += 1
+        return s / S, (e + 1) / S
+
+    # Time columns: ink of the selected row (y 480 in datewheel and
+    # timewheel, 200 in timewheel), in surface coordinates (surface 41..361).
+    def row_groups(a, y):
+        ink = runs(dark(a[int((y - 12) * S):int((y + 12) * S)]).any(axis=0))
+        groups, cur = [], [ink[0]]
+        for q in ink[1:]:
+            if q[0] - cur[-1][1] > 8:
+                groups.append(cur)
+                cur = [q]
+            else:
+                cur.append(q)
+        groups.append(cur)
+        return [(r(g[0][0] - 41), r(g[-1][1] - 41)) for g in groups]
+    tc = {}
+    if (d / "datewheel.png").exists():
+        g = row_groups(load(d, "datewheel.png"), 480)
+        tc["time12"] = {"hour_end": g[0][1], "minute_start": g[1][0],
+                        "period_start": g[2][0],
+                        "period_centre": r((g[2][0] + g[2][1]) / 2)}
+    if (d / "timewheel.png").exists():
+        a = load(d, "timewheel.png")
+        g = row_groups(a, 200)
+        tc["time24"] = {"hour_end": g[0][1], "minute_start": g[1][0]}
+        g = row_groups(a, 480)
+        tc["date_time"] = {"date_end": g[0][1], "hour_end": g[1][1],
+                           "minute_start": g[2][0], "period_start": g[3][0]}
+        band = lambda c: np.abs(np.asarray(c) - [244, 244, 245]).max(axis=-1) <= 3
+        bx = runs(band(a[int(200 * S)]))
+        tc["band_width_24"] = r(bx[-1][1] - bx[0][0])
+    if tc:
+        out["date_wheel_time"] = tc
+    # Search scopes (typed query, bar at the top) and suggestions.
+    if (d / "searchscopesquery.png").exists():
+        a = load(d, "searchscopesquery.png")
+        bright = a.min(axis=-1) >= 250
+        y0, y1 = at_run(bright[:, int(300 * S)], int(80 * S))
+        x0, x1 = at_run(bright[int(80 * S)], int(370 * S))
+        lst = [q for q in runs(bright[:, int(201 * S)]) if q[0] > y1 + 20][0]
+        out["search_scopes"] = {"top": r(y0), "height": r(y1 - y0),
+                                "end_inset": r(W - x1), "list_top": r(lst[0])}
+        if (d / "searchscopes.png").exists():
+            # Active, nothing typed: no scope bar; the list's first row.
+            a = load(d, "searchscopes.png")
+            bright = a.min(axis=-1) >= 250
+            lst = [q for q in runs(bright[:, int(201 * S)]) if q[0] > 70][0]
+            out["search_scopes"]["list_top_without"] = r(lst[0])
+    if (d / "searchactive.png").exists():
+        a = load(d, "searchactive.png")
+        col = a[:, int(200 * S)]
+        seps = runs(col[:int(300 * S)].min(axis=-1) < 245)
+        blue = (a[:, :, 2] > 200) & (a[:, :, 0] < 120)
+        xs = np.where(blue[:int(600 * S)].any(axis=0))[0]
+        sx = runs(a[int(seps[0][0] * S + 1)].min(axis=-1) < 245)
+        out["search_suggestions"] = {
+            "first_separator": r(seps[0][0]),
+            "row_pitch": r((seps[-1][0] - seps[0][0]) / (len(seps) - 1)),
+            "separator_start": r(sx[0][0]), "separator_end_inset": r(W - sx[-1][1]),
+            "title_ink_start": r(xs.min() / S),
+            "title_colour": hexc(a[:int(300 * S)][blue[:int(300 * S)]].min(axis=0)),
+        }
+    # Colour picker sheet (UIColorPickerViewController after a tap on the
+    # colorrow scene's swatch): the 12 x 10 grid.
+    if (d / "colorsheet_tap.png").exists():
+        a = load(d, "colorsheet_tap.png")
+        bg = a[2500, 600]  # the sheet's fill, under the saved swatches
+        sheet = np.abs(a - bg).max(axis=-1) <= 2
+        sx = runs(sheet[int(476 * S)])
+        nonbg = np.abs(a[int(476 * S)] - bg).max(axis=-1) > 6
+        gx = [q for q in runs(nonbg) if q[1] - q[0] > 300][0]
+        gy = runs(np.abs(a[:, int(200 * S)] - bg).max(axis=-1) > 6)
+        gy = [q for q in gy if q[0] > 300 and q[1] - q[0] > 250][0]
+        out["color_sheet"] = {
+            "sheet_inset": r(sx[0][0]), "grid_inset": r(gx[0] - sx[0][0]),
+            "grid_width": r(gx[1] - gx[0]), "grid_top": r(gy[0]),
+            "grid_height": r(gy[1] - gy[0]), "columns": 12, "rows": 10,
+        }
+    # Context menu (UIKit interaction opened programmatically).
+    cm = {}
+    for name, cx in (("contextmenuuikit", 201), ("contextmenuuikitleft", 110),
+                     ("contextmenuuikitwide", 201)):
+        if not (d / f"{name}.png").exists():
+            continue
+        a = load(d, f"{name}.png")
+        bg = a[100, 100]
+        white = a.min(axis=-1) >= 248
+        far = np.abs(a - bg).max(axis=-1) > 20
+        cx0, cx1 = at_run(white[int(340 * S)], int(cx * S))
+        cy0, cy1 = at_run(white[:, int((cx0 + 30) * S)], int(362 * S))
+        mx = np.where(far[int(540 * S)])[0]
+        my = [q for q in runs(far[:, int(200 * S)]) if q[0] > cy1 + 5][0]
+        cm[name] = {"card": [r(cx0), r(cy0), r(cx1), r(cy1)],
+                    "menu": [r(mx.min() / S), r(my[0]), r((mx.max() + 1) / S), r(my[1])],
+                    "dim": hexc(bg)}
+    if cm:
+        out["context_menu"] = cm
+    return out
+
+
 def main():
     d = pathlib.Path(sys.argv[1])
     dst = pathlib.Path(__file__).with_name("controls.json")
@@ -526,6 +639,10 @@ def main():
         comp.update(new_components(d))
     if (d / "swiftui" / "label.png").exists():
         comp.update(more_components(d / "swiftui"))
+    if any((d / "swiftui" / f).exists() for f in
+           ("timewheel.png", "searchscopesquery.png", "colorsheet_tap.png",
+            "contextmenuuikit.png")):
+        comp.update(last_components(d / "swiftui"))
     print(json.dumps(comp, indent=1))
     if "--dry" in sys.argv:
         return

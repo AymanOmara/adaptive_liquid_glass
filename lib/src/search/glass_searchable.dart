@@ -20,8 +20,6 @@ import '../core/glass.dart';
 import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
-import '../core/glass_shape.dart';
-import '../liquid_glass.dart';
 import '../list/list_metrics.dart';
 import 'glass_search_controller.dart';
 import 'glass_search_field.dart';
@@ -32,8 +30,8 @@ import 'search_cancel_button.dart';
 import 'search_metrics.dart';
 
 /// iOS 26's `.searchable` presentation: a [GlassSearchField] that takes
-/// the screen's focus, a Cancel button that slides out from its end,
-/// suggestions on a glass platter and scope segments under the field.
+/// the screen's focus, a close button that slides out from its end,
+/// suggestions listed in place of the content and scope segments.
 ///
 /// ```dart
 /// GlassSearchable(
@@ -89,8 +87,9 @@ class GlassSearchable extends StatefulWidget {
   /// Called when the user submits from the keyboard.
   final ValueChanged<String>? onSubmitted;
 
-  /// Builds the suggestions for the controller's current text, shown on a
-  /// glass platter while search is active. An empty list draws none.
+  /// Builds the suggestions for the controller's current text, listed in
+  /// place of the content while search is active, as SwiftUI does. An
+  /// empty list draws none.
   final List<GlassSearchSuggestion> Function(
     BuildContext context,
     GlassSearchController controller,
@@ -118,7 +117,7 @@ class GlassSearchable extends StatefulWidget {
   /// [GlassSearchField.semanticLabel].
   final String? semanticLabel;
 
-  /// The glass of the field and the suggestions platter.
+  /// The glass of the field.
   final Glass? glass;
 
   /// The rendering path; see [GlassRenderMode].
@@ -281,11 +280,8 @@ class _GlassSearchableState extends State<GlassSearchable>
                 children: [
                   widget.child,
                   if (suggestions.isNotEmpty)
-                    PositionedDirectional(
-                      top: 0,
-                      start: SearchMetrics.inset,
-                      end: SearchMetrics.inset,
-                      child: _platter(context, suggestions),
+                    Positioned.fill(
+                      child: _suggestionList(context, suggestions),
                     ),
                 ],
               ),
@@ -294,10 +290,34 @@ class _GlassSearchableState extends State<GlassSearchable>
         ],
       );
     }
+    // SwiftUI (iOS 26.4, measured) shows the scopes once a query is typed,
+    // as a bar at the top under the status bar that pushes the content
+    // down; suggestions replace the content with a plain list.
+    final topScopes = scopes != null && _controller.text.isNotEmpty;
+    final media = MediaQuery.of(context);
     return Stack(
       fit: StackFit.expand,
       children: [
-        widget.child,
+        if (topScopes)
+          MediaQuery(
+            data: media.copyWith(
+              padding: media.padding.copyWith(
+                top: media.padding.top + SearchMetrics.scopeContentShift,
+              ),
+            ),
+            child: widget.child,
+          )
+        else
+          widget.child,
+        if (suggestions.isNotEmpty)
+          Positioned.fill(child: _suggestionList(context, suggestions)),
+        if (topScopes && suggestions.isEmpty)
+          PositionedDirectional(
+            top: media.padding.top + SearchMetrics.scopeTop,
+            start: SearchMetrics.scopeInset,
+            end: SearchMetrics.scopeInset,
+            child: _scopeSegments(),
+          ),
         AnimatedBuilder(
           animation: _reveal,
           // Idle, SwiftUI floats the field like the toolbar (28 pt from
@@ -320,21 +340,7 @@ class _GlassSearchableState extends State<GlassSearchable>
               child: child!,
             );
           },
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (suggestions.isNotEmpty) ...[
-                _platter(context, suggestions),
-                const SizedBox(height: SearchMetrics.suggestionsGap),
-              ],
-              if (scopes != null) ...[
-                _scopeSegments(),
-                const SizedBox(height: SearchMetrics.scopeGap),
-              ],
-              _fieldRow(context),
-            ],
-          ),
+          child: _fieldRow(context),
         ),
       ],
     );
@@ -360,23 +366,34 @@ class _GlassSearchableState extends State<GlassSearchable>
         AnimatedBuilder(
           animation: _reveal,
           builder: (context, _) {
-            final shown = _reveal.value.clamp(0.0, 1.0);
+            // iOS 26.4 (measured, `-controls search` tapped): the field
+            // narrows first, then the close button grows in place from
+            // about a third of its size as it fades in.
+            final t = _reveal.value.clamp(0.0, 1.0);
+            final slot = (t / SearchMetrics.revealSplit).clamp(0.0, 1.0);
+            final grow =
+                ((t - SearchMetrics.revealSplit) /
+                        (1 - SearchMetrics.revealSplit))
+                    .clamp(0.0, 1.0);
             return ClipRect(
               child: Align(
                 alignment: AlignmentDirectional.centerStart,
-                widthFactor: shown,
+                widthFactor: slot,
                 child: Opacity(
-                  opacity: shown,
+                  opacity: grow,
                   child: Padding(
                     padding: const EdgeInsetsDirectional.only(
                       start: SearchMetrics.cancelGap,
                     ),
-                    child: SearchCancelButton(
-                      onPressed: _cancel,
-                      label:
-                          widget.cancelLabel ??
-                          cupertinoL10n(context).cancelButtonLabel,
-                      mode: widget.mode,
+                    child: Transform.scale(
+                      scale: lerpDouble(SearchMetrics.revealScale, 1, grow),
+                      child: SearchCancelButton(
+                        onPressed: _cancel,
+                        label:
+                            widget.cancelLabel ??
+                            cupertinoL10n(context).cancelButtonLabel,
+                        mode: widget.mode,
+                      ),
                     ),
                   ),
                 ),
@@ -414,35 +431,37 @@ class _GlassSearchableState extends State<GlassSearchable>
     mode: widget.mode,
   );
 
-  /// The suggestions on a glass platter, with hairline separators like a
-  /// list section's.
-  Widget _platter(BuildContext context, List<GlassSearchSuggestion> items) {
-    final separator = CupertinoDynamicColor.resolve(
-      GlassColors.listSeparator,
-      context,
+  /// The suggestions as SwiftUI shows them (iOS 26.4, measured): a plain
+  /// list on the system background in place of the content, from under
+  /// the status bar, a separator above, between and below the rows.
+  Widget _suggestionList(
+    BuildContext context,
+    List<GlassSearchSuggestion> items,
+  ) {
+    final separator = ColoredBox(
+      color: CupertinoDynamicColor.resolve(GlassColors.listSeparator, context),
+      child: const SizedBox(
+        height: ListMetrics.separatorThickness,
+        width: double.infinity,
+      ),
     );
-    return LiquidGlass(
-      glass: widget.glass,
-      mode: widget.mode,
-      shape: const GlassShape.rect(SearchMetrics.suggestionsRadius),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    final padded = Padding(
+      padding: const EdgeInsetsDirectional.only(
+        start: ListMetrics.horizontalPadding,
+        end: ListMetrics.separatorEnd,
+      ),
+      child: separator,
+    );
+    return ColoredBox(
+      color: CupertinoDynamicColor.resolve(
+        CupertinoColors.systemBackground,
+        context,
+      ),
+      child: ListView(
+        padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
         children: [
-          for (var i = 0; i < items.length; i++)
-            Stack(
-              children: [
-                _row(items[i]),
-                if (i < items.length - 1)
-                  PositionedDirectional(
-                    start: ListMetrics.horizontalPadding,
-                    end: ListMetrics.separatorEnd,
-                    bottom: 0,
-                    height: ListMetrics.separatorThickness,
-                    child: ColoredBox(color: separator),
-                  ),
-              ],
-            ),
+          padded,
+          for (final item in items) ...[_row(item), padded],
         ],
       ),
     );

@@ -56,23 +56,44 @@ abstract final class SearchMetrics {
   /// The close button's diameter: a glass xmark circle (measured).
   static const double cancelSize = 48;
 
-  /// The gap between the field and the scope bar (estimated).
+  /// The gap between the field and the scope bar in the navigation-bar
+  /// placement (estimated).
   static const double scopeGap = 8;
 
-  /// The scope bar's height (estimated; GlassSegmentedControl's).
+  /// The scope bar's height (measured: 32, GlassSegmentedControl's).
   static const double scopeBarHeight = 32;
 
-  /// A suggestion row's least height (estimated).
-  static const double suggestionRowHeight = 44;
+  /// With the bottom field, the scope bar's top below the safe area's
+  /// (measured: SwiftUI shows it at the top once a query is typed, `-controls
+  /// searchscopesquery`).
+  static const double scopeTop = 2;
 
-  /// The suggestions platter's corner radius (estimated: the list
-  /// platter's).
-  static const double suggestionsRadius = 26;
+  /// The scope bar's inset from the screen's sides (measured).
+  static const double scopeInset = 16;
 
-  /// The gap between the platter and the field (estimated).
-  static const double suggestionsGap = 8;
+  /// How far the scope bar pushes the content down (measured: the list's
+  /// first row moves from 97 to 141).
+  static const double scopeContentShift = 44;
 
-  /// The Cancel button's reveal / hide spring (estimated: the sheet's).
+  /// A suggestion row's least height (measured: SwiftUI lists suggestions
+  /// as plain rows 53.67 apart with their 1-pt separators, in place of the
+  /// content).
+  static const double suggestionRowHeight = 52.67;
+
+  /// The close button's reveal, measured from a recording of SwiftUI's
+  /// (iOS 26.4, `-controls search` tapped, 60 fps): the field narrows to
+  /// make room while it rides up with the keyboard, then the button grows
+  /// in place from 0.28 of its size, fading in, settling ~10 frames later.
+  /// This fraction of [activation] narrows the field; the rest grows the
+  /// button.
+  static const double revealSplit = 0.5;
+
+  /// The close button's size as it starts to grow in (measured: its glyph
+  /// first shows 5 of 17.7 pt wide).
+  static const double revealScale = 0.28;
+
+  /// The close button's reveal / hide spring (estimated: the sheet's; the
+  /// recording's 0.37 s from tap-out to settled fits it).
   static final SpringDescription activation = swiftUISpring(
     response: 0.4,
     dampingFraction: 0.86,

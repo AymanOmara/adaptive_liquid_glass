@@ -198,6 +198,8 @@ class _GlassDateWheelState extends State<GlassDateWheel> {
     required int selected,
     required ValueChanged<int>? onChanged,
     String? semanticLabel,
+    AlignmentGeometry alignment = AlignmentDirectional.center,
+    EdgeInsetsGeometry? padding,
   }) => SizedBox(
     width: width,
     child: GlassWheelPicker<int>(
@@ -207,8 +209,62 @@ class _GlassDateWheelState extends State<GlassDateWheel> {
       selected: selected,
       onChanged: onChanged,
       semanticLabel: semanticLabel,
+      alignment: alignment,
+      rowPadding:
+          padding ??
+          const EdgeInsetsDirectional.symmetric(
+            horizontal: WheelPickerMetrics.rowPadding,
+          ),
     ),
   );
+
+  /// Lays [columns] out across the surface as UIDatePicker does: each is
+  /// `(endAligned, line, build)`, its label ending (end-aligned) or
+  /// starting at `line` from the surface's leading edge; the columns meet
+  /// [DatePickerWheelMetrics.timeColumnGap] past an end line or before the
+  /// next start line, and the last takes the rest of the surface.
+  List<Widget> _placed(
+    List<
+      (
+        bool,
+        double,
+        Widget Function(
+          double width,
+          AlignmentGeometry alignment,
+          EdgeInsetsGeometry padding,
+        ),
+      )
+    >
+    columns,
+  ) {
+    const gap = DatePickerWheelMetrics.timeColumnGap;
+    final out = <Widget>[];
+    var left = 0.0;
+    for (var i = 0; i < columns.length; i++) {
+      final (endAligned, line, build) = columns[i];
+      final last = i == columns.length - 1;
+      final right = last
+          ? WheelPickerMetrics.width
+          : endAligned
+          ? line + gap
+          : columns[i + 1].$2 - gap;
+      out.add(
+        endAligned
+            ? build(
+                right - left,
+                AlignmentDirectional.centerEnd,
+                EdgeInsetsDirectional.only(end: right - line),
+              )
+            : build(
+                right - left,
+                AlignmentDirectional.centerStart,
+                EdgeInsetsDirectional.only(start: line - left),
+              ),
+      );
+      left = right;
+    }
+    return out;
+  }
 
   List<Widget> _dateColumns(CupertinoLocalizations l10n) {
     final v = widget.value;
@@ -248,41 +304,73 @@ class _GlassDateWheelState extends State<GlassDateWheel> {
     };
   }
 
-  List<Widget> _timeColumns(CupertinoLocalizations l10n) {
+  /// The hour, minute and (12-hour) AM/PM columns, each as
+  /// `(endAligned, line, build)` for [_placed]: [hourEnd] is where the
+  /// hours end, [minuteStart] and [periodStart] where the minutes and
+  /// AM/PM start.
+  List<
+    (
+      bool,
+      double,
+      Widget Function(double, AlignmentGeometry, EdgeInsetsGeometry),
+    )
+  >
+  _timeColumns(
+    CupertinoLocalizations l10n, {
+    required double hourEnd,
+    required double minuteStart,
+    required double periodStart,
+  }) {
     final v = widget.value;
     final use12 = !_use24;
-    final hour = _column(
-      width: DatePickerWheelMetrics.timeColumnWidth,
-      items: [
-        for (var h = use12 ? 1 : 0; h <= (use12 ? 12 : 23); h++)
-          GlassPickerItem(value: h, label: l10n.datePickerHour(h)),
-      ],
-      selected: use12 ? (v.hour % 12 == 0 ? 12 : v.hour % 12) : v.hour,
-      onChanged: _enabled ? (h) => _pickHour(h, use12: use12) : null,
-      semanticLabel: _materialL10n.timePickerHourLabel,
-    );
-    final minute = _column(
-      width: DatePickerWheelMetrics.timeColumnWidth,
-      items: [
-        for (var m = 0; m < 60; m += widget.minuteInterval)
-          GlassPickerItem(value: m, label: l10n.datePickerMinute(m)),
-      ],
-      selected: v.minute - v.minute % widget.minuteInterval,
-      onChanged: _enabled ? _pickMinute : null,
-      semanticLabel: _materialL10n.timePickerMinuteLabel,
-    );
     return [
-      hour,
-      minute,
-      if (use12)
-        _column(
-          width: DatePickerWheelMetrics.timeColumnWidth,
+      (
+        true,
+        hourEnd,
+        (width, alignment, padding) => _column(
+          width: width,
+          alignment: alignment,
+          padding: padding,
           items: [
-            GlassPickerItem(value: 0, label: l10n.anteMeridiemAbbreviation),
-            GlassPickerItem(value: 1, label: l10n.postMeridiemAbbreviation),
+            for (var h = use12 ? 1 : 0; h <= (use12 ? 12 : 23); h++)
+              GlassPickerItem(value: h, label: l10n.datePickerHour(h)),
           ],
-          selected: v.hour < 12 ? 0 : 1,
-          onChanged: _enabled ? _pickPeriod : null,
+          selected: use12 ? (v.hour % 12 == 0 ? 12 : v.hour % 12) : v.hour,
+          onChanged: _enabled ? (h) => _pickHour(h, use12: use12) : null,
+          semanticLabel: _materialL10n.timePickerHourLabel,
+        ),
+      ),
+      (
+        false,
+        minuteStart,
+        (width, alignment, padding) => _column(
+          width: width,
+          alignment: alignment,
+          padding: padding,
+          items: [
+            for (var m = 0; m < 60; m += widget.minuteInterval)
+              GlassPickerItem(value: m, label: l10n.datePickerMinute(m)),
+          ],
+          selected: v.minute - v.minute % widget.minuteInterval,
+          onChanged: _enabled ? _pickMinute : null,
+          semanticLabel: _materialL10n.timePickerMinuteLabel,
+        ),
+      ),
+      if (use12)
+        (
+          false,
+          periodStart,
+          (width, alignment, padding) => _column(
+            width: width,
+            alignment: alignment,
+            padding: padding,
+            items: [
+              GlassPickerItem(value: 0, label: l10n.anteMeridiemAbbreviation),
+              GlassPickerItem(value: 1, label: l10n.postMeridiemAbbreviation),
+            ],
+            selected: v.hour < 12 ? 0 : 1,
+            onChanged: _enabled ? _pickPeriod : null,
+          ),
         ),
     ];
   }
@@ -290,43 +378,62 @@ class _GlassDateWheelState extends State<GlassDateWheel> {
   List<Widget> _columns(CupertinoLocalizations l10n) =>
       switch (widget.pickerMode) {
         GlassDatePickerMode.date => _dateColumns(l10n),
-        GlassDatePickerMode.time => _timeColumns(l10n),
-        GlassDatePickerMode.dateAndTime => [
+        GlassDatePickerMode.time => _placed(
+          _use24
+              ? _timeColumns(
+                  l10n,
+                  hourEnd: DatePickerWheelMetrics.time24HourEnd,
+                  minuteStart: DatePickerWheelMetrics.time24MinuteStart,
+                  periodStart: 0,
+                )
+              : _timeColumns(
+                  l10n,
+                  hourEnd: DatePickerWheelMetrics.time12HourEnd,
+                  minuteStart: DatePickerWheelMetrics.time12MinuteStart,
+                  periodStart: DatePickerWheelMetrics.time12PeriodStart,
+                ),
+        ),
+        GlassDatePickerMode.dateAndTime => _placed([
           // Every day of the range, one row per day, by its offset from
           // [firstDate].
-          _column(
-            width: DatePickerWheelMetrics.dateTimeWidth,
-            items: [
-              for (var i = 0; i <= _dayCount; i++)
-                GlassPickerItem(
-                  value: i,
-                  label: l10n.datePickerMediumDate(_dayAt(i)),
-                ),
-            ],
-            selected: _day(
-              widget.value,
-            ).difference(_day(widget.firstDate)).inDays,
-            onChanged: _enabled ? _pickDayIndex : null,
+          (
+            true,
+            DatePickerWheelMetrics.dateTimeDateEnd,
+            (width, alignment, padding) => _column(
+              width: width,
+              alignment: alignment,
+              padding: padding,
+              items: [
+                for (var i = 0; i <= _dayCount; i++)
+                  GlassPickerItem(
+                    value: i,
+                    label: l10n.datePickerMediumDate(_dayAt(i)),
+                  ),
+              ],
+              selected: _day(
+                widget.value,
+              ).difference(_day(widget.firstDate)).inDays,
+              onChanged: _enabled ? _pickDayIndex : null,
+            ),
           ),
-          ..._timeColumns(l10n),
-        ],
+          ..._timeColumns(
+            l10n,
+            hourEnd: DatePickerWheelMetrics.dateTimeHourEnd,
+            minuteStart: DatePickerWheelMetrics.dateTimeMinuteStart,
+            periodStart: DatePickerWheelMetrics.dateTimePeriodStart,
+          ),
+        ]),
       };
 
   @override
   Widget build(BuildContext context) {
     final columns = _columns(cupertinoL10n(context));
-    final timeColumns = _use24 ? 2 : 3;
-    final width = switch (widget.pickerMode) {
-      GlassDatePickerMode.date =>
-        DatePickerWheelMetrics.dayWidth +
-            DatePickerWheelMetrics.monthWidth +
-            DatePickerWheelMetrics.yearWidth,
-      GlassDatePickerMode.time =>
-        timeColumns * DatePickerWheelMetrics.timeColumnWidth,
-      GlassDatePickerMode.dateAndTime =>
-        DatePickerWheelMetrics.dateTimeWidth +
-            timeColumns * DatePickerWheelMetrics.timeColumnWidth,
-    };
+    // Every time style keeps UIDatePicker's 320-pt surface (measured).
+    final width = widget.pickerMode == GlassDatePickerMode.date
+        ? DatePickerWheelMetrics.dayWidth +
+              DatePickerWheelMetrics.monthWidth +
+              DatePickerWheelMetrics.yearWidth
+        : WheelPickerMetrics.width;
     // The rows keep their size at any text size, as UIDatePicker's.
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: WheelPickerMetrics.maxTextScale,

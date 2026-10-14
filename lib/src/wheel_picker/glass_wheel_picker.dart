@@ -42,6 +42,10 @@ class GlassWheelPicker<T> extends StatefulWidget {
     this.surface = true,
     this.mode,
     this.semanticLabel,
+    this.alignment = AlignmentDirectional.center,
+    this.rowPadding = const EdgeInsetsDirectional.symmetric(
+      horizontal: WheelPickerMetrics.rowPadding,
+    ),
   }) : assert(itemExtent > 0, 'itemExtent must be positive'),
        assert(height > 0, 'height must be positive');
 
@@ -73,6 +77,14 @@ class GlassWheelPicker<T> extends StatefulWidget {
   /// What assistive tech reads for the picker (say, "Hour"); the current
   /// choice is always its value.
   final String? semanticLabel;
+
+  /// Where each row's label sits across the column: centred by default;
+  /// UIDatePicker's columns align their hours to the end and their
+  /// minutes to the start.
+  final AlignmentGeometry alignment;
+
+  /// The space either side of each row's label inside the column.
+  final EdgeInsetsGeometry rowPadding;
 
   @override
   State<GlassWheelPicker<T>> createState() => _GlassWheelPickerState<T>();
@@ -198,10 +210,9 @@ class _GlassWheelPickerState<T> extends State<GlassWheelPicker<T>> {
       childDelegate: ListWheelChildBuilderDelegate(
         childCount: widget.items.length,
         builder: (context, i) => Padding(
-          padding: const EdgeInsetsDirectional.symmetric(
-            horizontal: WheelPickerMetrics.rowPadding,
-          ),
-          child: Center(
+          padding: widget.rowPadding,
+          child: Align(
+            alignment: widget.alignment,
             child: Text(
               widget.items[i].label,
               maxLines: 1,

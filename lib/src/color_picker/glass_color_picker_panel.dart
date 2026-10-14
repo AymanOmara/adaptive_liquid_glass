@@ -163,7 +163,10 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
   Widget _content(BuildContext context, bool material) => SafeArea(
     top: false,
     child: SingleChildScrollView(
-      padding: const EdgeInsets.all(ColorPickerMetrics.padding),
+      padding: const EdgeInsets.symmetric(
+        horizontal: ColorPickerMetrics.padding,
+        vertical: ColorPickerMetrics.verticalPadding,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,

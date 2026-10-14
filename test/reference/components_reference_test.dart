@@ -6,12 +6,14 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart'
 import 'package:adaptive_liquid_glass/src/button/glass_button_metrics.dart';
 import 'package:adaptive_liquid_glass/src/button/glass_control_size.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/color_picker_metrics.dart';
+import 'package:adaptive_liquid_glass/src/context_menu/context_menu_metrics.dart';
 import 'package:adaptive_liquid_glass/src/controls/control_metrics.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
 import 'package:adaptive_liquid_glass/src/date_picker/date_picker_metrics.dart';
 import 'package:adaptive_liquid_glass/src/dialog/dialog_metrics.dart';
 import 'package:adaptive_liquid_glass/src/full_screen_cover/full_screen_cover_metrics.dart';
 import 'package:adaptive_liquid_glass/src/label/label_metrics.dart';
+import 'package:adaptive_liquid_glass/src/list/list_metrics.dart';
 import 'package:adaptive_liquid_glass/src/menu/menu_metrics.dart';
 import 'package:adaptive_liquid_glass/src/popover/popover_metrics.dart';
 import 'package:adaptive_liquid_glass/src/scaffold/scaffold_metrics.dart';
@@ -605,5 +607,132 @@ void main() {
       ColorPickerMetrics.rowRingGap,
       moreOrLessEquals(n(c, 'ring_gap'), epsilon: pt),
     );
+  });
+
+  test('date wheel time columns', () {
+    final t = m('date_wheel_time');
+    Map<String, dynamic> k(String key) => t[key] as Map<String, dynamic>;
+    final t12 = k('time12');
+    final t24 = k('time24');
+    final dt = k('date_time');
+    for (final (got, map, key) in [
+      (DatePickerWheelMetrics.time12HourEnd, t12, 'hour_end'),
+      (DatePickerWheelMetrics.time12MinuteStart, t12, 'minute_start'),
+      (DatePickerWheelMetrics.time12PeriodStart, t12, 'period_start'),
+      (DatePickerWheelMetrics.time24HourEnd, t24, 'hour_end'),
+      (DatePickerWheelMetrics.time24MinuteStart, t24, 'minute_start'),
+      (DatePickerWheelMetrics.dateTimeDateEnd, dt, 'date_end'),
+      (DatePickerWheelMetrics.dateTimeHourEnd, dt, 'hour_end'),
+      (DatePickerWheelMetrics.dateTimeMinuteStart, dt, 'minute_start'),
+      (DatePickerWheelMetrics.dateTimePeriodStart, dt, 'period_start'),
+    ]) {
+      expect(got, moreOrLessEquals(n(map, key), epsilon: pt), reason: key);
+    }
+    // Every time style keeps the 320-pt surface and its 302-pt band.
+    expect(
+      WheelPickerMetrics.width - WheelPickerMetrics.bandInset * 2,
+      moreOrLessEquals(n(t, 'band_width_24'), epsilon: pt),
+    );
+  });
+
+  test('search scopes and suggestions', () {
+    final s = m('search_scopes');
+    const safeTop = 62.0;
+    expect(
+      safeTop + SearchMetrics.scopeTop,
+      moreOrLessEquals(n(s, 'top'), epsilon: pt),
+    );
+    expect(
+      SearchMetrics.scopeBarHeight,
+      moreOrLessEquals(n(s, 'height'), epsilon: pt),
+    );
+    expect(
+      SearchMetrics.scopeInset,
+      moreOrLessEquals(n(s, 'end_inset'), epsilon: pt),
+    );
+    expect(
+      SearchMetrics.scopeContentShift,
+      moreOrLessEquals(
+        n(s, 'list_top') - n(s, 'list_top_without'),
+        epsilon: pt,
+      ),
+    );
+    final g = m('search_suggestions');
+    expect(n(g, 'first_separator'), moreOrLessEquals(safeTop, epsilon: pt));
+    expect(
+      SearchMetrics.suggestionRowHeight + ListMetrics.separatorThickness,
+      moreOrLessEquals(n(g, 'row_pitch'), epsilon: pt),
+    );
+    expect(
+      ListMetrics.horizontalPadding,
+      moreOrLessEquals(n(g, 'separator_start'), epsilon: pt),
+    );
+    expect(
+      ListMetrics.separatorEnd,
+      moreOrLessEquals(n(g, 'separator_end_inset'), epsilon: pt),
+    );
+    expect(GlassColors.systemBlue.color, sameColour(hex(g, 'title_colour')));
+  });
+
+  test('colour picker sheet grid', () {
+    final c = m('color_sheet');
+    expect(
+      ColorPickerMetrics.padding,
+      moreOrLessEquals(n(c, 'grid_inset'), epsilon: pt),
+    );
+    expect(ColorPickerMetrics.gridColumns, n(c, 'columns'));
+    expect(ColorPickerMetrics.gridRows, n(c, 'rows'));
+    // Touching swatches: the grid is columns x rows cells of one size.
+    final cell = n(c, 'grid_width') / ColorPickerMetrics.gridColumns;
+    expect(ColorPickerMetrics.gridGap, 0);
+    expect(
+      n(c, 'grid_height') / ColorPickerMetrics.gridRows,
+      moreOrLessEquals(cell, epsilon: pt),
+    );
+  });
+
+  test('context menu', () {
+    final c = m('context_menu');
+    const screen = Size(402, 874);
+    // The scenes' cards: 200 x 120 at x 201 and 110, 360 x 80 at 201,
+    // centred at y 362 on screen.
+    const cards = {
+      'contextmenuuikit': Rect.fromLTWH(101, 302, 200, 120),
+      'contextmenuuikitleft': Rect.fromLTWH(10, 302, 200, 120),
+      'contextmenuuikitwide': Rect.fromLTWH(21, 322, 360, 80),
+    };
+    for (final MapEntry(:key, value: card) in cards.entries) {
+      final scene = c[key] as Map<String, dynamic>;
+      final lifted = (scene['card'] as List).cast<num>();
+      final menu = (scene['menu'] as List).cast<num>();
+      final got = ContextMenuMetrics.lifted(card, screen);
+      expect(got.left, moreOrLessEquals(lifted[0].toDouble(), epsilon: 1));
+      expect(got.top, moreOrLessEquals(lifted[1].toDouble(), epsilon: 1));
+      expect(got.right, moreOrLessEquals(lifted[2].toDouble(), epsilon: 1));
+      expect(got.bottom, moreOrLessEquals(lifted[3].toDouble(), epsilon: 1));
+      // Menu: the measured gap under the lifted card, centred on it but
+      // kept off the screen's edge.
+      expect(
+        (menu[1] - lifted[3]).toDouble(),
+        moreOrLessEquals(ContextMenuMetrics.gap, epsilon: pt),
+        reason: key,
+      );
+      final width = (menu[2] - menu[0]).toDouble();
+      final left = (got.center.dx - width / 2).clamp(
+        ContextMenuMetrics.margin,
+        screen.width - ContextMenuMetrics.margin - width,
+      );
+      expect(left, moreOrLessEquals(menu[0].toDouble(), epsilon: 1.5));
+    }
+    // The dim over a 128 grey and a white page.
+    Color over(int v) {
+      const d = GlassColors.contextMenuBarrier;
+      int ch(double c) => (v * (1 - d.a) + c * 255 * d.a).round();
+      return Color.fromARGB(255, ch(d.r), ch(d.g), ch(d.b));
+    }
+
+    Map<String, dynamic> scene(String key) => c[key] as Map<String, dynamic>;
+    expect(over(128), sameColour(hex(scene('contextmenuuikit'), 'dim')));
+    expect(over(255), sameColour(hex(scene('contextmenuuikitwide'), 'dim')));
   });
 }

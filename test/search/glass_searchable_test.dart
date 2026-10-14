@@ -1,4 +1,5 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/search/search_metrics.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
@@ -126,7 +127,9 @@ void main() {
     expect(picked, 1);
   }, variant: ios);
 
-  testWidgets('scopes show a segmented control only while active', (t) async {
+  testWidgets('scopes show at the top once a query is typed, as SwiftUI', (
+    t,
+  ) async {
     shaderEnv();
     final controller = GlassSearchController();
     addTearDown(controller.dispose);
@@ -136,16 +139,59 @@ void main() {
         controller: controller,
         scopes: const ['All', 'Mine'],
         onScopeChanged: (i) => scope = i,
+        topPadding: 62,
       ),
     );
     expect(find.byType(GlassSegmentedControl<int>), findsNothing);
     await t.tap(find.byType(CupertinoTextField));
     await t.pumpAndSettle();
-    expect(find.byType(GlassSegmentedControl<int>), findsOneWidget);
+    // Active but empty: no scopes yet (measured, -controls searchscopes).
+    expect(find.byType(GlassSegmentedControl<int>), findsNothing);
+    await t.enterText(find.byType(CupertinoTextField), 'Ro');
+    await t.pumpAndSettle();
+    final bar = t.getRect(find.byType(GlassSegmentedControl<int>));
+    // -controls searchscopesquery: 16 pt in, 2 pt under the safe area.
+    expect(bar.left, SearchMetrics.scopeInset);
+    expect(bar.right, 800 - SearchMetrics.scopeInset);
+    expect(bar.top, 62 + SearchMetrics.scopeTop);
     await t.tap(find.text('Mine'));
     await t.pumpAndSettle();
     expect(scope, 1);
     expect(controller.scopeIndex, 1);
+  }, variant: ios);
+
+  testWidgets('suggestions are a plain list under the status bar', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      _app(
+        topPadding: 62,
+        suggestions: (context, search) => const [
+          GlassSearchSuggestion(title: Text('Apple')),
+          GlassSearchSuggestion(title: Text('Banana')),
+        ],
+      ),
+    );
+    await t.tap(find.byType(CupertinoTextField));
+    await t.pumpAndSettle();
+    final rows = find.byType(GlassSearchSuggestionRow);
+    final first = t.getRect(rows.first);
+    final second = t.getRect(rows.at(1));
+    // -controls searchactive: separator at 62, rows 53.67 apart.
+    expect(first.top, 62 + 1);
+    expect(second.top - first.top, closeTo(53.67, 0.01));
+    expect(first.left, 0);
+    final title = t.widget<DefaultTextStyle>(
+      find
+          .ancestor(
+            of: find.text('Apple'),
+            matching: find.byType(DefaultTextStyle),
+          )
+          .first,
+    );
+    expect(
+      title.style.color?.toARGB32(),
+      GlassColors.systemBlue.color.toARGB32(),
+    );
   }, variant: ios);
 
   testWidgets('RTL: Cancel slides out to the left of the field', (t) async {

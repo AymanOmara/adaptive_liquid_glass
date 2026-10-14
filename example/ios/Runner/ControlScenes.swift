@@ -39,6 +39,11 @@ enum ControlScenes {
     case "dialog": root = AnyView(DialogReference())
     case "popover": root = AnyView(PopoverReference())
     case "contextmenu": root = AnyView(ContextMenuReference())
+    case "contextmenuopen": root = AnyView(ContextMenuReference(open: true))
+    case "contextmenuuikit": root = AnyView(UIKitContextMenuReference())
+    case "contextmenuuikitleft": root = AnyView(UIKitContextMenuReference(x: 110))
+    case "contextmenuuikitwide": root = AnyView(
+      UIKitContextMenuReference(size: CGSize(width: 360, height: 80), white: true))
     case "stepper": root = AnyView(StepperReference())
     case "picker": root = AnyView(PickerReference())
     case "datepicker": root = AnyView(DatePickerReference())
@@ -73,6 +78,9 @@ enum ControlScenes {
     case "colorrow": root = AnyView(ColorSheetReference(present: false))
     case "colorsheet": root = AnyView(ColorSheetReference(present: true))
     case "coverclose": root = AnyView(CoverCloseReference())
+    case "timewheel": root = AnyView(TimeWheelReference())
+    case "searchscopes": root = AnyView(SearchScopesReference(query: ""))
+    case "searchscopesquery": root = AnyView(SearchScopesReference(query: "Ro"))
     default: return false
     }
     window?.rootViewController = UIHostingController(rootView: root)
@@ -581,9 +589,11 @@ struct PopoverReference: View {
 }
 
 /// A card with a context menu (Copy, Share, Delete); long-press it
-/// (centre 201, 300) to measure. Mid-grey page.
+/// (centre 201, 300) to measure; with `open`, 1 s after launch the menu
+/// opens programmatically (ContextMenuOpener). Mid-grey page.
 @available(iOS 26.0, *)
 struct ContextMenuReference: View {
+  var open = false
   var body: some View {
     ZStack {
       Color(white: 0.5).ignoresSafeArea()
@@ -598,6 +608,12 @@ struct ContextMenuReference: View {
         .position(x: 201, y: 300)
     }
     .environment(\.colorScheme, .light)
+    .onAppear {
+      guard open else { return }
+      DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+        ContextMenuOpener.open(at: CGPoint(x: 201, y: 300))
+      }
+    }
   }
 }
 

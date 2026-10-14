@@ -3,8 +3,9 @@ import 'package:flutter/widgets.dart';
 import 'context_menu_metrics.dart';
 
 /// Places a context menu by its lifted item ([preview], global
-/// coordinates): below it (above without room), aligned to its nearer
-/// side, kept inside the screen's safe area.
+/// coordinates, as [ContextMenuMetrics.lifted] places it): below it
+/// (above without room), centred on it and kept [ContextMenuMetrics.margin]
+/// from the screen's sides, as UIKit's (measured).
 class GlassContextMenuLayout extends SingleChildLayoutDelegate {
   /// Lays out the menu for [preview] inside [padding].
   GlassContextMenuLayout({required this.preview, required this.padding});
@@ -22,8 +23,7 @@ class GlassContextMenuLayout extends SingleChildLayoutDelegate {
   @override
   Offset getPositionForChild(Size size, Size childSize) {
     const m = ContextMenuMetrics.margin;
-    final alignEnd = preview.center.dx > size.width / 2;
-    final x = (alignEnd ? preview.right - childSize.width : preview.left).clamp(
+    final x = (preview.center.dx - childSize.width / 2).clamp(
       m,
       size.width - m - childSize.width,
     );

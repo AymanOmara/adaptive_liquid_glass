@@ -1,11 +1,12 @@
 import 'package:flutter/cupertino.dart';
 
+import '../core/glass_colors.dart';
 import '../core/ios_text.dart';
 import '../list/list_metrics.dart';
 import 'glass_search_suggestion.dart';
 import 'search_metrics.dart';
 
-/// One row of a [GlassSearchable]'s suggestions platter.
+/// One row of a [GlassSearchable]'s suggestions.
 ///
 /// ```dart
 /// GlassSearchSuggestionRow(
@@ -14,8 +15,8 @@ import 'search_metrics.dart';
 /// )
 /// ```
 ///
-/// A leading slot, a title and a subtitle, on the searchable's platter
-/// like a list row. The searchable copies the title into the field
+/// A leading slot, a title in the accent colour (SwiftUI tints a
+/// `.searchCompletion` row) and a subtitle, like a plain list row. The searchable copies the title into the field
 /// before [GlassSearchSuggestion.onSelected] runs; tapping here only
 /// forwards.
 class GlassSearchSuggestionRow extends StatelessWidget {
@@ -34,7 +35,10 @@ class GlassSearchSuggestionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = CupertinoDynamicColor.resolve(CupertinoColors.label, context);
+    final title = CupertinoDynamicColor.resolve(
+      GlassColors.systemBlue,
+      context,
+    );
     final secondary = CupertinoDynamicColor.resolve(
       CupertinoColors.secondaryLabel,
       context,
