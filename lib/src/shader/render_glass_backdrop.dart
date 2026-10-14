@@ -12,6 +12,7 @@ import 'glass_frame_uniforms.dart';
 import 'glass_program.dart';
 import 'glass_shape_uniform.dart';
 import 'glass_texture_space.dart';
+import 'reused_shader.dart';
 
 /// See [GlassBackdrop].
 class RenderGlassBackdrop extends RenderProxyBox {
@@ -27,6 +28,7 @@ class RenderGlassBackdrop extends RenderProxyBox {
   final LayerHandle<ClipRectLayer> _clip = LayerHandle<ClipRectLayer>();
   final LayerHandle<BackdropFilterLayer> _backdrop =
       LayerHandle<BackdropFilterLayer>();
+  final _shader = reusedFragmentShader();
 
   /// The last computed frame (null when nothing was drawable).
   GlassBackdropDebugFrame? debugLastFrame;
@@ -84,6 +86,7 @@ class RenderGlassBackdrop extends RenderProxyBox {
   void dispose() {
     _clip.layer = null;
     _backdrop.layer = null;
+    _shader.clear();
     super.dispose();
   }
 
@@ -201,7 +204,7 @@ class RenderGlassBackdrop extends RenderProxyBox {
       return;
     }
 
-    final shader = program.fragmentShader();
+    final shader = _shader.of(program);
     final floats = packGlassUniforms(frame.uniforms);
     for (var i = 0; i < floats.length; i++) {
       shader.setFloat(kFirstUserFloat + i, floats[i]);
