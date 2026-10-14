@@ -81,10 +81,16 @@ class GlassPicker<T> extends StatelessWidget {
     required this.onChanged,
     this.style = GlassPickerStyle.menu,
     this.label,
-    this.color,
+    Color? tint,
+    @Deprecated('Use tint. Will be removed in 1.0.') Color? color,
     this.mode,
     this.semanticLabel,
   }) : assert(
+         tint == null || color == null,
+         'Pass tint only; color is its old name.',
+       ),
+       tint = tint ?? color,
+       assert(
          style != GlassPickerStyle.navigationLink || label != null,
          'A navigation-link picker needs a label for its row and page.',
        );
@@ -108,7 +114,11 @@ class GlassPicker<T> extends StatelessWidget {
 
   /// The menu label's or the checkmark's colour. Defaults to iOS 26's
   /// blue, as SwiftUI draws it.
-  final Color? color;
+  final Color? tint;
+
+  /// The old name of [tint].
+  @Deprecated('Use tint. Will be removed in 1.0.')
+  Color? get color => tint;
 
   /// The rendering path; see [GlassRenderMode].
   final GlassRenderMode? mode;
@@ -144,7 +154,7 @@ class GlassPicker<T> extends StatelessWidget {
         selected: selected,
         onChanged: onChanged,
         effective: effective,
-        color: color,
+        color: tint,
         mode: mode,
       ),
       GlassPickerStyle.navigationLink => _link(context, effective),
@@ -177,8 +187,8 @@ class GlassPicker<T> extends StatelessWidget {
 
   Widget _glassMenu(BuildContext context) {
     final enabled = onChanged != null;
-    final tint = CupertinoDynamicColor.resolve(
-      enabled ? color ?? GlassSystemColors.blue : GlassColors.tertiaryLabel,
+    final accent = CupertinoDynamicColor.resolve(
+      enabled ? tint ?? GlassSystemColors.blue : GlassColors.tertiaryLabel,
       context,
     );
     return GlassMenuAnchor(
@@ -223,14 +233,14 @@ class GlassPicker<T> extends StatelessWidget {
                             fontSize
                         ? null
                         : 1,
-                    style: IOSText.style(fontSize, color: tint),
+                    style: IOSText.style(fontSize, color: accent),
                   ),
                 ),
                 const SizedBox(width: PickerMetrics.chevronGap),
                 Icon(
                   CupertinoIcons.chevron_up_chevron_down,
                   size: chevronSize,
-                  color: tint,
+                  color: accent,
                 ),
               ],
             ),
@@ -272,7 +282,7 @@ class GlassPicker<T> extends StatelessWidget {
       title: label!,
       items: items,
       selected: selected,
-      color: color,
+      color: tint,
       mode: mode,
     );
     final Route<T> route;

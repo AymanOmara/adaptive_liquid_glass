@@ -556,7 +556,7 @@ its acceleration. The lens is drawn with the package's shader, fitted to iOS
 a band and splits colour there. So that the lens can refract the bar, the bar
 is shader glass too whenever the shader is available (pass `mode:` to force
 another path). Give a tab an `activeIcon` for its selected
-state. The selected tab takes `selectedColor` (default: iOS 26's tab bar
+state. The selected tab takes `tint` (default: iOS 26's tab bar
 blue, measured from SwiftUI's `TabView`); the others take glass's readable
 colour. `onSearch` adds iOS 26's search tab, a glass circle beside the bar.
 On Android it is a Material 3 `NavigationBar` in the same floating capsule;

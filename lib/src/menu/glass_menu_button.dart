@@ -18,8 +18,6 @@ part 'material_menu.dart';
 ///
 /// ```dart
 /// GlassMenuButton(
-///   icon: CupertinoIcons.ellipsis,
-///   semanticLabel: 'More',
 ///   items: [
 ///     GlassMenuItem(label: 'Copy', icon: CupertinoIcons.doc_on_doc,
 ///         onSelected: copy),
@@ -33,21 +31,22 @@ part 'material_menu.dart';
 /// near the bottom of the screen) on the button's nearer side, as SwiftUI's
 /// `Menu` does. Measured from SwiftUI (`MenuMetrics`). Tap outside or choose an
 /// item to close it. On the Material path it is a Material 3 [MenuAnchor].
+/// Without [icon] and [semanticLabel] it is the "More" ellipsis button.
 class GlassMenuButton extends StatelessWidget {
   /// Creates a menu button.
   const GlassMenuButton({
     super.key,
-    required this.icon,
-    required this.semanticLabel,
+    this.icon = CupertinoIcons.ellipsis,
+    this.semanticLabel = 'More',
     required this.items,
     this.controller,
     this.mode,
   });
 
-  /// The button's icon.
+  /// The button's icon; defaults to an ellipsis.
   final IconData icon;
 
-  /// What assistive tech reads for the button.
+  /// What assistive tech reads for the button; defaults to 'More'.
   final String semanticLabel;
 
   /// The menu's items, top to bottom.

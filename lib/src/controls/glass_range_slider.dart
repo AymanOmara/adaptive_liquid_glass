@@ -43,11 +43,17 @@ class GlassRangeSlider extends StatefulWidget {
     this.divisions,
     this.onChangeStart,
     this.onChangeEnd,
-    this.activeColor,
+    Color? tint,
+    @Deprecated('Use tint. Will be removed in 1.0.') Color? activeColor,
     this.semanticFormatter,
     this.mode,
     this.axis = Axis.horizontal,
-  }) : assert(min < max, 'min must be less than max'),
+  }) : assert(
+         tint == null || activeColor == null,
+         'Pass tint only; activeColor is its old name.',
+       ),
+       tint = tint ?? activeColor,
+       assert(min < max, 'min must be less than max'),
        assert(divisions == null || divisions > 0, 'divisions must be > 0');
 
   /// The current range, `start <= end`, both from [min] to [max].
@@ -74,7 +80,11 @@ class GlassRangeSlider extends StatefulWidget {
   /// The filled part of the track, between the thumbs. Defaults to iOS
   /// 26's accent blue, as SwiftUI's slider draws it, or Material 3's
   /// colour on the Material path.
-  final Color? activeColor;
+  final Color? tint;
+
+  /// The old name of [tint].
+  @Deprecated('Use tint. Will be removed in 1.0.')
+  Color? get activeColor => tint;
 
   /// A thumb's value as assistive tech reads it; defaults to a percentage.
   final String Function(double value)? semanticFormatter;
@@ -243,7 +253,7 @@ class _GlassRangeSliderState extends State<GlassRangeSlider>
       onChanged: widget.onChanged,
       onChangeStart: widget.onChangeStart,
       onChangeEnd: widget.onChangeEnd,
-      activeColor: widget.activeColor,
+      activeColor: widget.tint,
       semanticFormatterCallback: widget.semanticFormatter,
     );
     return _vertical
@@ -285,7 +295,7 @@ class _GlassRangeSliderState extends State<GlassRangeSlider>
 
   Widget _glass(BuildContext context) {
     final active = CupertinoDynamicColor.resolve(
-      widget.activeColor ?? GlassColors.sliderFill,
+      widget.tint ?? GlassColors.sliderFill,
       context,
     );
     final inactive = CupertinoDynamicColor.resolve(

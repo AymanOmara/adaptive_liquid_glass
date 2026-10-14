@@ -40,10 +40,15 @@ class GlassChip extends StatelessWidget {
     this.onSelected,
     this.onDeleted,
     this.deleteLabel,
-    this.selectedColor,
+    Color? tint,
+    @Deprecated('Use tint. Will be removed in 1.0.') Color? selectedColor,
     this.glass,
     this.mode,
-  });
+  }) : assert(
+         tint == null || selectedColor == null,
+         'Pass tint only; selectedColor is its old name.',
+       ),
+       tint = tint ?? selectedColor;
 
   /// The chip's text.
   final String label;
@@ -65,7 +70,11 @@ class GlassChip extends StatelessWidget {
   final String? deleteLabel;
 
   /// The selected tint; defaults to iOS 26's blue.
-  final Color? selectedColor;
+  final Color? tint;
+
+  /// The old name of [tint].
+  @Deprecated('Use tint. Will be removed in 1.0.')
+  Color? get selectedColor => tint;
 
   /// The unselected glass. Defaults to the theme's default glass.
   final Glass? glass;
@@ -95,9 +104,9 @@ class GlassChip extends StatelessWidget {
           // 38: as tall as the glass chip.
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           visualDensity: _density,
-          selectedColor: selectedColor == null
+          selectedColor: tint == null
               ? null
-              : CupertinoDynamicColor.resolve(selectedColor!, context),
+              : CupertinoDynamicColor.resolve(tint!, context),
         )
       : InputChip(
           label: Text(label),
@@ -181,7 +190,7 @@ class GlassChip extends StatelessWidget {
       child: LiquidGlass(
         glass: selected
             ? (glass ?? LiquidGlassTheme.of(context).defaultGlass).tint(
-                resolve(selectedColor ?? GlassSystemColors.blue),
+                resolve(tint ?? GlassSystemColors.blue),
               )
             : glass,
         mode: mode,

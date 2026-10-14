@@ -121,7 +121,7 @@ class _ProbeState extends State<_Probe> {
                   label: 'Settings',
                 ),
               ],
-              selectedColor: const Color(0xFF1DAEFF), // Kept's accent
+              tint: const Color(0xFF1DAEFF), // Kept's accent
               selectedIndex: _tab,
               onSelected: (i) => setState(() => _tab = i),
             ),
