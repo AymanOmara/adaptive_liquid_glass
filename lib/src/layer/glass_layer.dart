@@ -46,6 +46,34 @@ class GlassLayerOptOut extends InheritedWidget {
   bool updateShouldNotify(GlassLayerOptOut oldWidget) => false;
 }
 
+/// Marks content composited by the shared layer's slot (a group's content,
+/// or [GlassLayerContent]'s child) rather than in place.
+///
+/// Backdrop effects within it (the tab bar's vibrancy) paint plain there:
+/// a backdrop filter in deferred content draws nothing on Impeller.
+class GlassLayerDeferred extends InheritedWidget {
+  /// Marks [child] as deferred when [deferred].
+  const GlassLayerDeferred({
+    super.key,
+    required this.deferred,
+    required super.child,
+  });
+
+  /// Whether the content is composited by the shared layer.
+  final bool deferred;
+
+  /// Whether [context] is in deferred content.
+  static bool of(BuildContext context) =>
+      context
+          .dependOnInheritedWidgetOfExactType<GlassLayerDeferred>()
+          ?.deferred ??
+      false;
+
+  @override
+  bool updateShouldNotify(GlassLayerDeferred oldWidget) =>
+      deferred != oldWidget.deferred;
+}
+
 /// The shared glass of one route: the groups that draw through it and the
 /// slots (one per group's `OverlayPortal`) of which the first paints it.
 class GlassLayer {

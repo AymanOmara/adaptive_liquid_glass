@@ -15,6 +15,7 @@ import '../foreground/foreground_brightness.dart';
 import '../foreground/glass_backdrop_source.dart';
 import '../foreground/glass_backdrop_sources.dart';
 import '../foreground/glass_foreground.dart';
+import '../layer/glass_layer.dart';
 import '../layer/glass_layer_anchor.dart';
 import '../native/native_glass_layer.dart';
 import '../platform/glass_platform.dart';
@@ -380,7 +381,12 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
           highContrast: MediaQuery.highContrastOf(context),
           opaqueColor: opaque,
         ),
-        child: RepaintBoundary(child: scoped(child: content)),
+        child: RepaintBoundary(
+          child: GlassLayerDeferred(
+            deferred: shared != null,
+            child: scoped(child: content),
+          ),
+        ),
       ),
     );
   }

@@ -1,11 +1,14 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/layer/glass_layer.dart';
+import 'package:adaptive_liquid_glass/src/layer/glass_layer_anchor.dart';
 import 'package:adaptive_liquid_glass/src/layer/glass_layer_slot.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_backdrop.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:adaptive_liquid_glass/src/shader/render_glass_backdrop.dart';
+import 'package:adaptive_liquid_glass/src/tab_bar/render_vibrant_blend.dart';
+import 'package:adaptive_liquid_glass/src/tab_bar/vibrant_blend.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -229,4 +232,24 @@ void main() {
     final after = layer.debugLastPlan!.first.passes.first.uniforms.shapes;
     expect(after.first.rect.top, closeTo(top0 - 10 * dpr, 1e-6));
   }, variant: android);
+
+  for (final p in [TargetPlatform.android, TargetPlatform.iOS]) {
+    testWidgets('vibrancy paints plain only when deferred ($p)', (t) async {
+      env();
+      await t.pumpWidget(
+        app(
+          const Scaffold(
+            body: GlassLayerContent(
+              enabled: true,
+              child: VibrantBlend(child: Text('label')),
+            ),
+          ),
+        ),
+      );
+      final blend = t.renderObject<RenderVibrantBlend>(
+        find.byType(VibrantBlend),
+      );
+      expect(blend.enabled, p == TargetPlatform.iOS);
+    }, variant: TargetPlatformVariant.only(p));
+  }
 }
