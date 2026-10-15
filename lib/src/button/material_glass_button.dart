@@ -55,23 +55,24 @@ class MaterialGlassButton extends StatelessWidget {
         : prominent
         ? b.tint
         : null;
-    final Color? foreground = b.foregroundColor != null
-        ? b.foregroundColor
-        : textStyle
-        ? (destructive
-              ? scheme.error
-              : plain
-              ? scheme.onSurface
-              : b.tint)
-        : destructive
-        ? (prominent ? scheme.onError : scheme.onErrorContainer)
-        // A custom fill: black or white, whichever reads on it (the
-        // theme's onPrimary is made for its primary, not this colour).
-        : background != null
-        ? (ThemeData.estimateBrightnessForColor(background) == Brightness.light
-              ? GlassColors.black
-              : GlassColors.white)
-        : null;
+    final Color? foreground =
+        b.foregroundColor ??
+        (textStyle
+            ? (destructive
+                  ? scheme.error
+                  : plain
+                  ? scheme.onSurface
+                  : b.tint)
+            : destructive
+            ? (prominent ? scheme.onError : scheme.onErrorContainer)
+            // A custom fill: black or white, whichever reads on it (the
+            // theme's onPrimary is made for its primary, not this colour).
+            : background != null
+            ? (ThemeData.estimateBrightnessForColor(background) ==
+                      Brightness.light
+                  ? GlassColors.black
+                  : GlassColors.white)
+            : null);
     final OutlinedBorder? border = switch (b.shape) {
       GlassButtonShape.roundedRect => RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(b.cornerRadius ?? h / 4),

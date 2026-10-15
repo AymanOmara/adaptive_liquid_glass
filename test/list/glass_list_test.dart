@@ -414,17 +414,17 @@ void main() {
     shaderEnv();
     await t.pumpWidget(
       plainHost(
-        GlassListSection(
+        const GlassListSection(
           backgroundColor: bg,
           separatorColor: line,
           children: [
-            const GlassListTile(title: Text('About')),
-            const GlassListTile(title: Text('Storage')),
+            GlassListTile(title: Text('About')),
+            GlassListTile(title: Text('Storage')),
             GlassDisclosureGroup(
-              label: const Text('More'),
-              children: const [GlassListTile(title: Text('Inner'))],
+              label: Text('More'),
+              children: [GlassListTile(title: Text('Inner'))],
             ),
-            const GlassListTile(title: Text('Last')),
+            GlassListTile(title: Text('Last')),
           ],
         ),
       ),

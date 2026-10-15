@@ -9,6 +9,7 @@ enum GlassButtonShape {
   /// A circle (square layout).
   circle,
 
-  /// A rounded rectangle with the size's corner radius.
+  /// A rounded rectangle with the size's corner radius, or
+  /// `GlassButton.cornerRadius` when given.
   roundedRect,
 }

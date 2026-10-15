@@ -399,7 +399,7 @@ void main() {
     final glasses = t
         .widgetList<LiquidGlass>(find.byType(LiquidGlass))
         .toList();
-    expect(glasses[0].shape, GlassShape.rect(4));
+    expect(glasses[0].shape, const GlassShape.rect(4));
     expect(glasses[1].shape, const GlassShape.capsule());
   }, variant: ios);
 }
