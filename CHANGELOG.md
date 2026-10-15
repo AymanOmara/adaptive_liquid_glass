@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.3 (2026-10-15)
 
 - `SliverGlassNavigationBar.materialBuilder`: wrap or replace the
   Material path's sliver (it receives the default `SliverAppBar.large`;

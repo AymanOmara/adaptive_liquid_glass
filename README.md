@@ -80,7 +80,7 @@ documented there), then score with
 
 ```yaml
 dependencies:
-  adaptive_liquid_glass: ^0.2.2
+  adaptive_liquid_glass: ^0.2.3
 ```
 
 ```dart
@@ -353,6 +353,7 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `GlassPicker`, `GlassPickerItem` | Menu-style picker, current choice checked | `DropdownButton` |
 | `GlassWheelPicker` | `.pickerStyle(.wheel)`: scrolling rows under a clear-glass selection band, haptics | `ListWheelScrollView` on a Material surface |
 | `GlassDatePicker` | Compact date picker opening a glass calendar | text button + `showDatePicker` |
+| `showGlassDatePicker`, `showGlassDateRangePicker`, `GlassCalendar` (`.range`) | The calendar sheet for one date or a range | `showDatePicker` / `showDateRangePicker` |
 | `GlassMenuButton`, `GlassMenuItem` | Pull-down glass menu from an icon button | `MenuAnchor` |
 | `GlassMenuController` | Drives a menu from an outer gesture: slide-to-select (`glideTo`) | open/close only |
 | `GlassContextMenu` | Long-press lifts the child and opens the glass menu | popup menu |
