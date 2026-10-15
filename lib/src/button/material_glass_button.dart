@@ -55,7 +55,9 @@ class MaterialGlassButton extends StatelessWidget {
         : prominent
         ? b.tint
         : null;
-    final Color? foreground = textStyle
+    final Color? foreground = b.foregroundColor != null
+        ? b.foregroundColor
+        : textStyle
         ? (destructive
               ? scheme.error
               : plain
@@ -72,7 +74,7 @@ class MaterialGlassButton extends StatelessWidget {
         : null;
     final OutlinedBorder? border = switch (b.shape) {
       GlassButtonShape.roundedRect => RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(h / 4),
+        borderRadius: BorderRadius.circular(b.cornerRadius ?? h / 4),
       ),
       GlassButtonShape.circle => const CircleBorder(),
       _ => null,

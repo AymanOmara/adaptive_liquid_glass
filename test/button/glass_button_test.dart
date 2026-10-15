@@ -303,4 +303,105 @@ void main() {
     );
     expect(text.text.style!.color, const Color(0xFF123456));
   }, variant: ios);
+
+  testWidgets('foregroundColor colours the label and icon; disabled dims', (
+    t,
+  ) async {
+    shaderEnv();
+    const fg = Color(0xFF123456);
+    await t.pumpWidget(
+      plainHost(
+        Column(
+          children: [
+            GlassButton(
+              onPressed: () {},
+              style: GlassButtonStyle.glassProminent,
+              foregroundColor: fg,
+              child: const Text('Go'),
+            ),
+            GlassButton.icon(
+              onPressed: () {},
+              icon: CupertinoIcons.add,
+              label: const Text('Add'),
+              foregroundColor: fg,
+            ),
+            const GlassButton(
+              onPressed: null,
+              foregroundColor: fg,
+              child: Text('Off'),
+            ),
+          ],
+        ),
+      ),
+    );
+    expect(styleOf(t, 'Go').color, fg);
+    expect(styleOf(t, 'Add').color, fg);
+    expect(IconTheme.of(t.element(find.byIcon(CupertinoIcons.add))).color, fg);
+    expect(styleOf(t, 'Off').color, fg);
+    final dim = t.widget<Opacity>(
+      find.ancestor(of: find.text('Off'), matching: find.byType(Opacity)).first,
+    );
+    expect(dim.opacity, 0.5);
+  }, variant: ios);
+
+  testWidgets('foregroundColor on a system style; disabled stays grey', (
+    t,
+  ) async {
+    shaderEnv();
+    const fg = Color(0xFF123456);
+    await t.pumpWidget(
+      plainHost(
+        const Column(
+          children: [
+            GlassButton(
+              onPressed: _noop,
+              style: GlassButtonStyle.borderedProminent,
+              foregroundColor: fg,
+              child: Text('On'),
+            ),
+            GlassButton(
+              onPressed: null,
+              style: GlassButtonStyle.borderedProminent,
+              foregroundColor: fg,
+              child: Text('Off'),
+            ),
+          ],
+        ),
+      ),
+    );
+    expect(styleOf(t, 'On').color, fg);
+    expect(styleOf(t, 'Off').color, isNot(fg));
+  }, variant: ios);
+
+  testWidgets('cornerRadius rounds a roundedRect; capsule ignores it', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(
+      plainHost(
+        Column(
+          children: [
+            GlassButton(
+              onPressed: () {},
+              shape: GlassButtonShape.roundedRect,
+              cornerRadius: 4,
+              child: const Text('A'),
+            ),
+            GlassButton(
+              onPressed: () {},
+              cornerRadius: 4,
+              child: const Text('B'),
+            ),
+          ],
+        ),
+      ),
+    );
+    final glasses = t
+        .widgetList<LiquidGlass>(find.byType(LiquidGlass))
+        .toList();
+    expect(glasses[0].shape, GlassShape.rect(4));
+    expect(glasses[1].shape, const GlassShape.capsule());
+  }, variant: ios);
 }
+
+void _noop() {}

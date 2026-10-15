@@ -136,9 +136,7 @@ void main() {
     expect(t.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
   }, variant: android);
 
-  testWidgets('a tinted prominent button labels for contrast (W20)', (
-    t,
-  ) async {
+  testWidgets('a tinted prominent button labels for contrast (W20)', (t) async {
     shaderEnv();
     Color? labelOf(String text) =>
         DefaultTextStyle.of(t.element(find.text(text))).style.color;
@@ -164,5 +162,61 @@ void main() {
     );
     expect(labelOf('Light'), Colors.black);
     expect(labelOf('Dark'), Colors.white);
+  }, variant: android);
+
+  testWidgets('foregroundColor colours the label; disabled keeps dimmed', (
+    t,
+  ) async {
+    shaderEnv();
+    const fg = Color(0xFF123456);
+    Color? labelOf(String text) =>
+        DefaultTextStyle.of(t.element(find.text(text))).style.color;
+    await t.pumpWidget(
+      appHost(
+        Column(
+          children: [
+            GlassButton(
+              onPressed: () {},
+              style: GlassButtonStyle.glassProminent,
+              tint: Colors.yellow,
+              foregroundColor: fg,
+              child: const Text('Go'),
+            ),
+            GlassButton.icon(
+              onPressed: () {},
+              icon: CupertinoIcons.add,
+              foregroundColor: fg,
+            ),
+            const GlassButton(
+              onPressed: null,
+              foregroundColor: fg,
+              child: Text('Off'),
+            ),
+          ],
+        ),
+      ),
+    );
+    expect(labelOf('Go'), fg);
+    expect(IconTheme.of(t.element(find.byIcon(CupertinoIcons.add))).color, fg);
+    expect(labelOf('Off'), isNot(fg));
+  }, variant: android);
+
+  testWidgets('cornerRadius rounds a roundedRect', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      appHost(
+        GlassButton(
+          onPressed: () {},
+          shape: GlassButtonShape.roundedRect,
+          cornerRadius: 4,
+          child: const Text('A'),
+        ),
+      ),
+    );
+    final button = t.widget<FilledButton>(find.byType(FilledButton));
+    expect(
+      button.style!.shape!.resolve({}),
+      RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+    );
   }, variant: android);
 }

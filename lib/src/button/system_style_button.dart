@@ -65,6 +65,8 @@ class _SystemStyleButtonState extends State<SystemStyleButton> {
 
     final Color labelColor = !enabled
         ? resolve(GlassColors.buttonDisabledLabel)
+        : b.foregroundColor != null
+        ? resolve(b.foregroundColor!)
         : switch (b.style) {
             GlassButtonStyle.borderedProminent => GlassColors.white,
             GlassButtonStyle.plain when !destructive => resolve(
@@ -99,7 +101,9 @@ class _SystemStyleButtonState extends State<SystemStyleButton> {
             GlassButtonShape.automatic ||
             GlassButtonShape.capsule => const GlassShape.capsule(),
             GlassButtonShape.circle => const GlassShape.circle(),
-            GlassButtonShape.roundedRect => GlassShape.rect(m.cornerRadius),
+            GlassButtonShape.roundedRect => GlassShape.rect(
+              b.cornerRadius ?? m.cornerRadius,
+            ),
           };
     final circle = bordered && b.shape == GlassButtonShape.circle;
 

@@ -48,6 +48,8 @@ class GlassButton extends StatelessWidget {
     this.loading = false,
     this.loadingLabel = 'loading',
     this.tint,
+    this.foregroundColor,
+    this.cornerRadius,
     this.mode,
     this.glassId,
     this.semanticLabel,
@@ -68,6 +70,8 @@ class GlassButton extends StatelessWidget {
     this.loading = false,
     this.loadingLabel = 'loading',
     this.tint,
+    this.foregroundColor,
+    this.cornerRadius,
     this.mode,
     this.glassId,
     this.semanticLabel,
@@ -99,6 +103,20 @@ class GlassButton extends StatelessWidget {
   /// and the `.bordered` and `.borderless` label. Defaults to the theme's
   /// accent colour; a destructive role uses red instead.
   final Color? tint;
+
+  /// The label and icon colour on every path and style, in place of the
+  /// style's own (white on prominent glass, the contrast colour on a
+  /// Material fill, the role's red). Null keeps the style's colour. A
+  /// disabled button keeps the package's disabled look: dimmed on glass,
+  /// iOS's disabled grey on the system styles, Material's disabled
+  /// colour on the Material path.
+  final Color? foregroundColor;
+
+  /// The corner radius of a [GlassButtonShape.roundedRect] button, on
+  /// both paths. Null keeps the control size's radius (the Material
+  /// path's quarter height). Ignored by the other shapes: a capsule or a
+  /// circle has no free radius.
+  final double? cornerRadius;
 
   /// Rendering mode; see [GlassRenderMode].
   final GlassRenderMode? mode;
@@ -161,7 +179,9 @@ class GlassButton extends StatelessWidget {
     final accent = role == GlassButtonRole.destructive
         ? red
         : resolve(tint ?? CupertinoTheme.of(context).primaryColor);
-    final Color? labelColor = prominent
+    final Color? labelColor = foregroundColor != null
+        ? resolve(foregroundColor!)
+        : prominent
         ? GlassColors.white
         : role == GlassButtonRole.destructive
         ? red
@@ -175,7 +195,9 @@ class GlassButton extends StatelessWidget {
       GlassButtonShape.automatic ||
       GlassButtonShape.capsule => const GlassShape.capsule(),
       GlassButtonShape.circle => const GlassShape.circle(),
-      GlassButtonShape.roundedRect => GlassShape.rect(m.cornerRadius),
+      GlassButtonShape.roundedRect => GlassShape.rect(
+        cornerRadius ?? m.cornerRadius,
+      ),
     };
     final circle = shape == GlassButtonShape.circle;
     final height = (_iconOnly ? m.iconOnlyHeight : m.height) * scale;
