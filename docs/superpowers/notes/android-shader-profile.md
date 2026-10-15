@@ -166,7 +166,32 @@ carry their own constants) over one blur.
 Found on the way: a backdrop filter reads its `FragmentShader`'s uniforms
 at raster time, so each pass needs its own shader object; and a backdrop
 filter inside content composited by the slot (the tab bar's vibrancy)
-draws nothing, so vibrancy paints plain on the shared layer.
+draws nothing, so vibrancy paints plain on the shared layer. (Wrong, see
+below.)
+
+Vibrancy on the shared layer (2026-10-15, later): the backdrop filter of
+`RenderVibrantBlend` does draw in slot-composited content, reading the
+glass the layer drew before it. What "drew nothing" was a bug of both
+paths: the shader's glyph origin (`uBox`) is the box's screen position at
+paint time, and a viewport scroll or route animation moves the blend
+without repainting it, so the shader looked for the glyphs where they had
+been (the Gallery's bars are in a `ListView`: empty after scrolling, on
+the layer and off it, until a tap repainted them). The blend now listens
+to the enclosing scroll positions and route animations and repaints with
+the same glyph image; `GlassLayerDeferred` is gone. Probe (red page,
+blue band) and photo bar: layer on vs off, mean difference 0.000 over the
+bar; Gallery bars after scrolling 0.065 (max 4). Memory (Gallery script
+above, host graphics over idle; mean of the 20 samples, peak):
+
+| build | mean | peak |
+|---|--:|--:|
+| vibrancy plain on the layer | +762 / +840 MB | +1171 / +1108 MB |
+| vibrancy on | +883 / +929 MB | +1018 / +1254 MB |
+
+About +100 MB: the vibrancy shader backdrops of the two bars (labels,
+tint, pill) each get their own target. A key shared between them would not
+help (the capture is shared, the shader stage is not), and the pill must
+be read by the labels over it.
 
 Commits: 6408e55 (design, spike), bb08440 (shader per-shape group /
 smoothing / opacity / clip, 24 shapes), 424e427 (`computeGroupFrame`),

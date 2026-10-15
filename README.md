@@ -1437,8 +1437,9 @@ testWidgets('pays', (tester) async {
   over glass in a sibling, like the tab bar's row, is handled); groups of
   one stratum share the largest blur; clips are rectangular (a rounded
   clip around glass clips to its bounds); route transitions that snapshot
-  the page show the glass outside the snapshot; the tab bar's labels are
-  not vibrant; menus draw their glass group by group.
+  the page show the glass outside the snapshot; menus draw their glass
+  group by group. The tab bar's vibrant labels read the layer's glass as
+  they do in place (about 100 MB more over the Gallery's run).
   `LiquidGlassThemeData.androidShaderBudget` (default null: no cap) still
   caps the groups that draw group by group; the rest draw a frosted blur.
   Fonts stay Roboto (not SF Pro), and scroll physics,
