@@ -332,21 +332,29 @@ class NativeGlassBatch extends ChangeNotifier {
 
   /// The path from [box] up to [host], or null when the batch cannot draw
   /// [box]'s glass as its own view would (see [GlassBatch]).
+  ///
+  /// Walks up one parent at a time, keeping the box's rect and the clip in
+  /// the current ancestor's coordinates, so each step costs one paint
+  /// transform per child visited (this runs on every push, e.g. per scroll
+  /// frame). The clip is returned in global coordinates.
   static _Path? _inspect(
     RenderBox box,
     RenderBox host,
     Set<Listenable> animations,
   ) {
-    final rect = MatrixUtils.transformRect(
-      box.getTransformTo(null),
-      Offset.zero & box.size,
-    );
+    var rect = Offset.zero & box.size;
+    Rect? clip;
     var hidden = false;
     var opacity = 1.0;
-    Rect? clip;
     RenderObject child = box;
     var parent = box.parent;
-    while (parent != null && !identical(parent, host)) {
+    while (parent != null) {
+      final step = Matrix4.identity();
+      parent.applyPaintTransform(child, step);
+      if (!_axisAligned(step)) return null;
+      rect = MatrixUtils.transformRect(step, rect);
+      if (clip != null) clip = MatrixUtils.transformRect(step, clip);
+      if (identical(parent, host)) break;
       if (_paintsBeneath(parent)) return null;
       if (!parent.paintsChild(child)) hidden = true;
       if (parent is RenderOpacity) {
@@ -356,25 +364,27 @@ class NativeGlassBatch extends ChangeNotifier {
         animations.add(parent.opacity);
       }
       final c = parent.describeApproximatePaintClip(child);
-      if (c != null) {
-        final g = MatrixUtils.transformRect(parent.getTransformTo(null), c);
-        clip = clip == null ? g : clip.intersect(g);
-      }
+      if (c != null) clip = clip == null ? c : clip.intersect(c);
       if (_earlierSiblingOverlaps(parent, child, rect)) return null;
       child = parent;
       parent = parent.parent;
     }
     // Not below the batch in the render tree (an OverlayPortal child).
     if (parent == null) return null;
-    final m = box.getTransformTo(host);
-    const e = 1e-6;
-    if (m.entry(0, 1).abs() > e ||
-        m.entry(1, 0).abs() > e ||
-        m.entry(3, 0).abs() > e ||
-        m.entry(3, 1).abs() > e) {
-      return null;
+    if (clip != null) {
+      clip = MatrixUtils.transformRect(host.getTransformTo(null), clip);
     }
     return (hidden: hidden, opacity: opacity, clip: clip);
+  }
+
+  /// Whether [m] keeps rects axis-aligned (translation and scale only):
+  /// the batch draws a rotated or skewed glass's bounding box, not it.
+  static bool _axisAligned(Matrix4 m) {
+    const e = 1e-6;
+    return m.entry(0, 1).abs() <= e &&
+        m.entry(1, 0).abs() <= e &&
+        m.entry(3, 0).abs() <= e &&
+        m.entry(3, 1).abs() <= e;
   }
 
   /// Whether [o] paints something beneath its children.
@@ -389,7 +399,7 @@ class NativeGlassBatch extends ChangeNotifier {
   };
 
   /// Whether a child of [parent] painted before [child] overlaps [rect]
-  /// (global): the batch's view would draw beneath it.
+  /// ([parent]'s coordinates): the batch's view would draw beneath it.
   static bool _earlierSiblingOverlaps(
     RenderObject parent,
     RenderObject child,
@@ -407,10 +417,9 @@ class NativeGlassBatch extends ChangeNotifier {
         return;
       }
       if (!parent.paintsChild(s)) return;
-      final r = MatrixUtils.transformRect(
-        s.getTransformTo(null),
-        s.paintBounds,
-      );
+      final m = Matrix4.identity();
+      parent.applyPaintTransform(s, m);
+      final r = MatrixUtils.transformRect(m, s.paintBounds);
       final i = r.intersect(rect);
       if (i.width > 0.5 && i.height > 0.5) hit = true;
     });
