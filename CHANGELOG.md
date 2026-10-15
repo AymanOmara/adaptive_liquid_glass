@@ -174,6 +174,26 @@
 - `GlassTabBar.labelMaxTextScale` caps the tab labels' text scale (the
   floating bar still pins it at 1 by default).
 
+- `showGlassDatePicker(context:, ...)` returns a `Future<DateTime?>`: a
+  glass sheet with the calendar (picking a day confirms) or the wheels (a
+  checkmark confirms); dismissing returns null. On Material it is
+  `showDatePicker`.
+- `firstDayOfWeek` on `GlassCalendar`, `GlassDatePicker` and
+  `showGlassDatePicker` (0 = Sunday to 6 = Saturday; null follows the
+  locale). On Material the locale decides.
+- `GlassNavigationBar.materialBuilder`: return your own
+  `PreferredSizeWidget` on the Material path (it receives the default
+  `AppBar`); its `preferredSize` sizes the `Scaffold` / `GlassScaffold`
+  slot. The Material bar is now tested to take every `AppBarTheme` style.
+- `GlassAdaptive.pathOf(context)` and `GlassAdaptive.usesGlass(context)`
+  tell function-style code which path the package would render
+  (`GlassEffectivePath`), using the same resolver as every widget.
+- `GlassSwipeActions.groupTag`: opening a row closes only open rows with
+  the same tag; `GlassSwipeActions.closeGroup(tag)`. `closeAll()` closes
+  every group.
+- Fixed: `GlassEmptyState`'s title and description keep the app's font
+  family on the glass path.
+
 ## 0.2.1 (2026-10-14)
 
 - Debug builds print a one-time warning when more than 8 native glass
