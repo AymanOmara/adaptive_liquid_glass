@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../core/effective_glass_mode.dart';
+import '../core/glass_effective_path.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 
@@ -38,6 +39,31 @@ class GlassAdaptive extends StatelessWidget {
 
   /// Rendering mode; see [GlassRenderMode].
   final GlassRenderMode? mode;
+
+  /// The path a glass widget with [mode] (the theme's default when null)
+  /// takes at [context], resolved exactly as [GlassAdaptive] and every glass
+  /// widget resolve it, for function-style APIs:
+  ///
+  /// ```dart
+  /// Navigator.of(context).push(
+  ///   GlassAdaptive.usesGlass(context)
+  ///       ? CupertinoPageRoute(builder: buildPage)
+  ///       : MaterialPageRoute(builder: buildPage),
+  /// );
+  /// ```
+  ///
+  /// It reads the platform environment as it is now; a widget that must
+  /// follow live changes (Reduce Transparency, say) builds through
+  /// [GlassAdaptive] instead.
+  static GlassEffectivePath pathOf(
+    BuildContext context, {
+    GlassRenderMode? mode,
+  }) => glassEffectivePathOf(resolveGlassModeOf(context, mode: mode));
+
+  /// Whether [pathOf] is a glass path, that is, whether [GlassAdaptive]
+  /// would show its `glass` widget.
+  static bool usesGlass(BuildContext context, {GlassRenderMode? mode}) =>
+      pathOf(context, mode: mode).isGlass;
 
   @override
   Widget build(BuildContext context) => GlassModeBuilder(

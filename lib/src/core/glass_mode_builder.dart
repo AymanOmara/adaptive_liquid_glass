@@ -25,14 +25,25 @@ class GlassModeBuilder extends StatelessWidget {
         valueListenable: GlassPlatform.instance.environment,
         builder: (context, environment, _) => builder(
           context,
-          resolveGlassMode(
-            requested: mode ?? LiquidGlassTheme.of(context).defaultMode,
-            environment: environment,
-            highContrast: MediaQuery.highContrastOf(context),
-            supportLiquidGlassOnAndroid: LiquidGlassTheme.of(
-              context,
-            ).supportLiquidGlassOnAndroid,
-          ),
+          resolveGlassModeOf(context, mode: mode, environment: environment),
         ),
       );
+}
+
+/// The rendering path [mode] resolves to at [context] (the theme's default
+/// when null) in [environment] (the platform's current one when null): the
+/// theme's Android flag, high contrast, Reduce Transparency, the platform
+/// and the iOS version, as every glass widget resolves it.
+EffectiveGlassMode resolveGlassModeOf(
+  BuildContext context, {
+  GlassRenderMode? mode,
+  GlassEnvironment? environment,
+}) {
+  final theme = LiquidGlassTheme.of(context);
+  return resolveGlassMode(
+    requested: mode ?? theme.defaultMode,
+    environment: environment ?? GlassPlatform.instance.environment.value,
+    highContrast: MediaQuery.highContrastOf(context),
+    supportLiquidGlassOnAndroid: theme.supportLiquidGlassOnAndroid,
+  );
 }
