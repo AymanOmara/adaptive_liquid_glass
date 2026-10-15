@@ -703,6 +703,8 @@ belongs in a `CustomScrollView` after the bar, so it scrolls under the glass.
 `materialBuilder` replaces the Android bar: it receives the default
 `AppBar` (which already follows your `AppBarTheme`) and returns any
 `PreferredSizeWidget`, whose `preferredSize` sizes the `Scaffold` slot.
+`SliverGlassNavigationBar.materialBuilder` does the same for the sliver
+bar: it receives the default `SliverAppBar.large` and returns a sliver.
 
 ### Screen layout
 
