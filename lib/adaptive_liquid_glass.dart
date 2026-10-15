@@ -49,6 +49,7 @@ export 'src/date_picker/glass_date_picker.dart';
 export 'src/date_picker/glass_date_picker_mode.dart';
 export 'src/date_picker/glass_date_picker_style.dart';
 export 'src/date_picker/glass_date_wheel.dart';
+export 'src/date_picker/show_glass_date_picker.dart';
 export 'src/dialog/glass_alert_action_order.dart';
 export 'src/dialog/glass_dialog_action.dart';
 export 'src/dialog/show_glass_alert.dart';

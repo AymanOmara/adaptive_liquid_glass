@@ -30,7 +30,11 @@ class GlassCalendar extends StatefulWidget {
     required this.firstDate,
     required this.lastDate,
     this.showWeekNumbers = false,
-  });
+    this.firstDayOfWeek,
+  }) : assert(
+         firstDayOfWeek == null || (firstDayOfWeek >= 0 && firstDayOfWeek < 7),
+         'firstDayOfWeek is 0 (Sunday) to 6 (Saturday)',
+       );
 
   /// The selected day.
   final DateTime selected;
@@ -47,6 +51,11 @@ class GlassCalendar extends StatefulWidget {
   /// Whether a column of ISO week numbers leads each row (estimated
   /// layout).
   final bool showWeekNumbers;
+
+  /// The weekday leading each row: 0 for Sunday to 6 for Saturday, as
+  /// `MaterialLocalizations.firstDayOfWeekIndex` counts
+  /// (`DateTime.monday % 7` is Monday). Null follows the locale.
+  final int? firstDayOfWeek;
 
   @override
   State<GlassCalendar> createState() => _GlassCalendarState();
@@ -100,7 +109,7 @@ class _GlassCalendarState extends State<GlassCalendar> {
     Color resolve(Color c) => CupertinoDynamicColor.resolve(c, context);
     final label = resolve(GlassColors.label);
     final blue = resolve(GlassSystemColors.blue);
-    final first = l10n.firstDayOfWeekIndex;
+    final first = widget.firstDayOfWeek ?? l10n.firstDayOfWeekIndex;
     final daysInMonth = DateUtils.getDaysInMonth(_month.year, _month.month);
     // DateTime.weekday: Monday 1 ... Sunday 7; the index: Sunday 0.
     final lead = (DateTime(_month.year, _month.month).weekday % 7 - first) % 7;
