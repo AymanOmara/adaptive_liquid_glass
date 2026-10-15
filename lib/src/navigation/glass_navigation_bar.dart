@@ -14,7 +14,8 @@ import 'nav_bar_status_style.dart';
 /// iOS 26's navigation bar with an inline title: no bar background, a glass
 /// back button when the route can pop, a centred title and the actions
 /// merged into one glass capsule. Use it as `Scaffold.appBar` with
-/// `extendBodyBehindAppBar: true`. An [AppBar] on the Material path.
+/// `extendBodyBehindAppBar: true`. An [AppBar] on the Material path, styled
+/// by the app's `AppBarTheme`; [materialBuilder] replaces it.
 ///
 /// ```dart
 /// Scaffold(
@@ -42,6 +43,7 @@ class GlassNavigationBar extends StatefulWidget implements PreferredSizeWidget {
     this.actions = const [],
     this.mode,
     this.scrollEdgeStyle = GlassScrollEdgeStyle.uniform,
+    this.materialBuilder,
   });
 
   /// The centred title.
@@ -63,9 +65,24 @@ class GlassNavigationBar extends StatefulWidget implements PreferredSizeWidget {
   /// [GlassScrollEdgeStyle].
   final GlassScrollEdgeStyle scrollEdgeStyle;
 
-  /// The glass bar's height, or on the Material path an [AppBar]'s, which
-  /// a Scaffold reads from the app's `AppBarTheme.toolbarHeight`. Without
-  /// a context the theme's default mode is not known: [mode], or auto.
+  /// Returns the bar shown on the Material path in place of the default
+  /// [AppBar], which it receives (title, leading and actions set, styling
+  /// left to `AppBarTheme`). Its `preferredSize` sizes the Scaffold slot.
+  ///
+  /// ```dart
+  /// materialBuilder: (bar) => AppBar(
+  ///   title: bar.title,
+  ///   leading: bar.leading,
+  ///   actions: bar.actions,
+  ///   backgroundColor: Colors.transparent,
+  /// ),
+  /// ```
+  final PreferredSizeWidget Function(AppBar bar)? materialBuilder;
+
+  /// The glass bar's height, or on the Material path the [materialBuilder]
+  /// bar's or an [AppBar]'s, which a Scaffold reads from the app's
+  /// `AppBarTheme.toolbarHeight`. Without a context the theme's default
+  /// mode is not known: [mode], or auto.
   @override
   Size get preferredSize =>
       resolveGlassMode(
@@ -74,8 +91,21 @@ class GlassNavigationBar extends StatefulWidget implements PreferredSizeWidget {
             highContrast: false,
           ) ==
           EffectiveGlassMode.material
-      ? AppBar().preferredSize
+      ? materialPreferredSize
       : const Size.fromHeight(NavBarMetrics.barHeight);
+
+  /// [preferredSize] on the Material path.
+  Size get materialPreferredSize =>
+      materialBuilder?.call(_materialBar()).preferredSize ??
+      AppBar().preferredSize;
+
+  // Only what the caller set: every style is left null for AppBarTheme.
+  AppBar _materialBar() => AppBar(
+    title: title,
+    leading: leading,
+    automaticallyImplyLeading: automaticallyImplyLeading,
+    actions: actions,
+  );
 
   @override
   State<GlassNavigationBar> createState() => _GlassNavigationBarState();
@@ -111,12 +141,8 @@ class _GlassNavigationBarState extends State<GlassNavigationBar> {
     mode: widget.mode,
     builder: (context, effective) {
       if (effective == EffectiveGlassMode.material) {
-        return AppBar(
-          title: widget.title,
-          leading: widget.leading,
-          automaticallyImplyLeading: widget.automaticallyImplyLeading,
-          actions: widget.actions,
-        );
+        final bar = widget._materialBar();
+        return widget.materialBuilder?.call(bar) ?? bar;
       }
       final top = MediaQuery.paddingOf(context).top;
       return NavBarStatusStyle(
