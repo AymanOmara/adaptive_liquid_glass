@@ -205,4 +205,98 @@ void main() {
     await t.pump(NavBarMetrics.inlineFade);
     expect(blur().enabled, isFalse);
   }, variant: ios);
+
+  group('materialBuilder', () {
+    Widget medium(SliverAppBar bar) => SliverAppBar.medium(
+      title: bar.title,
+      leading: bar.leading,
+      automaticallyImplyLeading: bar.automaticallyImplyLeading,
+      actions: bar.actions,
+      backgroundColor: Colors.green,
+    );
+
+    Widget scroll(Widget Function(SliverAppBar bar) builder) => MaterialApp(
+      theme: ThemeData(
+        appBarTheme: const AppBarTheme(backgroundColor: Colors.red),
+      ),
+      home: Scaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverGlassNavigationBar(
+              largeTitle: const Text('Inbox'),
+              materialBuilder: builder,
+            ),
+            SliverList.builder(
+              itemCount: 60,
+              itemBuilder: (_, i) =>
+                  SizedBox(height: 44, child: Text('Row $i')),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    testWidgets('replaces the sliver, receiving the default', (t) async {
+      shaderEnv();
+      SliverAppBar? received;
+      await t.pumpWidget(
+        scroll((bar) {
+          received = bar;
+          return medium(bar);
+        }),
+      );
+      expect((received!.title! as Text).data, 'Inbox');
+      final bar = t.widget<SliverAppBar>(find.byType(SliverAppBar));
+      expect(bar.backgroundColor, Colors.green);
+      expect(find.text('Inbox'), findsWidgets);
+      // SliverAppBar.medium: 112 expanded, below SliverAppBar.large's 152.
+      expect(
+        t.getTopLeft(find.text('Row 0')).dy,
+        moreOrLessEquals(112, epsilon: 0.5),
+      );
+    }, variant: android);
+
+    testWidgets('can wrap the default in another sliver', (t) async {
+      shaderEnv();
+      await t.pumpWidget(
+        scroll(
+          (bar) => SliverPadding(
+            key: const Key('wrap'),
+            padding: const EdgeInsetsDirectional.only(top: 8),
+            sliver: bar,
+          ),
+        ),
+      );
+      expect(find.byKey(const Key('wrap')), findsOneWidget);
+      expect(find.byType(SliverAppBar), findsOneWidget);
+    }, variant: android);
+
+    testWidgets('applies inside GlassLargeTitleScrollView', (t) async {
+      shaderEnv();
+      await t.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: GlassLargeTitleScrollView(
+              navigationBar: SliverGlassNavigationBar(
+                largeTitle: const Text('Inbox'),
+                materialBuilder: medium,
+              ),
+              body: ListView(children: const [Text('Row 0')]),
+            ),
+          ),
+        ),
+      );
+      expect(
+        t.widget<SliverAppBar>(find.byType(SliverAppBar)).backgroundColor,
+        Colors.green,
+      );
+    }, variant: android);
+
+    testWidgets('the glass path ignores it', (t) async {
+      shaderEnv();
+      await t.pumpWidget(scroll(medium));
+      expect(find.byType(SliverAppBar), findsNothing);
+      expect(large, findsOneWidget);
+    }, variant: ios);
+  });
 }

@@ -1,3 +1,10 @@
+## Unreleased
+
+- `SliverGlassNavigationBar.materialBuilder`: wrap or replace the
+  Material path's sliver (it receives the default `SliverAppBar.large`;
+  the result must be a sliver). Also applies inside
+  `GlassLargeTitleScrollView`. Ignored on glass.
+
 ## 0.2.2 (2026-10-15)
 
 - `LiquidGlassThemeData.supportLiquidGlassOnAndroid` (default false): one

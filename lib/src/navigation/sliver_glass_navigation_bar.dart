@@ -14,7 +14,8 @@ import 'nav_bar_metrics.dart';
 /// The large title scrolls up with the content under the bar; once it has
 /// gone (past [NavBarMetrics.inlineThreshold]) the inline title fades in.
 /// Pulling down stretches the large title. `SliverAppBar.large` on the
-/// Material path.
+/// Material path, styled by the app's `AppBarTheme`; [materialBuilder]
+/// replaces it.
 ///
 /// ```dart
 /// CustomScrollView(slivers: [
@@ -37,6 +38,7 @@ class SliverGlassNavigationBar extends StatelessWidget {
     this.actions = const [],
     this.mode,
     this.scrollEdgeStyle = GlassScrollEdgeStyle.uniform,
+    this.materialBuilder,
   });
 
   /// The large title below the bar.
@@ -61,17 +63,33 @@ class SliverGlassNavigationBar extends StatelessWidget {
   /// [GlassScrollEdgeStyle].
   final GlassScrollEdgeStyle scrollEdgeStyle;
 
+  /// Returns the sliver shown on the Material path in place of the default
+  /// `SliverAppBar.large`, which it receives (title, leading and actions
+  /// set, styling left to `AppBarTheme`). The result must be a sliver: a
+  /// [SliverAppBar] of another size, or the default wrapped in one.
+  ///
+  /// ```dart
+  /// materialBuilder: (bar) => SliverAppBar.medium(
+  ///   title: bar.title,
+  ///   leading: bar.leading,
+  ///   actions: bar.actions,
+  ///   backgroundColor: Colors.transparent,
+  /// ),
+  /// ```
+  final Widget Function(SliverAppBar bar)? materialBuilder;
+
   @override
   Widget build(BuildContext context) => GlassModeBuilder(
     mode: mode,
     builder: (context, effective) {
       if (effective == EffectiveGlassMode.material) {
-        return SliverAppBar.large(
+        final bar = SliverAppBar.large(
           title: title ?? largeTitle,
           leading: leading,
           automaticallyImplyLeading: automaticallyImplyLeading,
           actions: actions,
         );
+        return materialBuilder?.call(bar) ?? bar;
       }
       final scale =
           MediaQuery.textScalerOf(

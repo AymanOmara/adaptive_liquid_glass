@@ -147,5 +147,5 @@ and CHANGELOG.md.
     `showGlassDatePicker` + `firstDayOfWeek`, W28 empty-state font, W33
     `GlassBatch` + `batchImplicitGroups` (opt-in)
   - open: decide whether `batchImplicitGroups` defaults on before 1.0
-    (check opacity forwarding and frame times on a device);
-    `SliverGlassNavigationBar` has no materialBuilder; no date range picker
+    (check opacity forwarding and frame times on a device); no date range
+    picker
