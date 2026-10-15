@@ -13,32 +13,37 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../api/hosts.dart';
 
-Widget _row(String name, List<String> log, {bool fullSwipe = true}) =>
-    GlassSwipeActions(
-      key: ValueKey(name),
-      allowsFullSwipe: fullSwipe,
-      leading: [
-        GlassSwipeAction(
-          icon: CupertinoIcons.pin,
-          label: 'Pin',
-          onPressed: () => log.add('pin $name'),
-        ),
-      ],
-      trailing: [
-        GlassSwipeAction(
-          icon: CupertinoIcons.trash,
-          label: 'Delete',
-          color: CupertinoColors.systemRed,
-          onPressed: () => log.add('delete $name'),
-        ),
-        GlassSwipeAction(
-          icon: CupertinoIcons.flag,
-          label: 'Flag',
-          onPressed: () => log.add('flag $name'),
-        ),
-      ],
-      child: SizedBox(height: 60, child: Center(child: Text(name))),
-    );
+Widget _row(
+  String name,
+  List<String> log, {
+  bool fullSwipe = true,
+  Object? groupTag,
+}) => GlassSwipeActions(
+  key: ValueKey(name),
+  allowsFullSwipe: fullSwipe,
+  groupTag: groupTag,
+  leading: [
+    GlassSwipeAction(
+      icon: CupertinoIcons.pin,
+      label: 'Pin',
+      onPressed: () => log.add('pin $name'),
+    ),
+  ],
+  trailing: [
+    GlassSwipeAction(
+      icon: CupertinoIcons.trash,
+      label: 'Delete',
+      color: CupertinoColors.systemRed,
+      onPressed: () => log.add('delete $name'),
+    ),
+    GlassSwipeAction(
+      icon: CupertinoIcons.flag,
+      label: 'Flag',
+      onPressed: () => log.add('flag $name'),
+    ),
+  ],
+  child: SizedBox(height: 60, child: Center(child: Text(name))),
+);
 
 Widget _list(
   List<String> log, {
@@ -425,6 +430,91 @@ void main() {
       expect(_shift(t, 'A'), lessThan(0));
       GlassSwipeActions.closeAll();
       await t.pumpAndSettle();
+      expect(_shift(t, 'A'), 0);
+    }, variant: ios);
+  });
+
+  group('groupTag', () {
+    /// Rows A and B tagged [ab], C and D tagged [cd].
+    Widget tagged({Object? ab = 'ab', Object? cd = 'cd'}) => MaterialApp(
+      home: Scaffold(
+        body: ListView(
+          children: [
+            _row('A', [], groupTag: ab),
+            _row('B', [], groupTag: ab),
+            _row('C', [], groupTag: cd),
+            _row('D', [], groupTag: cd),
+            const SizedBox(height: 2000),
+          ],
+        ),
+      ),
+    );
+
+    Future<void> open(WidgetTester t, String name) async {
+      await t.timedDrag(
+        _rowOf(name),
+        const Offset(-200, 0),
+        const Duration(milliseconds: 400),
+      );
+      await t.pumpAndSettle();
+    }
+
+    testWidgets('opening a row closes only its own group', (t) async {
+      shaderEnv();
+      await t.pumpWidget(tagged());
+      await open(t, 'A');
+      await open(t, 'C');
+      expect(_shift(t, 'A'), lessThan(0));
+      expect(_shift(t, 'C'), lessThan(0));
+      await open(t, 'B');
+      expect(_shift(t, 'A'), 0);
+      expect(_shift(t, 'B'), lessThan(0));
+      expect(_shift(t, 'C'), lessThan(0));
+    }, variant: ios);
+
+    testWidgets('closeGroup closes that group only', (t) async {
+      shaderEnv();
+      await t.pumpWidget(tagged());
+      await open(t, 'A');
+      await open(t, 'C');
+      GlassSwipeActions.closeGroup('cd');
+      await t.pumpAndSettle();
+      expect(_shift(t, 'C'), 0);
+      expect(_shift(t, 'A'), lessThan(0));
+    }, variant: ios);
+
+    testWidgets('closeAll closes every group', (t) async {
+      shaderEnv();
+      await t.pumpWidget(tagged());
+      await open(t, 'A');
+      await open(t, 'C');
+      GlassSwipeActions.closeAll();
+      await t.pumpAndSettle();
+      expect(_shift(t, 'A'), 0);
+      expect(_shift(t, 'C'), 0);
+    }, variant: ios);
+
+    testWidgets('a tagged row leaves untagged rows open', (t) async {
+      shaderEnv();
+      await t.pumpWidget(tagged(ab: null));
+      await open(t, 'A');
+      await open(t, 'C');
+      expect(_shift(t, 'A'), lessThan(0));
+      expect(_shift(t, 'C'), lessThan(0));
+      // Untagged rows still close each other.
+      await open(t, 'B');
+      expect(_shift(t, 'A'), 0);
+    }, variant: ios);
+
+    testWidgets('a row that changes group closes, then joins it', (t) async {
+      shaderEnv();
+      await t.pumpWidget(tagged());
+      await open(t, 'A');
+      await t.pumpWidget(tagged(ab: 'cd'));
+      await t.pumpAndSettle();
+      expect(_shift(t, 'A'), 0);
+      await open(t, 'A');
+      await open(t, 'C');
       expect(_shift(t, 'A'), 0);
     }, variant: ios);
   });

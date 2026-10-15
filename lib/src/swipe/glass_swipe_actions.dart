@@ -40,7 +40,7 @@ part 'swipe_approach.dart';
 /// row runs the edge-most action (the first in the list), with a haptic as
 /// the swipe passes that point; a [GlassSwipeAction.destructive] one
 /// slides the row away and collapses it first, as SwiftUI does. A tap on the open row, a scroll, or
-/// opening another row closes it. The first action sits at the row's
+/// opening another row of the same [groupTag] closes it. The first action sits at the row's
 /// edge; edges follow the reading direction. Assistive tech gets the
 /// actions as custom actions on the row. Give each row a key so an open
 /// row stays with its item.
@@ -53,6 +53,7 @@ class GlassSwipeActions extends StatefulWidget {
     this.trailing = const [],
     this.allowsFullSwipe = true,
     this.fullSwipeThreshold = SwipeMetrics.fullSwipe,
+    this.groupTag,
   }) : assert(
          fullSwipeThreshold > 0 && fullSwipeThreshold <= 1,
          'fullSwipeThreshold is a fraction of the row width.',
@@ -76,8 +77,21 @@ class GlassSwipeActions extends StatefulWidget {
   /// (see [allowsFullSwipe]).
   final double fullSwipeThreshold;
 
-  /// Closes whichever row is open (when the list's filter changes, say).
-  static void closeAll() => _GlassSwipeActionsState._active.value = null;
+  /// The group the row belongs to: opening a row closes the open row of
+  /// its own group only, so each list (or section) can keep one row open.
+  /// Rows without a tag form one group of their own.
+  final Object? groupTag;
+
+  /// Closes whichever rows are open, in every group (when the list's
+  /// filter changes, say).
+  static void closeAll() {
+    for (final group in _SwipeGroup._groups.values.toList()) {
+      group.value = null;
+    }
+  }
+
+  /// Closes the open row of the group tagged [tag] (see [groupTag]).
+  static void closeGroup(Object tag) => _SwipeGroup._groups[tag]?.value = null;
 
   @override
   State<GlassSwipeActions> createState() => _GlassSwipeActionsState();
@@ -85,8 +99,9 @@ class GlassSwipeActions extends StatefulWidget {
 
 class _GlassSwipeActionsState extends State<GlassSwipeActions>
     with TickerProviderStateMixin {
-  /// The row that is open or being swiped; opening another closes it.
-  static final ValueNotifier<Object?> _active = ValueNotifier(null);
+  /// The row of this row's group that is open or being swiped; opening
+  /// another closes it.
+  late _SwipeGroup _active;
 
   /// The row's offset towards the trailing edge (negative reveals the
   /// trailing actions), in logical pixels.
@@ -228,7 +243,22 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
       value: 1,
       duration: SwipeMetrics.closeFade,
     );
-    _active.addListener(_onActive);
+    _active = _SwipeGroup.join(widget.groupTag, _onActive);
+  }
+
+  @override
+  void didUpdateWidget(GlassSwipeActions oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.groupTag == oldWidget.groupTag) return;
+    // An open row closes as it moves to its new group.
+    _leaveGroup();
+    _active = _SwipeGroup.join(widget.groupTag, _onActive);
+    if (_offset.value != 0) _settle(0);
+  }
+
+  void _leaveGroup() {
+    _active.leave(_onActive);
+    if (_active.value == this) _active.value = null;
   }
 
   @override
@@ -242,8 +272,7 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
   @override
   void dispose() {
     _scroll?.isScrollingNotifier.removeListener(_onScroll);
-    _active.removeListener(_onActive);
-    if (_active.value == this) _active.value = null;
+    _leaveGroup();
     _offset.dispose();
     _platter.dispose();
     _collapse.dispose();
@@ -790,5 +819,26 @@ class _GlassSwipeActionsState extends State<GlassSwipeActions>
       );
     }
     return buttons;
+  }
+}
+
+/// The rows sharing a `GlassSwipeActions.groupTag`; its value is the row
+/// that is open or being swiped.
+class _SwipeGroup extends ValueNotifier<Object?> {
+  _SwipeGroup._(this._tag) : super(null);
+
+  /// The live groups by tag; a group goes when its last row does.
+  static final Map<Object?, _SwipeGroup> _groups = {};
+
+  final Object? _tag;
+
+  /// The group tagged [tag], with [listener] added.
+  static _SwipeGroup join(Object? tag, VoidCallback listener) =>
+      _groups.putIfAbsent(tag, () => _SwipeGroup._(tag))..addListener(listener);
+
+  /// Removes [listener], dropping the group once no row is in it.
+  void leave(VoidCallback listener) {
+    removeListener(listener);
+    if (!hasListeners && identical(_groups[_tag], this)) _groups.remove(_tag);
   }
 }
