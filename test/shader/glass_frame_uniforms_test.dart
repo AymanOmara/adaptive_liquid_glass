@@ -50,7 +50,7 @@ void main() {
         }),
       ),
     );
-    expect(f.length, 352);
+    expect(f.length, 640);
     expect(f.sublist(0, 4), [1, 3, -2, 0]);
     expect(f.sublist(4, 8), [
       60,
@@ -59,7 +59,7 @@ void main() {
       GlassConstants.standard.cornerZone,
     ]);
     expect(f.sublist(16, 20), [1, 2, 30, 40]);
-    expect(f.sublist(80, 84), [
+    expect(f.sublist(112, 116), [
       10,
       0,
       0, // global exponent (uGlobal2.y) + continuous-corner zone
@@ -82,9 +82,9 @@ void main() {
         s(const Rect.fromLTWH(0, 0, 60, 60), v: GlassVariant.clear),
       ]),
     );
-    expect(f[83], closeTo(0.85, 1e-9));
-    expect(f[87], 1);
-    expect(f[91], 1);
+    expect(f[115], closeTo(0.85, 1e-9));
+    expect(f[119], 1);
+    expect(f[123], 1);
   });
 
   test('per-shape corner exponent is packed into uInfo.z', () {
@@ -94,57 +94,57 @@ void main() {
         s(const Rect.fromLTWH(20, 0, 10, 10)),
       ]),
     );
-    expect(f[82], 2);
-    expect(f[86], 0); // global exponent + continuous-corner zone
+    expect(f[114], 2);
+    expect(f[118], 0); // global exponent + continuous-corner zone
   });
 
   test('variant constants are scaled to physical px', () {
     final f = packGlassUniforms(frame(const []));
     final reg = GlassConstants.standard.regular;
     final clr = GlassConstants.standard.clear;
-    expect(f.sublist(208, 212), [
+    expect(f.sublist(304, 308), [
       reg.lensDecay * 3,
       reg.lensBand * 3,
       reg.lensStrength,
       reg.dispersion,
     ]);
-    expect(f.sublist(212, 216), [
+    expect(f.sublist(308, 312), [
       reg.rimWidth * 3,
       reg.rimIntensity,
       reg.fillOpacity,
       reg.dim,
     ]);
-    expect(f.sublist(216, 220), [
+    expect(f.sublist(312, 316), [
       reg.shadowRadius * 3,
       reg.shadowOpacity,
       reg.tintStrength,
       reg.lensSizeRef * 3,
     ]);
-    expect(f.sublist(264, 268), [
+    expect(f.sublist(360, 364), [
       clr.shadowRadius * 3,
       clr.shadowOpacity,
       clr.tintStrength,
       clr.lensSizeRef * 3,
     ]);
-    expect(f.sublist(220, 224), [
+    expect(f.sublist(316, 320), [
       reg.fillColor.r,
       reg.fillColor.g,
       reg.fillColor.b,
       reg.saturation,
     ]);
-    expect(f.sublist(256, 260), [
+    expect(f.sublist(352, 356), [
       clr.lensDecay * 3,
       clr.lensBand * 3,
       clr.lensStrength,
       clr.dispersion,
     ]);
-    expect(f.sublist(260, 264), [
+    expect(f.sublist(356, 360), [
       clr.rimWidth * 3,
       clr.rimIntensity,
       clr.fillOpacity,
       clr.dim,
     ]);
-    expect(f.sublist(268, 272), [
+    expect(f.sublist(364, 368), [
       clr.fillColor.r,
       clr.fillColor.g,
       clr.fillColor.b,
@@ -170,10 +170,10 @@ void main() {
       },
     });
     final f = packGlassUniforms(frame(const [], constants: c));
-    expect(f.sublist(224, 228), [5.5 * 3, 0.3, 1.2, 70 * 3]);
-    expect(f[228], 1.4);
-    expect(f.sublist(272, 276), [4.0 * 3, -0.1, 0.2, 0]);
-    expect(f[276], 0.5);
+    expect(f.sublist(320, 324), [5.5 * 3, 0.3, 1.2, 70 * 3]);
+    expect(f[324], 1.4);
+    expect(f.sublist(368, 372), [4.0 * 3, -0.1, 0.2, 0]);
+    expect(f[372], 0.5);
   });
 
   test('tone LUT knots pack into G, H and I (standard when absent)', () {
@@ -181,11 +181,11 @@ void main() {
     // Since the g13 refit the shipped regular set carries fitted knots;
     // fromJson fills absent keys from standard, so the pack carries them.
     final reg = GlassConstants.standard.regular.toneKnots;
-    expect(std.sublist(232, 236), reg.sublist(0, 4));
-    expect(std.sublist(236, 240), reg.sublist(4, 8));
-    expect(std[240], reg[8]);
+    expect(std.sublist(328, 332), reg.sublist(0, 4));
+    expect(std.sublist(332, 336), reg.sublist(4, 8));
+    expect(std[336], reg[8]);
     // The clear set's knots live 48 floats later.
-    expect(std[240 + 48], GlassConstants.standard.clear.toneKnots[8]);
+    expect(std[336 + 48], GlassConstants.standard.clear.toneKnots[8]);
 
     final c = GlassConstants.fromJson({
       'regular': {
@@ -193,20 +193,20 @@ void main() {
       },
     });
     final f = packGlassUniforms(frame(const [], constants: c));
-    expect(f.sublist(232, 236), [0.0, 0.1, 0.2, 0.3]);
-    expect(f.sublist(236, 240), [0.4, 0.5, 0.6, 0.7]);
-    expect(f[240], 0.8);
+    expect(f.sublist(328, 332), [0.0, 0.1, 0.2, 0.3]);
+    expect(f.sublist(332, 336), [0.4, 0.5, 0.6, 0.7]);
+    expect(f[336], 0.8);
   });
 
   test('Task 17d keys pack into F, I and J (pre-17d behaviour by default)', () {
     final d = packGlassUniforms(frame(const []));
     // F.yzw: the fitted glow, no post-lens blur, outline normals.
-    expect(d.sublist(229, 232), [closeTo(0.027, 1e-6), 0, 1]);
-    expect(d.sublist(241, 244), [0, closeTo(0.6 * 3, 1e-12), 0]);
-    expect(d.sublist(248, 251), [0.5, 0, 0]); // K.w = blurSizeRef·dpr
-    expect(d.sublist(244, 248), [0, 1.5 * 3, 1 * 3, 1]);
+    expect(d.sublist(325, 328), [closeTo(0.027, 1e-6), 0, 1]);
+    expect(d.sublist(337, 340), [0, closeTo(0.6 * 3, 1e-12), 0]);
+    expect(d.sublist(344, 347), [0.5, 0, 0]); // K.w = blurSizeRef·dpr
+    expect(d.sublist(340, 344), [0, 1.5 * 3, 1 * 3, 1]);
     expect(d[7], GlassConstants.standard.cornerZone); // uGlobal2.w (Task A1)
-    expect([d[252], d[300]], [0.35, 0.35]); // L.x rimBack
+    expect([d[348], d[396]], [0.35, 0.35]); // L.x rimBack
 
     final c = GlassConstants.fromJson({
       'clear': {
@@ -232,11 +232,11 @@ void main() {
     );
     expect(f[7], c.cornerZone);
     // K.zw: post-lens sigma = blurSigma·√0.9·dpr, blur size ref·dpr.
-    expect(f[298], closeTo(c.clear.blurSigma * math.sqrt(0.9) * 3, 1e-12));
-    expect(f[299], c.clear.blurSizeRef * 3);
-    expect(f.sublist(277, 280), [0.4, 0.9, 1.55]);
-    expect(f.sublist(289, 292), [9.0 * 3, closeTo(0.6 * 3, 1e-12), 0]);
-    expect(f.sublist(292, 296), [0.63, 1.5 * 3, 1.0 * 3, 0.05]);
+    expect(f[394], closeTo(c.clear.blurSigma * math.sqrt(0.9) * 3, 1e-12));
+    expect(f[395], c.clear.blurSizeRef * 3);
+    expect(f.sublist(373, 376), [0.4, 0.9, 1.55]);
+    expect(f.sublist(385, 388), [9.0 * 3, closeTo(0.6 * 3, 1e-12), 0]);
+    expect(f.sublist(388, 392), [0.63, 1.5 * 3, 1.0 * 3, 0.05]);
   });
 
   test('toneLift keys pack into I.w and K.xy (size ref × dpr)', () {
@@ -257,9 +257,9 @@ void main() {
         brightness: Brightness.dark,
       ),
     );
-    expect(f[243], 0.7); // regular I.w
-    expect(f.sublist(248, 250), [0.8, 48.0 * 2]); // regular K.xy
-    expect(f[291], 0); // clear I.w: lift off
+    expect(f[339], 0.7); // regular I.w
+    expect(f.sublist(344, 346), [0.8, 48.0 * 2]); // regular K.xy
+    expect(f[387], 0); // clear I.w: lift off
   });
 
   test(
@@ -280,9 +280,9 @@ void main() {
         ], constants: c),
       );
       // regular K.zw: no post blur; clear K.zw: 1.2·0.6·3 px, no size scale.
-      expect(f.sublist(250, 252), [0, 60.0 * 3]);
-      expect(f[298], closeTo(1.2 * 0.6 * 3, 1e-12));
-      expect(f[299], 0);
+      expect(f.sublist(346, 348), [0, 60.0 * 3]);
+      expect(f[394], closeTo(1.2 * 0.6 * 3, 1e-12));
+      expect(f[395], 0);
     },
   );
 
@@ -328,10 +328,10 @@ void main() {
         s(const Rect.fromLTWH(0, 0, 10, 10), v: GlassVariant.clear, tint: tint),
       ]),
     );
-    expect(f[81], 1);
-    expect(f.sublist(144, 147), [1, 0, 0]);
+    expect(f[113], 1);
+    expect(f.sublist(208, 211), [1, 0, 0]);
     expect(
-      f[147],
+      f[211],
       closeTo(GlassConstants.standard.clear.tintStrength * tint.a, 1e-9),
     );
   });
@@ -350,11 +350,48 @@ void main() {
     expect(f.every((x) => x.isFinite), isTrue);
   });
 
-  test('count is capped at 16', () {
+  test('per-group defaults: group 0, frame smoothing, opacity 1, no clip', () {
     final f = packGlassUniforms(
-      frame(List.generate(20, (i) => s(Rect.fromLTWH(i * 10.0, 0, 5, 5)))),
+      frame([s(const Rect.fromLTWH(1, 2, 30, 40)), s(Rect.zero)]),
     );
-    expect(f[0], 16);
+    expect(f.sublist(kExtraAt, kExtraAt + 4), [0, 60, 1, 0]);
+    expect(f.sublist(kClipAt, kClipAt + 4), [-1e9, -1e9, 1e9, 1e9]);
+  });
+
+  test('shared-layer group, smoothing, opacity and clip pack per shape', () {
+    final a = s(const Rect.fromLTWH(1, 2, 30, 40));
+    final b = s(const Rect.fromLTWH(100, 2, 30, 40)).inGroup(
+      group: 1,
+      smoothing: 12,
+      opacity: 0.5,
+      clip: const Rect.fromLTRB(0, 10, 200, 300),
+    );
+    final f = packGlassUniforms(frame([a, b]));
+    expect(f.sublist(kExtraAt + 4, kExtraAt + 8), [1, 12, 0.5, 0]);
+    expect(f.sublist(kClipAt + 4, kClipAt + 8), [0, 10, 200, 300]);
+    expect(f.sublist(kRectsAt + 4, kRectsAt + 8), [100, 2, 30, 40]);
+  });
+
+  test('mergeUnions keeps the group fields', () {
+    const clip = Rect.fromLTRB(0, 0, 50, 50);
+    final merged = mergeUnions([
+      s(
+        const Rect.fromLTWH(0, 0, 10, 10),
+        union: 'u',
+      ).inGroup(group: 2, smoothing: 3, opacity: 0.4, clip: clip),
+      s(const Rect.fromLTWH(20, 0, 10, 10), union: 'u'),
+    ]);
+    expect(merged.single.group, 2);
+    expect(merged.single.smoothing, 3);
+    expect(merged.single.opacity, 0.4);
+    expect(merged.single.clip, clip);
+  });
+
+  test('count is capped at 24', () {
+    final f = packGlassUniforms(
+      frame(List.generate(30, (i) => s(Rect.fromLTWH(i * 10.0, 0, 5, 5)))),
+    );
+    expect(f[0], 24);
   });
 
   test('dark brightness packs the dark constant sets', () {
@@ -369,19 +406,19 @@ void main() {
       ),
     );
     final d = GlassConstants.standard.regularDark;
-    expect(f.sublist(212, 216), [
+    expect(f.sublist(308, 312), [
       d.rimWidth,
       d.rimIntensity,
       d.fillOpacity,
       d.dim,
     ]);
-    expect(f.sublist(220, 224), [
+    expect(f.sublist(316, 320), [
       d.fillColor.r,
       d.fillColor.g,
       d.fillColor.b,
       d.saturation,
     ]);
-    expect(f[263], GlassConstants.standard.clearDark.dim);
+    expect(f[359], GlassConstants.standard.clearDark.dim);
   });
 
   test('opaque and touch', () {
@@ -424,9 +461,9 @@ void main() {
     // The g13 refit ships the curve on regular/regularDark; clear keeps
     // the identity knots and a closed size window.
     final reg = GlassConstants.standard.regular;
-    expect(d.sublist(304, 308), reg.smallToneKnots.sublist(0, 4));
-    expect(d.sublist(308, 312), reg.smallToneKnots.sublist(4, 8));
-    expect(d.sublist(312, 316), [
+    expect(d.sublist(400, 404), reg.smallToneKnots.sublist(0, 4));
+    expect(d.sublist(404, 408), reg.smallToneKnots.sublist(4, 8));
+    expect(d.sublist(408, 412), [
       reg.smallToneKnots[8],
       reg.smallSizeLo * 3,
       reg.smallSizeHi * 3,
@@ -435,10 +472,10 @@ void main() {
     // The clear set 48 floats later stays identity/off; O.w carries the
     // clear post-lens Jacobian clamp (fidelity group 4).
     expect(
-      d.sublist(316, 320),
+      d.sublist(412, 416),
       GlassVariantConstants.identityToneKnots.sublist(0, 4),
     );
-    expect(d.sublist(324, 328), [1.0, 0, 0, 1.15]);
+    expect(d.sublist(420, 424), [1.0, 0, 0, 1.15]);
 
     final c = GlassConstants.fromJson({
       'regular': {
@@ -448,14 +485,14 @@ void main() {
       },
     });
     final f = packGlassUniforms(frame(const [], constants: c));
-    expect(f.sublist(304, 308), [0.0, 0.1, 0.2, 0.3]);
-    expect(f.sublist(308, 312), [0.4, 0.5, 0.6, 0.7]);
+    expect(f.sublist(400, 404), [0.0, 0.1, 0.2, 0.3]);
+    expect(f.sublist(404, 408), [0.4, 0.5, 0.6, 0.7]);
     // O = (knot 8, smallSizeLo px, smallSizeHi px, postJacobianMax).
-    expect(f.sublist(312, 316), [0.8, 30 * 3, 34 * 3, 4]);
+    expect(f.sublist(408, 412), [0.8, 30 * 3, 34 * 3, 4]);
     // The clear set keeps the identity defaults (N.x = knot 4).
-    expect(f[320], 0.5);
-    expect(f[324], 1.0);
-    expect(f.sublist(325, 328), [0, 0, 1.15]);
+    expect(f[416], 0.5);
+    expect(f[420], 1.0);
+    expect(f.sublist(421, 424), [0, 0, 1.15]);
   });
 
   test('sideways dispersion and elliptical normals pack into Q after P', () {
@@ -472,9 +509,9 @@ void main() {
     });
     final f = packGlassUniforms(frame(const [], constants: c));
     // The inset is a length (x dpr 3).
-    expect(f.sublist(336, 340), [0.5, 1, 12, 0.5]);
-    expect(f.sublist(340, 344), [-3, 0, 0, 0]);
-    expect(f.sublist(344, 348), [3, 0.5, 0, 0]);
+    expect(f.sublist(432, 436), [0.5, 1, 12, 0.5]);
+    expect(f.sublist(436, 440), [-3, 0, 0, 0]);
+    expect(f.sublist(440, 444), [3, 0.5, 0, 0]);
   });
 
   test('ambient colour packs into P after the M-O blocks (item 8)', () {
@@ -484,11 +521,11 @@ void main() {
     });
     final f = packGlassUniforms(frame(const [], constants: c));
     // Reach is a length (x dpr 3); the mix is a weight.
-    expect(f.sublist(328, 332), [0.25, 36, 0.5, 0]);
-    expect(f.sublist(332, 336), [0, 0, 0, 0]);
+    expect(f.sublist(424, 428), [0.25, 36, 0.5, 0]);
+    expect(f.sublist(428, 432), [0, 0, 0, 0]);
     final d = packGlassUniforms(frame(const []));
     final reg = GlassConstants.standard.regular;
-    expect(d.sublist(328, 332), [
+    expect(d.sublist(424, 428), [
       reg.ambientMix,
       reg.ambientReach * 3,
       reg.toneLumaMix,
@@ -498,15 +535,15 @@ void main() {
 
   test('lensVertical and the rim tint pack into L.yzw (off by default)', () {
     final d = packGlassUniforms(frame(const []));
-    expect(d.sublist(253, 256), [0, 0, 0]);
-    expect(d.sublist(301, 304), [0, 0, 0]);
+    expect(d.sublist(349, 352), [0, 0, 0]);
+    expect(d.sublist(397, 400), [0, 0, 0]);
     final c = GlassConstants.fromJson({
       'clear': {'lensVertical': 1.0, 'rimTint': 0.5, 'rimHue': 180.0},
     });
     final f = packGlassUniforms(frame(const [], constants: c));
     // Weights, not lengths: no dpr scaling; the hue in turns. Clear
     // variant's L at 300.
-    expect(f.sublist(301, 304), [1.0, 0.5, 0.5]);
-    expect(f.sublist(253, 256), [0, 0, 0]);
+    expect(f.sublist(397, 400), [1.0, 0.5, 0.5]);
+    expect(f.sublist(349, 352), [0, 0, 0]);
   });
 }

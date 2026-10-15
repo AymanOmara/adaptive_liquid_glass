@@ -14,6 +14,10 @@ class GlassShapeUniform {
     this.tint,
     this.unionId,
     this.cornerExponent,
+    this.group = 0,
+    this.smoothing,
+    this.opacity = 1,
+    this.clip,
   });
 
   /// Shape bounds.
@@ -35,4 +39,39 @@ class GlassShapeUniform {
   /// [GlassConstants.cornerExponent]. 2 gives exact circular arcs (capsules,
   /// circles).
   final double? cornerExponent;
+
+  /// Index of the shape's glass group within a shared-layer pass; shapes of
+  /// one group are packed together, smooth-union only among themselves and
+  /// never merge with another group's.
+  final int group;
+
+  /// The group's smooth-union radius (physical px); null uses
+  /// `GlassFrameUniforms.smoothing`.
+  final double? smoothing;
+
+  /// The group's opacity (ancestor `Opacity`/`FadeTransition` on the shared
+  /// layer); 1 on the per-group path.
+  final double opacity;
+
+  /// The group's clip in texture space (physical px); null is unbounded.
+  final Rect? clip;
+
+  /// A copy with the shared-layer fields replaced.
+  GlassShapeUniform inGroup({
+    required int group,
+    required double smoothing,
+    double opacity = 1,
+    Rect? clip,
+  }) => GlassShapeUniform(
+    rect: rect,
+    radius: radius,
+    variant: variant,
+    tint: tint,
+    unionId: unionId,
+    cornerExponent: cornerExponent,
+    group: group,
+    smoothing: smoothing,
+    opacity: opacity,
+    clip: clip,
+  );
 }
