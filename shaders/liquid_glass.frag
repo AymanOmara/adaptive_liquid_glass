@@ -5,12 +5,12 @@ precision highp float;
 // Float layout must match lib/src/shader/glass_frame_uniforms.dart.
 uniform vec2 uSize;        // engine: texture size
 uniform vec4 uGlobal;      // count, dpr, lightAngle, opaque
-uniform vec4 uGlobal2;     // smoothing px, cornerExponent, highContrast, cornerZone
+uniform vec4 uGlobal2;     // default smoothing px (per shape: uExtra.y), cornerExponent, highContrast, cornerZone
 uniform vec4 uOpaque;      // rgb
 uniform vec4 uTouch;       // x, y, glow, glowRadius px
-uniform vec4 uRects[16];   // x, y, w, h px
-uniform vec4 uInfo[16];    // radius px, variant(0 regular, 1 clear), cornerExponent (0 = global), fill scale
-uniform vec4 uTints[16];   // rgb, strength
+uniform vec4 uRects[24];   // x, y, w, h px
+uniform vec4 uInfo[24];    // radius px, variant(0 regular, 1 clear), cornerExponent (0 = global), fill scale
+uniform vec4 uTints[24];   // rgb, strength
 uniform vec4 uVar[36];     // per variant (regular A-L, then clear A-L, then
                            // regular M-O, then clear M-O, then regular P,
                            // then clear P):
@@ -31,6 +31,14 @@ uniform vec4 uVar[36];     // per variant (regular A-L, then clear A-L, then
                            //   P.z item 8 round 3)
                            //   Q(sideways dispersion, ellipse normal mix, backdrop inset px, ambient lift), regular then clear
                            //   R(backdrop reach px, -, -, -), regular then clear
+// Shared glass layer (docs/superpowers/plans/2026-10-15-shared-glass-layer.md):
+// one pass may draw several groups. Shapes of a group are contiguous; the
+// smooth union and the attribute blend run within a group, groups combine
+// with min. A pixel takes the clip and opacity of its nearest shape's group.
+// One group with opacity 1 and an unbounded clip is the old single-group
+// shader exactly.
+uniform vec4 uExtra[24];   // group index, smoothing px, opacity, -
+uniform vec4 uClip[24];    // clip x0, y0, x1, y1 px
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -107,13 +115,21 @@ float smin(float a, float b, float k) {
 // the lens normals.
 float lensField(vec2 p) {
   float d = 1e6;
-  for (int i = 0; i < 16; i++) {
+  float dg = 1e6;
+  float g = -1.0;
+  for (int i = 0; i < 24; i++) {
     if (i >= int(uGlobal.x)) break;
     vec4 info = uInfo[i];
+    vec4 ex = uExtra[i];
+    if (ex.x != g) {
+      d = min(d, dg);
+      dg = 1e6;
+      g = ex.x;
+    }
     float rs = mix(uVar[5].w, uVar[17].w, info.y);
-    d = smin(d, shapeOf(p, uRects[i], info, rs, 1.0), uGlobal2.x);
+    dg = smin(dg, shapeOf(p, uRects[i], info, rs, 1.0), ex.y);
   }
-  return d;
+  return min(d, dg);
 }
 
 // Tone LUT (Task 17d, glass_model.tone_apply): 9 grey output knots at
@@ -138,16 +154,19 @@ vec3 toneLut(vec3 c, vec4 a, vec4 b, float k8) {
 // lens field at p (glass_model.field_blend): 0 where no shape's union is
 // smoothed, i.e. outside every merge neck (the fold starts at 1e6, so a
 // single shape always has blend 0). Index-free like lensField.
-float lensBlend(vec2 p) {
+// Only the shapes of group [grp] count.
+float lensBlend(vec2 p, float grp) {
   float d = 1e6;
   float hmax = 0.0;
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < 24; i++) {
     if (i >= int(uGlobal.x)) break;
+    vec4 ex = uExtra[i];
+    if (ex.x != grp) continue;
     vec4 info = uInfo[i];
     float rs = mix(uVar[5].w, uVar[17].w, info.y);
     float di = shapeOf(p, uRects[i], info, rs, 1.0);
-    if (uGlobal2.x > 0.0) hmax = max(hmax, max(uGlobal2.x - abs(d - di), 0.0) / uGlobal2.x);
-    d = smin(d, di, uGlobal2.x);
+    if (ex.y > 0.0) hmax = max(hmax, max(ex.y - abs(d - di), 0.0) / ex.y);
+    d = smin(d, di, ex.y);
   }
   return hmax;
 }
@@ -163,20 +182,50 @@ void main() {
   // Weights are shifted by the nearest distance (online softmax) so the
   // nearest shape always weighs 1: raw exp(-dist/k) underflows to 0 beyond
   // ~87 px and wsum = 0 turned every attribute into NaN (black output).
+  // The nearest shape's group owns the pixel (its smoothing, clip and
+  // opacity); the outline is the union of every group's smooth union.
+  float d = 1e6;
+  float dg = 1e6;
+  float g = -1.0;
+  float dOwn = 1e6;
+  vec4 own = vec4(0.0, 0.0, 1.0, 0.0);
+  vec4 ownClip = vec4(-1e9, -1e9, 1e9, 1e9);
+  for (int i = 0; i < 24; i++) {
+    if (i >= count) break;
+    vec4 ex = uExtra[i];
+    if (ex.x != g) {
+      d = min(d, dg);
+      dg = 1e6;
+      g = ex.x;
+    }
+    float di = shapeOf(px, uRects[i], uInfo[i], 1.0, uGlobal2.w);
+    dg = smin(dg, di, ex.y);
+    if (di < dOwn) {
+      dOwn = di;
+      own = ex;
+      ownClip = uClip[i];
+    }
+  }
+  d = min(d, dg);
+  float ownK = own.y;
+  float keep = own.z
+      * step(ownClip.x, px.x) * step(ownClip.y, px.y)
+      * step(px.x, ownClip.z) * step(px.y, ownClip.w);
+  if (keep <= 0.0) { fragColor = vec4(0.0); return; }
+
   float wsum = 0.0;
   float clearMix = 0.0;
   float halfMin = 0.0;  // half the shorter side, for the lens size factor
   float fillScale = 0.0;  // per-shape fillOpacity factor (fill size scaling)
   vec4 tint = vec4(0.0);
   vec4 rcB = vec4(0.0);  // attribute-blended rect, for the ambient colour
-  float d = 1e6;
-  float wk = uGlobal2.x * 0.5 + 1.0;
+  float wk = ownK * 0.5 + 1.0;
   float dmin = 1e6;
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < 24; i++) {
     if (i >= count) break;
+    if (uExtra[i].x != own.x) continue;
     vec4 info = uInfo[i];
     float di = shapeOf(px, uRects[i], info, 1.0, uGlobal2.w);
-    d = smin(d, di, uGlobal2.x);
     float e = max(di, 0.0);
     if (e < dmin) {
       float s = exp(-(dmin - e) / wk);
@@ -232,23 +281,32 @@ void main() {
   float dSh = d;
   if (P.w != 0.0) {
     dSh = 1e6;
-    for (int i = 0; i < 16; i++) {
+    float dShG = 1e6;
+    float gSh = -1.0;
+    for (int i = 0; i < 24; i++) {
       if (i >= count) break;
-      dSh = smin(dSh, shapeOf(px - vec2(0.0, P.w), uRects[i], uInfo[i], 1.0, uGlobal2.w), uGlobal2.x);
+      vec4 ex = uExtra[i];
+      if (ex.x != gSh) {
+        dSh = min(dSh, dShG);
+        dShG = 1e6;
+        gSh = ex.x;
+      }
+      dShG = smin(dShG, shapeOf(px - vec2(0.0, P.w), uRects[i], uInfo[i], 1.0, uGlobal2.w), ex.y);
     }
+    dSh = min(dSh, dShG);
   }
   float dOut = max(dSh, 0.0);
   float sh = C.y * exp(-(dOut * dOut) / (2.0 * sr * sr));
   vec4 shadow = vec4(0.0, 0.0, 0.0, sh) * (1.0 - inside);
   if (inside <= 0.0) {
-    fragColor = shadow;
+    fragColor = shadow * keep;
     return;
   }
 
   // Opaque (Reduce Transparency).
   if (uGlobal.w > 0.5) {
     vec3 solid = mix(uOpaque.rgb, tint.rgb, tint.a);
-    fragColor = vec4(solid * inside, inside) + shadow;
+    fragColor = (vec4(solid * inside, inside) + shadow) * keep;
     return;
   }
 
@@ -280,7 +338,7 @@ void main() {
   // saddle instead of flipping sides (the crease a unit normal draws).
   // Outside merge necks neck = 1 and the lens is unchanged.
   float neck = 1.0;
-  if (count > 1 && uGlobal2.x > 0.0 && lensBlend(px) > 0.0) neck = clamp(0.5 * gradLen, 0.05, 1.0);
+  if (count > 1 && ownK > 0.0 && lensBlend(px, own.x) > 0.0) neck = clamp(0.5 * gradLen, 0.05, 1.0);
 
   // Lens v3, measured from SwiftUI (Task 15c, tool/fidelity/measure_lens.py):
   // the displacement along the normal falls off exponentially with depth
@@ -528,5 +586,5 @@ void main() {
     col += F.y * uTouch.z * exp(-dot(dt, dt) / (2.0 * gr * gr));
   }
 
-  fragColor = vec4(clamp(col, 0.0, 1.0) * inside, inside) + shadow;
+  fragColor = (vec4(clamp(col, 0.0, 1.0) * inside, inside) + shadow) * keep;
 }

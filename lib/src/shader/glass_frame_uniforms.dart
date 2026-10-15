@@ -10,7 +10,26 @@ import 'glass_shape_uniform.dart';
 /// First float index after the engine-owned `uSize` vec2.
 const int kFirstUserFloat = 2;
 
-const int _maxShapes = 16;
+/// Shapes one shader pass can draw (`uRects[24]` in the shader).
+const int kMaxPassShapes = 24;
+
+/// First float of each per-shape array and of `uVar`, after `uSize`.
+const int kRectsAt = 16;
+
+/// See [kRectsAt].
+const int kInfoAt = kRectsAt + 4 * kMaxPassShapes;
+
+/// See [kRectsAt].
+const int kTintsAt = kInfoAt + 4 * kMaxPassShapes;
+
+/// See [kRectsAt].
+const int kVarAt = kTintsAt + 4 * kMaxPassShapes;
+
+/// See [kRectsAt].
+const int kExtraAt = kVarAt + 4 * 36;
+
+/// See [kRectsAt].
+const int kClipAt = kExtraAt + 4 * kMaxPassShapes;
 
 /// Everything the shader needs for one frame.
 @immutable
@@ -114,15 +133,20 @@ List<GlassShapeUniform> mergeUnions(List<GlassShapeUniform> shapes) {
       tint: prev.tint,
       unionId: id,
       cornerExponent: prev.cornerExponent,
+      group: prev.group,
+      smoothing: prev.smoothing,
+      opacity: prev.opacity,
+      clip: prev.clip,
     );
   }
   return out;
 }
 
 /// Number of user floats after `uSize`.
-const int kGlassUniformFloats = 352;
+const int kGlassUniformFloats = kClipAt + 4 * kMaxPassShapes;
 
-/// Packs [u] into the float layout documented in `shaders/liquid_glass.frag`:
+/// Packs [u] into the float layout documented in `shaders/liquid_glass.frag`
+/// (N = [kMaxPassShapes] = 24):
 ///
 /// | floats  | uniform        | contents                                  |
 /// |---------|----------------|-------------------------------------------|
@@ -130,14 +154,16 @@ const int kGlassUniformFloats = 352;
 /// | 4–7     | uGlobal2       | smoothing px, cornerExponent, highContrast, cornerZone |
 /// | 8–11    | uOpaque        | rgb                                       |
 /// | 12–15   | uTouch         | x, y, glow, glowRadius px                 |
-/// | 16–79   | uRects[16]     | x, y, w, h px                             |
-/// | 80–143  | uInfo[16]      | radius px, clear?, cornerExponent, fill scale |
-/// | 144–207 | uTints[16]     | rgb, strength                             |
-/// | 208–303 | uVar[0..23]    | regular A–L, then clear A–L               |
-/// | 304–327 | uVar[24..29]   | regular M–O, then clear M–O               |
-/// | 328–335 | uVar[30..31]   | regular P, then clear P                   |
-/// | 336–343 | uVar[32..33]   | regular Q, then clear Q                   |
-/// | 344–351 | uVar[34..35]   | regular R, then clear R                   |
+/// | 16–111  | uRects[N]      | x, y, w, h px                             |
+/// | 112–207 | uInfo[N]       | radius px, clear?, cornerExponent, fill scale |
+/// | 208–303 | uTints[N]      | rgb, strength                             |
+/// | 304–399 | uVar[0..23]    | regular A–L, then clear A–L               |
+/// | 400–423 | uVar[24..29]   | regular M–O, then clear M–O               |
+/// | 424–431 | uVar[30..31]   | regular P, then clear P                   |
+/// | 432–439 | uVar[32..33]   | regular Q, then clear Q                   |
+/// | 440–447 | uVar[34..35]   | regular R, then clear R                   |
+/// | 448–543 | uExtra[N]      | group index, smoothing px, opacity, 0     |
+/// | 544–639 | uClip[N]       | clip x0, y0, x1, y1 px                    |
 ///
 /// Per variant: A = (lens decay px, lens band px, lens strength, dispersion),
 /// B = (rim width px, rim intensity, fillOpacity, dim),
@@ -162,7 +188,7 @@ const int kGlassUniformFloats = 352;
 /// R = (backdropReach px, bandSplitDrop, 0, 0).
 List<double> packGlassUniforms(GlassFrameUniforms u) {
   final dpr = u.devicePixelRatio;
-  final shapes = u.shapes.where(_drawable).take(_maxShapes).toList();
+  final shapes = u.shapes.where(_drawable).take(kMaxPassShapes).toList();
   final f = List<double>.filled(kGlassUniformFloats, 0);
 
   f[0] = shapes.length.toDouble();
@@ -193,7 +219,7 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
   for (var i = 0; i < shapes.length; i++) {
     final s = shapes[i];
     final v = u.constants.of(s.variant, u.brightness);
-    f.setAll(16 + i * 4, [
+    f.setAll(kRectsAt + i * 4, [
       s.rect.left,
       s.rect.top,
       s.rect.width,
@@ -204,7 +230,7 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
     final fillScale = v.fillSizeRef > 0
         ? 1 - v.fillSizeDrop * (1 - math.min(1.0, halfMin / v.fillSizeRef))
         : 1.0;
-    f.setAll(80 + i * 4, [
+    f.setAll(kInfoAt + i * 4, [
       s.radius,
       s.variant == GlassVariant.clear ? 1 : 0,
       // 0: the global exponent and continuous-corner zone (uGlobal2.yw).
@@ -212,8 +238,26 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
       fillScale,
     ]);
     final tint = s.tint;
+    final clip = s.clip;
+    f.setAll(kExtraAt + i * 4, [
+      s.group.toDouble(),
+      s.smoothing ?? u.smoothing,
+      s.opacity,
+      0,
+    ]);
+    f.setAll(kClipAt + i * 4, [
+      clip?.left ?? -1e9,
+      clip?.top ?? -1e9,
+      clip?.right ?? 1e9,
+      clip?.bottom ?? 1e9,
+    ]);
     if (tint != null) {
-      f.setAll(144 + i * 4, [tint.r, tint.g, tint.b, v.tintStrength * tint.a]);
+      f.setAll(kTintsAt + i * 4, [
+        tint.r,
+        tint.g,
+        tint.b,
+        v.tintStrength * tint.a,
+      ]);
     }
   }
 
@@ -221,7 +265,7 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
     u.constants.of(GlassVariant.regular, u.brightness),
     u.constants.of(GlassVariant.clear, u.brightness),
   ];
-  var k = 208;
+  var k = kVarAt;
   for (final v in variantSets) {
     // The frost blur is the composed ImageFilter, not a uniform.
     f.setAll(k, [

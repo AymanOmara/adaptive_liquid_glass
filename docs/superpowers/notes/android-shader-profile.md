@@ -132,3 +132,55 @@ shader (no change). Not a Dart-side leak: a working set that scales with
 the number of shader backdrops, so the Gallery (10+ groups, two tab bars)
 exceeds what lmkd allows. A package fix needs the shader passes bounded to
 the glass (an engine change, or a different backdrop architecture).
+
+## Shared glass layer (2026-10-15)
+
+Design: `docs/superpowers/plans/2026-10-15-shared-glass-layer.md`.
+
+Spike (`example/lib/shared_layer_spike.dart`, Pixel 8 API 35 emulator,
+`-gpu host`, cold boot; the guest reports no GL mtrack there, so this is
+the host qemu process's graphics footprint over the launcher):
+
+| scene | MB |
+|---|--:|
+| photo only | +82 |
+| 2 groups (per-group backdrops) | +508 |
+| 1 group, 2 shapes (one backdrop) | +375 |
+| 10 groups | +1857 |
+| 1 group, 10 shapes | +664 |
+
+Gallery (shader mode, profile, open Gallery then 20 flings; peak over the
+launcher, same emulator):
+
+| build | peak | glass |
+|---|--:|---|
+| per-group path, no budget | +3906 MB | all shader |
+| per-group path, budget 4 | +922 MB | frosted past 4 groups |
+| shared layer, 3 blurs per stratum | +1641 / +1676 MB | all shader |
+| shared layer, 1 blur per stratum (default) | +913 / +943 / +970 MB | all shader |
+
+The app stayed alive in every run. The Gallery plans as one stratum of
+10-15 groups; passes = one per distinct shader globals (the two tab bars
+carry their own constants) over one blur.
+
+Found on the way: a backdrop filter reads its `FragmentShader`'s uniforms
+at raster time, so each pass needs its own shader object; and a backdrop
+filter inside content composited by the slot (the tab bar's vibrancy)
+draws nothing, so vibrancy paints plain on the shared layer.
+
+Commits: 6408e55 (design, spike), bb08440 (shader per-shape group /
+smoothing / opacity / clip, 24 shapes), 424e427 (`computeGroupFrame`),
+be1ad88 (planner), 35e8ee1 (paint chain), 511bc19 (layer, slot, wiring),
+6d10543 (menus opt out), b1f3f73 (shader per pass), a9876ad (budget
+default null), a9d2481 (one blur per stratum), d494e4b
+(`GlassLayerContent`), 3d6e68e (vibrancy plain when deferred).
+
+Covered routes: a route under an opaque route is offstage, so its slot
+(an `OverlayPortal` child of the route's entry) is not painted and its
+backdrop layers leave the scene; Impeller frees their targets. Measured
+(host graphics over idle): home +393 MB, Gallery +648, Gallery covered by
+the large-title page +424, back to Gallery +674. Steady state holds one
+route's layer; two only while a transition shows both.
+
+Fidelity (iOS 26.4 sim, shader mode, against `g8-3` SwiftUI captures):
+59/75 with the switch on and off, same failing scenes.

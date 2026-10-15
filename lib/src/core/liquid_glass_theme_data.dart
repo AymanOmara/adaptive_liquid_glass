@@ -18,7 +18,7 @@ class LiquidGlassThemeData {
     this.defaultGlass = Glass.regular,
     this.defaultMode = GlassRenderMode.auto,
     this.constants = GlassConstants.standard,
-    this.androidShaderBudget = 4,
+    this.androidShaderBudget,
     this.supportLiquidGlassOnAndroid = false,
   });
 
@@ -42,21 +42,25 @@ class LiquidGlassThemeData {
   /// `package:adaptive_liquid_glass/testing.dart`.
   final GlassConstants constants;
 
-  /// How many glass groups may draw the shader at once on Android, per
-  /// view; null removes the cap. Applies whenever the shader glass is drawn
-  /// on Android ([GlassRenderMode.shader], or `auto` with
+  /// How many glass groups outside the shared glass layer may draw the
+  /// shader at once on Android, per view; null (the default) removes the
+  /// cap. Applies whenever the shader glass is drawn on Android
+  /// ([GlassRenderMode.shader], or `auto` with
   /// [supportLiquidGlassOnAndroid]) and never on iOS.
   ///
-  /// Under Impeller each shader glass group renders into full-screen
+  /// Under Impeller each shader backdrop renders into full-screen
   /// offscreen textures whatever the glass's size: about 110-200 MB of GPU
-  /// memory per group on a 1080x2340 phone, measured on a Samsung
-  /// SM-S731B (Vulkan), and enough groups get the app killed by Android's
-  /// low-memory killer. Groups past the budget draw a frosted blur
-  /// instead. A `GlassGroup` counts once whatever its members, a
-  /// `LiquidGlass` outside a group counts once, and `GlassTabBar` glass is
-  /// served first. The first groups to appear keep the shader; when one
-  /// goes, the next waiting group takes its place on the next frame.
-  /// Groups in a route hidden under an opaque route do not count.
+  /// memory each on a 1080x2340 phone (Samsung SM-S731B, Vulkan). On
+  /// Android all shader glass of a route therefore draws through one shared
+  /// layer (a few passes, not one per group), and this budget only counts
+  /// groups the layer cannot take: glass with no enclosing route (above the
+  /// `Navigator`, in an `OverlayEntry`) or in a `GlassMenuAnchor` menu.
+  /// Groups past the budget draw a frosted blur instead. A `GlassGroup`
+  /// counts once whatever its members, a `LiquidGlass` outside a group
+  /// counts once, and `GlassTabBar` glass is served first. The first groups
+  /// to appear keep the shader; when one goes, the next waiting group takes
+  /// its place on the next frame. Groups in a route hidden under an opaque
+  /// route do not count.
   final int? androidShaderBudget;
 
   /// Whether [GlassRenderMode.auto] draws the iOS Liquid Glass look on

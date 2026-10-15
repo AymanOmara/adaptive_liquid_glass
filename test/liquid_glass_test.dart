@@ -162,7 +162,7 @@ void main() {
       2.0,
     ]);
     expect(
-      [for (var i = 0; i < 4; i++) packed[80 + i * 4 + 2]],
+      [for (var i = 0; i < 4; i++) packed[kInfoAt + i * 4 + 2]],
       [2.0, 0, 2.0, 2.0], // 0: global exponent + continuous-corner zone
     );
   }, variant: ios);

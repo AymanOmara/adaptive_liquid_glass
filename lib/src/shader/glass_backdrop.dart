@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../group/glass_registry.dart';
+import '../layer/glass_layer.dart';
 import 'glass_backdrop_config.dart';
 import 'render_glass_backdrop.dart';
 
@@ -12,8 +13,12 @@ class GlassBackdrop extends SingleChildRenderObjectWidget {
     required this.registry,
     required this.config,
     this.backdropKey,
+    this.sharedLayer,
     super.child,
   });
+
+  /// The route's shared glass layer; null draws the glass here.
+  final GlassLayer? sharedLayer;
 
   /// Members to draw.
   final GlassRegistry registry;
@@ -30,6 +35,7 @@ class GlassBackdrop extends SingleChildRenderObjectWidget {
         registry: registry,
         config: config,
         backdropKey: backdropKey,
+        sharedLayer: sharedLayer,
       );
 
   @override
@@ -40,6 +46,7 @@ class GlassBackdrop extends SingleChildRenderObjectWidget {
     renderObject
       ..registry = registry
       ..config = config
-      ..backdropKey = backdropKey;
+      ..backdropKey = backdropKey
+      ..sharedLayer = sharedLayer;
   }
 }

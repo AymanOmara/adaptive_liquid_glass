@@ -1,6 +1,7 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/degraded/degraded_glass.dart';
+import 'package:adaptive_liquid_glass/src/layer/glass_layer.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_backdrop.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
@@ -26,7 +27,7 @@ const _unset = Object();
 /// [n] standalone shader glasses keyed 0..n-1 (each its own group).
 Widget glasses(
   Iterable<int> keys, {
-  Object? budget = _unset,
+  Object? budget = 4,
   Widget Function(int i, Widget glass)? wrap,
 }) {
   env(); // after the variant set the platform
@@ -92,14 +93,22 @@ void main() {
   setUp(() {
     GlassProgram.instance.debugReset(skipLoad: true);
     ShaderGlassBudget.debugWarned = false;
+    // The budget counts glass outside the shared layer.
+    GlassSharedLayer.debugEnabled = false;
   });
 
   tearDown(() {
+    GlassSharedLayer.debugEnabled = null;
     GlassPlatform.instance.debugReset();
     GlassProgram.instance.debugReset();
   });
 
-  testWidgets('default budget: the first 4 groups keep the shader', (t) async {
+  testWidgets('no cap by default', (t) async {
+    await t.pumpWidget(glasses(List.generate(6, (i) => i), budget: _unset));
+    expect(find.byType(GlassBackdrop), findsNWidgets(6));
+  }, variant: android);
+
+  testWidgets('budget 4: the first 4 groups keep the shader', (t) async {
     await t.pumpWidget(glasses(List.generate(6, (i) => i)));
     expect(find.byType(GlassBackdrop), findsNWidgets(4));
     for (var i = 0; i < 4; i++) {

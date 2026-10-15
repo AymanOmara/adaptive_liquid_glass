@@ -285,10 +285,10 @@ Future<void> main() async {
 }
 ```
 
-Memory: under Impeller each shader glass group renders full-screen
-offscreen textures, about 110-200 MB of GPU memory per group, so at most
-`androidShaderBudget` groups (default 4) draw the shader at once and the
-rest a frosted blur. Put neighbouring glass in one `GlassGroup`. Devices
+Memory: under Impeller each shader backdrop renders full-screen offscreen
+textures, about 110-200 MB of GPU memory each, so on Android all shader
+glass of a route draws through one shared layer (one capture, one blur
+per stratum of overlapping glass); see Known limitations. Devices
 without shader support (not Impeller) get the frosted blur throughout.
 
 `defaultMode: GlassRenderMode.shader` (with `initialize(mode:
@@ -1423,16 +1423,24 @@ testWidgets('pays', (tester) async {
   Where `ImageFilter.isShaderFilterSupported` is false (Skia, or
   `--no-enable-impeller`, an opt-out Flutter is removing), glass falls
   back to a frosted blur with no lens, rim or merging. GPU memory is the
-  limit: under Impeller every shader glass group renders into full-screen
+  limit: under Impeller every shader backdrop renders into full-screen
   offscreen textures whatever the glass's size, about 110-200 MB each on a
-  1080x2340 phone (Samsung SM-S731B, Vulkan; one standalone `LiquidGlass`
-  386 MB in all against 127 MB with no glass, three 781 MB). A screen with
-  10+ groups reached 1.1-3.2 GB and was killed by Android's low-memory
-  killer. So at most `LiquidGlassThemeData.androidShaderBudget` groups
-  (default 4, per view; null removes the cap) draw the shader at once on
-  Android, and the rest draw that frosted blur; debug builds print a
-  warning the first time. A `GlassGroup` counts once whatever its members
-  and the tab bar is served first, so put neighbouring glass in one group.
+  1080x2340 phone, and a screen with 10+ groups drawn group by group
+  reached 1.1-3.9 GB and was killed by Android's low-memory killer. So on
+  Android all shader glass of a route draws through one shared layer,
+  painted after the route: one backdrop capture and one blur per stratum
+  (glass over glass starts a new stratum), with each group's content
+  composited after its glass. The example Gallery peaks about 0.9 GB over
+  idle with every group shader glass (3.9 GB group by group). Limits of
+  the layer: non-glass content painted after a group in the same route
+  and overlapping its glass draws beneath that glass (wrap content laid
+  over glass in a sibling, like the tab bar's row, is handled); groups of
+  one stratum share the largest blur; clips are rectangular (a rounded
+  clip around glass clips to its bounds); route transitions that snapshot
+  the page show the glass outside the snapshot; the tab bar's labels are
+  not vibrant; menus draw their glass group by group.
+  `LiquidGlassThemeData.androidShaderBudget` (default null: no cap) still
+  caps the groups that draw group by group; the rest draw a frosted blur.
   Fonts stay Roboto (not SF Pro), and scroll physics,
   the back gesture and haptics stay Android's; making those iOS-like is
   not part of the package.
