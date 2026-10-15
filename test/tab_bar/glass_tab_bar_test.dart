@@ -1288,4 +1288,66 @@ void main() {
     expect(picks, [2]);
     semantics.dispose();
   }, variant: android);
+
+  group('labelMaxTextScale', () {
+    Widget bar({
+      double? cap,
+      GlassMaterialTabBarStyle style = GlassMaterialTabBarStyle.floating,
+    }) => MediaQuery(
+      data: MediaQueryData.fromView(
+        WidgetsBinding.instance.platformDispatcher.implicitView!,
+      ).copyWith(textScaler: const TextScaler.linear(2)),
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(
+          child: GlassTabBar(
+            items: _items,
+            selectedIndex: 0,
+            onSelected: (_) {},
+            materialStyle: style,
+            labelMaxTextScale: cap,
+          ),
+        ),
+      ),
+    );
+    double labelScale(WidgetTester t) =>
+        MediaQuery.textScalerOf(
+          t.element(find.text('History').first),
+        ).scale(10) /
+        10;
+
+    testWidgets('glass: pinned to 1 by default, capped when given', (t) async {
+      shaderEnv();
+      await t.pumpWidget(bar());
+      expect(labelScale(t), 1);
+      await t.pumpWidget(bar(cap: 1.5));
+      expect(labelScale(t), 1.5);
+    }, variant: ios);
+
+    testWidgets(
+      'Material floating: pinned to 1 by default, capped when given',
+      (t) async {
+        shaderEnv();
+        await t.pumpWidget(appHost(bar()));
+        expect(labelScale(t), 1);
+        await t.pumpWidget(appHost(bar(cap: 1.2)));
+        expect(labelScale(t), 1.2);
+      },
+      variant: android,
+    );
+
+    testWidgets(
+      'Material edge to edge: ambient by default, capped when given',
+      (t) async {
+        shaderEnv();
+        const style = GlassMaterialTabBarStyle.edgeToEdge;
+        // NavigationBar caps its own labels at 1.3.
+        await t.pumpWidget(appHost(bar(style: style)));
+        expect(labelScale(t), 1.3);
+        await t.pumpWidget(appHost(bar(style: style, cap: 1.2)));
+        expect(labelScale(t), 1.2);
+      },
+      variant: android,
+    );
+  });
 }
