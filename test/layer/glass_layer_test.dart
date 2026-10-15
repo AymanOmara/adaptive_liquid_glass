@@ -133,6 +133,25 @@ void main() {
     expect(plan, hasLength(2));
   }, variant: android);
 
+  testWidgets('shared glass takes no budget ticket', (t) async {
+    env();
+    await t.pumpWidget(
+      LiquidGlassTheme(
+        data: const LiquidGlassThemeData(
+          defaultMode: GlassRenderMode.shader,
+          androidShaderBudget: 1,
+        ),
+        child: MaterialApp(
+          home: Scaffold(
+            body: Column(children: [button('a'), button('b'), button('c')]),
+          ),
+        ),
+      ),
+    );
+    expect(backdrops(t), hasLength(3));
+    expect(backdrops(t).map((b) => b.sharedLayer), everyElement(isNotNull));
+  }, variant: android);
+
   testWidgets('switch off: each group draws its own glass', (t) async {
     env();
     GlassSharedLayer.debugEnabled = false;
@@ -200,7 +219,10 @@ void main() {
     final layer = backdrops(t).first.sharedLayer!;
     final dpr = t.view.devicePixelRatio;
     final before = layer.debugLastPlan!.first.passes.first.uniforms.shapes;
-    expect(before.first.clip, Rect.fromLTWH(0, 100 * dpr, 800 * dpr, 200 * dpr));
+    expect(
+      before.first.clip,
+      Rect.fromLTWH(0, 100 * dpr, 800 * dpr, 200 * dpr),
+    );
     final top0 = before.first.rect.top;
     controller.jumpTo(10);
     await t.pump();

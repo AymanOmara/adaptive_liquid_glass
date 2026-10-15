@@ -1,9 +1,6 @@
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
-/// Default for `LiquidGlassThemeData.androidShaderBudget`.
-const int kDefaultAndroidShaderBudget = 4;
-
 /// Caps how many shader glass groups draw at once in one view on Android.
 ///
 /// Under Impeller every `ImageFilter.shader` backdrop renders into
@@ -91,7 +88,7 @@ class ShaderGlassTicket {
   final VoidCallback _onChanged;
   bool _priority = false;
   bool _active = true;
-  int? _limit = kDefaultAndroidShaderBudget;
+  int? _limit;
   bool _released = false;
 
   /// The grant the owner last built with.
