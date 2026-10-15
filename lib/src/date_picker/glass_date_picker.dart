@@ -61,6 +61,7 @@ class GlassDatePicker extends StatefulWidget {
     this.pickerMode = GlassDatePickerMode.date,
     this.minuteInterval = 1,
     this.showWeekNumbers = false,
+    this.firstDayOfWeek,
     this.use24HourFormat,
     this.mode,
   }) : assert(
@@ -96,6 +97,12 @@ class GlassDatePicker extends StatefulWidget {
   /// Whether the graphical calendar leads each row with its ISO week
   /// number.
   final bool showWeekNumbers;
+
+  /// The weekday leading the calendar's rows, 0 (Sunday) to 6
+  /// (Saturday); null follows the locale. See
+  /// [GlassCalendar.firstDayOfWeek]. Material's calendar has no such
+  /// setting, so on the Material path the locale decides.
+  final int? firstDayOfWeek;
 
   /// Whether the time reads and is picked in 24-hour form. Defaults to
   /// `MediaQuery.alwaysUse24HourFormat`.
@@ -142,6 +149,7 @@ class _GlassDatePickerState extends State<GlassDatePicker> {
         firstDate: widget.firstDate,
         lastDate: widget.lastDate,
         showWeekNumbers: widget.showWeekNumbers,
+        firstDayOfWeek: widget.firstDayOfWeek,
         onSelected: (d) => Navigator.of(context).pop(d),
       ),
     );
@@ -291,6 +299,7 @@ class _GlassDatePickerState extends State<GlassDatePicker> {
       firstDate: widget.firstDate,
       lastDate: widget.lastDate,
       showWeekNumbers: widget.showWeekNumbers,
+      firstDayOfWeek: widget.firstDayOfWeek,
       onSelected: (d) {
         final v = widget.value;
         widget.onChanged?.call(

@@ -33,4 +33,8 @@ abstract final class DatePickerMetrics {
 
   /// The month header's size (semibold).
   static const double headerFontSize = 17;
+
+  /// The inset of `showGlassDatePicker`'s sheet header and content from
+  /// the sheet's edges (estimated).
+  static const double sheetPadding = 16;
 }
