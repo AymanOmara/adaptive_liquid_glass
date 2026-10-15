@@ -174,3 +174,13 @@ be1ad88 (planner), 35e8ee1 (paint chain), 511bc19 (layer, slot, wiring),
 6d10543 (menus opt out), b1f3f73 (shader per pass), a9876ad (budget
 default null), a9d2481 (one blur per stratum), d494e4b
 (`GlassLayerContent`), 3d6e68e (vibrancy plain when deferred).
+
+Covered routes: a route under an opaque route is offstage, so its slot
+(an `OverlayPortal` child of the route's entry) is not painted and its
+backdrop layers leave the scene; Impeller frees their targets. Measured
+(host graphics over idle): home +393 MB, Gallery +648, Gallery covered by
+the large-title page +424, back to Gallery +674. Steady state holds one
+route's layer; two only while a transition shows both.
+
+Fidelity (iOS 26.4 sim, shader mode, against `g8-3` SwiftUI captures):
+59/75 with the switch on and off, same failing scenes.

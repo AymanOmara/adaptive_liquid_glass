@@ -252,4 +252,36 @@ void main() {
       expect(blend.enabled, p == TargetPlatform.iOS);
     }, variant: TargetPlatformVariant.only(p));
   }
+
+  testWidgets('a route covered by an opaque route stops painting its layer', (
+    t,
+  ) async {
+    env();
+    await t.pumpWidget(app(Scaffold(body: Center(child: button('page')))));
+    await t.pump();
+    final layer = backdrops(t).single.sharedLayer!;
+    final slot = layer.painter!;
+    bool inScene(RenderObject r) {
+      Layer? l = r.debugLayer;
+      while (l != null && l.parent != null) {
+        l = l.parent;
+      }
+      return l != null && l.attached;
+    }
+
+    expect(inScene(slot), isTrue);
+    Navigator.of(t.element(find.text('page'))).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const Scaffold(body: Text('top')),
+      ),
+    );
+    await t.pumpAndSettle();
+    // The covered page is offstage: its slot's backdrop layers leave the
+    // scene, so the engine frees their render targets.
+    expect(find.text('page', skipOffstage: false), findsOneWidget);
+    expect(inScene(slot), isFalse);
+    Navigator.of(t.element(find.text('top'))).pop();
+    await t.pumpAndSettle();
+    expect(inScene(layer.painter!), isTrue);
+  }, variant: android);
 }
