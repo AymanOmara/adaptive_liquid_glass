@@ -3,6 +3,7 @@ import 'package:adaptive_liquid_glass/src/core/effective_glass_mode.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_mode_builder.dart';
 import 'package:adaptive_liquid_glass/src/degraded/degraded_glass.dart';
+import 'package:adaptive_liquid_glass/src/layer/glass_layer.dart';
 import 'package:adaptive_liquid_glass/src/material/material_glass.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_backdrop.dart';
@@ -115,16 +116,29 @@ void main() {
     expect(seen.last, EffectiveGlassMode.shader);
   }, variant: android);
 
+  Widget six() => Wrap(
+    children: [
+      for (var i = 0; i < 6; i++)
+        const LiquidGlass(child: SizedBox(width: 20, height: 20)),
+    ],
+  );
+
+  testWidgets('under the flag the glass draws on the shared layer', (t) async {
+    await t.pumpWidget(host(flagOn, six()));
+    expect(find.byType(GlassBackdrop), findsNWidgets(6));
+    expect(find.byType(DegradedGlass), findsNothing);
+  }, variant: android);
+
   testWidgets('the Android shader budget applies under the flag', (t) async {
+    GlassSharedLayer.debugEnabled = false;
+    addTearDown(() => GlassSharedLayer.debugEnabled = null);
     await t.pumpWidget(
       host(
-        flagOn,
-        Wrap(
-          children: [
-            for (var i = 0; i < 6; i++)
-              const LiquidGlass(child: SizedBox(width: 20, height: 20)),
-          ],
+        const LiquidGlassThemeData(
+          supportLiquidGlassOnAndroid: true,
+          androidShaderBudget: 4,
         ),
+        six(),
       ),
     );
     expect(find.byType(GlassBackdrop), findsNWidgets(4));
