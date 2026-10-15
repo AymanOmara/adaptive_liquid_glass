@@ -131,8 +131,23 @@ and CHANGELOG.md.
   - SwiftPM build of the iOS plugin (only CocoaPods was built)
   - measure the bordered fill, press dim and disabled colours vs SwiftUI
 
-12- CashRoot report P2 API requests (2026-10-13; bugs W1-W31 and W15
-  done): button corner radius and text colour; sheet max height; alert
-  custom content; menu item colour; chip and dialog-action subtitles;
-  `LiquidGlass` size; calendar first day of week; a public way to ask
-  which render mode is in effect
+12- CashRoot required enhancements (from CashRoot's
+  adaptive_liquid_glass_enhancments.md, re-checked against 0.2.1 on
+  2026-10-15; none are in CashRoot or any branch here).
+  - in progress (2026-10-15): sheets and dialogs (W5 sheet
+    isScrollControlled + maxHeightFactor, W6 enableDrag, W19 whole-sheet
+    maxHeight, W9 alert content/icon/barrierDismissible/action order,
+    W10 GlassDialogAction subtitle) and small parameters (W14 menu item
+    colour, W20 button label colour, W22 button corner radius, W25 chip
+    subtitle/trailing, W30 LiquidGlass minSize, W12 list section colours,
+    W32 tab bar labelMaxTextScale)
+  - W4: a public effective-mode query (`GlassRenderMode.effectiveOf`),
+    folding in reduce transparency and high contrast
+  - W7: Material GlassNavigationBar honours AppBarTheme fully, or a
+    materialBuilder hook
+  - W13: `showGlassDatePicker` returning `Future<DateTime?>` and a
+    `firstDayOfWeek` parameter on GlassCalendar
+  - W33: batch implicit glass groups automatically (0.2.1 only warns)
+  - W28 leftover: GlassEmptyState title/description use DefaultTextStyle
+    (replace), so they drop the app font; use merge
+  - W11 leftover: close the open swipe rows of one group, not all
