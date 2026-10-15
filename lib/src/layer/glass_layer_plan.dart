@@ -25,6 +25,7 @@ class LayerGroupInput {
     required this.config,
     this.clip,
     this.opacity = 1,
+    this.content,
   });
 
   /// The group (its renderer).
@@ -50,8 +51,32 @@ class LayerGroupInput {
   /// Ancestor opacity, 0..1.
   final double opacity;
 
+  /// The group's content (its renderer's box) in global logical px; null
+  /// is the glass only.
+  final Rect? content;
+
   /// [bounds] cut to [clip].
   Rect get region => clip == null ? bounds : bounds.intersect(clip!);
+
+  Rect _cut(Rect r) => clip == null ? r : r.intersect(clip!);
+
+  /// The glass bodies (no shadow), global logical px, cut to [clip].
+  Rect get glass {
+    final dpr = config.devicePixelRatio;
+    final shapes = frame.uniforms.shapes;
+    if (shapes.isEmpty) return Rect.zero;
+    final r = shapes.map((s) => s.rect).reduce((a, b) => a.expandToInclude(b));
+    return _cut(
+      Rect.fromLTRB(r.left / dpr, r.top / dpr, r.right / dpr, r.bottom / dpr),
+    );
+  }
+
+  /// What this group puts on screen: its glass and its content.
+  Rect get footprint {
+    final g = glass;
+    final c = content;
+    return c == null ? g : g.expandToInclude(_cut(c));
+  }
 }
 
 /// One backdrop filter + shader pass.
@@ -140,7 +165,7 @@ class _PassKey {
 /// Splits [groups] into strata and passes.
 ///
 /// Groups go in paint order; each joins the stratum after the latest
-/// earlier group whose region it overlaps (so glass over glass, and glass
+/// earlier group whose glass or content its glass overlaps (so glass over glass, and glass
 /// over another group's content, draws after it as before). Within a
 /// stratum, groups sharing shader globals and blur draw in one pass of up
 /// to [kMaxPassShapes] shapes; at most [maxBlurs] blurs per set of globals
@@ -159,7 +184,9 @@ List<LayerStratum> planGlassLayer(
   for (var i = 0; i < sorted.length; i++) {
     var s = 0;
     for (var j = 0; j < i; j++) {
-      if (_overlaps(sorted[i].region, sorted[j].region)) {
+      // A later group's glass over an earlier group's glass or content
+      // must draw after that content. Shadows may overlap.
+      if (_overlaps(sorted[i].glass, sorted[j].footprint)) {
         s = math.max(s, level[j] + 1);
       }
     }

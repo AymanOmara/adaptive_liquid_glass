@@ -15,6 +15,7 @@ import '../foreground/foreground_brightness.dart';
 import '../foreground/glass_backdrop_source.dart';
 import '../foreground/glass_backdrop_sources.dart';
 import '../foreground/glass_foreground.dart';
+import '../layer/glass_layer_anchor.dart';
 import '../native/native_glass_layer.dart';
 import '../platform/glass_platform.dart';
 import '../shader/glass_backdrop.dart';
@@ -253,6 +254,12 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  GlassMemberRendering _releaseBudget(GlassMemberRendering rendering) {
+    _budgetTicket?.release();
+    _budgetTicket = null;
+    return rendering;
+  }
+
   /// On Android, shader glass past the theme's `androidShaderBudget` draws
   /// the frosted fallback (see [ShaderGlassBudget]).
   GlassMemberRendering _withinBudget(
@@ -306,7 +313,14 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
       EffectiveGlassMode.shader => GlassMemberRendering.backdrop,
       EffectiveGlassMode.native => GlassMemberRendering.native,
     };
-    rendering = _withinBudget(rendering, environment.platform, theme);
+    // Shader glass in a route draws through the route's shared layer
+    // (one pass for many groups), which needs no budget.
+    final shared = rendering == GlassMemberRendering.backdrop
+        ? sharedGlassLayerOf(context, environment.platform)
+        : null;
+    rendering = shared != null
+        ? _releaseBudget(rendering)
+        : _withinBudget(rendering, environment.platform, theme);
 
     _updateSampler(rendering);
     // Only the shader path needs the program; the Material, degraded and
@@ -349,19 +363,25 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
       return scoped(child: content);
     }
 
-    return GlassBackdrop(
-      registry: _registry,
-      backdropKey: BackdropGroup.of(context)?.backdropKey,
-      config: GlassBackdropConfig(
-        spacing: widget.spacing,
-        lightAngle: theme.lightAngle,
-        devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
-        constants: theme.constants,
-        brightness: brightness!,
-        highContrast: MediaQuery.highContrastOf(context),
-        opaqueColor: opaque,
+    // The content is a repaint boundary either way, so the shared layer can
+    // composite it elsewhere and switching paths never remounts it.
+    return GlassLayerAnchor(
+      layer: shared,
+      child: GlassBackdrop(
+        registry: _registry,
+        sharedLayer: shared,
+        backdropKey: BackdropGroup.of(context)?.backdropKey,
+        config: GlassBackdropConfig(
+          spacing: widget.spacing,
+          lightAngle: theme.lightAngle,
+          devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
+          constants: theme.constants,
+          brightness: brightness!,
+          highContrast: MediaQuery.highContrastOf(context),
+          opaqueColor: opaque,
+        ),
+        child: RepaintBoundary(child: scoped(child: content)),
       ),
-      child: scoped(child: content),
     );
   }
 }

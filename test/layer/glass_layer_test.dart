@@ -1,0 +1,210 @@
+import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
+import 'package:adaptive_liquid_glass/src/layer/glass_layer.dart';
+import 'package:adaptive_liquid_glass/src/layer/glass_layer_slot.dart';
+import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
+import 'package:adaptive_liquid_glass/src/shader/glass_backdrop.dart';
+import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
+import 'package:adaptive_liquid_glass/src/shader/render_glass_backdrop.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void env() {
+  GlassPlatform.instance.debugEnvironment = GlassEnvironment(
+    platform: defaultTargetPlatform,
+    iosMajorVersion: null,
+    reduceTransparency: false,
+    shaderSupported: true,
+  );
+}
+
+Widget app(Widget home) => LiquidGlassTheme(
+  data: const LiquidGlassThemeData(defaultMode: GlassRenderMode.shader),
+  child: MaterialApp(home: home),
+);
+
+Widget button(String label) => LiquidGlass(
+  child: SizedBox(width: 80, height: 40, child: Center(child: Text(label))),
+);
+
+List<RenderGlassBackdrop> backdrops(WidgetTester t) => t
+    .renderObjectList<RenderGlassBackdrop>(find.byType(GlassBackdrop))
+    .toList();
+
+final android = TargetPlatformVariant.only(TargetPlatform.android);
+
+void main() {
+  setUp(() => GlassProgram.instance.debugReset(skipLoad: true));
+  tearDown(() {
+    GlassPlatform.instance.debugReset();
+    GlassSharedLayer.debugEnabled = null;
+  });
+
+  testWidgets('groups of one route share one layer and one pass', (t) async {
+    env();
+    await t.pumpWidget(
+      app(
+        Scaffold(
+          body: Column(
+            children: [
+              button('a'),
+              const SizedBox(height: 40),
+              button('b'),
+              const SizedBox(height: 40),
+              button('c'),
+            ],
+          ),
+        ),
+      ),
+    );
+    await t.pump();
+    final bs = backdrops(t);
+    expect(bs, hasLength(3));
+    final layer = bs.first.sharedLayer!;
+    expect(bs.map((b) => b.sharedLayer), everyElement(same(layer)));
+    final plan = layer.debugLastPlan!;
+    expect(plan, hasLength(1));
+    expect(plan.single.passes, hasLength(1));
+    expect(plan.single.passes.single.uniforms.shapes, hasLength(3));
+    expect(plan.single.passes.single.uniforms.shapes.map((s) => s.group), [
+      0,
+      1,
+      2,
+    ]);
+    // Exactly one slot paints.
+    final slots = t.renderObjectList<RenderGlassLayerSlot>(
+      find.byType(GlassLayerSlot),
+    );
+    expect(slots, hasLength(3));
+    expect(slots.where((s) => identical(layer.painter, s)), hasLength(1));
+  }, variant: android);
+
+  testWidgets('the content composites after the pass in the slot', (t) async {
+    env();
+    await t.pumpWidget(app(Scaffold(body: Center(child: button('a')))));
+    await t.pump();
+    final b = backdrops(t).single;
+    final slot = b.sharedLayer!.painter!;
+    // The group's content layer now hangs under the painting slot.
+    final contentLayer = b.child!.debugLayer!;
+    Layer? p = contentLayer;
+    while (p != null && !identical(p, slot.debugLayer)) {
+      p = p.parent;
+    }
+    expect(p, same(slot.debugLayer));
+    // The backdrop itself pushes nothing in place.
+    expect(b.debugLayer, isNull);
+  }, variant: android);
+
+  testWidgets('a dialog route gets its own layer', (t) async {
+    env();
+    await t.pumpWidget(app(Scaffold(body: Center(child: button('page')))));
+    final ctx = t.element(find.text('page'));
+    showDialog<void>(
+      context: ctx,
+      builder: (_) => Center(child: button('dialog')),
+    );
+    await t.pumpAndSettle();
+    final bs = backdrops(t);
+    expect(bs, hasLength(2));
+    expect(bs[0].sharedLayer, isNotNull);
+    expect(bs[1].sharedLayer, isNotNull);
+    expect(identical(bs[0].sharedLayer, bs[1].sharedLayer), isFalse);
+  }, variant: android);
+
+  testWidgets('glass over glass draws in a later stratum', (t) async {
+    env();
+    await t.pumpWidget(
+      app(
+        Scaffold(
+          body: Stack(
+            children: [
+              Positioned(left: 0, top: 0, child: button('under')),
+              Positioned(left: 20, top: 10, child: button('over')),
+            ],
+          ),
+        ),
+      ),
+    );
+    await t.pump();
+    final plan = backdrops(t).first.sharedLayer!.debugLastPlan!;
+    expect(plan, hasLength(2));
+  }, variant: android);
+
+  testWidgets('switch off: each group draws its own glass', (t) async {
+    env();
+    GlassSharedLayer.debugEnabled = false;
+    await t.pumpWidget(app(Scaffold(body: Center(child: button('a')))));
+    final b = backdrops(t).single;
+    expect(b.sharedLayer, isNull);
+    expect(b.debugLastFrame, isNotNull);
+  }, variant: android);
+
+  testWidgets('iOS keeps the per-group path by default', (t) async {
+    env();
+    await t.pumpWidget(app(Scaffold(body: Center(child: button('a')))));
+    expect(backdrops(t).single.sharedLayer, isNull);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('no route: per-group path', (t) async {
+    env();
+    await t.pumpWidget(
+      LiquidGlassTheme(
+        data: const LiquidGlassThemeData(defaultMode: GlassRenderMode.shader),
+        child: MediaQuery(
+          data: const MediaQueryData(),
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: Center(child: button('a')),
+          ),
+        ),
+      ),
+    );
+    expect(backdrops(t).single.sharedLayer, isNull);
+  }, variant: android);
+
+  testWidgets('scrolling clips glass to the viewport and repaints', (t) async {
+    env();
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await t.pumpWidget(
+      app(
+        Scaffold(
+          body: Column(
+            children: [
+              const SizedBox(height: 100),
+              SizedBox(
+                height: 200,
+                child: ListView(
+                  controller: controller,
+                  children: [
+                    for (var i = 0; i < 10; i++)
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: button('$i'),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await t.pump();
+    final layer = backdrops(t).first.sharedLayer!;
+    final dpr = t.view.devicePixelRatio;
+    final before = layer.debugLastPlan!.first.passes.first.uniforms.shapes;
+    expect(before.first.clip, Rect.fromLTWH(0, 100 * dpr, 800 * dpr, 200 * dpr));
+    final top0 = before.first.rect.top;
+    controller.jumpTo(10);
+    await t.pump();
+    final after = layer.debugLastPlan!.first.passes.first.uniforms.shapes;
+    expect(after.first.rect.top, closeTo(top0 - 10 * dpr, 1e-6));
+  }, variant: android);
+}
