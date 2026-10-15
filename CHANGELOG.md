@@ -1,16 +1,20 @@
 ## Unreleased
 
-- Android, `GlassRenderMode.shader`: at most
-  `LiquidGlassThemeData.androidShaderBudget` glass groups (default 4, per
-  view; null = no cap) draw the shader at once; the rest draw the frosted
-  blur fallback. Under Impeller each shader glass group costs about
-  110-200 MB of GPU memory whatever its size, and the example Gallery
-  (10+ groups) reached 1.1-3.2 GB and was killed by lmkd. A `GlassGroup`
-  or a standalone `LiquidGlass` counts once, the tab bar's glass goes
-  first, the earliest groups keep the shader, a waiting group is promoted
-  on the next frame when one leaves, and groups in routes hidden under an
-  opaque route do not count. Debug builds warn once when the budget is
-  exceeded. iOS, Material and native glass are unchanged.
+- Android, `GlassRenderMode.shader`: all shader glass of a route draws
+  through one shared layer (one backdrop capture, one blur per stratum of
+  overlapping glass, up to 24 shapes per pass), with each group's content
+  composited after its glass. Under Impeller each shader backdrop costs
+  about 110-200 MB of GPU memory whatever its size, and the example
+  Gallery (10+ groups) reached 1.1-3.9 GB and was killed by lmkd; it now
+  peaks about 0.9 GB over idle with every group shader glass. Limits:
+  non-glass content painted after a group and overlapping its glass draws
+  beneath it, groups of one stratum share the largest blur, clips around
+  glass are rectangular, the tab bar's labels are not vibrant, and menus
+  draw their glass group by group. iOS, Material and native glass are
+  unchanged.
+- `LiquidGlassThemeData.androidShaderBudget` (new; default null = no cap)
+  caps the shader glass groups drawn group by group on Android (outside
+  the shared layer); the rest draw the frosted blur fallback.
 - Android (Impeller, OpenGL ES): fixed a raster-thread crash at launch
   with a shader-mode `GlassTabBar`. Its vibrant labels rasterise a glyph
   image (`toImageSync`), and a snapshot taken before the first frame

@@ -103,8 +103,12 @@ before the shader, one sigma per filter; the sigma depends on the variant,
 the brightness and, below `blurSizeRef`, the shape's size. A stratum's
 groups split by (blur sigma, aspect, and the shader's per-pass globals:
 constants, brightness, light angle, contrast, opaque colour, dpr). Up to
-`kMaxPassesPerStratum` (3) passes; with more distinct keys the closest
-sigmas (log scale) merge and use the larger. One key = exact fidelity: every
+`kMaxPassesPerStratum` blurs (default 1, set with
+`--dart-define=ADAPTIVE_LIQUID_GLASS_LAYER_BLURS=n`); with more distinct
+sigmas the closest (log scale) merge and use the larger. Each blur costs a
+full-screen target, so 3 blurs measured +1.65 GB on the Gallery against
++0.93 GB for 1. Passes that differ only in the shader globals share the
+stratum's blur cluster. One key = exact fidelity: every
 fidelity scene has one group, so the harness is unaffected. A pass holds
 up to `kMaxPassShapes` (24) shapes; more start another pass.
 
@@ -155,8 +159,11 @@ for a painter repaint after the frame (one frame late, the same rule
 - Tab bar: its glass groups are ordinary groups (the bar is a later stratum
   than content under it). Its lens (`tab_lens_content.frag`) and vibrancy
   (`tab_vibrancy.frag`) backdrop shaders are inside the bar's content, so
-  they are composited with it, after the bar's glass, as today; they keep
-  their own passes (follow-up: vibrancy is always on and costs a pass).
+  they are composited with it, after the bar's glass. The bar's row and
+  lens content are siblings laid over the bar's glass, not its children:
+  `GlassLayerContent` defers them as content-only clients, in paint order.
+  A backdrop filter inside deferred content draws nothing on Impeller, so
+  vibrancy paints plain there (`GlassLayerDeferred`; follow-up).
 - Progressive scroll-edge blur and other non-glass content painted after a
   group in the same route now paint *below* that group's glass where they
   overlap (limitation; the edge effect is under bars, which are glass).
