@@ -204,6 +204,17 @@
 - Fixed: `GlassEmptyState`'s title and description keep the app's font
   family on the glass path.
 
+- `GlassBatch`: ungrouped glass below it (chips, list rows, sheet
+  content) shares one native iOS 26 view instead of one each; on the
+  simulator 29 chips need 1 view instead of 29 (first show 0.3 s instead
+  of 1.6-2.2 s, debug). Glass a shared view would draw differently (over
+  painted or overlapping content, partly clipped, rotated, in an overlay
+  or another scroll view) keeps its own view.
+- `LiquidGlassThemeData.batchImplicitGroups` (default false): `GlassSheet`
+  content and `GlassScaffold` bodies batch their ungrouped glass
+  automatically, and native `GlassGroup`s take more than 16 members.
+  Scrolled content needs its own `GlassBatch`.
+
 ## 0.2.1 (2026-10-14)
 
 - Debug builds print a one-time warning when more than 8 native glass

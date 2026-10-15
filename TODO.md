@@ -141,13 +141,11 @@ and CHANGELOG.md.
     colour, W20 button label colour, W22 button corner radius, W25 chip
     subtitle/trailing, W30 LiquidGlass minSize, W12 list section colours,
     W32 tab bar labelMaxTextScale)
-  - W4: a public effective-mode query (`GlassRenderMode.effectiveOf`),
-    folding in reduce transparency and high contrast
-  - W7: Material GlassNavigationBar honours AppBarTheme fully, or a
-    materialBuilder hook
-  - W13: `showGlassDatePicker` returning `Future<DateTime?>` and a
-    `firstDayOfWeek` parameter on GlassCalendar
-  - W33: batch implicit glass groups automatically (0.2.1 only warns)
-  - W28 leftover: GlassEmptyState title/description use DefaultTextStyle
-    (replace), so they drop the app font; use merge
-  - W11 leftover: close the open swipe rows of one group, not all
+  - done, unreleased (2026-10-15): W4 `GlassAdaptive.pathOf`/`usesGlass`,
+    W7 `GlassNavigationBar.materialBuilder` (AppBarTheme was already
+    honoured; now tested), W11 swipe `groupTag`/`closeGroup`, W13
+    `showGlassDatePicker` + `firstDayOfWeek`, W28 empty-state font, W33
+    `GlassBatch` + `batchImplicitGroups` (opt-in)
+  - open: decide whether `batchImplicitGroups` defaults on before 1.0
+    (check opacity forwarding and frame times on a device);
+    `SliverGlassNavigationBar` has no materialBuilder; no date range picker
