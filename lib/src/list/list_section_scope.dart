@@ -9,6 +9,7 @@ class ListSectionScope extends InheritedWidget {
     super.key,
     required this.mode,
     required this.glass,
+    this.separatorColor,
     required super.child,
   });
 
@@ -18,11 +19,16 @@ class ListSectionScope extends InheritedWidget {
   /// Whether the section's platter is glass.
   final bool glass;
 
+  /// The section's hairline colour; null for iOS's default.
+  final Color? separatorColor;
+
   /// The nearest scope, if any.
   static ListSectionScope? maybeOf(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<ListSectionScope>();
 
   @override
   bool updateShouldNotify(ListSectionScope old) =>
-      old.mode != mode || old.glass != glass;
+      old.mode != mode ||
+      old.glass != glass ||
+      old.separatorColor != separatorColor;
 }

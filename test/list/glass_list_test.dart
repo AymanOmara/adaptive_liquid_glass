@@ -6,7 +6,15 @@ import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
-    show Card, ColorScheme, Colors, Icons, ListTile, MaterialApp, ThemeData;
+    show
+        Card,
+        ColorScheme,
+        Colors,
+        Divider,
+        Icons,
+        ListTile,
+        MaterialApp,
+        ThemeData;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../api/hosts.dart';
@@ -392,5 +400,62 @@ void main() {
     await t.tap(find.text('About'));
     await t.pumpAndSettle();
     expect(taps, 1);
+  }, variant: android);
+
+  const bg = Color(0xFF102030);
+  const line = Color(0xFFA0B0C0);
+  Finder coloredBox(Color c) => find.byWidgetPredicate(
+    (w) => w is ColoredBox && w.color.toARGB32() == c.toARGB32(),
+  );
+
+  testWidgets('backgroundColor and separatorColor override the defaults', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(
+      plainHost(
+        GlassListSection(
+          backgroundColor: bg,
+          separatorColor: line,
+          children: [
+            const GlassListTile(title: Text('About')),
+            const GlassListTile(title: Text('Storage')),
+            GlassDisclosureGroup(
+              label: const Text('More'),
+              children: const [GlassListTile(title: Text('Inner'))],
+            ),
+            const GlassListTile(title: Text('Last')),
+          ],
+        ),
+      ),
+    );
+    expect(_separators, findsNothing);
+    // Two between tiles, one drawn by the disclosure group below it.
+    expect(coloredBox(line), findsNWidgets(3));
+    final platter = t.widget<DecoratedBox>(
+      find
+          .ancestor(of: find.text('About'), matching: find.byType(DecoratedBox))
+          .last,
+    );
+    expect((platter.decoration as ShapeDecoration).color, bg);
+  }, variant: ios);
+
+  testWidgets('Material: backgroundColor fills the card, separatorColor the '
+      'dividers', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      appHost(
+        const GlassListSection(
+          backgroundColor: bg,
+          separatorColor: line,
+          children: [
+            GlassListTile(title: Text('About')),
+            GlassListTile(title: Text('Storage')),
+          ],
+        ),
+      ),
+    );
+    expect(t.widget<Card>(find.byType(Card)).color, bg);
+    expect(t.widget<Divider>(find.byType(Divider)).color, line);
   }, variant: android);
 }
