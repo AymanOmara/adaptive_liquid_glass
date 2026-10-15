@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 
 import '../shader/raster_snapshot_gate.dart';
@@ -64,6 +65,29 @@ class RenderVibrantBlend extends RenderProxyBox {
     markNeedsPaint();
   }
 
+  List<Listenable> _motion = const [];
+
+  /// What moves this box on screen without repainting it (scroll
+  /// positions, route animations). The shader finds the glyphs at a screen
+  /// position fixed at paint time, so each change repaints the blend, with
+  /// the same glyph image.
+  List<Listenable> get motion => _motion;
+  set motion(List<Listenable> value) {
+    if (listEquals(value, _motion)) return;
+    if (attached) {
+      for (final l in _motion) {
+        l.removeListener(_moved);
+      }
+      for (final l in value) {
+        l.addListener(_moved);
+      }
+    }
+    _motion = value;
+  }
+
+  // A plain repaint: the glyphs did not change, only where they are.
+  void _moved() => super.markNeedsPaint();
+
   final LayerHandle<OpacityLayer> _hidden = LayerHandle<OpacityLayer>();
   final LayerHandle<OffsetLayer> _glyphs = LayerHandle<OffsetLayer>();
   final LayerHandle<ClipRectLayer> _clip = LayerHandle<ClipRectLayer>();
@@ -94,10 +118,16 @@ class RenderVibrantBlend extends RenderProxyBox {
     super.attach(owner);
     TabVibrancyProgram.instance.program.addListener(_programChanged);
     RasterSnapshotGate.instance.addListener(markNeedsPaint);
+    for (final l in _motion) {
+      l.addListener(_moved);
+    }
   }
 
   @override
   void detach() {
+    for (final l in _motion) {
+      l.removeListener(_moved);
+    }
     TabVibrancyProgram.instance.program.removeListener(_programChanged);
     RasterSnapshotGate.instance.removeListener(markNeedsPaint);
     super.detach();

@@ -90,7 +90,6 @@ const GlassBackdropConfig _noGlass = GlassBackdropConfig(
 /// content would end up beneath it; this defers [child] the same way a
 /// group's own content is deferred, in paint order. Off the layer (or with
 /// [enabled] false: the glass is not shader glass) it paints in place.
-/// See [GlassLayerDeferred].
 class GlassLayerContent extends StatelessWidget {
   /// Defers [child] when the glass it covers is on the shared layer.
   const GlassLayerContent({
@@ -119,9 +118,7 @@ class GlassLayerContent extends StatelessWidget {
         registry: _noMembers,
         config: _noGlass,
         sharedLayer: layer,
-        child: RepaintBoundary(
-          child: GlassLayerDeferred(deferred: layer != null, child: child),
-        ),
+        child: RepaintBoundary(child: child),
       ),
     );
   }
