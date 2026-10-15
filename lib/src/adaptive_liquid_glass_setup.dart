@@ -49,24 +49,34 @@ abstract final class AdaptiveLiquidGlass {
   ///
   /// Returns an already-completed future with nothing loaded when the
   /// environment cannot use shaders, or on Android and any other non-iOS
-  /// platform, which render Material by default. Pass [mode] to preload
-  /// anyway when the app forces shader glass there — it should match the
-  /// theme's `defaultMode`.
+  /// platform, which render Material by default. On Android, pass
+  /// [supportLiquidGlassOnAndroid] `true` when the theme sets
+  /// `LiquidGlassThemeData.supportLiquidGlassOnAndroid` (without it the
+  /// shaders load on first use and the first frames of glass draw a plain
+  /// blur). Pass [mode] to preload when the app forces shader glass on any
+  /// platform — it should match the theme's `defaultMode`.
   ///
   /// The loads never throw (a failure is reported to `FlutterError` and
   /// the widgets use their fallbacks) and are idempotent, so this is safe
   /// to call more than once. It calls
   /// `WidgetsFlutterBinding.ensureInitialized()` first, so `main()` needs
   /// no call of its own.
-  static Future<void> initialize({GlassRenderMode? mode}) {
+  static Future<void> initialize({
+    GlassRenderMode? mode,
+    bool supportLiquidGlassOnAndroid = false,
+  }) {
     WidgetsFlutterBinding.ensureInitialized();
     GlassPlatform.instance.ensureStarted();
     final environment = GlassPlatform.instance.environment.value;
     if (!environment.shaderSupported) {
       return Future<void>.value();
     }
+    final androidGlass =
+        supportLiquidGlassOnAndroid &&
+        environment.platform == TargetPlatform.android;
     if (environment.platform != TargetPlatform.iOS &&
-        mode != GlassRenderMode.shader) {
+        mode != GlassRenderMode.shader &&
+        !androidGlass) {
       return Future<void>.value();
     }
     return Future.wait<void>([

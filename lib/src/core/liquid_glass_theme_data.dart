@@ -19,6 +19,7 @@ class LiquidGlassThemeData {
     this.defaultMode = GlassRenderMode.auto,
     this.constants = GlassConstants.standard,
     this.androidShaderBudget = 4,
+    this.supportLiquidGlassOnAndroid = false,
   });
 
   /// Direction toward the light, radians, y-down screen space.
@@ -31,7 +32,8 @@ class LiquidGlassThemeData {
   /// Mode used when a widget does not specify one.
   ///
   /// [GlassRenderMode.auto] (the default) draws SwiftUI's own glass on
-  /// iOS 26+, the shader on older iOS and Material elsewhere. Set
+  /// iOS 26+, the shader on older iOS and Material elsewhere (shader glass
+  /// on Android with [supportLiquidGlassOnAndroid]). Set
   /// [GlassRenderMode.shader] to keep Flutter-drawn glass everywhere.
   final GlassRenderMode defaultMode;
 
@@ -41,8 +43,9 @@ class LiquidGlassThemeData {
   final GlassConstants constants;
 
   /// How many glass groups may draw the shader at once on Android, per
-  /// view; null removes the cap. Applies to [GlassRenderMode.shader] only
-  /// (the default `auto` mode draws Material on Android) and never on iOS.
+  /// view; null removes the cap. Applies whenever the shader glass is drawn
+  /// on Android ([GlassRenderMode.shader], or `auto` with
+  /// [supportLiquidGlassOnAndroid]) and never on iOS.
   ///
   /// Under Impeller each shader glass group renders into full-screen
   /// offscreen textures whatever the glass's size: about 110-200 MB of GPU
@@ -56,6 +59,25 @@ class LiquidGlassThemeData {
   /// Groups in a route hidden under an opaque route do not count.
   final int? androidShaderBudget;
 
+  /// Whether [GlassRenderMode.auto] draws the iOS Liquid Glass look on
+  /// Android (the package's shader glass) instead of Material 3. Off by
+  /// default.
+  ///
+  /// The simple switch for Android: leave [defaultMode] at `auto` and set
+  /// this. iOS is unchanged (SwiftUI's glass on 26+, the shader below),
+  /// and other platforms (web, desktop) keep Material. Where the device
+  /// cannot run the shader (`ImageFilter.isShaderFilterSupported` false,
+  /// i.e. not Impeller) the glass draws a frosted blur instead. A
+  /// widget's own `mode:`, or a [defaultMode] other than `auto`, still
+  /// wins.
+  ///
+  /// The shader loads on first use, so the first frame or two of glass
+  /// draw a plain blur; to have it ready before the first frame, call
+  /// `AdaptiveLiquidGlass.initialize(supportLiquidGlassOnAndroid: true)`
+  /// in `main()`. Each shader glass group costs 110-200 MB of GPU memory
+  /// on Android, so [androidShaderBudget] caps how many draw at once.
+  final bool supportLiquidGlassOnAndroid;
+
   /// Returns a copy with the given fields replaced (`androidShaderBudget`
   /// takes an `int?`; pass null to remove the cap).
   LiquidGlassThemeData copyWith({
@@ -64,6 +86,7 @@ class LiquidGlassThemeData {
     GlassRenderMode? defaultMode,
     GlassConstants? constants,
     Object? androidShaderBudget = _unset,
+    bool? supportLiquidGlassOnAndroid,
   }) => LiquidGlassThemeData(
     lightAngle: lightAngle ?? this.lightAngle,
     defaultGlass: defaultGlass ?? this.defaultGlass,
@@ -72,6 +95,8 @@ class LiquidGlassThemeData {
     androidShaderBudget: identical(androidShaderBudget, _unset)
         ? this.androidShaderBudget
         : androidShaderBudget as int?,
+    supportLiquidGlassOnAndroid:
+        supportLiquidGlassOnAndroid ?? this.supportLiquidGlassOnAndroid,
   );
 
   @override
@@ -81,7 +106,8 @@ class LiquidGlassThemeData {
       other.defaultGlass == defaultGlass &&
       other.defaultMode == defaultMode &&
       other.constants == constants &&
-      other.androidShaderBudget == androidShaderBudget;
+      other.androidShaderBudget == androidShaderBudget &&
+      other.supportLiquidGlassOnAndroid == supportLiquidGlassOnAndroid;
 
   @override
   int get hashCode => Object.hash(
@@ -90,5 +116,6 @@ class LiquidGlassThemeData {
     defaultMode,
     constants,
     androidShaderBudget,
+    supportLiquidGlassOnAndroid,
   );
 }

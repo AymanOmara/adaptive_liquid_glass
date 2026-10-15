@@ -55,6 +55,9 @@ Future<T?> showGlassSheet<T>({
     requested: mode ?? LiquidGlassTheme.of(context).defaultMode,
     environment: GlassPlatform.instance.environment.value,
     highContrast: MediaQuery.highContrastOf(context),
+    supportLiquidGlassOnAndroid: LiquidGlassTheme.of(
+      context,
+    ).supportLiquidGlassOnAndroid,
   );
   if (effective == EffectiveGlassMode.material) {
     return showModalBottomSheet<T>(

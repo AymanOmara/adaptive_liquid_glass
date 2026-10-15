@@ -240,6 +240,9 @@ class _GlassScaffoldState extends State<GlassScaffold> {
           requested: bar.mode ?? LiquidGlassTheme.of(context).defaultMode,
           environment: GlassPlatform.instance.environment.value,
           highContrast: MediaQuery.highContrastOf(context),
+          supportLiquidGlassOnAndroid: LiquidGlassTheme.of(
+            context,
+          ).supportLiquidGlassOnAndroid,
         ) ==
         EffectiveGlassMode.material;
     if (!material) return bar;
