@@ -134,7 +134,7 @@ and CHANGELOG.md.
 12- CashRoot required enhancements (from CashRoot's
   adaptive_liquid_glass_enhancments.md, re-checked against 0.2.1 on
   2026-10-15; none are in CashRoot or any branch here).
-  - in progress (2026-10-15): sheets and dialogs (W5 sheet
+  - done, unreleased (2026-10-15): sheets and dialogs (W5 sheet
     isScrollControlled + maxHeightFactor, W6 enableDrag, W19 whole-sheet
     maxHeight, W9 alert content/icon/barrierDismissible/action order,
     W10 GlassDialogAction subtitle) and small parameters (W14 menu item
