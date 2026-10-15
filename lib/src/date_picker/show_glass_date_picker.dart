@@ -1,6 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
-    show DateUtils, MaterialLocalizations, showDatePicker;
+    show
+        DateTimeRange,
+        DateUtils,
+        MaterialLocalizations,
+        showDatePicker,
+        showDateRangePicker;
 
 import '../button/glass_button.dart';
 import '../button/glass_button_metrics_scope.dart';
@@ -161,13 +166,224 @@ class _DatePickerSheet extends StatefulWidget {
 class _DatePickerSheetState extends State<_DatePickerSheet> {
   late DateTime _value = widget.initialDate;
 
-  MaterialLocalizations? get _l10n =>
-      Localizations.of<MaterialLocalizations>(context, MaterialLocalizations);
+  @override
+  Widget build(BuildContext context) => _SheetFrame(
+    helpText: widget.helpText,
+    cancelText: widget.cancelText,
+    confirmText: widget.confirmText,
+    mode: widget.mode,
+    showDone: widget.wheel,
+    onDone: () => Navigator.of(context).pop(_value),
+    child: widget.wheel
+        ? Padding(
+            padding: const EdgeInsetsDirectional.only(
+              top: DatePickerMetrics.sheetPadding,
+            ),
+            child: GlassDateWheel(
+              value: _value,
+              firstDate: widget.firstDate,
+              lastDate: widget.lastDate,
+              pickerMode: GlassDatePickerMode.date,
+              mode: widget.mode,
+              onChanged: (d) => setState(() => _value = d),
+            ),
+          )
+        : GlassCalendar(
+            selected: widget.initialDate,
+            firstDate: widget.firstDate,
+            lastDate: widget.lastDate,
+            firstDayOfWeek: widget.firstDayOfWeek,
+            showWeekNumbers: widget.showWeekNumbers,
+            onSelected: (d) => Navigator.of(context).pop(d),
+          ),
+  );
+}
+
+/// Asks for a range of dates and completes with it, or with null when
+/// the picker is dismissed: the glass counterpart of Material's
+/// [showDateRangePicker].
+///
+/// ```dart
+/// final range = await showGlassDateRangePicker(
+///   context: context,
+///   firstDate: DateTime(2020),
+///   lastDate: DateTime(2030),
+/// );
+/// ```
+///
+/// On the glass path it is the sheet [showGlassDatePicker] presents,
+/// holding a [GlassCalendar.range]: the first tap picks the start, the
+/// second the end (the same day gives a one-day range), and a tap before
+/// the start, or after a complete range, starts again. The ends sit on
+/// blue circles joined by a lighter band. The prominent checkmark
+/// (Done) completes with the range and is disabled until both ends are
+/// picked; the close button, a tap outside or a drag down complete with
+/// null. [initialRange] is selected when the sheet opens.
+///
+/// [firstDayOfWeek], [helpText], [cancelText], [confirmText] and
+/// [locale] work as in [showGlassDatePicker]. On the Material path it is
+/// [showDateRangePicker] with the same dates, labels and [locale]; there
+/// [firstDayOfWeek] does not apply. The range's days complete without a
+/// time on both paths.
+Future<DateTimeRange?> showGlassDateRangePicker({
+  required BuildContext context,
+  DateTimeRange? initialRange,
+  required DateTime firstDate,
+  required DateTime lastDate,
+  int? firstDayOfWeek,
+  String? helpText,
+  String? cancelText,
+  String? confirmText,
+  Locale? locale,
+  GlassRenderMode? mode,
+}) async {
+  assert(!lastDate.isBefore(firstDate), 'lastDate must not precede firstDate');
+  assert(
+    initialRange == null ||
+        (!DateUtils.dateOnly(
+              initialRange.start,
+            ).isBefore(DateUtils.dateOnly(firstDate)) &&
+            !DateUtils.dateOnly(
+              initialRange.end,
+            ).isAfter(DateUtils.dateOnly(lastDate))),
+    'initialRange must lie between firstDate and lastDate',
+  );
+  assert(
+    firstDayOfWeek == null || (firstDayOfWeek >= 0 && firstDayOfWeek < 7),
+    'firstDayOfWeek is 0 (Sunday) to 6 (Saturday)',
+  );
+  final effective = resolveGlassMode(
+    requested: mode ?? LiquidGlassTheme.of(context).defaultMode,
+    environment: GlassPlatform.instance.environment.value,
+    highContrast: MediaQuery.highContrastOf(context),
+    supportLiquidGlassOnAndroid: LiquidGlassTheme.of(
+      context,
+    ).supportLiquidGlassOnAndroid,
+  );
+  if (effective == EffectiveGlassMode.material) {
+    return showDateRangePicker(
+      context: context,
+      initialDateRange: initialRange,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      helpText: helpText,
+      cancelText: cancelText,
+      confirmText: confirmText,
+      locale: locale,
+    );
+  }
+  final picked = await showGlassSheet<DateTimeRange>(
+    context: context,
+    mode: mode,
+    builder: (context) {
+      final sheet = _DateRangePickerSheet(
+        initialRange: initialRange,
+        firstDate: firstDate,
+        lastDate: lastDate,
+        firstDayOfWeek: firstDayOfWeek,
+        helpText: helpText,
+        cancelText: cancelText,
+        confirmText: confirmText,
+        mode: mode,
+      );
+      return locale == null
+          ? sheet
+          : Localizations.override(
+              context: context,
+              locale: locale,
+              child: sheet,
+            );
+    },
+  );
+  return picked == null ? null : DateUtils.datesOnly(picked);
+}
+
+/// The glass date range picker sheet's content: the header and the range
+/// calendar.
+class _DateRangePickerSheet extends StatefulWidget {
+  const _DateRangePickerSheet({
+    required this.initialRange,
+    required this.firstDate,
+    required this.lastDate,
+    required this.firstDayOfWeek,
+    required this.helpText,
+    required this.cancelText,
+    required this.confirmText,
+    required this.mode,
+  });
+
+  final DateTimeRange? initialRange;
+  final DateTime firstDate;
+  final DateTime lastDate;
+  final int? firstDayOfWeek;
+  final String? helpText;
+  final String? cancelText;
+  final String? confirmText;
+  final GlassRenderMode? mode;
+
+  @override
+  State<_DateRangePickerSheet> createState() => _DateRangePickerSheetState();
+}
+
+class _DateRangePickerSheetState extends State<_DateRangePickerSheet> {
+  late DateTime? _start = widget.initialRange?.start;
+  late DateTime? _end = widget.initialRange?.end;
+
+  @override
+  Widget build(BuildContext context) {
+    final start = _start, end = _end;
+    return _SheetFrame(
+      helpText: widget.helpText,
+      cancelText: widget.cancelText,
+      confirmText: widget.confirmText,
+      mode: widget.mode,
+      showDone: true,
+      onDone: start == null || end == null
+          ? null
+          : () => Navigator.of(
+              context,
+            ).pop(DateTimeRange(start: start, end: end)),
+      child: GlassCalendar.range(
+        rangeStart: start,
+        rangeEnd: end,
+        firstDate: widget.firstDate,
+        lastDate: widget.lastDate,
+        firstDayOfWeek: widget.firstDayOfWeek,
+        onRangeChanged: (s, e) => setState(() {
+          _start = s;
+          _end = e;
+        }),
+      ),
+    );
+  }
+}
+
+/// The date picker sheets' frame: an xmark close button leading the
+/// header, the title, a prominent checkmark (Done) when [showDone]
+/// (disabled while [onDone] is null), and [child] below them.
+class _SheetFrame extends StatelessWidget {
+  const _SheetFrame({
+    required this.helpText,
+    required this.cancelText,
+    required this.confirmText,
+    required this.mode,
+    required this.showDone,
+    required this.onDone,
+    required this.child,
+  });
+
+  final String? helpText;
+  final String? cancelText;
+  final String? confirmText;
+  final GlassRenderMode? mode;
+  final bool showDone;
+  final VoidCallback? onDone;
+  final Widget child;
 
   Widget _button({
     required IconData icon,
     required String label,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
     GlassButtonStyle style = GlassButtonStyle.glass,
   }) => GlassButtonMetricsScope(
     metrics: ToolbarMetrics.single,
@@ -176,29 +392,33 @@ class _DatePickerSheetState extends State<_DatePickerSheet> {
       icon: icon,
       style: style,
       shape: GlassButtonShape.circle,
-      mode: widget.mode,
+      mode: mode,
       semanticLabel: label,
     ),
   );
 
   @override
   Widget build(BuildContext context) {
+    final l10n = Localizations.of<MaterialLocalizations>(
+      context,
+      MaterialLocalizations,
+    );
     final close = _button(
       icon: CupertinoIcons.xmark,
-      label: widget.cancelText ?? _l10n?.closeButtonLabel ?? 'Close',
+      label: cancelText ?? l10n?.closeButtonLabel ?? 'Close',
       onPressed: () => Navigator.of(context).pop(),
     );
     // Without a Done button an empty circle's width keeps the title
     // centred.
-    final done = widget.wheel
+    final done = showDone
         ? _button(
             icon: CupertinoIcons.checkmark,
-            label: widget.confirmText ?? 'Done',
+            label: confirmText ?? 'Done',
             style: GlassButtonStyle.glassProminent,
-            onPressed: () => Navigator.of(context).pop(_value),
+            onPressed: onDone,
           )
         : const SizedBox(width: ToolbarMetrics.height);
-    final title = widget.helpText;
+    final title = helpText;
     return Padding(
       padding: const EdgeInsetsDirectional.all(DatePickerMetrics.sheetPadding),
       child: Column(
@@ -231,30 +451,7 @@ class _DatePickerSheetState extends State<_DatePickerSheet> {
               done,
             ],
           ),
-          Center(
-            child: widget.wheel
-                ? Padding(
-                    padding: const EdgeInsetsDirectional.only(
-                      top: DatePickerMetrics.sheetPadding,
-                    ),
-                    child: GlassDateWheel(
-                      value: _value,
-                      firstDate: widget.firstDate,
-                      lastDate: widget.lastDate,
-                      pickerMode: GlassDatePickerMode.date,
-                      mode: widget.mode,
-                      onChanged: (d) => setState(() => _value = d),
-                    ),
-                  )
-                : GlassCalendar(
-                    selected: widget.initialDate,
-                    firstDate: widget.firstDate,
-                    lastDate: widget.lastDate,
-                    firstDayOfWeek: widget.firstDayOfWeek,
-                    showWeekNumbers: widget.showWeekNumbers,
-                    onSelected: (d) => Navigator.of(context).pop(d),
-                  ),
-          ),
+          Center(child: child),
         ],
       ),
     );

@@ -1152,6 +1152,14 @@ dismissing returns null. On Android it is `showDatePicker`.
 `firstDayOfWeek` (0 = Sunday to 6 = Saturday) overrides the locale's week
 start on the calendar; on Android the locale decides.
 
+`showGlassDateRangePicker(context: context, initialRange: ..., firstDate:
+..., lastDate: ...)` returns a `Future<DateTimeRange?>` from the same
+sheet: the first tap picks the start, the second the end (a tap before the
+start begins again), drawn as iOS does with blue end circles and a lighter
+band between; the checkmark confirms once both ends are picked. On
+Android it is `showDateRangePicker`. `GlassCalendar.range` is the
+calendar on its own.
+
 ### Alert and confirmation dialog
 
 ```dart
