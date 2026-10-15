@@ -248,7 +248,7 @@ class _GlassScaffoldState extends State<GlassScaffold> {
     if (!material) return bar;
     return PreferredSize(
       preferredSize: Size.fromHeight(
-        AppBar.preferredHeightFor(context, AppBar().preferredSize),
+        AppBar.preferredHeightFor(context, bar.materialPreferredSize),
       ),
       child: bar,
     );
