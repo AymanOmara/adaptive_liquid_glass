@@ -26,7 +26,7 @@ import 'glass_date_wheel.dart';
 ///
 /// ```dart
 /// final date = await showGlassDatePicker(
-///   context,
+///   context: context,
 ///   initialDate: DateTime.now(),
 ///   firstDate: DateTime(2020),
 ///   lastDate: DateTime(2030),
@@ -55,8 +55,8 @@ import 'glass_date_wheel.dart';
 /// labels and [locale], whatever the [style]. Material's calendar has
 /// no first-day setting, so there [firstDayOfWeek] does not apply and the
 /// locale decides. The date completes without a time on both paths.
-Future<DateTime?> showGlassDatePicker(
-  BuildContext context, {
+Future<DateTime?> showGlassDatePicker({
+  required BuildContext context,
   required DateTime initialDate,
   required DateTime firstDate,
   required DateTime lastDate,
