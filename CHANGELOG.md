@@ -1,3 +1,15 @@
+## Unreleased
+
+- `showGlassSheet`: `isScrollControlled` (Material; null derives it as
+  before), `enableDrag` (apart from `isDismissible`'s barrier tap) and
+  `maxHeightFactor`, which caps the whole sheet, grabber and inset
+  included.
+- `showGlassAlert`: `content`, `icon`, `barrierDismissible` (null keeps
+  each path's default) and `actionOrder` (`GlassAlertActionOrder`).
+- `GlassDialogAction.subtitle`: a secondary second line on alerts,
+  confirmation dialogs and action sheets, read with the label. Each glass
+  dialog button is now its own semantics node.
+
 ## 0.2.1 (2026-10-14)
 
 - Debug builds print a one-time warning when more than 8 native glass

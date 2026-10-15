@@ -16,6 +16,10 @@ class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
     required this.confirmation,
     this.title,
     this.message,
+    this.icon,
+    this.content,
+    this.platformOrder = false,
+    this.dismissible,
     this.mode,
     this.capturedThemes,
     this.barrierLabel,
@@ -26,6 +30,19 @@ class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
 
   /// See [GlassDialogCard.message].
   final String? message;
+
+  /// See [GlassDialogCard.icon].
+  final Widget? icon;
+
+  /// See [GlassDialogCard.content].
+  final Widget? content;
+
+  /// See [GlassDialogCard.platformOrder].
+  final bool platformOrder;
+
+  /// Whether a tap outside closes the card; null takes the default
+  /// below.
+  final bool? dismissible;
 
   /// See [GlassDialogCard.actions].
   final List<GlassDialogAction> actions;
@@ -44,9 +61,10 @@ class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
   final String? barrierLabel;
 
   /// A confirmation dialog closes on a tap outside (its cancel action);
-  /// an alert only through its buttons, as on iOS.
+  /// an alert only through its buttons, as on iOS, unless [dismissible]
+  /// says otherwise.
   @override
-  bool get barrierDismissible => confirmation;
+  bool get barrierDismissible => dismissible ?? confirmation;
 
   /// SwiftUI dims the page behind an alert (20%), not behind a
   /// confirmation dialog.
@@ -70,6 +88,9 @@ class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
           child: GlassDialogCard(
             title: title,
             message: message,
+            icon: icon,
+            content: content,
+            platformOrder: platformOrder,
             actions: actions,
             confirmation: confirmation,
             mode: mode,

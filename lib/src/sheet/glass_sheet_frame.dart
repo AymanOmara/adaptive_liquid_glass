@@ -23,6 +23,8 @@ class GlassSheetFrame extends StatefulWidget {
     required this.onDismiss,
     required this.showGrabber,
     required this.isDismissible,
+    this.enableDrag = true,
+    this.maxHeightFactor,
     this.cornerRadius,
     this.grabberSize,
     this.glass,
@@ -47,6 +49,14 @@ class GlassSheetFrame extends StatefulWidget {
 
   /// Whether a drag down may dismiss the sheet.
   final bool isDismissible;
+
+  /// Whether the sheet follows a vertical drag at all: false keeps it at
+  /// its detent, with no drag to dismiss.
+  final bool enableDrag;
+
+  /// Caps the whole sheet (grabber and bottom inset included) at this
+  /// fraction of the screen's height; null caps it at the large detent.
+  final double? maxHeightFactor;
 
   /// See [GlassSheet.cornerRadius].
   final double? cornerRadius;
@@ -159,14 +169,19 @@ class _GlassSheetFrameState extends State<GlassSheetFrame>
     final media = MediaQuery.of(context);
     final size = media.size;
     final top = media.padding.top;
+    final factor = widget.maxHeightFactor;
+    final cap = factor == null
+        ? size.height
+        : (factor * size.height).clamp(0.0, size.height);
     final gestures = <Type, GestureRecognizerFactory>{
-      VerticalDragGestureRecognizer:
-          GestureRecognizerFactoryWithHandlers<VerticalDragGestureRecognizer>(
-            VerticalDragGestureRecognizer.new,
-            (r) => r
-              ..onUpdate = _drag
-              ..onEnd = _end,
-          ),
+      if (widget.enableDrag)
+        VerticalDragGestureRecognizer:
+            GestureRecognizerFactoryWithHandlers<VerticalDragGestureRecognizer>(
+              VerticalDragGestureRecognizer.new,
+              (r) => r
+                ..onUpdate = _drag
+                ..onEnd = _end,
+            ),
     };
     if (_sized) {
       return AnimatedBuilder(
@@ -177,7 +192,9 @@ class _GlassSheetFrameState extends State<GlassSheetFrame>
         child: Align(
           alignment: Alignment.bottomCenter,
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: size.height - top),
+            constraints: BoxConstraints(
+              maxHeight: cap < size.height - top ? cap : size.height - top,
+            ),
             child: RawGestureDetector(
               gestures: gestures,
               behavior: HitTestBehavior.opaque,
@@ -204,7 +221,8 @@ class _GlassSheetFrameState extends State<GlassSheetFrame>
                   (widget.grabberSize?.height ?? SheetMetrics.grabberHeight)
             : 0);
     _stops = [
-      for (final d in widget.detents) d.resolve(size, top, chrome: chrome),
+      for (final d in widget.detents)
+        d.resolve(size, top, chrome: chrome).clamp(0.0, cap),
     ]..sort();
     if (!_placed) {
       _height.value = _stops[widget.initialDetent.clamp(0, _stops.length - 1)];
@@ -215,7 +233,7 @@ class _GlassSheetFrameState extends State<GlassSheetFrame>
     return AnimatedBuilder(
       animation: _height,
       builder: (context, _) {
-        final h = _height.value.clamp(0.0, size.height);
+        final h = _height.value.clamp(0.0, cap);
         final expansion = large <= medium
             ? 1.0
             : ((h - medium) / (large - medium)).clamp(0.0, 1.0);
