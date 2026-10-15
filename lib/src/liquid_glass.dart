@@ -123,7 +123,9 @@ class LiquidGlass extends StatelessWidget {
       ),
     );
     return GlassGroupScope.maybeOf(context) == null
-        ? GlassGroup(mode: mode, child: member)
+        ? ImplicitGlassGroup(
+            child: GlassGroup(mode: mode, child: member),
+          )
         : member;
   }
 

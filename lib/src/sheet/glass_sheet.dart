@@ -6,8 +6,10 @@ import '../core/glass.dart';
 import '../core/glass_colors.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
+import '../core/liquid_glass_theme.dart';
 import '../group/glass_group.dart';
 import '../liquid_glass.dart';
+import '../native/glass_batch.dart';
 import 'sheet_metrics.dart';
 
 /// The surface of an iOS 26 sheet, with a grabber. [showGlassSheet] puts
@@ -159,7 +161,12 @@ class GlassSheet extends StatelessWidget {
                 ),
               ),
             ),
-          content,
+          // Ungrouped glass in the sheet shares one native view (iOS 26+),
+          // above the sheet's own surfaces.
+          if (LiquidGlassTheme.of(context).batchImplicitGroups)
+            GlassBatch(child: content)
+          else
+            content,
         ],
       ),
     );

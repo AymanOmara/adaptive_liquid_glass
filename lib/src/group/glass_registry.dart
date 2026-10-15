@@ -18,10 +18,11 @@ class GlassRegistry extends ChangeNotifier {
   /// Registered entries in registration order.
   List<GlassEntry> get entries => List.unmodifiable(_entries);
 
-  /// Adds [e]. Returns `false` (and reports a non-fatal error) when full;
-  /// the caller then renders [e] in its own implicit group.
-  bool register(GlassEntry e) {
-    if (_entries.length >= maxShapes) {
+  /// Adds [e]. Returns `false` (and reports a non-fatal error) when full
+  /// ([maxShapes] entries, unless not [capped]); the caller then renders
+  /// [e] in its own implicit group.
+  bool register(GlassEntry e, {bool capped = true}) {
+    if (capped && _entries.length >= maxShapes) {
       FlutterError.reportError(
         FlutterErrorDetails(
           exception: FlutterError(

@@ -193,6 +193,14 @@ is costly to create. Twenty chips in a row, glass list rows or glass inside a
 sheet's content each become a separate view unless one `GlassGroup` wraps
 them; debug builds print a warning when more than 8 are alive at once.
 
+To keep such glass separate but still share one native view, wrap it in a
+`GlassBatch` (inside the scroll view, if it scrolls): nothing merges, the
+shapes only share the view. Glass the batch could not draw as its own view
+would (over a coloured or overlapping widget, partly clipped, rotated, in an
+overlay) keeps its own view. `LiquidGlassThemeData(batchImplicitGroups: true)`
+also places a batch in `GlassSheet` content and `GlassScaffold` bodies, and
+lets a native `GlassGroup` take more than 16 members.
+
 `spacing` is how close two shapes must be to flow together. The default, 0,
 merges only shapes that touch, so a row of buttons stays a row of separate
 buttons. Set it to at least the gap between them (here 12) for SwiftUI's
