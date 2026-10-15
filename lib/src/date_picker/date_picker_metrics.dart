@@ -25,6 +25,9 @@ abstract final class DatePickerMetrics {
   /// The selected day's circle.
   static const double selection = 38;
 
+  /// The opacity of the blue band joining a range's days (estimated).
+  static const double rangeAlpha = 0.18;
+
   /// A day's size.
   static const double dayFontSize = 20;
 

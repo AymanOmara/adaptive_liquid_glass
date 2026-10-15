@@ -1,3 +1,12 @@
+## Unreleased
+
+- `showGlassDateRangePicker` returns a `DateTimeRange?`: on the glass path
+  the `showGlassDatePicker` sheet with a range calendar (first tap the
+  start, second the end, a tap before the start begins again; blue end
+  circles and a lighter band wrapping per week row; Done disabled until
+  both ends are picked), on Material `showDateRangePicker`. The calendar
+  is public as `GlassCalendar.range`; in-range days read as selected.
+
 ## 0.2.2 (2026-10-15)
 
 - `LiquidGlassThemeData.supportLiquidGlassOnAndroid` (default false): one

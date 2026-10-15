@@ -148,4 +148,4 @@ and CHANGELOG.md.
     `GlassBatch` + `batchImplicitGroups` (opt-in)
   - open: decide whether `batchImplicitGroups` defaults on before 1.0
     (check opacity forwarding and frame times on a device);
-    `SliverGlassNavigationBar` has no materialBuilder; no date range picker
+    `SliverGlassNavigationBar` has no materialBuilder

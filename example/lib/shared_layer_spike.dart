@@ -48,11 +48,7 @@ class _SpikeState extends State<_Spike> with SingleTickerProviderStateMixin {
 
   Widget _shape(int i) => LiquidGlass(
     shape: const GlassShape.capsule(),
-    child: SizedBox(
-      width: 120,
-      height: 50,
-      child: Center(child: Text('$i')),
-    ),
+    child: SizedBox(width: 120, height: 50, child: Center(child: Text('$i'))),
   );
 
   @override

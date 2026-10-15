@@ -547,6 +547,24 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                           onChanged: (d) => setState(() => _date = d),
                         ),
                         const SizedBox(height: 12),
+                        GlassButton(
+                          onPressed: () async {
+                            final range = await showGlassDateRangePicker(
+                              context: context,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2030),
+                              helpText: 'Trip',
+                            );
+                            if (range != null) {
+                              _snack(
+                                '${range.start.month}/${range.start.day} - '
+                                '${range.end.month}/${range.end.day}',
+                              );
+                            }
+                          },
+                          child: const Text('Date range'),
+                        ),
+                        const SizedBox(height: 12),
                         GlassColorPicker(
                           label: const Text('Accent'),
                           value: _accent,

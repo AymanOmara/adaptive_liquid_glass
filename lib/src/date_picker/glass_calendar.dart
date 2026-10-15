@@ -21,6 +21,9 @@ import 'date_picker_wheel_metrics.dart';
 ///   onSelected: (d) => setState(() => date = d),
 /// )
 /// ```
+///
+/// [GlassCalendar.range] picks a range instead: the ends on blue
+/// circles joined by a lighter band that wraps per week row.
 class GlassCalendar extends StatefulWidget {
   /// Creates a calendar showing [selected]'s month.
   const GlassCalendar({
@@ -34,9 +37,57 @@ class GlassCalendar extends StatefulWidget {
   }) : assert(
          firstDayOfWeek == null || (firstDayOfWeek >= 0 && firstDayOfWeek < 7),
          'firstDayOfWeek is 0 (Sunday) to 6 (Saturday)',
-       );
+       ),
+       rangeStart = null,
+       rangeEnd = null,
+       onRangeChanged = null;
 
-  /// The selected day.
+  /// Creates a calendar that picks a range from [rangeStart] to
+  /// [rangeEnd], as iOS draws one: both ends on blue circles and a
+  /// lighter capsule joining the days between, wrapping per week row.
+  ///
+  /// A tap with no start, after a complete range or before the start
+  /// begins a new range at the tapped day; any other tap ends it there
+  /// (the start itself gives a one-day range). [onRangeChanged] receives
+  /// the new start and end (null until the end is picked); the calendar
+  /// shows what its parent passes back. It opens on [rangeStart]'s month,
+  /// or today's within the bounds.
+  const GlassCalendar.range({
+    super.key,
+    required this.rangeStart,
+    this.rangeEnd,
+    required GlassCalendarRangeChanged this.onRangeChanged,
+    required this.firstDate,
+    required this.lastDate,
+    this.showWeekNumbers = false,
+    this.firstDayOfWeek,
+  }) : assert(
+         firstDayOfWeek == null || (firstDayOfWeek >= 0 && firstDayOfWeek < 7),
+         'firstDayOfWeek is 0 (Sunday) to 6 (Saturday)',
+       ),
+       assert(
+         rangeEnd == null || rangeStart != null,
+         'rangeEnd needs a rangeStart',
+       ),
+       selected = rangeStart ?? firstDate,
+       onSelected = _ignore;
+
+  static void _ignore(DateTime _) {}
+
+  /// The range's first day, in [GlassCalendar.range]; null before one is
+  /// picked.
+  final DateTime? rangeStart;
+
+  /// The range's last day, in [GlassCalendar.range]; null until it is
+  /// picked.
+  final DateTime? rangeEnd;
+
+  /// Called in [GlassCalendar.range] with the range a tap makes; null in
+  /// the single-day calendar.
+  final GlassCalendarRangeChanged? onRangeChanged;
+
+  /// The selected day; in [GlassCalendar.range], the start (or
+  /// [firstDate] before one is picked).
   final DateTime selected;
 
   /// Called with the tapped day.
@@ -61,10 +112,58 @@ class GlassCalendar extends StatefulWidget {
   State<GlassCalendar> createState() => _GlassCalendarState();
 }
 
+/// Receives a [GlassCalendar.range]'s new [start] and [end]; [end] is
+/// null until the range's last day is picked.
+typedef GlassCalendarRangeChanged =
+    void Function(DateTime start, DateTime? end);
+
 class _GlassCalendarState extends State<GlassCalendar> {
-  late DateTime _month = DateTime(widget.selected.year, widget.selected.month);
+  late DateTime _month = _initialMonth();
+
+  bool get _isRange => widget.onRangeChanged != null;
+
+  DateTime _initialMonth() {
+    var d = widget.selected;
+    if (_isRange && widget.rangeStart == null) {
+      d = _day(DateTime.now());
+      final first = _day(widget.firstDate);
+      final last = _day(widget.lastDate);
+      if (d.isBefore(first)) d = first;
+      if (d.isAfter(last)) d = last;
+    }
+    return DateTime(d.year, d.month);
+  }
 
   static DateTime _day(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  DateTime? get _start =>
+      widget.rangeStart == null ? null : _day(widget.rangeStart!);
+
+  DateTime? get _end => widget.rangeEnd == null ? null : _day(widget.rangeEnd!);
+
+  void _tap(DateTime day) {
+    final onRange = widget.onRangeChanged;
+    if (onRange == null) return widget.onSelected(day);
+    final start = _start;
+    if (start == null || _end != null || day.isBefore(start)) {
+      onRange(day, null);
+    } else {
+      onRange(start, day);
+    }
+  }
+
+  /// Whether [d] is an end of the range (or the selected day).
+  bool _isEnd(DateTime d, DateTime selected) =>
+      _isRange ? d == _start || d == _end : d == selected;
+
+  /// Whether [d] lies within a complete range, ends included.
+  bool _inRange(DateTime d) {
+    final start = _start, end = _end;
+    return start != null &&
+        end != null &&
+        !d.isBefore(start) &&
+        !d.isAfter(end);
+  }
 
   bool _selectable(DateTime d) =>
       !d.isBefore(_day(widget.firstDate)) && !d.isAfter(_day(widget.lastDate));
@@ -130,7 +229,8 @@ class _GlassCalendarState extends State<GlassCalendar> {
       for (var d = 1; d <= daysInMonth; d++)
         _dayCell(
           DateTime(_month.year, _month.month, d),
-          isSelected: DateTime(_month.year, _month.month, d) == selected,
+          isSelected: _isEnd(DateTime(_month.year, _month.month, d), selected),
+          inRange: _inRange(DateTime(_month.year, _month.month, d)),
           isToday: DateTime(_month.year, _month.month, d) == today,
           label: label,
           blue: blue,
@@ -210,25 +310,73 @@ class _GlassCalendarState extends State<GlassCalendar> {
             for (var r = 0; r * 7 < cells.length; r++)
               SizedBox(
                 height: DatePickerMetrics.row,
-                child: Row(
-                  children: [
-                    if (widget.showWeekNumbers)
-                      _weekNumber(
-                        r * 7 - lead + 1,
-                        resolve(GlassColors.tertiaryLabel),
-                      ),
-                    for (var c = 0; c < 7; c++)
-                      Expanded(
-                        child: r * 7 + c < cells.length
-                            ? cells[r * 7 + c]
-                            : const SizedBox(),
-                      ),
-                  ],
+                child: _rangeBand(
+                  r * 7 - lead + 1,
+                  daysInMonth,
+                  blue,
+                  Row(
+                    children: [
+                      if (widget.showWeekNumbers)
+                        _weekNumber(
+                          r * 7 - lead + 1,
+                          resolve(GlassColors.tertiaryLabel),
+                        ),
+                      for (var c = 0; c < 7; c++)
+                        Expanded(
+                          child: r * 7 + c < cells.length
+                              ? cells[r * 7 + c]
+                              : const SizedBox(),
+                        ),
+                    ],
+                  ),
                 ),
               ),
           ],
         ),
       ),
+    );
+  }
+
+  /// Puts the lighter capsule behind a week row's in-range days: from
+  /// the first such day's circle to the last's, so it ends under the
+  /// endpoints' circles and wraps at the row's edges. [start] is the day
+  /// of the month in the row's first cell, as in [_weekNumber].
+  Widget _rangeBand(int start, int daysInMonth, Color blue, Widget row) {
+    int? from, to;
+    for (var c = 0; c < 7; c++) {
+      final d = start + c;
+      if (d < 1 || d > daysInMonth) continue;
+      if (_inRange(DateTime(_month.year, _month.month, d))) {
+        from ??= c;
+        to = c;
+      }
+    }
+    if (from == null || to == null || from == to) return row;
+    final lead = widget.showWeekNumbers
+        ? DatePickerWheelMetrics.weekNumberWidth
+        : 0.0;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final column = (constraints.maxWidth - lead) / 7;
+        const inset = DatePickerMetrics.selection / 2;
+        return Stack(
+          children: [
+            PositionedDirectional(
+              start: lead + column * (from! + 0.5) - inset,
+              width: column * (to! - from) + DatePickerMetrics.selection,
+              top: (constraints.maxHeight - DatePickerMetrics.selection) / 2,
+              height: DatePickerMetrics.selection,
+              child: DecoratedBox(
+                decoration: ShapeDecoration(
+                  shape: const StadiumBorder(),
+                  color: blue.withValues(alpha: DatePickerMetrics.rangeAlpha),
+                ),
+              ),
+            ),
+            Positioned.fill(child: row),
+          ],
+        );
+      },
     );
   }
 
@@ -249,6 +397,7 @@ class _GlassCalendarState extends State<GlassCalendar> {
     DateTime day, {
     required bool isSelected,
     required bool isToday,
+    bool inRange = false,
     required Color label,
     required Color blue,
   }) {
@@ -262,11 +411,11 @@ class _GlassCalendarState extends State<GlassCalendar> {
         : label;
     return Semantics(
       button: true,
-      selected: isSelected,
+      selected: isSelected || inRange,
       enabled: enabled,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: enabled ? () => widget.onSelected(day) : null,
+        onTap: enabled ? () => _tap(day) : null,
         child: Center(
           child: Container(
             width: DatePickerMetrics.selection,
