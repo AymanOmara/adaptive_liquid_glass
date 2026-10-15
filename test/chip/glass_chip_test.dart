@@ -147,6 +147,41 @@ void main() {
     s.dispose();
   }, variant: ios);
 
+  testWidgets('a subtitle follows the label, secondary, inside 32 pt', (
+    t,
+  ) async {
+    shaderEnv();
+    final s = t.ensureSemantics();
+    await t.pumpWidget(
+      plainHost(GlassChip(label: 'Tag', subtitle: '3', onSelected: (_) {})),
+    );
+    expect(t.getSize(find.byType(GlassChip)).height, ChipMetrics.height);
+    expect(
+      t.getCenter(find.text('3')).dx,
+      greaterThan(t.getCenter(find.text('Tag')).dx),
+    );
+    final label = t.widget<Text>(find.text('Tag')).style!;
+    final sub = t.widget<Text>(find.text('3')).style!;
+    expect(sub.color, isNot(label.color));
+    expect(find.bySemanticsLabel(RegExp(r'Tag.*3', dotAll: true)), findsOne);
+    s.dispose();
+  }, variant: ios);
+
+  testWidgets('Material: a subtitle follows the label inside 32 pt', (t) async {
+    shaderEnv();
+    final s = t.ensureSemantics();
+    await t.pumpWidget(
+      appHost(GlassChip(label: 'Tag', subtitle: '3', onSelected: (_) {})),
+    );
+    expect(t.getSize(find.byType(GlassChip)).height, ChipMetrics.height);
+    expect(
+      t.getCenter(find.text('3')).dx,
+      greaterThan(t.getCenter(find.text('Tag')).dx),
+    );
+    expect(find.bySemanticsLabel(RegExp(r'Tag.*3', dotAll: true)), findsOne);
+    s.dispose();
+  }, variant: android);
+
   testWidgets('Material: as tall as the glass chip', (t) async {
     shaderEnv();
     await t.pumpWidget(

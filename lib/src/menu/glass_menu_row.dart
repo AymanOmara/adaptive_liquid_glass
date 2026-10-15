@@ -38,7 +38,7 @@ class GlassMenuRow extends StatelessWidget {
           ? GlassColors.tertiaryLabel
           : item.destructive
           ? GlassSystemColors.red
-          : GlassColors.label,
+          : item.color ?? GlassColors.label,
       context,
     );
     final style = IOSText.style(MenuMetrics.fontSize, color: color);

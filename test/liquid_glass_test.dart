@@ -414,6 +414,45 @@ void main() {
     expect(find.byType(GlassBackdrop), findsNothing);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
+  for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
+    testWidgets('${platform.name}: minSize grows the glass, child centred', (
+      t,
+    ) async {
+      env();
+      await t.pumpWidget(
+        host(
+          const Center(
+            child: LiquidGlass(
+              shape: GlassShape.circle(),
+              minSize: Size.square(44),
+              child: SizedBox.square(key: Key('dot'), dimension: 16),
+            ),
+          ),
+        ),
+      );
+      final glass = t.getRect(find.byType(LiquidGlass));
+      expect(glass.size, const Size.square(44));
+      expect(t.getCenter(find.byKey(const Key('dot'))), glass.center);
+      expect(t.getSize(find.byKey(const Key('dot'))), const Size.square(16));
+    }, variant: TargetPlatformVariant.only(platform));
+  }
+
+  testWidgets('minSize never shrinks a larger child', (t) async {
+    env();
+    await t.pumpWidget(
+      host(
+        const Center(
+          child: LiquidGlass(
+            minSize: Size(44, 44),
+            padding: EdgeInsets.all(4),
+            child: SizedBox(width: 100, height: 20),
+          ),
+        ),
+      ),
+    );
+    expect(t.getSize(find.byType(LiquidGlass)), const Size(108, 44));
+  }, variant: ios);
+
   testWidgets('Reduce Transparency switches to opaque while running', (
     t,
   ) async {

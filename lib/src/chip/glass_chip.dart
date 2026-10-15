@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
-    show FilterChip, InputChip, MaterialTapTargetSize, VisualDensity;
+    show FilterChip, InputChip, MaterialTapTargetSize, Theme, VisualDensity;
 
 import '../core/effective_glass_mode.dart';
 import '../core/glass.dart';
@@ -35,6 +35,7 @@ class GlassChip extends StatelessWidget {
   const GlassChip({
     super.key,
     required this.label,
+    this.subtitle,
     this.icon,
     this.selected = false,
     this.onSelected,
@@ -52,6 +53,11 @@ class GlassChip extends StatelessWidget {
 
   /// The chip's text.
   final String label;
+
+  /// Secondary text after [label], such as a count ("3"), in the
+  /// secondary label colour; read after the label by assistive tech. The
+  /// chip keeps its height.
+  final String? subtitle;
 
   /// An icon before the label.
   final IconData? icon;
@@ -92,9 +98,28 @@ class GlassChip extends StatelessWidget {
 
   static const VisualDensity _density = VisualDensity(vertical: -3);
 
+  Widget _materialLabel(BuildContext context) => subtitle == null
+      ? Text(label)
+      : Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+            ),
+            const SizedBox(width: ChipMetrics.subtitleGap),
+            Text(
+              subtitle!,
+              maxLines: 1,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        );
+
   Widget _material(BuildContext context) => onSelected != null
       ? FilterChip(
-          label: Text(label),
+          label: _materialLabel(context),
           avatar: icon == null ? null : Icon(icon),
           selected: selected,
           onSelected: onSelected,
@@ -109,7 +134,7 @@ class GlassChip extends StatelessWidget {
               : CupertinoDynamicColor.resolve(tint!, context),
         )
       : InputChip(
-          label: Text(label),
+          label: _materialLabel(context),
           avatar: icon == null ? null : Icon(icon),
           onDeleted: onDeleted,
           deleteButtonTooltipMessage: deleteLabel ?? 'Remove $label',
@@ -148,6 +173,24 @@ class GlassChip extends StatelessWidget {
               ),
             ),
           ),
+          if (subtitle != null) ...[
+            const SizedBox(width: ChipMetrics.subtitleGap),
+            Text(
+              subtitle!,
+              maxLines: 1,
+              style: IOSText.style(
+                ChipMetrics.labelSize,
+                color: selected
+                    ? GlassColors.white.withValues(
+                        alpha: ChipMetrics.selectedSubtitleOpacity,
+                      )
+                    : CupertinoDynamicColor.resolve(
+                        GlassColors.secondaryLabel,
+                        context,
+                      ),
+              ),
+            ),
+          ],
           if (onDeleted != null) ...[
             const SizedBox(
               width: ChipMetrics.iconGap - ChipMetrics.deleteHitPadding,

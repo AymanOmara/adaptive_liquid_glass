@@ -105,6 +105,7 @@ class GlassTabBar extends StatefulWidget {
     this.materialStyle = GlassMaterialTabBarStyle.floating,
     this.minimizeBehavior = GlassTabBarMinimizeBehavior.automatic,
     this.style = GlassTabBarStyle.automatic,
+    this.labelMaxTextScale,
   }) : assert(
          tint == null || selectedColor == null,
          'Pass tint only; selectedColor is its old name.',
@@ -178,6 +179,15 @@ class GlassTabBar extends StatefulWidget {
   /// moves it to the top with a sidebar on an iPad, inside a
   /// [GlassScaffold] (SwiftUI `tabViewStyle(.sidebarAdaptable)`).
   final GlassTabBarStyle style;
+
+  /// The largest text scale the tab labels (and badges) take. Null keeps
+  /// each path's default: the floating bar pins its labels at 1, as iOS
+  /// does (UIKit shows the Large Content Viewer instead), and Material's
+  /// edge-to-edge bar follows the ambient text scaler. Raising it lets the
+  /// floating bar's labels grow within its fixed [height]. On the Material
+  /// path Flutter's `NavigationBar` never scales its labels past 1.3,
+  /// whatever this allows.
+  final double? labelMaxTextScale;
 
   @override
   State<GlassTabBar> createState() => _GlassTabBarState();
@@ -804,10 +814,16 @@ class _GlassTabBarState extends State<GlassTabBar>
     return ValueListenableBuilder<GlassEnvironment>(
       valueListenable: GlassPlatform.instance.environment,
       builder: (context, _, _) => tabBarEdgeToEdge(context, widget)
-          ? _materialBar(context)
+          ? widget.labelMaxTextScale == null
+                ? _materialBar(context)
+                : MediaQuery.withClampedTextScaling(
+                    maxScaleFactor: widget.labelMaxTextScale!,
+                    child: Builder(builder: _materialBar),
+                  )
           // iOS tab bar labels keep their size at any Dynamic Type setting.
           : MediaQuery.withClampedTextScaling(
-              maxScaleFactor: TabBarMetrics.maxTextScale,
+              maxScaleFactor:
+                  widget.labelMaxTextScale ?? TabBarMetrics.maxTextScale,
               child: Builder(builder: _floatingBar),
             ),
     );

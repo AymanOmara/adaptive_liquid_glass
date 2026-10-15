@@ -50,6 +50,8 @@ class GlassListSection extends StatelessWidget {
     this.header,
     this.footer,
     this.glass,
+    this.backgroundColor,
+    this.separatorColor,
     this.margin = const EdgeInsetsDirectional.symmetric(
       horizontal: ListMetrics.margin,
     ),
@@ -68,6 +70,15 @@ class GlassListSection extends StatelessWidget {
   /// The platter's glass; null draws iOS's opaque grouped cell (the
   /// default, as iOS 26 Settings).
   final Glass? glass;
+
+  /// The platter's colour in place of iOS's grouped cell colour (the
+  /// Material card's colour on the Material path). Ignored when [glass]
+  /// is given: tint the glass instead.
+  final Color? backgroundColor;
+
+  /// The hairlines between rows (the Material dividers) in place of iOS's
+  /// separator colour; disclosure groups in the section follow it.
+  final Color? separatorColor;
 
   /// The platter's inset from the screen's sides.
   final EdgeInsetsGeometry margin;
@@ -99,8 +110,8 @@ class GlassListSection extends StatelessWidget {
       : ListMetrics.horizontalPadding;
 
   Widget _glass(BuildContext context) {
-    final separatorColor = CupertinoDynamicColor.resolve(
-      GlassColors.listSeparator,
+    final separator = CupertinoDynamicColor.resolve(
+      separatorColor ?? GlassColors.listSeparator,
       context,
     );
     final content = ClipRSuperellipse(
@@ -108,6 +119,7 @@ class GlassListSection extends StatelessWidget {
       child: ListSectionScope(
         mode: mode,
         glass: glass != null,
+        separatorColor: separatorColor,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -128,7 +140,7 @@ class GlassListSection extends StatelessWidget {
                           end: ListMetrics.separatorEnd,
                           bottom: 0,
                           height: ListMetrics.separatorThickness,
-                          child: ColoredBox(color: separatorColor),
+                          child: ColoredBox(color: separator),
                         ),
                       ],
                     )
@@ -141,7 +153,7 @@ class GlassListSection extends StatelessWidget {
         ? DecoratedBox(
             decoration: ShapeDecoration(
               color: CupertinoDynamicColor.resolve(
-                GlassColors.listSectionBackground,
+                backgroundColor ?? GlassColors.listSectionBackground,
                 context,
               ),
               shape: RoundedSuperellipseBorder(
@@ -223,17 +235,20 @@ class GlassListSection extends StatelessWidget {
               ),
             ),
           Card.filled(
+            color: backgroundColor,
             margin: EdgeInsets.zero,
             clipBehavior: Clip.antiAlias,
             child: ListSectionScope(
               mode: mode,
               glass: false,
+              separatorColor: separatorColor,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: _separated(
                   (above) => Divider(
                     height: 1,
+                    color: separatorColor,
                     indent: above is GlassListTile && above.leading != null
                         ? ListMetrics.materialLeadingInset
                         : ListMetrics.materialInset,

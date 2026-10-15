@@ -162,6 +162,73 @@ void main() {
     );
   }, variant: android);
 
+  Widget tinted() => MaterialApp(
+    home: Scaffold(
+      body: Center(
+        child: GlassMenuButton(
+          icon: CupertinoIcons.ellipsis,
+          semanticLabel: 'More',
+          items: [
+            GlassMenuItem(
+              label: 'Pay',
+              icon: CupertinoIcons.money_dollar,
+              color: const Color(0xFF00AA55),
+              onSelected: () {},
+            ),
+            GlassMenuItem(
+              label: 'Delete',
+              icon: CupertinoIcons.trash,
+              color: const Color(0xFF00AA55),
+              destructive: true,
+              onSelected: () {},
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  testWidgets('a coloured item tints its label and icon; destructive wins', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(tinted());
+    await t.tap(find.bySemanticsLabel('More'));
+    await t.pumpAndSettle();
+    expect(
+      t.widget<Text>(find.text('Pay')).style!.color,
+      const Color(0xFF00AA55),
+    );
+    expect(
+      t.widget<Icon>(find.byIcon(CupertinoIcons.money_dollar)).color,
+      const Color(0xFF00AA55),
+    );
+    expect(
+      t.widget<Text>(find.text('Delete')).style!.color!.toARGB32(),
+      GlassSystemColors.red.color.toARGB32(),
+    );
+  }, variant: ios);
+
+  testWidgets('Material: a coloured item tints its label and icon', (t) async {
+    shaderEnv();
+    await t.pumpWidget(tinted());
+    await t.tap(find.byType(IconButton));
+    await t.pumpAndSettle();
+    expect(
+      DefaultTextStyle.of(t.element(find.text('Pay'))).style.color,
+      const Color(0xFF00AA55),
+    );
+    expect(
+      IconTheme.of(t.element(find.byIcon(CupertinoIcons.money_dollar))).color,
+      const Color(0xFF00AA55),
+    );
+    final error = Theme.of(t.element(find.text('Delete'))).colorScheme.error;
+    expect(
+      DefaultTextStyle.of(t.element(find.text('Delete'))).style.color,
+      error,
+    );
+  }, variant: android);
+
   testWidgets('a menu that was never opened disposes cleanly', (t) async {
     shaderEnv();
     await t.pumpWidget(_app([]));

@@ -159,6 +159,20 @@
 - `GlassDialogAction.subtitle`: a secondary second line on alerts,
   confirmation dialogs and action sheets, read with the label. Each glass
   dialog button is now its own semantics node.
+- `GlassMenuItem.color` tints an item's label and icon on both paths; a
+  disabled or destructive item keeps its own colour.
+- `GlassButton.foregroundColor` sets the label and icon colour on every
+  path and style; a disabled button keeps its dimmed look.
+- `GlassButton.cornerRadius` sets a `GlassButtonShape.roundedRect`
+  button's radius on both paths (other shapes ignore it).
+- `GlassChip.subtitle`: secondary text after the label (a count, say),
+  read with it; the chip stays 32 pt tall.
+- `LiquidGlass.minSize`: the glass grows to at least this size with its
+  child centred (a 44 pt circle around a 16 pt icon, no padding sums).
+- `GlassListSection.backgroundColor` and `separatorColor` replace the
+  platter and hairline colours (the card and dividers on Material).
+- `GlassTabBar.labelMaxTextScale` caps the tab labels' text scale (the
+  floating bar still pins it at 1 by default).
 
 ## 0.2.1 (2026-10-14)
 

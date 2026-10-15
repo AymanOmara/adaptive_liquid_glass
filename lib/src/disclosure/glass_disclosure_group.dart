@@ -16,6 +16,7 @@ import '../core/swiftui_spring.dart';
 import '../interaction/glass_pressable.dart';
 import '../list/glass_list_tile.dart';
 import '../list/list_metrics.dart';
+import '../list/list_section_scope.dart';
 import 'disclosure_chevron.dart';
 import 'disclosure_metrics.dart';
 import 'disclosure_separator_scope.dart';
@@ -228,7 +229,8 @@ class _GlassDisclosureGroupState extends State<GlassDisclosureGroup>
 
   Widget _glass(BuildContext context) {
     final separatorColor = CupertinoDynamicColor.resolve(
-      GlassColors.listSeparator,
+      ListSectionScope.maybeOf(context)?.separatorColor ??
+          GlassColors.listSeparator,
       context,
     );
     final labelStart = widget.leading != null
