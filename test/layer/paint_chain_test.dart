@@ -1,6 +1,5 @@
 import 'package:adaptive_liquid_glass/src/layer/paint_chain.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _probe = Key('probe');
