@@ -57,7 +57,9 @@ class RenderGlassLayerSlot extends RenderBox {
     markNeedsPaint();
   }
 
-  final _shader = reusedFragmentShader();
+  // One shader per pass: a filter reads its shader's uniforms when the
+  // frame is rasterised, not when it is made, so passes cannot share one.
+  final List<ReusedShader<ui.FragmentProgram, ui.FragmentShader>> _shaders = [];
   final List<BackdropKey> _keys = [];
 
   @override
@@ -94,7 +96,9 @@ class RenderGlassLayerSlot extends RenderBox {
 
   @override
   void dispose() {
-    _shader.clear();
+    for (final s in _shaders) {
+      s.clear();
+    }
     super.dispose();
   }
 
@@ -165,17 +169,26 @@ class RenderGlassLayerSlot extends RenderBox {
 
     final program = GlassProgram.instance.program.value;
     final canDraw = program != null && ui.ImageFilter.isShaderFilterSupported;
+    var passIndex = 0;
     for (var i = 0; i < strata.length; i++) {
       if (_keys.length <= i) _keys.add(BackdropKey());
       final (passes, contents) = strata[i];
       if (canDraw) {
         for (final p in passes) {
-          _paintPass(context, offset, fromGlobal, program, p, _keys[i]);
+          if (_shaders.length <= passIndex) {
+            _shaders.add(reusedFragmentShader());
+          }
+          final shader = _shaders[passIndex++].of(program);
+          _paintPass(context, offset, fromGlobal, shader, p, _keys[i]);
         }
       }
       for (final c in contents) {
         _paintContent(context, offset, fromGlobal, c);
       }
+    }
+    // Free the shaders of passes no longer drawn.
+    while (_shaders.length > passIndex) {
+      _shaders.removeLast().clear();
     }
   }
 
@@ -191,11 +204,10 @@ class RenderGlassLayerSlot extends RenderBox {
     PaintingContext context,
     Offset offset,
     Matrix4 fromGlobal,
-    ui.FragmentProgram program,
+    ui.FragmentShader shader,
     LayerPass pass,
     BackdropKey key,
   ) {
-    final shader = _shader.of(program);
     final floats = packGlassUniforms(pass.uniforms);
     for (var i = 0; i < floats.length; i++) {
       shader.setFloat(kFirstUserFloat + i, floats[i]);
