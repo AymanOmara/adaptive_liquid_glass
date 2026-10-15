@@ -1,5 +1,10 @@
 import 'package:flutter/widgets.dart';
 
+import '../core/glass_constants.dart';
+import '../group/glass_registry.dart';
+import '../platform/glass_platform.dart';
+import '../shader/glass_backdrop.dart';
+import '../shader/glass_backdrop_config.dart';
 import 'glass_layer.dart';
 import 'glass_layer_slot.dart';
 
@@ -63,6 +68,58 @@ class _GlassLayerAnchorState extends State<GlassLayerAnchor> {
             : IgnorePointer(child: GlassLayerSlot(layer: layer));
       },
       child: widget.child,
+    );
+  }
+}
+
+final GlassRegistry _noMembers = GlassRegistry();
+
+const GlassBackdropConfig _noGlass = GlassBackdropConfig(
+  spacing: 0,
+  lightAngle: 0,
+  devicePixelRatio: 1,
+  constants: GlassConstants.standard,
+  brightness: Brightness.light,
+  highContrast: false,
+);
+
+/// Content painted over shader glass that is not inside the glass's group
+/// (a sibling laid on top, like the tab bar's row over its bar).
+///
+/// On the shared layer a group's glass draws after the whole route, so such
+/// content would end up beneath it; this defers [child] the same way a
+/// group's own content is deferred, in paint order. Off the layer (or with
+/// [enabled] false: the glass is not shader glass) it paints in place.
+class GlassLayerContent extends StatelessWidget {
+  /// Defers [child] when the glass it covers is on the shared layer.
+  const GlassLayerContent({
+    super.key,
+    required this.enabled,
+    required this.child,
+  });
+
+  /// Whether the glass beneath is shader glass.
+  final bool enabled;
+
+  /// The content.
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final layer = enabled
+        ? sharedGlassLayerOf(
+            context,
+            GlassPlatform.instance.environment.value.platform,
+          )
+        : null;
+    return GlassLayerAnchor(
+      layer: layer,
+      child: GlassBackdrop(
+        registry: _noMembers,
+        config: _noGlass,
+        sharedLayer: layer,
+        child: RepaintBoundary(child: child),
+      ),
     );
   }
 }

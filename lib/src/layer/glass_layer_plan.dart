@@ -43,8 +43,9 @@ class LayerGroupInput {
   /// compared lexicographically (a prefix paints first).
   final List<int> order;
 
-  /// The group's frame (shapes in texture space, blur, touch).
-  final GlassBackdropDebugFrame frame;
+  /// The group's frame (shapes in texture space, blur, touch); null for
+  /// content that draws no glass (`GlassLayerContent`).
+  final GlassBackdropDebugFrame? frame;
 
   /// The frame's clip bounds in global logical px (glass, shadow and merge
   /// margin).
@@ -71,7 +72,7 @@ class LayerGroupInput {
   /// The glass bodies (no shadow), global logical px, cut to [clip].
   Rect get glass {
     final dpr = config.devicePixelRatio;
-    final shapes = frame.uniforms.shapes;
+    final shapes = frame?.uniforms.shapes ?? const [];
     if (shapes.isEmpty) return Rect.zero;
     final r = shapes.map((s) => s.rect).reduce((a, b) => a.expandToInclude(b));
     return _cut(
@@ -79,11 +80,16 @@ class LayerGroupInput {
     );
   }
 
+  /// The group's content, cut to [clip] (empty when unknown).
+  Rect get contentRegion => content == null ? Rect.zero : _cut(content!);
+
   /// What this group puts on screen: its glass and its content.
   Rect get footprint {
     final g = glass;
-    final c = content;
-    return c == null ? g : g.expandToInclude(_cut(c));
+    final c = contentRegion;
+    if (c.isEmpty) return g;
+    if (g.isEmpty) return c;
+    return g.expandToInclude(c);
   }
 }
 
@@ -191,11 +197,16 @@ List<LayerStratum> planGlassLayer(
   final strata = <List<LayerGroupInput>>[];
   for (var i = 0; i < sorted.length; i++) {
     var s = 0;
+    final me = sorted[i];
     for (var j = 0; j < i; j++) {
+      final them = sorted[j].footprint;
       // A later group's glass over an earlier group's glass or content
-      // must draw after that content. Shadows may overlap.
-      if (_overlaps(sorted[i].glass, sorted[j].footprint)) {
+      // must draw after that content (the next stratum); its content over
+      // them must composite no earlier than theirs. Shadows may overlap.
+      if (_overlaps(me.glass, them)) {
         s = math.max(s, level[j] + 1);
+      } else if (_overlaps(me.contentRegion, them)) {
+        s = math.max(s, level[j]);
       }
     }
     level.add(s);
@@ -207,7 +218,13 @@ List<LayerStratum> planGlassLayer(
 
   return [
     for (final members in strata)
-      LayerStratum(_passes(members, maxBlurs), [for (final g in members) g.id]),
+      LayerStratum(
+        _passes([
+          for (final g in members)
+            if (g.frame != null) g,
+        ], maxBlurs),
+        [for (final g in members) g.id],
+      ),
   ];
 }
 
@@ -227,7 +244,7 @@ List<LayerPass> _passes(List<LayerGroupInput> members, int maxBlurs) {
       var chunk = <LayerGroupInput>[];
       var count = 0;
       for (final g in gs) {
-        final n = g.frame.uniforms.shapes.length;
+        final n = g.frame!.uniforms.shapes.length;
         if (count + n > kMaxPassShapes && chunk.isNotEmpty) {
           out.add(_pass(chunk, blur));
           chunk = [];
@@ -248,7 +265,7 @@ Map<LayerGroupInput, (double, double)> _blurClusters(
   int maxBlurs,
 ) {
   final keys = <(double, double)>{
-    for (final g in list) (g.frame.blurSigma, g.frame.blurAspect),
+    for (final g in list) (g.frame!.blurSigma, g.frame!.blurAspect),
   }.toList()..sort((a, b) => a.$1.compareTo(b.$1));
   // Clusters of key indices; merge the closest neighbours (log sigma).
   final clusters = [
@@ -276,7 +293,7 @@ Map<LayerGroupInput, (double, double)> _blurClusters(
     }
   }
   return {
-    for (final g in list) g: merged[(g.frame.blurSigma, g.frame.blurAspect)]!,
+    for (final g in list) g: merged[(g.frame!.blurSigma, g.frame!.blurAspect)]!,
   };
 }
 
@@ -285,10 +302,10 @@ LayerPass _pass(List<LayerGroupInput> gs, (double, double) blur) {
   final dpr = first.config.devicePixelRatio;
   final shapes = [
     for (var i = 0; i < gs.length; i++)
-      for (final s in gs[i].frame.uniforms.shapes)
+      for (final s in gs[i].frame!.uniforms.shapes)
         s.inGroup(
           group: i,
-          smoothing: gs[i].frame.uniforms.smoothing,
+          smoothing: gs[i].frame!.uniforms.smoothing,
           opacity: gs[i].opacity.clamp(0.0, 1.0),
           clip: gs[i].clip == null
               ? null
@@ -302,13 +319,13 @@ LayerPass _pass(List<LayerGroupInput> gs, (double, double) blur) {
   Offset? touch;
   var glow = 0.0;
   for (final g in gs) {
-    final u = g.frame.uniforms;
+    final u = g.frame!.uniforms;
     if (u.touch != null && u.glow > glow) {
       glow = u.glow;
       touch = u.touch;
     }
   }
-  final u0 = first.frame.uniforms;
+  final u0 = first.frame!.uniforms;
   return LayerPass(
     uniforms: GlassFrameUniforms(
       shapes: shapes,

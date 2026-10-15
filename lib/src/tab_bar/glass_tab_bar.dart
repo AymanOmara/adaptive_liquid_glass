@@ -30,6 +30,7 @@ import '../group/glass_content_fill.dart';
 import '../group/glass_fill_style.dart';
 import '../group/glass_group.dart';
 import '../group/glass_group_scope.dart';
+import '../layer/glass_layer_anchor.dart';
 import '../liquid_glass.dart';
 import '../platform/glass_platform.dart';
 import 'bar_glow.dart';
@@ -1112,12 +1113,15 @@ class _GlassTabBarState extends State<GlassTabBar>
                 top: TabBarMetrics.inset,
                 width: _rowWidth,
                 height: _contentHeight,
-                child: IgnorePointer(
-                  child: Opacity(
-                    opacity: fade,
-                    child: _row(
-                      (i) => i == sel ? selected : null,
-                      semantics: false,
+                child: GlassLayerContent(
+                  enabled: _shaderBar,
+                  child: IgnorePointer(
+                    child: Opacity(
+                      opacity: fade,
+                      child: _row(
+                        (i) => i == sel ? selected : null,
+                        semantics: false,
+                      ),
                     ),
                   ),
                 ),
@@ -1128,10 +1132,13 @@ class _GlassTabBarState extends State<GlassTabBar>
                 width: TabBarMetrics.iconSize,
                 height: TabBarMetrics.iconSize,
               ),
-              child: IgnorePointer(
-                child: Opacity(
-                  opacity: (1 - fade).clamp(0.0, 1.0),
-                  child: _icon(widget.items[sel], true, selected),
+              child: GlassLayerContent(
+                enabled: _shaderBar,
+                child: IgnorePointer(
+                  child: Opacity(
+                    opacity: (1 - fade).clamp(0.0, 1.0),
+                    child: _icon(widget.items[sel], true, selected),
+                  ),
                 ),
               ),
             ),
@@ -1333,12 +1340,15 @@ class _GlassTabBarState extends State<GlassTabBar>
               rect: lens.shift(
                 const Offset(TabBarMetrics.inset, TabBarMetrics.inset),
               ),
-              child: const IgnorePointer(
-                child: CustomPaint(
-                  painter: BarShadow(
-                    opacity: TabBarMetrics.lensShadowOpacity,
-                    offset: TabBarMetrics.lensShadowOffset,
-                    sigma: TabBarMetrics.lensShadowSigma,
+              child: GlassLayerContent(
+                enabled: _shaderBar,
+                child: const IgnorePointer(
+                  child: CustomPaint(
+                    painter: BarShadow(
+                      opacity: TabBarMetrics.lensShadowOpacity,
+                      offset: TabBarMetrics.lensShadowOffset,
+                      sigma: TabBarMetrics.lensShadowSigma,
+                    ),
                   ),
                 ),
               ),
@@ -1400,7 +1410,7 @@ class _GlassTabBarState extends State<GlassTabBar>
               top: TabBarMetrics.inset,
               width: _rowWidth,
               height: _contentHeight,
-              child: baseRow,
+              child: GlassLayerContent(enabled: _shaderBar, child: baseRow),
             ),
           // With the content shader the tinted tabs lie over the lens glass,
           // refracted on their own, so the glass brightens only what is
@@ -1411,23 +1421,26 @@ class _GlassTabBarState extends State<GlassTabBar>
               top: TabBarMetrics.inset - _lensPad,
               width: _rowWidth + _lensPad * 2,
               height: _contentHeight + _lensPad * 2,
-              child: TabLensContent(
-                box: Size(
-                  _rowWidth + _lensPad * 2,
-                  _contentHeight + _lensPad * 2,
-                ),
-                lens: lens.shift(Offset(_lensPad - lean, _lensPad)),
-                motion: _motionBlur,
-                fallback: const SizedBox.shrink(),
-                child: ColoredBox(
-                  // Keeps the filter's layer the size of the box.
-                  color: GlassColors.invisible,
-                  child: Padding(
-                    padding: const EdgeInsets.all(_lensPad),
-                    child: _row(
-                      (_) => selected,
-                      semantics: false,
-                      scale: magnify,
+              child: GlassLayerContent(
+                enabled: _shaderBar,
+                child: TabLensContent(
+                  box: Size(
+                    _rowWidth + _lensPad * 2,
+                    _contentHeight + _lensPad * 2,
+                  ),
+                  lens: lens.shift(Offset(_lensPad - lean, _lensPad)),
+                  motion: _motionBlur,
+                  fallback: const SizedBox.shrink(),
+                  child: ColoredBox(
+                    // Keeps the filter's layer the size of the box.
+                    color: GlassColors.invisible,
+                    child: Padding(
+                      padding: const EdgeInsets.all(_lensPad),
+                      child: _row(
+                        (_) => selected,
+                        semantics: false,
+                        scale: magnify,
+                      ),
                     ),
                   ),
                 ),

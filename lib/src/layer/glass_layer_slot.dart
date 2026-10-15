@@ -113,7 +113,6 @@ class RenderGlassLayerSlot extends RenderBox {
 
     final clients = <Object, _Client>{};
     final inputs = <LayerGroupInput>[];
-    final contentOnly = <_Client>[];
     for (final box in _layer.clients) {
       if (!box.attached || !box.hasSize || box.child == null) continue;
       final chain = describePaintChain(box, stop);
@@ -128,37 +127,39 @@ class RenderGlassLayerSlot extends RenderBox {
         toGlobal: toGlobal,
       );
       box.debugLastFrame = frame;
-      if (frame == null) {
-        contentOnly.add(client);
-        continue;
-      }
+      final content = MatrixUtils.transformRect(
+        toGlobal,
+        Offset.zero & box.size,
+      );
       inputs.add(
         LayerGroupInput(
           id: box,
           order: chain.order,
           frame: frame,
-          bounds: MatrixUtils.transformRect(toGlobal, frame.localBounds),
+          // Content alone (no glass) is placed by its own box.
+          bounds: frame == null
+              ? content
+              : MatrixUtils.transformRect(toGlobal, frame.localBounds),
           config: box.config,
           clip: chain.clip,
           opacity: chain.opacity,
-          content: MatrixUtils.transformRect(toGlobal, Offset.zero & box.size),
+          content: content,
         ),
       );
     }
     final plan = planGlassLayer(inputs);
     _layer.debugLastPlan = plan;
 
-    // Content of groups that draw no glass (or whose glass is clipped
-    // away) composites with the first stratum, in paint order.
+    // Content of groups whose glass is clipped away composites with the
+    // first stratum, in paint order.
     final strata = <(List<LayerPass>, List<_Client>)>[
       for (final s in plan)
         (s.passes, [for (final id in s.groups) clients[id]!]),
     ];
     final planned = {for (final s in plan) ...s.groups};
     final rest = [
-      ...contentOnly,
       for (final c in clients.values)
-        if (!planned.contains(c.box) && !contentOnly.contains(c)) c,
+        if (!planned.contains(c.box)) c,
     ];
     if (rest.isNotEmpty) {
       if (strata.isEmpty) strata.add((const [], []));

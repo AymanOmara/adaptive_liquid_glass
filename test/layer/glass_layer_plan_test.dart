@@ -228,4 +228,45 @@ void main() {
     expect(u.touch, const Offset(2, 2));
     expect(u.glow, 0.7);
   });
+
+  LayerGroupInput content(String id, Rect r, int order) => LayerGroupInput(
+    id: id,
+    order: [order],
+    frame: null,
+    bounds: r,
+    config: _config,
+    content: r,
+  );
+
+  test('content over earlier glass composites in its stratum, no pass', () {
+    final plan = planGlassLayer([
+      g('g0', const Rect.fromLTWH(0, 0, 100, 50)),
+      content('row', const Rect.fromLTWH(10, 10, 80, 30), 1),
+    ]);
+    expect(plan.single.groups, ['g0', 'row']);
+    expect(plan.single.passes.single.groups, ['g0']);
+  });
+
+  test('content follows the stratum of the glass it covers', () {
+    final plan = planGlassLayer([
+      g('g0', const Rect.fromLTWH(0, 0, 100, 100)),
+      g('g1', const Rect.fromLTWH(10, 10, 50, 50)), // stratum 1
+      content('label', const Rect.fromLTWH(20, 20, 10, 10), 2),
+    ]);
+    expect(plan.map((s) => s.groups), [
+      ['g0'],
+      ['g1', 'label'],
+    ]);
+  });
+
+  test('glass over earlier content goes to the next stratum', () {
+    final plan = planGlassLayer([
+      content('text', const Rect.fromLTWH(0, 0, 100, 20), 0),
+      g('g1', const Rect.fromLTWH(10, 0, 50, 50)),
+    ]);
+    expect(plan.map((s) => s.groups), [
+      ['text'],
+      ['g1'],
+    ]);
+  });
 }
