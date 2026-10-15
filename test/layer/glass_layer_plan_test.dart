@@ -139,7 +139,7 @@ void main() {
       g('g2', const Rect.fromLTWH(40, 0, 10, 10), sigma: 4),
       g('g3', const Rect.fromLTWH(60, 0, 10, 10), sigma: 8),
       g('g4', const Rect.fromLTWH(80, 0, 10, 10), sigma: 8, aspect: 0.8),
-    ]);
+    ], maxBlurs: 3);
     final passes = plan.single.passes;
     expect(passes, hasLength(3));
     expect(
@@ -156,8 +156,20 @@ void main() {
     final plan = planGlassLayer([
       g('g0', const Rect.fromLTWH(0, 0, 10, 10), sigma: 1),
       g('g1', const Rect.fromLTWH(20, 0, 10, 10), sigma: 2),
-    ]);
+    ], maxBlurs: 3);
     expect(plan.single.passes.map((p) => p.blurSigma), [1, 2]);
+  });
+
+  test('by default a stratum is one pass with the strongest blur', () {
+    final plan = planGlassLayer([
+      g('g0', const Rect.fromLTWH(0, 0, 10, 10), sigma: 1),
+      g('g1', const Rect.fromLTWH(20, 0, 10, 10), sigma: 4, aspect: 0.9),
+      g('g2', const Rect.fromLTWH(40, 0, 10, 10), sigma: 2),
+    ]);
+    final pass = plan.single.passes.single;
+    expect(pass.blurSigma, 4);
+    expect(pass.blurAspect, 0.9);
+    expect(pass.groups, ['g0', 'g1', 'g2']);
   });
 
   test('different shader globals never share a pass', () {

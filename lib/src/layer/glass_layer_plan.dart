@@ -8,10 +8,18 @@ import '../shader/glass_backdrop_debug_frame.dart';
 import '../shader/glass_frame_uniforms.dart';
 import '../shader/glass_texture_space.dart';
 
-/// Most passes one stratum draws per set of shader globals; past it the
-/// closest blur sigmas merge (the larger wins). Each pass costs a
-/// full-screen offscreen target under Impeller.
-const int kMaxPassesPerStratum = 3;
+/// Most blurs (passes) one stratum draws per set of shader globals; past
+/// it the closest sigmas merge and the larger wins. Each pass costs a
+/// full-screen offscreen target under Impeller (measured: about 380 MB of
+/// host graphics memory per extra pass on the emulator Gallery), so the
+/// default is 1: a stratum of glass in one theme is one pass, and glass of
+/// several sizes there shares the strongest frost. One group (or groups of
+/// one size) keeps its exact blur.
+/// `--dart-define=ADAPTIVE_LIQUID_GLASS_LAYER_BLURS=<n>` raises it.
+const int kMaxPassesPerStratum = int.fromEnvironment(
+  'ADAPTIVE_LIQUID_GLASS_LAYER_BLURS',
+  defaultValue: 1,
+);
 
 /// One glass group as the shared layer sees it this frame.
 @immutable
