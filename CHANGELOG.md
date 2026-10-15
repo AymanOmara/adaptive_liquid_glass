@@ -18,9 +18,19 @@
   peaks about 0.9 GB over idle with every group shader glass. Limits:
   non-glass content painted after a group and overlapping its glass draws
   beneath it, groups of one stratum share the largest blur, clips around
-  glass are rectangular, the tab bar's labels are not vibrant, and menus
-  draw their glass group by group. iOS, Material and native glass are
+  glass are rectangular, and menus draw their glass group by group. iOS, Material and native glass are
   unchanged.
+- `GlassTabBar` over shader glass: the vibrant labels, tint and selected
+  pill no longer vanish when a scroll view or a route transition moves the
+  bar. The vibrancy shader finds the glyphs at the screen position of the
+  last paint, and moving the bar did not repaint them; the blend now
+  repaints (with the same glyph image) when an enclosing scroll position
+  or the route animates. This, not the shared layer, was why vibrancy
+  looked broken there: on the shared layer it is now on, and the bar
+  matches the per-group path (mean difference 0.0 over the bar on the
+  vibrancy probe and over a photo, 0.07 on the Gallery's two bars after
+  scrolling). Cost: about 100 MB more host graphics memory on average
+  over the emulator Gallery run (peaks within run-to-run noise).
 - `LiquidGlassThemeData.androidShaderBudget` (new; default null = no cap)
   caps the shader glass groups drawn group by group on Android (outside
   the shared layer); the rest draw the frosted blur fallback.

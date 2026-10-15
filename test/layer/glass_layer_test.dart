@@ -234,7 +234,9 @@ void main() {
   }, variant: android);
 
   for (final p in [TargetPlatform.android, TargetPlatform.iOS]) {
-    testWidgets('vibrancy paints plain only when deferred ($p)', (t) async {
+    testWidgets('vibrancy stays on in content deferred to the layer ($p)', (
+      t,
+    ) async {
       env();
       await t.pumpWidget(
         app(
@@ -249,7 +251,9 @@ void main() {
       final blend = t.renderObject<RenderVibrantBlend>(
         find.byType(VibrantBlend),
       );
-      expect(blend.enabled, p == TargetPlatform.iOS);
+      // Its backdrop filter, composited by the slot after the glass, reads
+      // the glass as it does in place.
+      expect(blend.enabled, isTrue);
     }, variant: TargetPlatformVariant.only(p));
   }
 

@@ -162,8 +162,8 @@ for a painter repaint after the frame (one frame late, the same rule
   they are composited with it, after the bar's glass. The bar's row and
   lens content are siblings laid over the bar's glass, not its children:
   `GlassLayerContent` defers them as content-only clients, in paint order.
-  A backdrop filter inside deferred content draws nothing on Impeller, so
-  vibrancy paints plain there (`GlassLayerDeferred`; follow-up).
+  Their vibrancy backdrop filters read the layer's glass, as in place
+  (they repaint when a scroll or route moves them; see the notes).
 - Progressive scroll-edge blur and other non-glass content painted after a
   group in the same route now paint *below* that group's glass where they
   overlap (limitation; the edge effect is under bars, which are glass).
