@@ -16,8 +16,9 @@ and CHANGELOG.md.
       component (e.g. tab bar gets items, selected index, tap callback);
       ~33 parameter classes of public API to freeze at 1.0. Tab bar and
       navigation bar first if asked for
-  - then: example app toggle for both; README Android section + Known
-    limitations (re-check every entry is still true); CHANGELOG
+  - example app toggle: done for the iOS look
+    (`supportLiquidGlassOnAndroid`, 2026-10-15); README Android section
+    done. Still: re-check every Known limitations entry is still true
 
 3- release readiness: 0.1.0 shipped 2026-10-08. 1.0 only after:
   - usability pass: done 2026-10-14 (additive part); the 1.0 breaks it

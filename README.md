@@ -228,7 +228,9 @@ app-wide.
 
 ### Android
 
-On Android, and any platform other than iOS, `auto` renders Material 3:
+On Android, and any platform other than iOS, `auto` renders Material 3
+(on Android, see [the iOS look on Android](#the-ios-look-on-android) to opt
+into the glass):
 
 | Glass | Material 3 |
 |---|---|
@@ -266,24 +268,36 @@ permissions.
 
 #### The iOS look on Android
 
-Components choose by render mode, not platform, so the shader glass runs on
-Android too. Set the mode app-wide and preload the shaders with the same mode
-(`initialize` skips them on Android otherwise):
+One switch: set `supportLiquidGlassOnAndroid` and `auto` draws the shader
+glass on Android instead of Material 3. iOS is unchanged (SwiftUI's glass on
+26+), other platforms keep Material, and a widget's own `mode:` still wins.
 
 ```dart
 Future<void> main() async {
-  await AdaptiveLiquidGlass.initialize(mode: GlassRenderMode.shader);
+  // Optional: preloads the shaders, else the first frames draw a plain blur.
+  await AdaptiveLiquidGlass.initialize(supportLiquidGlassOnAndroid: true);
   runApp(
     const LiquidGlassTheme(
-      data: LiquidGlassThemeData(defaultMode: GlassRenderMode.shader),
+      data: LiquidGlassThemeData(supportLiquidGlassOnAndroid: true),
       child: MaterialApp(home: HomePage()),
     ),
   );
 }
 ```
 
-The example app takes `--dart-define=MODE=shader` (or `material`) for both
-the gallery and `lib/components_demo.dart`. Checked on an Android 15
+Memory: under Impeller each shader backdrop renders full-screen offscreen
+textures, about 110-200 MB of GPU memory each, so on Android all shader
+glass of a route draws through one shared layer (one capture, one blur
+per stratum of overlapping glass); see Known limitations. Devices
+without shader support (not Impeller) get the frosted blur throughout.
+
+`defaultMode: GlassRenderMode.shader` (with `initialize(mode:
+GlassRenderMode.shader)`) forces the shader on every platform, iOS 26
+included.
+
+The example app's home page has an "iOS glass" toggle on Android; it also
+takes `--dart-define=ANDROID_GLASS=true` (or `MODE=shader`, `material`) for
+both the gallery and `lib/components_demo.dart`. Checked on an Android 15
 emulator (Impeller, OpenGL ES): glass, sheets, dialogs, menus, popovers,
 toasts, pickers, lists and the navigation bar render as on iOS. The shader
 needs Impeller (Flutter's default on Android); without it the glass falls

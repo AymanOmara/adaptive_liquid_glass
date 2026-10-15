@@ -863,12 +863,18 @@ class _GlassTabBarState extends State<GlassTabBar>
                   requested: requested,
                   environment: environment,
                   highContrast: MediaQuery.highContrastOf(context),
+                  supportLiquidGlassOnAndroid: LiquidGlassTheme.of(
+                    context,
+                  ).supportLiquidGlassOnAndroid,
                 ) ==
                 EffectiveGlassMode.shader);
     return resolveGlassMode(
           requested: widget.mode ?? (lens ? GlassRenderMode.shader : requested),
           environment: environment,
           highContrast: MediaQuery.highContrastOf(context),
+          supportLiquidGlassOnAndroid: LiquidGlassTheme.of(
+            context,
+          ).supportLiquidGlassOnAndroid,
         ) ==
         EffectiveGlassMode.shader;
   }
@@ -890,6 +896,9 @@ class _GlassTabBarState extends State<GlassTabBar>
             requested: widget.mode ?? LiquidGlassTheme.of(context).defaultMode,
             environment: environment,
             highContrast: MediaQuery.highContrastOf(context),
+            supportLiquidGlassOnAndroid: LiquidGlassTheme.of(
+              context,
+            ).supportLiquidGlassOnAndroid,
           );
           // A bar asked for another path (native) keeps a lens of that
           // path: the shader cannot see native glass, so a shader lens
@@ -902,6 +911,9 @@ class _GlassTabBarState extends State<GlassTabBar>
             requested: _barMode ?? LiquidGlassTheme.of(context).defaultMode,
             environment: environment,
             highContrast: MediaQuery.highContrastOf(context),
+            supportLiquidGlassOnAndroid: LiquidGlassTheme.of(
+              context,
+            ).supportLiquidGlassOnAndroid,
           );
           _shaderBar = barMode == EffectiveGlassMode.shader;
           _nativeBar = barMode == EffectiveGlassMode.native;

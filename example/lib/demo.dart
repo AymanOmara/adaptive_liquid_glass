@@ -1,6 +1,7 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:flutter/material.dart';
 
+import 'android_glass_toggle.dart';
 import 'gallery.dart';
 
 /// A quick look at still glass over a busy, photo-like backdrop, with a
@@ -60,6 +61,11 @@ class Demo extends StatelessWidget {
                 ),
               ),
             ),
+          ),
+          PositionedDirectional(
+            top: MediaQuery.paddingOf(context).top + 16,
+            start: 16,
+            child: const AndroidGlassSwitch(),
           ),
           PositionedDirectional(
             top: MediaQuery.paddingOf(context).top + 16,

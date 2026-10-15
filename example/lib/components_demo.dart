@@ -4,15 +4,18 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:flutter/cupertino.dart' show CupertinoColors, CupertinoIcons;
 import 'package:flutter/material.dart';
 
+import 'android_glass_toggle.dart';
+
 /// `flutter run -t lib/components_demo.dart`: every component on one
 /// `GlassScaffold`, over a photo. Add `--dart-define=MODE=shader` (or
-/// `native`, `material`) to force a rendering path.
+/// `native`, `material`) to force a rendering path, or
+/// `--dart-define=ANDROID_GLASS=true` for the iOS look on Android.
 Future<void> main() async {
   // Preloads the shaders on any platform, as MODE may force them.
   await AdaptiveLiquidGlass.initialize(mode: GlassRenderMode.shader);
   const mode = String.fromEnvironment('MODE');
   runApp(
-    LiquidGlassTheme(
+    AndroidGlassTheme(
       data: LiquidGlassThemeData(
         defaultMode: switch (mode) {
           'shader' => GlassRenderMode.shader,

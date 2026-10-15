@@ -297,6 +297,7 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
       requested: widget.mode ?? theme.defaultMode,
       environment: environment,
       highContrast: MediaQuery.highContrastOf(context),
+      supportLiquidGlassOnAndroid: theme.supportLiquidGlassOnAndroid,
     );
     // The theme's appearance, which Cupertino colours resolve against, so
     // the glass and the content on it always agree (see glassBrightnessOf).

@@ -54,6 +54,39 @@ void main() {
     expect(ProgressiveBlurProgram.instance.debugLoadCalls, 1);
   }, variant: android);
 
+  testWidgets(
+    'initialize preloads on Android with supportLiquidGlassOnAndroid',
+    (t) async {
+      shaderEnv();
+      await AdaptiveLiquidGlass.initialize(supportLiquidGlassOnAndroid: true);
+      expect(GlassProgram.instance.debugLoadCalls, 1);
+      expect(TabLensProgram.instance.debugLoadCalls, 1);
+      expect(ProgressiveBlurProgram.instance.debugLoadCalls, 1);
+    },
+    variant: android,
+  );
+
+  testWidgets('supportLiquidGlassOnAndroid does not load off Android', (
+    t,
+  ) async {
+    shaderEnv();
+    await AdaptiveLiquidGlass.initialize(supportLiquidGlassOnAndroid: true);
+    expect(GlassProgram.instance.debugLoadCalls, 0);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
+
+  testWidgets('supportLiquidGlassOnAndroid without shader support is a no-op', (
+    t,
+  ) async {
+    GlassPlatform.instance.debugEnvironment = const GlassEnvironment(
+      platform: TargetPlatform.android,
+      iosMajorVersion: null,
+      reduceTransparency: false,
+      shaderSupported: false,
+    );
+    await AdaptiveLiquidGlass.initialize(supportLiquidGlassOnAndroid: true);
+    expect(GlassProgram.instance.debugLoadCalls, 0);
+  }, variant: android);
+
   testWidgets('initialize is a no-op without shader support', (t) async {
     GlassPlatform.instance.debugEnvironment = const GlassEnvironment(
       platform: TargetPlatform.iOS,
