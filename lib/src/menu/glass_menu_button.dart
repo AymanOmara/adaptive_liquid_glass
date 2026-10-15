@@ -158,6 +158,11 @@ class _MaterialMenuState extends State<_MaterialMenu>
                   foregroundColor: Theme.of(context).colorScheme.error,
                   iconColor: Theme.of(context).colorScheme.error,
                 )
+              : item.color != null
+              ? MenuItemButton.styleFrom(
+                  foregroundColor: item.color,
+                  iconColor: item.color,
+                )
               : null,
           child: Semantics(
             label: item.semanticLabel,

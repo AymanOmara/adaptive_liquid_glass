@@ -12,6 +12,7 @@ class GlassMenuItem {
     this.destructive = false,
     this.checked,
     this.semanticLabel,
+    this.color,
   });
 
   /// The item's label.
@@ -34,4 +35,9 @@ class GlassMenuItem {
 
   /// What assistive tech reads instead of [label].
   final String? semanticLabel;
+
+  /// A tint for the label and icon (and checkmark) on both paths. Null
+  /// keeps the default label colour. A disabled item stays dimmed and a
+  /// [destructive] one stays red: both take precedence over [color].
+  final Color? color;
 }
