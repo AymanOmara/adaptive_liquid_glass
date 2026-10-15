@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import '../native/glass_batch.dart';
+
 import 'glass.dart';
 import 'glass_constants.dart';
 import 'glass_render_mode.dart';
@@ -20,6 +22,7 @@ class LiquidGlassThemeData {
     this.constants = GlassConstants.standard,
     this.androidShaderBudget,
     this.supportLiquidGlassOnAndroid = false,
+    this.batchImplicitGroups = false,
   });
 
   /// Direction toward the light, radians, y-down screen space.
@@ -82,6 +85,28 @@ class LiquidGlassThemeData {
   /// on Android, so [androidShaderBudget] caps how many draw at once.
   final bool supportLiquidGlassOnAndroid;
 
+  /// Whether glass that would get a native view of its own on iOS 26+
+  /// shares one with its neighbours. Off by default.
+  ///
+  /// On iOS 26 a `LiquidGlass` outside any `GlassGroup` gets a group of its
+  /// own, and every group hosts one native (SwiftUI) platform view, which
+  /// is slow to create: a sheet with 29 bare chips stalls for about a
+  /// second. With this on:
+  ///
+  /// * `GlassSheet` content and `GlassScaffold` bodies host a [GlassBatch]
+  ///   automatically: their ungrouped glass draws in one native view.
+  /// * A `GlassGroup` on the native path takes any number of members (the
+  ///   16-shape cap only binds the shader); without this, members past the
+  ///   16th get native views of their own.
+  ///
+  /// A [GlassBatch] placed by the app works whether this is on or off. Glass
+  /// inside a scroll view joins a batch only when the batch is inside that
+  /// scroll view too, so for scrolling content put a [GlassBatch] around
+  /// the scrolled content yourself; see [GlassBatch] for what else keeps
+  /// glass out of a batch. Shader, Material and degraded glass are not
+  /// affected.
+  final bool batchImplicitGroups;
+
   /// Returns a copy with the given fields replaced (`androidShaderBudget`
   /// takes an `int?`; pass null to remove the cap).
   LiquidGlassThemeData copyWith({
@@ -91,6 +116,7 @@ class LiquidGlassThemeData {
     GlassConstants? constants,
     Object? androidShaderBudget = _unset,
     bool? supportLiquidGlassOnAndroid,
+    bool? batchImplicitGroups,
   }) => LiquidGlassThemeData(
     lightAngle: lightAngle ?? this.lightAngle,
     defaultGlass: defaultGlass ?? this.defaultGlass,
@@ -101,6 +127,7 @@ class LiquidGlassThemeData {
         : androidShaderBudget as int?,
     supportLiquidGlassOnAndroid:
         supportLiquidGlassOnAndroid ?? this.supportLiquidGlassOnAndroid,
+    batchImplicitGroups: batchImplicitGroups ?? this.batchImplicitGroups,
   );
 
   @override
@@ -111,7 +138,8 @@ class LiquidGlassThemeData {
       other.defaultMode == defaultMode &&
       other.constants == constants &&
       other.androidShaderBudget == androidShaderBudget &&
-      other.supportLiquidGlassOnAndroid == supportLiquidGlassOnAndroid;
+      other.supportLiquidGlassOnAndroid == supportLiquidGlassOnAndroid &&
+      other.batchImplicitGroups == batchImplicitGroups;
 
   @override
   int get hashCode => Object.hash(
@@ -121,5 +149,6 @@ class LiquidGlassThemeData {
     constants,
     androidShaderBudget,
     supportLiquidGlassOnAndroid,
+    batchImplicitGroups,
   );
 }

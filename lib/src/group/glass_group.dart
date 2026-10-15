@@ -77,6 +77,22 @@ class GlassGroup extends StatefulWidget {
   State<GlassGroup> createState() => _GlassGroupState();
 }
 
+/// Marks [child] as the group a `LiquidGlass` made for itself, which a
+/// `GlassBatch` may draw. Internal.
+class ImplicitGlassGroup extends InheritedWidget {
+  /// Marks [child].
+  const ImplicitGlassGroup({super.key, required GlassGroup super.child});
+
+  /// Whether [group], built at [context], is the marked group.
+  static bool marks(BuildContext context, GlassGroup group) => identical(
+    context.getInheritedWidgetOfExactType<ImplicitGlassGroup>()?.child,
+    group,
+  );
+
+  @override
+  bool updateShouldNotify(ImplicitGlassGroup oldWidget) => false;
+}
+
 class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
   final GlassRegistry _registry = GlassRegistry();
   final List<Listenable> _motion = [];
@@ -357,6 +373,7 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
         child: NativeGlassLayer(
           registry: _registry,
           spacing: widget.spacing,
+          batchable: ImplicitGlassGroup.marks(context, widget),
           child: content,
         ),
       );

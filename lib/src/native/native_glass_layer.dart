@@ -9,6 +9,7 @@ import '../group/entry_geometry.dart';
 import '../group/glass_entry.dart';
 import '../group/glass_group_scope.dart';
 import '../group/glass_registry.dart';
+import 'glass_batch.dart';
 
 /// How far the native view extends past the group on each side.
 const double kNativeOverhang = 24;
@@ -16,15 +17,43 @@ const double kNativeOverhang = 24;
 /// Live native glass views above which a debug build warns once.
 const int kNativeGroupWarningThreshold = 8;
 
+/// One shape for a native view: an entry's geometry and the opacity of
+/// the ancestors between it and the view (null: none; drawn opaque).
+typedef NativeGlassShape = ({EntryGeometry geometry, double? opacity});
+
+/// [registry]'s drawable entries for a group whose render box is [box],
+/// recording each entry's drawn rect in group-local coordinates
+/// (`GlassEntry.lastDrawnLocal`, used for removal ghosts). Null while
+/// [box] is not laid out or not invertible.
+List<EntryGeometry>? nativeGroupGeometry(
+  RenderBox? box,
+  GlassRegistry registry,
+) {
+  if (box == null || !box.attached || !box.hasSize) return null;
+  final toGlobal = box.getTransformTo(null);
+  final fromGlobal = Matrix4.tryInvert(toGlobal);
+  if (fromGlobal == null) return null;
+  final out = collectEntryGeometry(registry, toGlobal);
+  for (final g in out) {
+    g.entry.lastDrawnLocal = MatrixUtils.transformRect(fromGlobal, g.drawn);
+  }
+  return out;
+}
+
 /// Hosts SwiftUI's own Liquid Glass (a `GlassEffectContainer` with one
 /// `.glassEffect` view per member) behind the group's content and keeps its
 /// shapes, appearance and unions in sync.
+///
+/// When [batchable] (the group a `LiquidGlass` made for itself) and a
+/// [GlassBatch] above can take it, the batch's view draws the glass and
+/// this layer creates no view of its own.
 class NativeGlassLayer extends StatefulWidget {
   /// Creates the layer.
   const NativeGlassLayer({
     super.key,
     required this.registry,
     required this.spacing,
+    this.batchable = false,
     required this.child,
   });
 
@@ -34,12 +63,15 @@ class NativeGlassLayer extends StatefulWidget {
   /// Container spacing.
   final double spacing;
 
+  /// Whether an enclosing [GlassBatch] may draw this group's glass.
+  final bool batchable;
+
   /// Group content.
   final Widget child;
 
   /// Native glass views alive now (debug builds only; 0 in release).
   @visibleForTesting
-  static int get debugLiveCount => _NativeGlassLayerState._live;
+  static int get debugLiveCount => _NativeGlassViewState._live;
 
   /// Whether the too-many-views warning was printed; reset it in tests.
   @visibleForTesting
@@ -49,7 +81,126 @@ class NativeGlassLayer extends StatefulWidget {
   State<NativeGlassLayer> createState() => _NativeGlassLayerState();
 }
 
-class _NativeGlassLayerState extends State<NativeGlassLayer> {
+class _NativeGlassLayerState extends State<NativeGlassLayer>
+    implements NativeGlassBatchClient {
+  /// The batch drawing this group's glass, or null when the group has a
+  /// view of its own.
+  NativeGlassBatch? _batch;
+
+  /// Set when a batch gave this group back (it could not draw it
+  /// faithfully); the group then keeps a view of its own for good.
+  bool _ejected = false;
+
+  @override
+  GlassRegistry get registry => widget.registry;
+
+  @override
+  RenderBox? get groupBox =>
+      mounted ? context.findRenderObject() as RenderBox? : null;
+
+  @override
+  void eject() {
+    _batch = null;
+    if (!_ejected && mounted) setState(() => _ejected = true);
+  }
+
+  void _syncBatch() {
+    final next = widget.batchable && !_ejected
+        ? GlassBatchScope.joinable(context)
+        : null;
+    if (identical(next, _batch)) return;
+    _batch?.remove(this);
+    _batch = next;
+    next?.add(this);
+  }
+
+  @override
+  void didUpdateWidget(NativeGlassLayer old) {
+    super.didUpdateWidget(old);
+    if (old.registry != widget.registry) {
+      // Re-join (in build) so the batch listens to the new registry.
+      _batch?.remove(this);
+      _batch = null;
+    }
+  }
+
+  @override
+  void deactivate() {
+    _batch?.remove(this);
+    _batch = null;
+    super.deactivate();
+  }
+
+  @override
+  void dispose() {
+    _batch?.remove(this);
+    _batch = null;
+    super.dispose();
+  }
+
+  List<NativeGlassShape>? _shapes() => nativeGroupGeometry(
+    context.findRenderObject() as RenderBox?,
+    widget.registry,
+  )?.map<NativeGlassShape>((g) => (geometry: g, opacity: null)).toList();
+
+  @override
+  Widget build(BuildContext context) {
+    _syncBatch();
+    // Physical left/top/right/bottom on purpose: this is geometry, not
+    // reading order, so it is correct in RTL too.
+    // Passthrough: the group's child sees the group's own constraints, as
+    // in the shader and material paths. The slot stays while batched, so
+    // joining or leaving a batch never remounts the content.
+    return Stack(
+      fit: StackFit.passthrough,
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          left: -kNativeOverhang,
+          top: -kNativeOverhang,
+          right: -kNativeOverhang,
+          bottom: -kNativeOverhang,
+          child: _batch != null
+              ? const SizedBox.shrink()
+              : NativeGlassView(
+                  spacing: widget.spacing,
+                  repaint: widget.registry,
+                  shapes: _shapes,
+                ),
+        ),
+        widget.child,
+      ],
+    );
+  }
+}
+
+/// The platform view: one SwiftUI `GlassEffectContainer` drawing [shapes],
+/// sized by its parent (a group or a batch plus [kNativeOverhang] on each
+/// side).
+class NativeGlassView extends StatefulWidget {
+  /// Creates the view.
+  const NativeGlassView({
+    super.key,
+    required this.spacing,
+    required this.repaint,
+    required this.shapes,
+  });
+
+  /// Container spacing.
+  final double spacing;
+
+  /// Notifies when [shapes] may have changed.
+  final Listenable repaint;
+
+  /// The shapes to draw (geometry in global coordinates); null skips the
+  /// push.
+  final List<NativeGlassShape>? Function() shapes;
+
+  @override
+  State<NativeGlassView> createState() => _NativeGlassViewState();
+}
+
+class _NativeGlassViewState extends State<NativeGlassView> {
   MethodChannel? _channel;
   bool _scheduled = false;
 
@@ -85,7 +236,7 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
   @override
   void initState() {
     super.initState();
-    widget.registry.addListener(_schedule);
+    widget.repaint.addListener(_schedule);
     assert(() {
       _live++;
       if (_live > kNativeGroupWarningThreshold &&
@@ -96,7 +247,7 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
           'hosting its own native glass view, and every view is costly to '
           'create on iOS. A LiquidGlass outside a GlassGroup gets a group of '
           'its own: wrap repeated glass (list rows, chip rows, sheet content) '
-          'in one shared GlassGroup.',
+          'in one shared GlassGroup or GlassBatch.',
         );
       }
       return true;
@@ -104,18 +255,18 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
   }
 
   @override
-  void didUpdateWidget(NativeGlassLayer old) {
+  void didUpdateWidget(NativeGlassView old) {
     super.didUpdateWidget(old);
-    if (old.registry != widget.registry) {
-      old.registry.removeListener(_schedule);
-      widget.registry.addListener(_schedule);
+    if (old.repaint != widget.repaint) {
+      old.repaint.removeListener(_schedule);
+      widget.repaint.addListener(_schedule);
     }
     _schedule();
   }
 
   @override
   void dispose() {
-    widget.registry.removeListener(_schedule);
+    widget.repaint.removeListener(_schedule);
     assert(() {
       _live--;
       return true;
@@ -123,7 +274,7 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
     super.dispose();
   }
 
-  /// Coalesces registry changes into one push after the frame's layout.
+  /// Coalesces changes into one push after the frame's layout.
   ///
   /// A change reported during post-frame callbacks (a member that moved
   /// without the group repainting) comes after layout and paint already, so
@@ -144,38 +295,38 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
   }
 
   void _push() {
-    final box = context.findRenderObject() as RenderBox?;
-    if (box == null || !box.attached || !box.hasSize) return;
-    final toGlobal = box.getTransformTo(null);
-    final fromGlobal = Matrix4.tryInvert(toGlobal);
+    // Collected even before the platform view exists: that records where
+    // each entry was drawn (see nativeGroupGeometry).
+    final collected = widget.shapes();
+    if (collected == null) return;
+    final view = context.findRenderObject() as RenderBox?;
+    if (view == null || !view.attached || !view.hasSize) return;
+    final fromGlobal = Matrix4.tryInvert(view.getTransformTo(null));
     if (fromGlobal == null) return;
     final shapes = <Map<String, Object?>>[];
     // unionId objects become small indices (SwiftUI's glassEffectUnion id).
     final unions = <Object, int>{};
-    for (final g in collectEntryGeometry(widget.registry, toGlobal)) {
-      final local = MatrixUtils.transformRect(fromGlobal, g.drawn);
-      // Same contract as the shader renderer: where the entry was drawn,
-      // in group-local coordinates (used for removal ghosts). Recorded even
-      // before the platform view exists.
-      g.entry.lastDrawnLocal = local;
-      final r = local.shift(const Offset(kNativeOverhang, kNativeOverhang));
-      final glass = g.entry.glass;
+    for (final (:geometry, :opacity) in collected) {
+      final r = MatrixUtils.transformRect(fromGlobal, geometry.drawn);
+      final entry = geometry.entry;
+      final glass = entry.glass;
       shapes.add({
-        'id': _ids[g.entry] ??= _nextId++,
+        'id': _ids[entry] ??= _nextId++,
         'x': r.left,
         'y': r.top,
         'w': r.width,
         'h': r.height,
-        'radius': g.radius,
-        'capsule': g.circularCorners,
+        'radius': geometry.radius,
+        'capsule': geometry.circularCorners,
         'variant': glass.variant == GlassVariant.clear ? 1 : 0,
         'tint': glass.tintColor?.toARGB32(),
         'interactive': glass.isInteractive,
-        'union': switch (g.entry.unionId) {
+        'union': switch (entry.unionId) {
           null => null,
           final id => unions.putIfAbsent(id, () => unions.length),
         },
-        'fills': _fills(g.entry, g.drawn),
+        'fills': _fills(entry, geometry.drawn),
+        'opacity': ?opacity,
       });
     }
     final channel = _channel;
@@ -236,43 +387,24 @@ class _NativeGlassLayerState extends State<NativeGlassLayer> {
 
   @override
   Widget build(BuildContext context) {
-    // Physical left/top/right/bottom on purpose: this is geometry, not
-    // reading order, so it is correct in RTL too.
-    // Passthrough: the group's child sees the group's own constraints, as
-    // in the shader and material paths.
-    return Stack(
-      fit: StackFit.passthrough,
-      clipBehavior: Clip.none,
-      children: [
-        Positioned(
-          left: -kNativeOverhang,
-          top: -kNativeOverhang,
-          right: -kNativeOverhang,
-          bottom: -kNativeOverhang,
-          // Glass is visual only: UIKit interaction is off, and the view must
-          // never take part in Flutter hit testing or the gesture arena.
-          child: IgnorePointer(
-            child: UiKitView(
-              viewType: 'adaptive_liquid_glass/native_glass',
-              creationParams: <String, Object?>{
-                'spacing': widget.spacing,
-                'dark': _dark,
-                'shapes': const <Object?>[],
-              },
-              creationParamsCodec: const StandardMessageCodec(),
-              hitTestBehavior: PlatformViewHitTestBehavior.transparent,
-              onPlatformViewCreated: (id) {
-                _channel = MethodChannel(
-                  'adaptive_liquid_glass/native_glass_$id',
-                );
-                _lastSent = null;
-                _push();
-              },
-            ),
-          ),
-        ),
-        widget.child,
-      ],
+    // Glass is visual only: UIKit interaction is off, and the view must
+    // never take part in Flutter hit testing or the gesture arena.
+    return IgnorePointer(
+      child: UiKitView(
+        viewType: 'adaptive_liquid_glass/native_glass',
+        creationParams: <String, Object?>{
+          'spacing': widget.spacing,
+          'dark': _dark,
+          'shapes': const <Object?>[],
+        },
+        creationParamsCodec: const StandardMessageCodec(),
+        hitTestBehavior: PlatformViewHitTestBehavior.transparent,
+        onPlatformViewCreated: (id) {
+          _channel = MethodChannel('adaptive_liquid_glass/native_glass_$id');
+          _lastSent = null;
+          _push();
+        },
+      ),
     );
   }
 }

@@ -108,6 +108,9 @@ struct GlassSpec: Identifiable, Equatable {
   /// System fills drawn as the glass's own content (vibrant, as iOS 26's
   /// tab bar pill), in points relative to the shape.
   let fills: [GlassFill]
+  /// Opacity of the Flutter ancestors between the shape and a batch's view
+  /// (`GlassBatch`); 1 when Dart sends none.
+  let opacity: Double
 
   /// [fallbackId] (the payload index) is used only when Dart sends no `id`.
   init(fallbackId: Int, _ s: [String: Any]) {
@@ -121,6 +124,7 @@ struct GlassSpec: Identifiable, Equatable {
     tint = s["tint"] as? Int
     interactive = s["interactive"] as? Bool ?? false
     union = s["union"] as? Int
+    opacity = s["opacity"] as? Double ?? 1
     let f = s["fills"] as? [Double] ?? []
     fills = stride(from: 0, to: f.count - 5, by: 6).enumerated().map { i, k in
       GlassFill(
@@ -211,11 +215,20 @@ struct GlassHostView: View {
       // Fills belong to the glass: none reaches past its outline.
       .clipShape(shape(s))
       .glassEffect(glass(s), in: shape(s))
-    Group {
+    let united = Group {
       if let u = s.union {
         base.glassEffectUnion(id: u, namespace: unions)
       } else {
         base
+      }
+    }
+    // Only batched glass under a Flutter fade carries an opacity; other
+    // shapes take no modifier at all.
+    Group {
+      if s.opacity < 1 {
+        united.opacity(s.opacity)
+      } else {
+        united
       }
     }
     .position(x: s.frame.midX, y: s.frame.midY)

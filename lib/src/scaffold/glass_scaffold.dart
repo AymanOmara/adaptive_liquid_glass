@@ -8,6 +8,7 @@ import '../core/glass_render_mode.dart';
 import '../core/liquid_glass_theme.dart';
 import '../core/render_mode_resolver.dart';
 import '../foreground/glass_backdrop_source.dart';
+import '../native/glass_batch.dart';
 import '../navigation/glass_navigation_bar.dart';
 import '../platform/glass_platform.dart';
 import '../tab_bar/glass_tab_bar.dart';
@@ -300,6 +301,10 @@ class _GlassScaffoldState extends State<GlassScaffold> {
     final bottomInset = bars > 0 && !hidden ? gap + bars : safeBottom;
     final fab = widget.floatingActionButton;
     Widget content = widget.body;
+    if (LiquidGlassTheme.of(context).batchImplicitGroups) {
+      // Ungrouped glass in the body shares one native view (iOS 26+).
+      content = GlassBatch(child: content);
+    }
     if (tabBar?.minimizeBehavior == GlassTabBarMinimizeBehavior.onScrollDown) {
       content = NotificationListener<ScrollNotification>(
         onNotification: _onScroll,

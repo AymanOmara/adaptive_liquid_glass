@@ -4,6 +4,7 @@ import '../core/glass.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
 import '../core/glass_variant.dart';
+import '../core/liquid_glass_theme.dart';
 import '../degraded/degraded_glass.dart';
 import '../degraded/glass_loading_surface.dart';
 import '../foreground/glass_foreground.dart';
@@ -85,6 +86,9 @@ class GlassMemberState extends State<GlassMember>
   /// The scope's registry last seen, registered with or not.
   GlassRegistry? _scopeRegistry;
 
+  /// Whether the registration was subject to the group's shape cap.
+  bool _capped = true;
+
   /// Scroll positions between this member and its group's scrollable.
   final List<Listenable> _scrolls = [];
 
@@ -122,10 +126,17 @@ class GlassMemberState extends State<GlassMember>
     _settled = scope.settled;
     entry.container = ConcentricScope.maybeOf(context);
     final target = scope.rendering.drawnByGroup ? scope.registry : null;
-    if (!identical(target, _scopeRegistry)) {
+    // The 16-shape cap binds the shader; native glass takes any number
+    // when the app opted in to fewer native views.
+    final capped =
+        !(scope.rendering == GlassMemberRendering.native &&
+            LiquidGlassTheme.of(context).batchImplicitGroups);
+    if (!identical(target, _scopeRegistry) || capped != _capped) {
       _registry?.unregister(entry);
       _scopeRegistry = target;
-      final registered = target != null && target.register(entry);
+      _capped = capped;
+      final registered =
+          target != null && target.register(entry, capped: capped);
       _overflow = target != null && !registered;
       _registry = registered ? target : null;
     }
