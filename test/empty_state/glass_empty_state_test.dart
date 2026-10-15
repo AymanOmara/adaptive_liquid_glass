@@ -259,4 +259,26 @@ void main() {
           .dy,
     );
   }, variant: android);
+
+  testWidgets('glass: title and description keep the app font family', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(
+      plainHost(
+        const DefaultTextStyle(
+          style: TextStyle(fontFamily: 'Cairo', fontFamilyFallback: ['Noto']),
+          child: _state,
+        ),
+      ),
+    );
+    for (final text in [
+      'No Mail',
+      'New messages you receive will appear here.',
+    ]) {
+      expect(_style(t, text).fontFamily, 'Cairo');
+      expect(_style(t, text).fontFamilyFallback, ['Noto']);
+    }
+    expect(_style(t, 'No Mail').fontSize, EmptyStateMetrics.titleSize);
+  }, variant: ios);
 }
