@@ -39,6 +39,7 @@ class LiquidGlass extends StatelessWidget {
     this.unionId,
     this.mode,
     this.padding,
+    this.minSize,
     this.adaptiveForeground = true,
     this.onPressed,
     required this.child,
@@ -64,6 +65,13 @@ class LiquidGlass extends StatelessWidget {
   /// Prefer [EdgeInsetsDirectional] so the inset follows the reading
   /// direction.
   final EdgeInsetsGeometry? padding;
+
+  /// The glass's smallest size; null means it hugs [child] (plus
+  /// [padding]). The glass grows to at least this size with [child]
+  /// centred on it, so a 16 pt icon on a 44 pt circle needs no padding
+  /// arithmetic: `minSize: Size.square(44)`. A larger child still grows
+  /// the glass. Give a [GlassShape.circle] a square size.
+  final Size? minSize;
 
   /// Whether text and icons on the glass take a readable colour.
   ///
@@ -116,10 +124,22 @@ class LiquidGlass extends StatelessWidget {
       mode: mode,
       adaptiveForeground: adaptiveForeground,
       onPressed: onPressed,
-      child: padding == null ? child : Padding(padding: padding!, child: child),
+      child: _sized(
+        padding == null ? child : Padding(padding: padding!, child: child),
+      ),
     );
     return GlassGroupScope.maybeOf(context) == null
         ? GlassGroup(mode: mode, child: member)
         : member;
   }
+
+  Widget _sized(Widget content) => minSize == null
+      ? content
+      : ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: minSize!.width,
+            minHeight: minSize!.height,
+          ),
+          child: Center(widthFactor: 1, heightFactor: 1, child: content),
+        );
 }
