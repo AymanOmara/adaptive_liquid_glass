@@ -80,7 +80,7 @@ documented there), then score with
 
 ```yaml
 dependencies:
-  adaptive_liquid_glass: ^0.2.0
+  adaptive_liquid_glass: ^0.2.2
 ```
 
 ```dart
@@ -233,6 +233,12 @@ one subtree, pass `mode:` to `GlassGroup` or `LiquidGlass`
 (`GlassRenderMode.auto`, `shader`, `native` or `material`); set
 `defaultMode: GlassRenderMode.shader` in the theme to opt out of native glass
 app-wide.
+
+For function-style code that needs a boolean rather than a widget switch,
+`GlassAdaptive.pathOf(context)` returns the `GlassEffectivePath` the
+package would draw (native, shader, degraded, opaque or material) and
+`GlassAdaptive.usesGlass(context)` whether it is glass, using the same
+resolver as every widget.
 
 ### Android
 
@@ -443,6 +449,10 @@ GlassFloatingActionButton.extended(
 )
 ```
 
+`foregroundColor` sets the label and icon colour on both paths (a disabled
+button keeps its dimmed look), and `cornerRadius` sets the radius of a
+`GlassButtonShape.roundedRect` button.
+
 ### Card with padding
 
 ```dart
@@ -462,6 +472,9 @@ const LiquidGlass(
 
 Nested glass with `GlassShape.concentric()` follows the card's corners, inset
 by the distance between them.
+
+`minSize` makes the glass at least that size with the child centred, so a
+36-pt circle around an 18-pt icon needs no padding arithmetic.
 
 ### Morphing pair with `glassId`
 
@@ -637,6 +650,10 @@ const GlassTabBarItem.custom(
 
 `GlassTabBarItem.icon` is null for custom items.
 
+`labelMaxTextScale` caps how far the labels follow the system text size
+(the glass bar keeps iOS's default size; Material's `NavigationBar` stops
+at 1.3 on its own).
+
 ### Navigation bar
 
 ```dart
@@ -682,6 +699,10 @@ GlassLargeTitleScrollView(
 
 The body sits below the bar, not under it. Content that can be slivers
 belongs in a `CustomScrollView` after the bar, so it scrolls under the glass.
+
+`materialBuilder` replaces the Android bar: it receives the default
+`AppBar` (which already follows your `AppBarTheme`) and returns any
+`PreferredSizeWidget`, whose `preferredSize` sizes the `Scaffold` slot.
 
 ### Screen layout
 
@@ -837,6 +858,9 @@ The platter is opaque by default, as iOS 26 Settings; pass
 row highlights while pressed. On Android it is a Material 3 filled `Card`
 of `ListTile`s.
 
+`backgroundColor` and `separatorColor` replace the iOS system platter and
+hairline colours (the background is ignored when `glass` is set).
+
 ### Disclosure group
 
 ```dart
@@ -884,6 +908,9 @@ badge is iOS's small solid red capsule with a count (a dot when empty,
 hidden at 0) on a child's top trailing corner — iOS draws badges solid,
 not glass. Geometry estimated, not yet measured. On Android: `FilterChip`
 / `InputChip` and `Badge`.
+
+`GlassChip.subtitle` shows a secondary text after the label, such as a
+count, and is read with it.
 
 ### Page control and progress
 
@@ -976,6 +1003,10 @@ The sheet works like SwiftUI's `presentationDetents`:
 - `cornerRadius` and `grabberSize` change the floating sheet's corners and
   grabber (iOS 26's 38 and 34.67 x 5 by default). On Android
   `cornerRadius` rounds the bottom sheet's top corners.
+- `maxHeightFactor` caps the whole sheet, grabber and inset included, at a
+  fraction of the screen. `enableDrag: false` turns dragging off while
+  `isDismissible` still governs a tap outside. `isScrollControlled`
+  overrides the Material sheet's own choice.
 
 ### Full-screen cover
 
@@ -1052,6 +1083,9 @@ GlassMenuButton(controller: controller, /* ... */)
 On Android it is a Material 3 `MenuAnchor`; gliding is a no-op there, but
 opening and closing still work.
 
+`GlassMenuItem.color` tints a row's label and icon on both paths; disabled
+and `destructive` rows keep their own colours.
+
 ### Context menu
 
 ```dart
@@ -1109,6 +1143,13 @@ The compact style: the date in a grey capsule, opening a glass calendar
 popover. Picking a day closes it. On Android, a text button opening
 Material's `showDatePicker`.
 
+`showGlassDatePicker(context: context, initialDate: ..., firstDate: ...,
+lastDate: ...)` returns a `Future<DateTime?>`: a glass sheet with the
+calendar (picking a day confirms) or the wheels (a checkmark confirms);
+dismissing returns null. On Android it is `showDatePicker`.
+`firstDayOfWeek` (0 = Sunday to 6 = Saturday) overrides the locale's week
+start on the calendar; on Android the locale decides.
+
 ### Alert and confirmation dialog
 
 ```dart
@@ -1141,6 +1182,12 @@ buttons side by side; without `actions` it has one OK button, as SwiftUI's
 `.alert` does. The confirmation dialog is a 240-pt card with its
 buttons stacked. As in iOS 26, its cancel action isn't drawn: a tap
 outside takes it. On Android they are `AlertDialog`s.
+
+`showGlassAlert` also takes `content` (any widget under the message),
+`icon`, `barrierDismissible` (null keeps each platform's default) and
+`actionOrder` (`GlassAlertActionOrder.platform` puts Cancel where the
+platform does). `GlassDialogAction.subtitle` adds a secondary second line
+to a button, in alerts, confirmation dialogs and action sheets.
 
 ### Action sheet
 
@@ -1268,6 +1315,8 @@ underneath:
 - A full swipe (`allowsFullSwipe`, the default) runs the outermost action,
   with a haptic as it passes the threshold.
 - Only one row is open at a time. A scroll or a tap closes it.
+- `groupTag` limits that to rows with the same tag;
+  `GlassSwipeActions.closeGroup(tag)` and `closeAll()` close them from code.
 - VoiceOver and TalkBack get the actions as custom actions.
 
 ### iOS 26 colours

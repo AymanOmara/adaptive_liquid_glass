@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.2 (2026-10-15)
 
 - `LiquidGlassThemeData.supportLiquidGlassOnAndroid` (default false): one
   switch for the iOS look on Android. `auto` then draws the shader glass
