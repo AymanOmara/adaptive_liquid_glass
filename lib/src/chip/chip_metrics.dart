@@ -27,4 +27,10 @@ abstract final class ChipMetrics {
 
   /// Padding around the delete glyph, widening its touch target.
   static const double deleteHitPadding = 4;
+
+  /// The gap between the label and the subtitle.
+  static const double subtitleGap = 4;
+
+  /// The subtitle's opacity on a selected (tinted) chip's white.
+  static const double selectedSubtitleOpacity = 0.7;
 }
