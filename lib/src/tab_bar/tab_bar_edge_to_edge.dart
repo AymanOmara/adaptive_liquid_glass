@@ -15,5 +15,8 @@ bool tabBarEdgeToEdge(BuildContext context, GlassTabBar bar) =>
           requested: bar.mode ?? LiquidGlassTheme.of(context).defaultMode,
           environment: GlassPlatform.instance.environment.value,
           highContrast: MediaQuery.highContrastOf(context),
+          supportLiquidGlassOnAndroid: LiquidGlassTheme.of(
+            context,
+          ).supportLiquidGlassOnAndroid,
         ) ==
         EffectiveGlassMode.material;

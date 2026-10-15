@@ -21,11 +21,100 @@ EffectiveGlassMode r(
   GlassRenderMode m,
   GlassEnvironment e, {
   bool highContrast = false,
-}) =>
-    resolveGlassMode(requested: m, environment: e, highContrast: highContrast);
+  bool androidGlass = false,
+}) => resolveGlassMode(
+  requested: m,
+  environment: e,
+  highContrast: highContrast,
+  supportLiquidGlassOnAndroid: androidGlass,
+);
 
 void main() {
   const auto = GlassRenderMode.auto;
+
+  group('supportLiquidGlassOnAndroid', () {
+    const android = TargetPlatform.android;
+
+    test('auto on Android is shader glass with the flag', () {
+      expect(
+        r(auto, env(platform: android), androidGlass: true),
+        EffectiveGlassMode.shader,
+      );
+    });
+
+    test('auto on Android without shader support is the frosted blur', () {
+      expect(
+        r(auto, env(platform: android, shader: false), androidGlass: true),
+        EffectiveGlassMode.degraded,
+      );
+    });
+
+    test('auto on Android without the flag stays Material', () {
+      for (final shader in [true, false]) {
+        expect(
+          r(auto, env(platform: android, shader: shader)),
+          EffectiveGlassMode.material,
+        );
+      }
+    });
+
+    test('an explicit mode wins over the flag', () {
+      for (final shader in [true, false]) {
+        final e = env(platform: android, shader: shader);
+        expect(
+          r(GlassRenderMode.material, e, androidGlass: true),
+          EffectiveGlassMode.material,
+        );
+        final glass = shader
+            ? EffectiveGlassMode.shader
+            : EffectiveGlassMode.degraded;
+        expect(r(GlassRenderMode.shader, e, androidGlass: true), glass);
+        expect(r(GlassRenderMode.shader, e), glass);
+        expect(r(GlassRenderMode.native, e, androidGlass: true), glass);
+      }
+    });
+
+    test('iOS ignores the flag', () {
+      for (final glass in [true, false]) {
+        expect(r(auto, env(), androidGlass: glass), EffectiveGlassMode.native);
+        expect(
+          r(auto, env(ios: 18), androidGlass: glass),
+          EffectiveGlassMode.shader,
+        );
+        expect(
+          r(auto, env(ios: 18, shader: false), androidGlass: glass),
+          EffectiveGlassMode.degraded,
+        );
+      }
+    });
+
+    test('other platforms ignore the flag', () {
+      for (final p in [
+        TargetPlatform.macOS,
+        TargetPlatform.windows,
+        TargetPlatform.linux,
+        TargetPlatform.fuchsia,
+      ]) {
+        expect(
+          r(auto, env(platform: p), androidGlass: true),
+          EffectiveGlassMode.material,
+          reason: '$p',
+        );
+      }
+    });
+
+    test('high contrast and Reduce Transparency still make it opaque', () {
+      final e = env(platform: android);
+      expect(
+        r(auto, e, androidGlass: true, highContrast: true),
+        EffectiveGlassMode.opaque,
+      );
+      expect(
+        r(auto, env(platform: android, rt: true), androidGlass: true),
+        EffectiveGlassMode.opaque,
+      );
+    });
+  });
 
   test('auto on Android is material', () {
     expect(

@@ -283,6 +283,9 @@ class _GlassTabSidebarState extends State<GlassTabSidebar>
               widget.tabBar.mode ?? LiquidGlassTheme.of(context).defaultMode,
           environment: GlassPlatform.instance.environment.value,
           highContrast: MediaQuery.highContrastOf(context),
+          supportLiquidGlassOnAndroid: LiquidGlassTheme.of(
+            context,
+          ).supportLiquidGlassOnAndroid,
         ) ==
         EffectiveGlassMode.shader;
     return CustomPaint(

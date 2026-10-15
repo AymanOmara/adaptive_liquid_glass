@@ -36,4 +36,31 @@ void main() {
     await tester.pumpWidget(app(GlassRenderMode.shader));
     expect(data.defaultMode, GlassRenderMode.shader);
   });
+
+  test('supportLiquidGlassOnAndroid defaults to false', () {
+    expect(const LiquidGlassThemeData().supportLiquidGlassOnAndroid, isFalse);
+  });
+
+  test('supportLiquidGlassOnAndroid in copyWith, == and hashCode', () {
+    const off = LiquidGlassThemeData();
+    final on = off.copyWith(supportLiquidGlassOnAndroid: true);
+    expect(on.supportLiquidGlassOnAndroid, isTrue);
+    expect(on, isNot(off));
+    expect(on, const LiquidGlassThemeData(supportLiquidGlassOnAndroid: true));
+    expect(
+      on.hashCode,
+      const LiquidGlassThemeData(supportLiquidGlassOnAndroid: true).hashCode,
+    );
+    expect(on.copyWith().supportLiquidGlassOnAndroid, isTrue);
+    expect(
+      on
+          .copyWith(defaultMode: GlassRenderMode.shader)
+          .supportLiquidGlassOnAndroid,
+      isTrue,
+    );
+    expect(
+      on.copyWith(supportLiquidGlassOnAndroid: false),
+      const LiquidGlassThemeData(),
+    );
+  });
 }

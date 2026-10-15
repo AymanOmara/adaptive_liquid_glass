@@ -59,6 +59,9 @@ GlassToastHandle showGlassToast(
     requested: mode ?? LiquidGlassTheme.of(context).defaultMode,
     environment: GlassPlatform.instance.environment.value,
     highContrast: MediaQuery.highContrastOf(context),
+    supportLiquidGlassOnAndroid: LiquidGlassTheme.of(
+      context,
+    ).supportLiquidGlassOnAndroid,
   );
   if (effective == EffectiveGlassMode.material) {
     final messenger = ScaffoldMessenger.maybeOf(context);
