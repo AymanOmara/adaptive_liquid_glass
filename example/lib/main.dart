@@ -4,6 +4,7 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/testing.dart';
 import 'package:flutter/material.dart';
 
+import 'android_glass_toggle.dart';
 import 'demo.dart';
 import 'launch.dart';
 import 'reference_twin.dart';
@@ -63,8 +64,9 @@ Future<void> main() async {
     throw StateError(message);
   }
   // The gallery follows the package default unless `-mode` is passed, or
-  // `--dart-define=MODE=shader` (the iOS look on Android, or `native`,
-  // `material`) where no launch channel exists.
+  // `--dart-define=MODE=shader` (or `native`, `material`) where no launch
+  // channel exists. On Android the gallery's "iOS glass" toggle (or
+  // `--dart-define=ANDROID_GLASS=true`) sets supportLiquidGlassOnAndroid.
   const defineMode = String.fromEnvironment('MODE');
   final mode = scene == null && args.mode == null
       ? switch (defineMode) {
@@ -75,7 +77,7 @@ Future<void> main() async {
         }
       : harnessMode;
   runApp(
-    LiquidGlassTheme(
+    AndroidGlassTheme(
       data: LiquidGlassThemeData(constants: constants, defaultMode: mode),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

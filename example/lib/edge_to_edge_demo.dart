@@ -46,9 +46,9 @@ class _DemoState extends State<_Demo> {
       ],
       selectedIndex: _tab,
       onSelected: (i) => setState(() => _tab = i),
-      onSearch: () => ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Search tapped'))),
+      onSearch: () =>
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('Search tapped'))),
     ),
     body: Stack(
       children: [

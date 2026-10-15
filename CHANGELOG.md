@@ -1,5 +1,14 @@
 ## Unreleased
 
+- `LiquidGlassThemeData.supportLiquidGlassOnAndroid` (default false): one
+  switch for the iOS look on Android. `auto` then draws the shader glass
+  there (the frosted blur where `ImageFilter.isShaderFilterSupported` is
+  false) instead of Material 3; iOS and other platforms are unchanged, and
+  a widget's `mode:` or a non-`auto` `defaultMode` still wins.
+  `AdaptiveLiquidGlass.initialize(supportLiquidGlassOnAndroid: true)`
+  preloads the shaders; without it they load on first use (a plain blur
+  for the first frame or two). `androidShaderBudget` applies. The example
+  app has an "iOS glass" toggle on Android (`--dart-define=ANDROID_GLASS=true`).
 - Android, `GlassRenderMode.shader`: at most
   `LiquidGlassThemeData.androidShaderBudget` glass groups (default 4, per
   view; null = no cap) draw the shader at once; the rest draw the frosted
