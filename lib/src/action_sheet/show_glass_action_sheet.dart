@@ -39,8 +39,9 @@ import '../platform/glass_platform.dart';
 /// As on iOS 26, [cancel] is not drawn: a tap outside the card takes it
 /// (when it is the only action it is drawn). When [cancel] is null a
 /// tap outside just closes the card and the future completes with null.
-/// The future completes with the chosen action. On the Material path it
-/// is a Material 3 modal bottom sheet with a list, Cancel included.
+/// The future completes with the chosen action. An action's `subtitle`
+/// is a second line under its label. On the Material path it is a
+/// Material 3 modal bottom sheet with a list, Cancel included.
 Future<GlassDialogAction?> showGlassActionSheet({
   required BuildContext context,
   String? title,
@@ -92,12 +93,16 @@ Future<GlassDialogAction?> showGlassActionSheet({
                         ? TextStyle(color: Theme.of(context).colorScheme.error)
                         : null,
                   ),
+                  subtitle: a.subtitle == null ? null : Text(a.subtitle!),
                   onTap: () => Navigator.of(context).pop(a),
                 ),
               if (cancel != null) ...[
                 const Divider(),
                 ListTile(
                   title: Text(cancel.label),
+                  subtitle: cancel.subtitle == null
+                      ? null
+                      : Text(cancel.subtitle!),
                   onTap: () => Navigator.of(context).pop(cancel),
                 ),
               ],

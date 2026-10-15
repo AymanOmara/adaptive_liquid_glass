@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 
+import '../button/glass_button_role.dart';
 import '../core/glass_colors.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
@@ -19,6 +20,10 @@ import 'glass_dialog_button.dart';
 /// stacked (its title regular, in the label colour, as SwiftUI's). A
 /// confirmation dialog with a message lays its text out as the alert's
 /// (measured from SwiftUI iOS 26.4).
+///
+/// An [icon] sits above the title, aligned with the text; a [content]
+/// widget comes under the text, across the buttons' width. Neither is
+/// part of SwiftUI's alert, so their spacing reuses the text's.
 class GlassDialogCard extends StatelessWidget {
   /// Creates the card.
   const GlassDialogCard({
@@ -28,6 +33,9 @@ class GlassDialogCard extends StatelessWidget {
     required this.confirmation,
     this.title,
     this.message,
+    this.icon,
+    this.content,
+    this.platformOrder = false,
     this.mode,
   });
 
@@ -37,8 +45,18 @@ class GlassDialogCard extends StatelessWidget {
   /// The alert's message.
   final String? message;
 
+  /// A widget above the title.
+  final Widget? icon;
+
+  /// A widget under the title and message.
+  final Widget? content;
+
   /// The buttons, in order.
   final List<GlassDialogAction> actions;
+
+  /// Moves a [GlassButtonRole.cancel] action to iOS's place: leading when
+  /// two buttons sit side by side, last when they stack.
+  final bool platformOrder;
 
   /// Called with the tapped action.
   final ValueChanged<GlassDialogAction> onAction;
@@ -55,22 +73,36 @@ class GlassDialogCard extends StatelessWidget {
     final secondary = resolve(GlassColors.secondaryLabel);
     final title = this.title;
     final message = this.message;
-    final buttons = [
-      for (final a in actions)
-        GlassDialogButton(
-          action: a,
-          emphasised: confirmation,
-          onTap: () => onAction(a),
-        ),
-    ];
+    final icon = this.icon;
+    final content = this.content;
     final scale =
         MediaQuery.textScalerOf(context).scale(DialogMetrics.titleSize) /
         DialogMetrics.titleSize;
     // At the accessibility sizes an alert stacks its buttons, as iOS's.
     final side =
         !confirmation &&
-        buttons.length == 2 &&
+        actions.length == 2 &&
         scale < DialogMetrics.stackedButtonsTextScale;
+    var ordered = actions;
+    if (platformOrder) {
+      final cancel = [
+        for (final a in actions)
+          if (a.role == GlassButtonRole.cancel) a,
+      ];
+      final rest = [
+        for (final a in actions)
+          if (a.role != GlassButtonRole.cancel) a,
+      ];
+      ordered = side ? [...cancel, ...rest] : [...rest, ...cancel];
+    }
+    final buttons = [
+      for (final a in ordered)
+        GlassDialogButton(
+          action: a,
+          emphasised: confirmation,
+          onTap: () => onAction(a),
+        ),
+    ];
     final alertText = !confirmation || message != null;
     final text = Padding(
       padding: EdgeInsetsDirectional.symmetric(
@@ -81,6 +113,14 @@ class GlassDialogCard extends StatelessWidget {
             ? CrossAxisAlignment.start
             : CrossAxisAlignment.center,
         children: [
+          if (icon != null) ...[
+            IconTheme.merge(
+              data: IconThemeData(color: resolve(GlassColors.label)),
+              child: icon,
+            ),
+            if (title != null || message != null)
+              const SizedBox(height: DialogMetrics.messageGap),
+          ],
           if (title != null)
             Text(
               title,
@@ -128,13 +168,24 @@ class GlassDialogCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (title != null || message != null) ...[
+              if (title != null || message != null || icon != null) ...[
                 text,
+                // Under a message, UIKit's line spacing below its last
+                // line adds to the gap.
                 SizedBox(
-                  height: message != null
-                      ? DialogMetrics.messageButtonsGap
-                      : DialogMetrics.buttonsGap,
+                  height:
+                      (content != null
+                          ? DialogMetrics.messageGap
+                          : DialogMetrics.buttonsGap) +
+                      (message != null
+                          ? DialogMetrics.messageButtonsGap -
+                                DialogMetrics.buttonsGap
+                          : 0),
                 ),
+              ],
+              if (content != null) ...[
+                content,
+                const SizedBox(height: DialogMetrics.buttonsGap),
               ],
               if (side)
                 Row(

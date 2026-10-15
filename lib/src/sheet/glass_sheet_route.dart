@@ -17,6 +17,8 @@ class GlassSheetRoute<T> extends PopupRoute<T> {
     required this.initialDetent,
     required this.showGrabber,
     required this.isDismissible,
+    this.enableDrag = true,
+    this.maxHeightFactor,
     this.cornerRadius,
     this.grabberSize,
     this.glass,
@@ -40,6 +42,12 @@ class GlassSheetRoute<T> extends PopupRoute<T> {
 
   /// Whether a tap outside or a drag down dismisses the sheet.
   final bool isDismissible;
+
+  /// See [GlassSheetFrame.enableDrag].
+  final bool enableDrag;
+
+  /// See [GlassSheetFrame.maxHeightFactor].
+  final double? maxHeightFactor;
 
   /// See [GlassSheet.cornerRadius].
   final double? cornerRadius;
@@ -84,6 +92,8 @@ class GlassSheetRoute<T> extends PopupRoute<T> {
         initialDetent: initialDetent,
         showGrabber: showGrabber,
         isDismissible: isDismissible,
+        enableDrag: enableDrag,
+        maxHeightFactor: maxHeightFactor,
         cornerRadius: cornerRadius,
         grabberSize: grabberSize,
         glass: glass,

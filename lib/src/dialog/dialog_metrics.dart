@@ -60,6 +60,13 @@ abstract final class DialogMetrics {
   /// A button's label size.
   static const double buttonSize = 17;
 
+  /// An action's subtitle size: iOS's footnote, under the label. Not
+  /// measured (SwiftUI's alert buttons have no subtitle).
+  static const double subtitleSize = 13;
+
+  /// Above and below a button's label and subtitle.
+  static const double subtitleButtonPadding = 6;
+
   /// The text scale from which an alert stacks its two buttons, as iOS
   /// does at the accessibility sizes (AX1 sets 17 pt body text at 28 pt).
   static const double stackedButtonsTextScale = 28 / 17;

@@ -9,6 +9,7 @@ import '../core/render_mode_resolver.dart';
 import '../platform/glass_platform.dart';
 import 'glass_dialog_action.dart';
 import 'glass_dialog_route.dart';
+import 'material_dialog_action_label.dart';
 
 /// Shows an iOS 26 confirmation dialog, like SwiftUI's
 /// `.confirmationDialog`: a small glass card in the middle of the screen
@@ -56,7 +57,7 @@ Future<GlassDialogAction?> showGlassConfirmationDialog({
                       foregroundColor: Theme.of(context).colorScheme.error,
                     )
                   : null,
-              child: Text(a.label),
+              child: materialDialogActionLabel(context, a),
             ),
         ],
       ),
