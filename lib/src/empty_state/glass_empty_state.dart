@@ -103,27 +103,40 @@ class GlassEmptyState extends StatelessWidget {
         : _glass(context),
   );
 
-  Widget _glass(BuildContext context) => _column(
-    context,
-    iconColor: CupertinoDynamicColor.resolve(
-      GlassColors.secondaryLabel,
+  Widget _glass(BuildContext context) {
+    // The iOS styles replace the inherited one; keep the app's font.
+    final inherited = DefaultTextStyle.of(context).style;
+    return _column(
       context,
-    ),
-    titleStyle: IOSText.style(
-      EmptyStateMetrics.titleSize,
-      weight: EmptyStateMetrics.titleWeight,
-      color: CupertinoDynamicColor.resolve(GlassColors.label, context),
-    ),
-    descriptionStyle: IOSText.style(
-      EmptyStateMetrics.descriptionSize,
-      color: CupertinoDynamicColor.resolve(GlassColors.secondaryLabel, context),
-    ),
-    iconGap: _iconGap,
-    // SwiftUI's block sits above a plain centring (measured).
-    bottomInset: actions.isEmpty
-        ? EmptyStateMetrics.bottomInset
-        : EmptyStateMetrics.actionsBottomInset,
-  );
+      iconColor: CupertinoDynamicColor.resolve(
+        GlassColors.secondaryLabel,
+        context,
+      ),
+      titleStyle: IOSText.inFontOf(
+        IOSText.style(
+          EmptyStateMetrics.titleSize,
+          weight: EmptyStateMetrics.titleWeight,
+          color: CupertinoDynamicColor.resolve(GlassColors.label, context),
+        ),
+        inherited,
+      ),
+      descriptionStyle: IOSText.inFontOf(
+        IOSText.style(
+          EmptyStateMetrics.descriptionSize,
+          color: CupertinoDynamicColor.resolve(
+            GlassColors.secondaryLabel,
+            context,
+          ),
+        ),
+        inherited,
+      ),
+      iconGap: _iconGap,
+      // SwiftUI's block sits above a plain centring (measured).
+      bottomInset: actions.isEmpty
+          ? EmptyStateMetrics.bottomInset
+          : EmptyStateMetrics.actionsBottomInset,
+    );
+  }
 
   Widget _material(BuildContext context) {
     final theme = Theme.of(context);
