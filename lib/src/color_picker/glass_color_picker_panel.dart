@@ -308,6 +308,27 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
               ),
             ),
           ),
+          // The grid sits 1 pt further out than the rest, as UIKit's.
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: ColorPickerMetrics.gridInset,
+            ),
+            // At least the measured page; a wider sheet's grid (UIKit's
+            // cell aspect) is taller, and every page takes its size.
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                minHeight: ColorPickerMetrics.pageHeight,
+              ),
+              child: IndexedStack(
+                index: _page.index,
+                children: [
+                  ColorSwatchGrid(selected: _color, onSelected: _setOpaque),
+                  _inset(_spectrum()),
+                  _inset(_sliders(context)),
+                ],
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: ColorPickerMetrics.padding,
@@ -316,21 +337,6 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // At least the measured page; a wider sheet's grid
-                // (square cells) is taller, and every page takes its size.
-                ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minHeight: ColorPickerMetrics.pageHeight,
-                  ),
-                  child: IndexedStack(
-                    index: _page.index,
-                    children: [
-                      ColorSwatchGrid(selected: _color, onSelected: _setOpaque),
-                      _spectrum(),
-                      _sliders(context),
-                    ],
-                  ),
-                ),
                 if (widget.supportsOpacity) ...[
                   const SizedBox(height: ColorPickerMetrics.opacityGap),
                   _caption(context, widget.opacityLabel),
@@ -405,6 +411,14 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
         ],
       ),
     ),
+  );
+
+  /// A page other than the grid, at the sheet's own inset.
+  Widget _inset(Widget page) => Padding(
+    padding: const EdgeInsets.symmetric(
+      horizontal: ColorPickerMetrics.padding - ColorPickerMetrics.gridInset,
+    ),
+    child: page,
   );
 
   Widget _header(BuildContext context) => SizedBox(

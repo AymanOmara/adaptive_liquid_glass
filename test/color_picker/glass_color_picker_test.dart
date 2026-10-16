@@ -6,6 +6,7 @@ import 'package:adaptive_liquid_glass/src/color_picker/color_swatch_dot.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/color_swatch_grid.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/color_value_field.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/glass_color_picker_panel.dart';
+import 'package:adaptive_liquid_glass/src/color_picker/spectrum_map.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/material.dart';
@@ -275,7 +276,7 @@ void main() {
   }, variant: ios);
 
   testWidgets('on an iPhone 17 Pro the sheet floats 8 pt in and the grid '
-      'is 296 pt tall, as UIKit (measured)', (t) async {
+      'is 357.33 x 296, as UIKit (measured)', (t) async {
     shaderEnv();
     t.view.physicalSize = const Size(402, 874);
     t.view.devicePixelRatio = 1;
@@ -286,10 +287,26 @@ void main() {
     final panel = t.getRect(find.byType(GlassColorPickerPanel));
     expect(panel.left, moreOrLessEquals(8));
     expect(panel.right, moreOrLessEquals(402 - 8));
-    expect(
-      t.getSize(find.byType(ColorSwatchGrid)).height,
-      moreOrLessEquals(ColorPickerMetrics.pageHeight, epsilon: 0.34),
+    // UIKit's grid: 14.33 in, 357.33 x 296, cells 29.78 x 29.6.
+    final grid = t.getRect(find.byType(ColorSwatchGrid));
+    expect(grid.left - panel.left, moreOrLessEquals(14.33, epsilon: 0.01));
+    expect(grid.width, moreOrLessEquals(357.33, epsilon: 0.01));
+    expect(grid.height, moreOrLessEquals(296, epsilon: 0.01));
+    final cell = t.getSize(
+      find
+          .descendant(
+            of: find.byType(ColorSwatchGrid),
+            matching: find.byType(AspectRatio),
+          )
+          .first,
     );
+    expect(cell.width, moreOrLessEquals(357.33 / 12, epsilon: 0.01));
+    expect(cell.height, moreOrLessEquals(29.6, epsilon: 0.01));
+    // The other pages keep the sheet's 15.33 inset.
+    await t.tap(find.text('Spectrum'));
+    await t.pumpAndSettle();
+    final map = t.getRect(find.byType(SpectrumMap));
+    expect(map.left - panel.left, moreOrLessEquals(15.33, epsilon: 0.01));
     // UIKit's segmented control is 30.67 tall here, not SwiftUI's 32.
     expect(
       t

@@ -60,9 +60,7 @@ and CHANGELOG.md.
   Colour sheet (2026-10-14, second pass): side inset 8 (partial sheet
   detents now float at any height, SwiftUI .height(300...765) measured),
   segmented control 30.67, saved colours row, UIKit's Spectrum map
-  (mean |diff| 1.1/255) and an in-app eyedropper done. Left: the grid is
-  355.33 wide with square cells where UIKit's is 357.33 (cells 29.8 x
-  29.6); the loupe is estimated (UIKit's cannot be captured mid-drag);
+  (mean |diff| 1.1/255) and an in-app eyedropper done. Left: the loupe is estimated (UIKit's cannot be captured mid-drag);
   dark-mode "+" colours estimated.
   Refresh: the rubber band is UIKit's only for scrollables inheriting
   bouncing physics (their own BouncingScrollPhysics keeps Flutter's

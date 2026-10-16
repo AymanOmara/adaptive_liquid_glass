@@ -1522,8 +1522,7 @@ testWidgets('pays', (tester) async {
   such as maps, web views and native-mode glass. Saved colours live in
   memory unless the app passes `savedColors` / `onSavedColorsChanged` and
   stores them; a long press opens UIKit's context menu to delete one. The
-  loupe's size and magnification are estimated, and the grid is 2 pt
-  narrower than UIKit's (its cells are square).
+  loupe's size and magnification are estimated.
 - **Pull to refresh:** `GlassRefresh` gives a scrollable that inherits
   bouncing physics UIScrollView's rubber band under the pull (measured
   within 4 pt of UIKit's for 50-300 pt of finger travel). A scrollable

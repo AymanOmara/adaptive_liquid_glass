@@ -22,7 +22,7 @@ class _Swatch extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: AspectRatio(
-          aspectRatio: 1,
+          aspectRatio: ColorPickerMetrics.gridCellAspect,
           child: AnimatedContainer(
             duration: reduceMotion
                 ? Duration.zero

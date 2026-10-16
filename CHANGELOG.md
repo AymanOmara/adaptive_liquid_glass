@@ -6,6 +6,8 @@
 - `GlassColorPicker`: a long press on a saved colour opens the context
   menu with Delete, as UIKit does, instead of removing it at once
   (`deleteColorLabel` names the item).
+- `GlassColorPicker`: the sheet's grid is UIKit's size, 14.33 pt in and
+  357.33 x 296 on an iPhone 17 Pro (was 2 pt narrower with square cells).
 
 ## 0.2.3 (2026-10-15)
 
