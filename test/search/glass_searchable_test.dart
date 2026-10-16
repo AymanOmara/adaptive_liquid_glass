@@ -204,6 +204,41 @@ void main() {
     );
   }, variant: ios);
 
+  testWidgets('the close button is not clipped to a box, so its shadow '
+      'keeps its round edge', (t) async {
+    shaderEnv();
+    for (final direction in TextDirection.values) {
+      final controller = GlassSearchController();
+      addTearDown(controller.dispose);
+      await t.pumpWidget(_app(controller: controller, direction: direction));
+      controller.activate();
+      await t.pumpAndSettle();
+      final button = find.byType(SearchCancelButton);
+      expect(
+        find.ancestor(of: button, matching: find.byType(ClipRect)),
+        findsNothing,
+        reason: '$direction, shown',
+      );
+
+      // While hiding, only the room's end edge cuts it.
+      controller.cancel();
+      await t.pump();
+      final clip = find.ancestor(of: button, matching: find.byType(ClipRect));
+      final size = t.getSize(clip);
+      final rect = t.widget<ClipRect>(clip).clipper!.getClip(size);
+      expect(rect.top, lessThan(-50), reason: '$direction');
+      expect(rect.bottom, greaterThan(size.height + 50), reason: '$direction');
+      if (direction == TextDirection.ltr) {
+        expect(rect.left, lessThan(-50));
+        expect(rect.right, moreOrLessEquals(size.width));
+      } else {
+        expect(rect.left, moreOrLessEquals(0));
+        expect(rect.right, greaterThan(size.width + 50));
+      }
+      await t.pumpAndSettle();
+    }
+  }, variant: ios);
+
   testWidgets('re-activating mid-hide reveals the button again', (t) async {
     shaderEnv();
     final controller = GlassSearchController();

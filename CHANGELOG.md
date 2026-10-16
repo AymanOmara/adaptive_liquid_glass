@@ -1,5 +1,7 @@
 ## Unreleased
 
+- `GlassSearchable`: the close button's shadow is no longer cut to a box
+  as it appears and hides (a tint showed along its top and end edges).
 - Shader mode (iOS and the Android shared layer): pressed interactive
   glass lights up as SwiftUI's does. It now adds white over the whole
   pressed shape (`GlassVariantConstants.pressLift`), not only the glow

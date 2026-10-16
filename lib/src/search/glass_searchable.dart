@@ -448,18 +448,18 @@ class _GlassSearchableState extends State<GlassSearchable>
               0.0,
               (t - SearchMetrics.revealSplit) / (1 - SearchMetrics.revealSplit),
             );
-            return ClipRect(
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                widthFactor: slot,
-                child: Opacity(
-                  opacity: math.min(grow, 1.0),
-                  child: Padding(
-                    padding: EdgeInsetsDirectional.only(start: _cancelGap),
-                    child: Transform.scale(
-                      scale: lerpDouble(SearchMetrics.revealScale, 1, grow),
-                      child: _cancelButton(context),
-                    ),
+            // No clip: the button is transparent until its room is
+            // whole, and a clip would cut its shadow to a box.
+            return Align(
+              alignment: AlignmentDirectional.centerStart,
+              widthFactor: slot,
+              child: Opacity(
+                opacity: math.min(grow, 1.0),
+                child: Padding(
+                  padding: EdgeInsetsDirectional.only(start: _cancelGap),
+                  child: Transform.scale(
+                    scale: lerpDouble(SearchMetrics.revealScale, 1, grow),
+                    child: _cancelButton(context),
                   ),
                 ),
               ),
@@ -481,10 +481,12 @@ class _GlassSearchableState extends State<GlassSearchable>
       (_drawer ? SearchMetrics.drawerHeight : SearchMetrics.cancelSize);
 
   /// The close button while hiding: full size, fading over the first
-  /// [SearchMetrics.hideFade] of the hide as its room closes.
+  /// [SearchMetrics.hideFade] of the hide as its room closes, cut only at
+  /// the room's end so its shadow keeps its round edge elsewhere.
   Widget _hidingCancel(BuildContext context) {
     final p = _hide.value;
     return ClipRect(
+      clipper: _EndEdgeClipper(Directionality.of(context)),
       child: Align(
         alignment: AlignmentDirectional.centerStart,
         widthFactor: (1 - p).clamp(0.0, 1.0),
@@ -678,4 +680,35 @@ class _GlassSearchableState extends State<GlassSearchable>
       ],
     );
   }
+}
+
+/// Clips only past the end edge (right in LTR, left in RTL), leaving the
+/// other sides unbounded for the child's shadow.
+class _EndEdgeClipper extends CustomClipper<Rect> {
+  const _EndEdgeClipper(this.direction);
+
+  final TextDirection direction;
+
+  /// Far enough to clear any shadow.
+  static const double _open = 1000;
+
+  @override
+  Rect getClip(Size size) => switch (direction) {
+    TextDirection.ltr => Rect.fromLTRB(
+      -_open,
+      -_open,
+      size.width,
+      size.height + _open,
+    ),
+    TextDirection.rtl => Rect.fromLTRB(
+      0,
+      -_open,
+      size.width + _open,
+      size.height + _open,
+    ),
+  };
+
+  @override
+  bool shouldReclip(_EndEdgeClipper oldClipper) =>
+      oldClipper.direction != direction;
 }
