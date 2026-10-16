@@ -64,6 +64,7 @@ class GlassColorPickerPanel extends StatefulWidget {
     this.onSavedColorsChanged,
     this.savedColorLabel = 'Saved colour',
     this.addColorLabel = 'Add to saved colours',
+    this.deleteColorLabel = 'Delete',
     this.onEyedropper,
     this.eyedropperLabel = 'Eyedropper',
   });
@@ -122,7 +123,7 @@ class GlassColorPickerPanel extends StatefulWidget {
   final List<Color>? savedColors;
 
   /// Called with the new list when the "+" saves the current colour or a
-  /// long press removes one; with [savedColors], store it and pass it back
+  /// context menu's Delete removes one; with [savedColors], store it and pass it back
   /// to keep the change.
   final ValueChanged<List<Color>>? onSavedColorsChanged;
 
@@ -131,6 +132,9 @@ class GlassColorPickerPanel extends StatefulWidget {
 
   /// The "+" button's screen-reader label.
   final String addColorLabel;
+
+  /// The saved colours' context-menu item that deletes one.
+  final String deleteColorLabel;
 
   /// Called by the eyedropper at the top start; no eyedropper when null.
   /// `GlassColorPicker` hides its sheet and runs `pickColorFromApp`.
@@ -183,6 +187,7 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
     colors: saved,
     savedLabel: widget.savedColorLabel,
     addLabel: widget.addColorLabel,
+    deleteLabel: widget.deleteColorLabel,
     onPick: (c) => _set(
       hsv: HSVColor.fromColor(c.withValues(alpha: 1)),
       alpha: widget.supportsOpacity ? c.a : null,

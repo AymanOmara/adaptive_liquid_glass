@@ -1521,7 +1521,7 @@ testWidgets('pays', (tester) async {
   page under the sheet): not other apps, the status bar or platform views
   such as maps, web views and native-mode glass. Saved colours live in
   memory unless the app passes `savedColors` / `onSavedColorsChanged` and
-  stores them; a long press removes one (UIKit uses a context menu). The
+  stores them; a long press opens UIKit's context menu to delete one. The
   loupe's size and magnification are estimated, and the grid is 2 pt
   narrower than UIKit's (its cells are square).
 - **Pull to refresh:** `GlassRefresh` gives a scrollable that inherits

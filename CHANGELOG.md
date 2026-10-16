@@ -3,6 +3,9 @@
 - Android shared glass layer: a rounded, superellipse, oval, path or
   `PhysicalModel` clip around glass now clips the glass and its content to
   that shape, not to its bounding rectangle.
+- `GlassColorPicker`: a long press on a saved colour opens the context
+  menu with Delete, as UIKit does, instead of removing it at once
+  (`deleteColorLabel` names the item).
 
 ## 0.2.3 (2026-10-15)
 

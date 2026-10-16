@@ -60,6 +60,7 @@ class GlassColorPicker extends StatefulWidget {
     this.onSavedColorsChanged,
     this.savedColorLabel = 'Saved colour',
     this.addColorLabel = 'Add to saved colours',
+    this.deleteColorLabel = 'Delete',
     this.supportsEyedropper = true,
     this.eyedropperLabel = 'Eyedropper',
   });
@@ -109,7 +110,7 @@ class GlassColorPicker extends StatefulWidget {
   final List<Color>? savedColors;
 
   /// Called with the new saved colours when the sheet's "+" saves the
-  /// current colour or a long press removes one. With [savedColors],
+  /// current colour or a context menu's Delete removes one. With [savedColors],
   /// store the list (persist it if you like) and pass it back.
   final ValueChanged<List<Color>>? onSavedColorsChanged;
 
@@ -118,6 +119,9 @@ class GlassColorPicker extends StatefulWidget {
 
   /// The sheet's "+" (save the colour) screen-reader label.
   final String addColorLabel;
+
+  /// The saved colours' context-menu item that deletes one.
+  final String deleteColorLabel;
 
   /// Whether the sheet has UIKit's eyedropper: it hides the sheet, shows
   /// a loupe over the app to drag, picks the pixel under it (keeping the
@@ -156,6 +160,7 @@ class _GlassColorPickerState extends State<GlassColorPicker> {
     onSavedColorsChanged: widget.onSavedColorsChanged,
     savedColorLabel: widget.savedColorLabel,
     addColorLabel: widget.addColorLabel,
+    deleteColorLabel: widget.deleteColorLabel,
     eyedropperLabel: widget.eyedropperLabel,
     onEyedropper: widget.supportsEyedropper ? () => _eyedropper(context) : null,
   );
