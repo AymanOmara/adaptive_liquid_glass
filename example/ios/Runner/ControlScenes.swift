@@ -46,11 +46,14 @@ enum ControlScenes {
     case "contextmenuopen": root = AnyView(ContextMenuReference(open: true))
     case "contextmenuuikit": root = AnyView(UIKitContextMenuReference())
     case "contextmenuuikitleft": root = AnyView(UIKitContextMenuReference(x: 110))
+    case "contextmenuuikitstripes": root = AnyView(UIKitContextMenuReference(stripes: true))
+    case "contextmenuuikitmotion": root = AnyView(UIKitContextMenuReference(openOnTap: true))
     case "contextmenuuikitwide": root = AnyView(
       UIKitContextMenuReference(size: CGSize(width: 360, height: 80), white: true))
     case "stepper": root = AnyView(StepperReference())
     case "picker": root = AnyView(PickerReference())
     case "datepicker": root = AnyView(DatePickerReference())
+    case "datetimepicker": root = AnyView(DatePickerReference(time: true))
     case "searchtab": root = AnyView(SearchTabReference())
     case "swipe": root = AnyView(SwipeReference(tall: false))
     case "swipetall": root = AnyView(SwipeReference(tall: true))
@@ -83,10 +86,15 @@ enum ControlScenes {
     case "refresh": root = AnyView(RefreshReference())
     case "colorrow": root = AnyView(ColorSheetReference(present: false))
     case "colorsheet": root = AnyView(ColorSheetReference(present: true))
+    case "colorrowdark": root = AnyView(ColorSheetReference(present: false, dark: true))
     case "coverclose": root = AnyView(CoverCloseReference())
     case "timewheel": root = AnyView(TimeWheelReference())
     case "searchscopes": root = AnyView(SearchScopesReference(query: ""))
     case "searchscopesquery": root = AnyView(SearchScopesReference(query: "Ro"))
+    case "searchdrawer": root = AnyView(SearchScopesReference(query: "", drawer: true))
+    case "searchdrawerquery": root = AnyView(SearchScopesReference(query: "Ro", drawer: true))
+    case "searchdrawerplain": root = AnyView(SearchScopesReference(query: "", drawer: true, plain: true))
+    case "searchdrawerplainquery": root = AnyView(SearchScopesReference(query: "Ro", drawer: true, plain: true))
     default: return false
     }
     window?.rootViewController = UIHostingController(rootView: root)
@@ -687,11 +695,12 @@ struct PickerReference: View {
 /// open. White page.
 @available(iOS 26.0, *)
 struct DatePickerReference: View {
-  @State private var date = Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 6))!
+  var time = false
+  @State private var date = Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 6, hour: 9, minute: 41))!
   var body: some View {
     ZStack(alignment: .topLeading) {
       Color.white
-      DatePicker("", selection: $date, displayedComponents: .date)
+      DatePicker("", selection: $date, displayedComponents: time ? [.date, .hourAndMinute] : .date)
         .labelsHidden().fixedSize().position(x: 201, y: 300)
     }
     .frame(width: 402, height: 874)

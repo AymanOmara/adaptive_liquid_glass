@@ -176,11 +176,21 @@ abstract final class ColorPickerMetrics {
   /// 29.8 x 29.6 pt each on iPhone 17 Pro).
   static const double gridGap = 0;
 
+  /// The grid's side inset, 1 pt less than the rest of the sheet's
+  /// (measured: 14.33, the grid 357.33 wide in a 386-pt sheet).
+  static const double gridInset = 14.33;
+
+  /// A grid swatch's width over its height (measured: 357.33 / 12 wide,
+  /// 296 / 10 tall).
+  static const double gridCellAspect =
+      (357.33 / gridColumns) / (296 / gridRows);
+
   /// The grid's outer corner radius (measured, continuous corners).
   static const double gridRadius = 8;
 
-  /// The selected grid swatch's ring thickness (estimated).
-  static const double gridSelectionRing = 2;
+  /// The selected grid swatch's ring thickness, inside the swatch
+  /// (measured: 7 px, light and dark).
+  static const double gridSelectionRing = 7 / 3;
 
   /// The spectrum map's corner radius (measured, about 8, as the grid's).
   static const double spectrumRadius = 8;

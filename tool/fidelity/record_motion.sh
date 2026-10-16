@@ -12,7 +12,8 @@
 # Disk guards: stops when / has under MIN_FREE_GB (20) free, before the run
 # and before every take, and when the run dir exceeds MAX_RUN_GB (3).
 # Env: UDID (default: the motion simulator), CONSTANTS='{"motion":{...}}'
-#      (Flutter only), RENDERERS="flutter swiftui", SKIP_BUILD=1,
+#      (Flutter only), MODE=native (Flutter only: Apple's glass, not the
+#      shader), RENDERERS="flutter swiftui", SKIP_BUILD=1,
 #      PRE=0.8 (s recorded before the touch), POST=1.6 (s after it ends),
 #      WARMUP=1 (run the motion once, unrecorded, first; 0 disables), DUMP=1
 set -euo pipefail
@@ -137,6 +138,7 @@ while read -r id kind tx ty hold crop; do
     xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
     extra=()
     [[ "$r" == flutter && -n "${CONSTANTS:-}" ]] && extra=(-constants "$CONSTANTS")
+    [[ "$r" == flutter && -n "${MODE:-}" ]] && extra+=(-mode "$MODE")
     if [[ "$DUMP" != 0 ]]; then
       IFS=: read -r cw ch cx cy <<<"$crop"
       extra+=(-dump "$cx,$cy,$cw,$ch,$(dump_frames "$hold")")

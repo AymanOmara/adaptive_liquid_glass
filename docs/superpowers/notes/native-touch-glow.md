@@ -1,7 +1,26 @@
 # Native mode: SwiftUI's touch glow on pressed glass
 
-**Outcome (2026-10-14):** not achievable with supported APIs. Code unchanged;
-the README's Known limitations entry stands.
+**Outcome (2026-10-14):** SwiftUI's own glow cannot be triggered with
+supported APIs (below).
+
+**Update (2026-10-17):** native mode now draws the press light itself, as
+it already drew the growth. `GlassPlatformView.swift` adds white with
+`.plusLighter` inside each pressed shape: a lift over the whole shape plus
+a Gaussian under the finger (`NativePressLight` in
+`lib/src/native/native_glass_layer.dart`). Its timing is
+`GlassPressController.light`: on in the frame of the touch, held 0.33 s
+past the release while fading 20%, then off within a frame.
+
+Measured with `MODE=native tool/fidelity/record_motion.sh … press-capsule-photo`
+(iPhone 17 Pro, iOS 26.4): the SwiftUI frames minus this package's native
+frames. The rest frames match exactly (it is the same Apple glass), so the
+pressed residual is the light alone. Fitted inside the shape with the finger
+fixed: light 10.2 + 5.0·G(σ 39 pt), dark 12.6 + 17.8·G(σ 43 pt), out of
+255. SwiftUI realizes 89% (light) and 93% (dark) of a `.plusLighter` lift
+inside glass, so the lifts are asked that much higher. In-shape |diff| over
+the whole press went from 4.09 to 1.11 (light) and from 6.04 to 1.61 (dark).
+At the hold, rms went from 12.6 to 4.2 and from 20.5 to 5.0, which is the
+model's floor.
 
 ## Why
 

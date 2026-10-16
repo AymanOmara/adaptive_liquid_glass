@@ -553,6 +553,49 @@ def last_components(d):
         tc["band_width_24"] = r(bx[-1][1] - bx[0][0])
     if tc:
         out["date_wheel_time"] = tc
+    # Search in the navigation bar's drawer, active (`-controls
+    # searchdrawerquery`): the field, close button and scope bar; the
+    # plain-list scenes' red rows mark where the content starts.
+    if (d / "searchdrawerquery.png").exists():
+        a = load(d, "searchdrawerquery.png")
+        bright = a.min(axis=-1) >= 250
+        fy = [q for q in runs(bright[:, int(100 * S)]) if q[1] - q[0] > 30][0]
+        mid = int((fy[0] + fy[1]) / 2 * S)
+        # Lifted runs, merged across glyphs (the shadow between the field
+        # and the close button is wider than 6 pt).
+        fx = []
+        for q in runs(a[mid].min(axis=-1) >= 250):
+            if fx and q[0] - fx[-1][1] < 6:
+                fx[-1] = (fx[-1][0], q[1])
+            else:
+                fx.append(q)
+        field, close = (fx[0][0], fx[-2][1]), fx[-1]
+        fend = field[1]
+        band = a[int(fy[0] * S):int(fy[1] * S)]
+        ink = runs((band.max(axis=-1) < 128).any(axis=0))
+        ink = [q for q in ink if field[0] < q[0] < fend]
+        sc = [q for q in runs(a[:, int(201 * S)].max(axis=-1) >= 248) if q[0] > fy[1] + 5][0]
+        out["search_drawer"] = {
+            "top": r(fy[0]), "height": r(fy[1] - fy[0]),
+            "start_inset": r(field[0]), "field_end": r(fend),
+            "close_start": r(close[0]), "close_end_inset": r(W - close[1]),
+            "icon_start": r(ink[0][0] - field[0]),
+            "clear_end": r(fend - ink[-1][1]),
+            "scope_top": r(sc[0]),
+        }
+        for name, key in (("searchdrawerplain.png", "content_top"),
+                          ("searchdrawerplainquery.png", "content_top_scopes")):
+            if (d / name).exists():
+                p = load(d, name)
+                red = (p[..., 0] > 200) & (p[..., 1] < 80) & (p[..., 2] < 80)
+                out["search_drawer"][key] = r(np.flatnonzero(red[:, int(201 * S)])[0] / S)
+    # Date-and-time compact picker (`-controls datetimepicker`): the gap
+    # between its date and time capsules, along their centre line.
+    if (d / "datetimepicker.png").exists():
+        a = load(d, "datetimepicker.png")
+        caps = [c for c in runs(a[int(300 * S)].max(axis=-1) < 245)
+                if c[1] - c[0] > 20]
+        out["date_picker_time"] = {"capsule_gap": r(caps[1][0] - caps[0][1])}
     # Search scopes (typed query, bar at the top) and suggestions.
     if (d / "searchscopesquery.png").exists():
         a = load(d, "searchscopesquery.png")
@@ -687,6 +730,44 @@ def last_components(d):
                 "channel_pitch": r((tr[-1][0] - tr[0][0]) / (len(tr) - 1)),
                 "hex_top": r(hy[0] - gy[0]), "hex_width": r(hx[1] - hx[0]),
             })
+    # The sheet's colours, light and dark system appearance: the colorrow
+    # scene's sheet after a tap on the swatch, then on the grid swatch at
+    # (188, 524) (colorsheet_sel / colorsheetdark_sel). Points are for
+    # iPhone 17 Pro, where the sheet sits 265 pt down.
+    colours = {}
+    for name, key in (("colorsheet_sel", "light"), ("colorsheetdark_sel", "dark")):
+        if not (d / f"{name}.png").exists():
+            continue
+        a = load(d, f"{name}.png")
+        px = lambda x, y: a[int(y * S), int(x * S)]
+        bg = px(196.5, 690)
+        # The separator: the one row at x 201 that differs from the sheet.
+        col = a[int(745 * S):int(762 * S), int(201 * S)]
+        line = [i for i in range(len(col)) if np.abs(col[i] - bg).max() > 12]
+        # The checker's grey cell at the clear end of the opacity track,
+        # and the clear one beside it (the sheet).
+        # The selected swatch's ring: the run of the ring's colour where
+        # the swatch starts, on the row through its centre.
+        row = a[int(524 * S), int(165 * S):int(212 * S)]
+        ring = row[18]
+        width = 0
+        while np.abs(row[18 + width] - ring).max() <= 2:
+            width += 1
+        colours[key] = {
+            "sheet": hexc(bg),
+            "plus_fill": hexc(px(352, 782)),
+            "plus_glyph": hexc(px(360.7, 789.5)),
+            "field": hexc(px(310, 714.9)),
+            "separator": hexc(col[line[-1]]) if line else None,
+            "separator_px": len(line),
+            "checker_grey": hexc(px(27, 706)),
+            "checker_clear": hexc(px(27, 715)),
+            "selection_ring": hexc(ring),
+            "selection_ring_width": r(width / S),
+            "thumb_ring": hexc(px(258.7, 714.9)),
+        }
+    if colours:
+        out["color_sheet_colours"] = colours
     # Context menu (UIKit interaction opened programmatically).
     cm = {}
     for name, cx in (("contextmenuuikit", 201), ("contextmenuuikitleft", 110),
@@ -706,6 +787,22 @@ def last_components(d):
                     "dim": hexc(bg)}
     if cm:
         out["context_menu"] = cm
+    # The page behind the menu over 100-pt black and white stripes
+    # (`-controls contextmenuuikitstripes`): how far each stripe edge
+    # spreads (10-90 % of the step) under the row at 750, below the menu.
+    if (d / "contextmenuuikitstripes.png").exists():
+        a = load(d, "contextmenuuikitstripes.png")
+        row = a[int(750 * S)].mean(axis=-1)
+        spread = []
+        for e in (100, 200, 300):
+            seg = row[int((e - 6) * S):int((e + 6) * S)]
+            n = (seg - seg.min()) / (seg.max() - seg.min())
+            spread.append(float(((n > 0.1) & (n < 0.9)).sum()) / S)
+        out["context_menu_page"] = {
+            "edge_spread": r(max(spread)),
+            "white": hexc(a[int(750 * S), int(150 * S)]),
+            "black": hexc(a[int(750 * S), int(50 * S)]),
+        }
     return out
 
 
@@ -730,7 +827,9 @@ def main():
         comp.update(more_components(d / "swiftui"))
     if any((d / "swiftui" / f).exists() for f in
            ("timewheel.png", "searchscopesquery.png", "colorsheet_tap.png",
-            "contextmenuuikit.png")):
+            "contextmenuuikit.png", "contextmenuuikitstripes.png",
+            "datetimepicker.png", "colorsheet_sel.png",
+            "searchdrawerquery.png")):
         comp.update(last_components(d / "swiftui"))
     print(json.dumps(comp, indent=1))
     if "--dry" in sys.argv:

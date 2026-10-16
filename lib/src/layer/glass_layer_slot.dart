@@ -142,6 +142,7 @@ class RenderGlassLayerSlot extends RenderBox {
               : MatrixUtils.transformRect(toGlobal, frame.localBounds),
           config: box.config,
           clip: chain.clip,
+          clipPath: chain.clipPath,
           opacity: chain.opacity,
           content: content,
         ),
@@ -227,12 +228,21 @@ class RenderGlassLayerSlot extends RenderBox {
             )
           : shaderFilter,
     )..backdropKey = key;
-    context.pushClipRect(
-      true,
-      offset,
-      MatrixUtils.transformRect(fromGlobal, pass.bounds),
-      (ctx, o) => ctx.pushLayer(backdrop, (_, _) {}, o),
-    );
+    final bounds = MatrixUtils.transformRect(fromGlobal, pass.bounds);
+    void draw(PaintingContext ctx, Offset o) =>
+        ctx.pushLayer(backdrop, (_, _) {}, o);
+    final shape = pass.clipPath;
+    if (shape == null) {
+      context.pushClipRect(true, offset, bounds, draw);
+    } else {
+      context.pushClipPath(
+        true,
+        offset,
+        bounds,
+        shape.transform(fromGlobal.storage),
+        draw,
+      );
+    }
   }
 
   void _paintContent(
@@ -257,11 +267,18 @@ class RenderGlassLayerSlot extends RenderBox {
 
     final clip = c.chain.clip;
     if (clip == null) return faded(context, offset);
-    context.pushClipRect(
-      true,
-      offset,
-      MatrixUtils.transformRect(fromGlobal, clip),
-      faded,
-    );
+    final bounds = MatrixUtils.transformRect(fromGlobal, clip);
+    final shape = c.chain.clipPath;
+    if (shape == null) {
+      context.pushClipRect(true, offset, bounds, faded);
+    } else {
+      context.pushClipPath(
+        true,
+        offset,
+        bounds,
+        shape.transform(fromGlobal.storage),
+        faded,
+      );
+    }
   }
 }

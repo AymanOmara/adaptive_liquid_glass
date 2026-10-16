@@ -80,7 +80,7 @@ documented there), then score with
 
 ```yaml
 dependencies:
-  adaptive_liquid_glass: ^0.2.3
+  adaptive_liquid_glass: ^0.2.4
 ```
 
 ```dart
@@ -153,7 +153,9 @@ Every preset still chains: `Glass.smoke.interactive()`.
 
 With `onPressed` the glass is a button: it gets button semantics, takes
 focus, answers Enter and Space, and its glass turns interactive (the press
-stretch and glow on iOS, the ripple on Android). Pass
+stretch and light on iOS, the ripple on Android; the light is SwiftUI's,
+measured: white over the whole shape plus a glow under the finger, on at
+the touch and held 0.33 s past the release). Pass
 `Glass.regular.interactive(false)` to keep the tap without the press
 visuals.
 
@@ -1457,21 +1459,25 @@ testWidgets('pays', (tester) async {
 
 ## Known limitations
 
-- **Context menu not measured:** synthetic touches on the simulator do
-  not open SwiftUI's `.contextMenu`, so `GlassContextMenu` follows the
-  system's look but has not been measured. Of the newer components'
-  motion, the disclosure spring, the refresh snap-back, threshold and
-  rubber band, the colour grid's ring and `GlassSearchable`'s
-  close-button reveal and hide are measured; the wheel picker's
-  VoiceOver step is not.
+- **Context menu:** `GlassContextMenu`'s layout and its opening and
+  closing springs are measured from UIKit's UIContextMenuInteraction
+  (which SwiftUI's `.contextMenu` rides on), opened programmatically:
+  synthetic touches on the simulator open neither, so the press before
+  the lift (the item easing under the finger) is not measured. Of the
+  newer components' motion, only the wheel picker's VoiceOver step is
+  unmeasured.
 - **Native mode, runtime light→dark flip:** on iOS 26, 71 of 72 measured
   brightness flips at runtime match SwiftUI. One does not: a regular glass
   capsule over a photo, flipped from light to dark, keeps part of Apple's
   previous look (SSIM 0.84 against a dark launch, which matches). Apple's
   glass appears to keep state from glass drawn earlier in the process; it
   is not fixed by rebuilding the glass.
-- **Native interactive glass:** pressing native glass gets this package's
-  stretch and growth, but not SwiftUI's own touch glow.
+- **Native interactive glass:** Flutter keeps the touches, so SwiftUI's
+  own press never runs on native glass. The package draws its growth,
+  stretch and light instead, measured from SwiftUI's (on at the touch,
+  held 0.33 s past the release; in-shape error over a press 1.1 light,
+  1.6 dark, from 4.1 and 6.0). The light is measured on regular glass
+  only; clear glass uses the same values.
 - **Tab bar:** close to iOS 26.4's `TabView`, not identical. Over photos
   the shader-drawn bar draws untinted labels vibrant, as iOS does (each
   glyph takes the hue of the glass behind it); the selected tint follows
@@ -1501,10 +1507,10 @@ testWidgets('pays', (tester) async {
   composited after its glass. The example Gallery peaks about 0.9 GB over
   idle with every group shader glass (3.9 GB group by group). Limits of
   the layer: non-glass content painted after a group in the same route
-  and overlapping its glass draws beneath that glass (wrap content laid
-  over glass in a sibling, like the tab bar's row, is handled); groups of
-  one stratum share the largest blur; clips are rectangular (a rounded
-  clip around glass clips to its bounds); route transitions that snapshot
+  and overlapping its glass draws beneath that glass (the package's own
+  content laid over glass in a sibling, like the tab bar's row and a
+  sheet's content, is handled); groups of
+  one stratum share the largest blur; route transitions that snapshot
   the page show the glass outside the snapshot; menus draw their glass
   group by group. The tab bar's vibrant labels read the layer's glass as
   they do in place (about 100 MB more over the Gallery's run).
@@ -1513,18 +1519,16 @@ testWidgets('pays', (tester) async {
   Fonts stay Roboto (not SF Pro), and scroll physics,
   the back gesture and haptics stay Android's; making those iOS-like is
   not part of the package.
-- **Unmeasured geometry:** `GlassSearchable`'s scope bar and suggestions,
-  the date wheel's time columns and the full-screen cover's drag
-  thresholds follow iOS by eye, not by measurement.
-- **Colour picker sheet:** laid out as iOS 26.4's
-  UIColorPickerViewController (measured, saved colours and Spectrum map
-  included). Its eyedropper reads only what the app itself draws (the
+- **Full-screen cover drag:** SwiftUI's cover has no drag to dismiss, so
+  `dragToDismiss` (off by default) borrows the sheet's thresholds.
+- **Colour picker sheet:** laid out and coloured as iOS 26.4's
+  UIColorPickerViewController, light and dark (measured, saved colours and
+  Spectrum map included). Its eyedropper reads only what the app itself draws (the
   page under the sheet): not other apps, the status bar or platform views
   such as maps, web views and native-mode glass. Saved colours live in
   memory unless the app passes `savedColors` / `onSavedColorsChanged` and
-  stores them; a long press removes one (UIKit uses a context menu). The
-  loupe's size and magnification are estimated, and the grid is 2 pt
-  narrower than UIKit's (its cells are square).
+  stores them; a long press opens UIKit's context menu to delete one. The
+  loupe's size and magnification are estimated.
 - **Pull to refresh:** `GlassRefresh` gives a scrollable that inherits
   bouncing physics UIScrollView's rubber band under the pull (measured
   within 4 pt of UIKit's for 50-300 pt of finger travel). A scrollable
@@ -1533,7 +1537,9 @@ testWidgets('pays', (tester) async {
   `GlassRefreshScrollPhysics`; the refresh still starts at UIKit's
   finger travel (315 pt). `SliverGlassRefresh` needs
   `GlassRefreshScrollPhysics` on its `CustomScrollView` for the same
-  curve. The release's bounce back is Flutter's.
+  curve. Released short of the refresh, the content springs back on
+  UIKit's measured curve (within 2.5 pt per frame); a fling up faster
+  than that start keeps Flutter's simulation.
 
 ## License
 

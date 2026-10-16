@@ -15,9 +15,62 @@ Widget? newComponentTwin(String scene) => switch (scene) {
   'refreshmotion' => const _RefreshMotion(),
   'refreshmotiondark' => const _RefreshMotion(dark: true),
   'searchmotion' => const _SearchMotion(),
-  'colorrow' => const _ColorRow(),
+  'colorrow' || 'colorrowdark' => const _ColorRow(),
+  'contextmenuuikitmotion' => const _ContextMenuMotion(),
   _ => null,
 };
+
+/// UIKitContextMenuReference(openOnTap:): a 200 x 120 white card centred
+/// at (201, 362) on mid grey, its context menu opened by a long press.
+class _ContextMenuMotion extends StatelessWidget {
+  const _ContextMenuMotion();
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: const Color(0xFF808080),
+    child: Stack(
+      children: [
+        Positioned(
+          left: 101,
+          top: 302,
+          child: GlassContextMenu(
+            items: [
+              GlassMenuItem(
+                label: 'Copy',
+                icon: CupertinoIcons.doc_on_doc,
+                onSelected: _noop,
+              ),
+              GlassMenuItem(
+                label: 'Share',
+                icon: CupertinoIcons.share,
+                onSelected: _noop,
+              ),
+              GlassMenuItem(
+                label: 'Delete',
+                icon: CupertinoIcons.trash,
+                destructive: true,
+                onSelected: _noop,
+              ),
+            ],
+            child: Container(
+              width: 200,
+              height: 120,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              alignment: Alignment.center,
+              child: const Text(
+                'Long-press me',
+                style: TextStyle(color: Colors.black, fontSize: 17),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
 /// The buttons' no-op, as the SwiftUI scene's empty `Button` actions.
 void _noop() {}

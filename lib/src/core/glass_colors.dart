@@ -356,51 +356,46 @@ abstract final class GlassColors {
   /// A toast's action button text (iOS's systemBlue).
   static const CupertinoDynamicColor toastAction = CupertinoColors.systemBlue;
 
-  // ColorPicker (estimated, not measured)
+  // ColorPicker: measured on UIColorPickerViewController (iOS 26.4, light
+  // and dark system appearance; `-controls colorrow`, the sheet opened by a
+  // tap; tool/reference/measure_components.py `color_sheet_colours`).
 
-  /// The ring around the selected grid swatch.
-  static const Color colorPickerSelection = white;
+  /// The ring around the selected grid swatch, inside its edge (measured:
+  /// white in light, #1C1C1E in dark, the field's fill).
+  static const CupertinoDynamicColor colorPickerSelection =
+      CupertinoDynamicColor.withBrightness(
+        color: white,
+        darkColor: Color(0xFF1C1C1E),
+      );
 
-  /// The ring around the spectrum and hue bar thumbs.
+  /// The ring around the spectrum and hue bar thumbs (measured: white,
+  /// light and dark).
   static const Color colorPickerThumbRing = white;
 
-  /// The checkerboard's light cell under a translucent swatch.
-  static const Color colorPickerCheckerLight = white;
+  /// The checkerboard's grey cells under a translucent colour; the others
+  /// are clear, showing the sheet (measured: #D9D9D9 in light and dark).
+  static const Color colorPickerChecker = Color(0xFFD9D9D9);
 
-  /// The checkerboard's dark cell under a translucent swatch.
-  static const Color colorPickerCheckerDark = Color(0xFFCCCCCC);
-
-  /// A value field's fill (measured light: white on UIKit's sheet; dark
-  /// estimated).
+  /// A value field's fill (measured: white, and #1C1C1E in dark).
   static const CupertinoDynamicColor colorPickerField =
       CupertinoDynamicColor.withBrightness(
         color: white,
-        darkColor: Color(0xFF2C2C2E),
+        darkColor: Color(0xFF1C1C1E),
       );
 
-  /// The line above the current colour (measured light: #D7D7DA; dark
-  /// estimated).
+  /// The 1-px line above the current colour (measured: #D7D7DA on the
+  /// light sheet's #ECECEF; in dark white at 13%, #2F2F2F on #0F0F0F).
   static const CupertinoDynamicColor colorPickerSeparator =
       CupertinoDynamicColor.withBrightness(
         color: Color(0xFFD7D7DA),
-        darkColor: Color(0xFF38383A),
+        darkColor: Color(0x22FFFFFF),
       );
 
-  /// The saved colours' "+" circle (measured light #D9D9D9 on the sheet's
-  /// #ECECEF; dark estimated).
-  static const CupertinoDynamicColor colorPickerAddFill =
-      CupertinoDynamicColor.withBrightness(
-        color: Color(0xFFD9D9D9),
-        darkColor: Color(0xFF3A3A3C),
-      );
+  /// The saved colours' "+" circle (measured: #D9D9D9, light and dark).
+  static const Color colorPickerAddFill = Color(0xFFD9D9D9);
 
-  /// The saved colours' "+" glyph (measured light #4A4A4A; dark
-  /// estimated).
-  static const CupertinoDynamicColor colorPickerAddGlyph =
-      CupertinoDynamicColor.withBrightness(
-        color: Color(0xFF4A4A4A),
-        darkColor: Color(0xFFC7C7CC),
-      );
+  /// The saved colours' "+" glyph (measured: #4A4A4A, light and dark).
+  static const Color colorPickerAddGlyph = Color(0xFF4A4A4A);
 
   /// The eyedropper loupe's shadow and its centre pixel's outer outline
   /// (estimated: black at 25%).

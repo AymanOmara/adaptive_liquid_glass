@@ -427,14 +427,14 @@
       "plus_fill": "#D9D9D9",
       "segment_track": "#DDDDE1",
       "segment_width": 355.33,
+      "hex_width": 96.0,
+      "channel_pitch": 73.5,
+      "hex_top": 234.0,
       "channel_track_tops": [
         22.67,
         96.33,
         169.67
-      ],
-      "channel_pitch": 73.5,
-      "hex_top": 234.0,
-      "hex_width": 96.0
+      ]
     },
     "context_menu": {
       "contextmenuuikit": {
@@ -481,6 +481,55 @@
           565.33
         ],
         "dim": "#CECED2"
+      }
+    },
+    "date_picker_time": {
+      "capsule_gap": 4.0
+    },
+    "search_drawer": {
+      "top": 70.0,
+      "height": 44.0,
+      "start_inset": 16.0,
+      "field_end": 331.0,
+      "close_start": 342.0,
+      "close_end_inset": 16.0,
+      "icon_start": 14.0,
+      "clear_end": 16.0,
+      "scope_top": 124.0,
+      "content_top": 122.0,
+      "content_top_scopes": 166.0
+    },
+    "context_menu_page": {
+      "edge_spread": 0.0,
+      "white": "#CECED2",
+      "black": "#050409"
+    },
+    "color_sheet_colours": {
+      "light": {
+        "sheet": "#ECECEF",
+        "plus_fill": "#D9D9D9",
+        "plus_glyph": "#4A4A4A",
+        "field": "#FFFFFF",
+        "separator": "#D7D7DA",
+        "separator_px": 1,
+        "checker_grey": "#D9D5D7",
+        "checker_clear": "#ECE9EB",
+        "selection_ring": "#FFFFFF",
+        "selection_ring_width": 2.33,
+        "thumb_ring": "#FFFFFF"
+      },
+      "dark": {
+        "sheet": "#0F0F0F",
+        "plus_fill": "#D9D9D9",
+        "plus_glyph": "#4A4A4A",
+        "field": "#1C1C1E",
+        "separator": "#2F2F2F",
+        "separator_px": 1,
+        "checker_grey": "#D9D5D7",
+        "checker_clear": "#13100F",
+        "selection_ring": "#1C1C1E",
+        "selection_ring_width": 2.33,
+        "thumb_ring": "#FFFFFF"
       }
     }
   }

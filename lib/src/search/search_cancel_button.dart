@@ -23,6 +23,7 @@ class SearchCancelButton extends StatelessWidget {
     required this.onPressed,
     required this.label,
     this.mode,
+    this.size = SearchMetrics.cancelSize,
   });
 
   /// Ends the search.
@@ -34,10 +35,13 @@ class SearchCancelButton extends StatelessWidget {
   /// Rendering mode; see [GlassRenderMode].
   final GlassRenderMode? mode;
 
+  /// The button's diameter.
+  final double size;
+
   @override
   Widget build(BuildContext context) => MergeSemantics(
     child: SizedBox.square(
-      dimension: SearchMetrics.cancelSize,
+      dimension: size,
       child: GlassButtonMetricsScope(
         metrics: ToolbarMetrics.single,
         child: GlassButton.icon(

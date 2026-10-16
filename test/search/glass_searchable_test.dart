@@ -23,6 +23,7 @@ Widget _app({
   double topPadding = 0,
   ValueChanged<String>? onChanged,
   ValueChanged<int>? onScopeChanged,
+  Widget child = const SizedBox.expand(),
 }) => MaterialApp(
   home: Scaffold(
     body: Directionality(
@@ -40,7 +41,7 @@ Widget _app({
             suggestionsBuilder: suggestions,
             scopes: scopes,
             placement: placement,
-            child: const SizedBox.expand(),
+            child: child,
           ),
         ),
       ),
@@ -203,6 +204,41 @@ void main() {
     );
   }, variant: ios);
 
+  testWidgets('the close button is not clipped to a box, so its shadow '
+      'keeps its round edge', (t) async {
+    shaderEnv();
+    for (final direction in TextDirection.values) {
+      final controller = GlassSearchController();
+      addTearDown(controller.dispose);
+      await t.pumpWidget(_app(controller: controller, direction: direction));
+      controller.activate();
+      await t.pumpAndSettle();
+      final button = find.byType(SearchCancelButton);
+      expect(
+        find.ancestor(of: button, matching: find.byType(ClipRect)),
+        findsNothing,
+        reason: '$direction, shown',
+      );
+
+      // While hiding, only the room's end edge cuts it.
+      controller.cancel();
+      await t.pump();
+      final clip = find.ancestor(of: button, matching: find.byType(ClipRect));
+      final size = t.getSize(clip);
+      final rect = t.widget<ClipRect>(clip).clipper!.getClip(size);
+      expect(rect.top, lessThan(-50), reason: '$direction');
+      expect(rect.bottom, greaterThan(size.height + 50), reason: '$direction');
+      if (direction == TextDirection.ltr) {
+        expect(rect.left, lessThan(-50));
+        expect(rect.right, moreOrLessEquals(size.width));
+      } else {
+        expect(rect.left, moreOrLessEquals(0));
+        expect(rect.right, greaterThan(size.width + 50));
+      }
+      await t.pumpAndSettle();
+    }
+  }, variant: ios);
+
   testWidgets('re-activating mid-hide reveals the button again', (t) async {
     shaderEnv();
     final controller = GlassSearchController();
@@ -236,6 +272,46 @@ void main() {
       t.getTopLeft(find.byType(CupertinoTextField)).dy,
       greaterThanOrEqualTo(59),
     );
+  }, variant: ios);
+
+  testWidgets('navigation bar placement: SwiftUI drawer layout (measured)', (
+    t,
+  ) async {
+    shaderEnv();
+    t.view.physicalSize = const Size(402, 874);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    final controller = GlassSearchController();
+    addTearDown(controller.dispose);
+    const content = Key('content');
+    Future<void> pump({required bool scopes}) => t.pumpWidget(
+      _app(
+        controller: controller,
+        placement: GlassSearchablePlacement.navigationBar,
+        topPadding: 62,
+        scopes: scopes ? const ['All', 'Mail', 'Notes'] : null,
+        child: const SizedBox.expand(key: content),
+      ),
+    );
+    await pump(scopes: false);
+    controller.activate();
+    await t.pumpAndSettle();
+    // -controls searchdrawerquery: field 16..331 x 70..114, close 342..386.
+    final field = t.getRect(find.byType(GlassSearchField));
+    expect(field, rectMoreOrLessEquals(const Rect.fromLTRB(16, 70, 331, 114)));
+    final close = t.getRect(find.byType(SearchCancelButton));
+    expect(close, rectMoreOrLessEquals(const Rect.fromLTRB(342, 70, 386, 114)));
+    expect(t.getTopLeft(find.byKey(content)).dy, moreOrLessEquals(122));
+    // With scopes: the bar 10 under the field, the content 10 under it.
+    await pump(scopes: true);
+    await t.pumpAndSettle();
+    final bar = t.getRect(
+      find.byWidgetPredicate((w) => w is GlassSegmentedControl),
+    );
+    expect(bar.top, moreOrLessEquals(124));
+    expect(bar.left, moreOrLessEquals(16));
+    expect(bar.right, moreOrLessEquals(386));
+    expect(t.getTopLeft(find.byKey(content)).dy, moreOrLessEquals(166));
   }, variant: ios);
 
   testWidgets('activating the controller from outside reveals Cancel', (

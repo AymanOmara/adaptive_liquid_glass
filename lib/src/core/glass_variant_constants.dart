@@ -44,6 +44,7 @@ class GlassVariantConstants {
     this.bandSplitDrop = 0,
     this.toneLumaMix = 0,
     this.glowStrength = 0.25,
+    this.pressLift = 0,
     this.postBlurShare = 0,
     this.normalRadiusScale = 1,
     this.lensEdge = 0,
@@ -130,6 +131,7 @@ class GlassVariantConstants {
     bandSplitDrop: GlassJson.number(j, 'bandSplitDrop', base.bandSplitDrop),
     toneLumaMix: GlassJson.number(j, 'toneLumaMix', base.toneLumaMix),
     glowStrength: GlassJson.number(j, 'glowStrength', base.glowStrength),
+    pressLift: GlassJson.number(j, 'pressLift', base.pressLift),
     postBlurShare: GlassJson.number(j, 'postBlurShare', base.postBlurShare),
     normalRadiusScale: GlassJson.number(
       j,
@@ -345,6 +347,13 @@ class GlassVariantConstants {
   /// pre-17d behaviour, left for the motion fit).
   final double glowStrength;
 
+  /// White added over the whole of a pressed shape, with the touch glow
+  /// ([glowStrength]) on top: SwiftUI's pressed `.interactive()` glass
+  /// lights all of itself, not only under the finger. Follows
+  /// `GlassPressGeometry.light` (on at the touch, off a moment after the
+  /// release). 0 disables it.
+  final double pressLift;
+
   /// Share of the frost blur's variance applied after the lens instead of
   /// before it (0..0.9; Task 17d, clear glass). The composed blur becomes
   /// σ·√(1 − share) and the shader adds σ·√share in screen space, mapped
@@ -491,6 +500,7 @@ class GlassVariantConstants {
     'bandSplitDrop': bandSplitDrop,
     'toneLumaMix': toneLumaMix,
     'glowStrength': glowStrength,
+    'pressLift': pressLift,
     'postBlurShare': postBlurShare,
     'normalRadiusScale': normalRadiusScale,
     'lensEdge': lensEdge,

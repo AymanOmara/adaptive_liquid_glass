@@ -128,12 +128,16 @@ void main() {
     expect(_saved(_blue), findsOneWidget);
   }, variant: ios);
 
-  testWidgets('a long press removes a saved colour', (t) async {
+  testWidgets("a saved colour's context menu deletes it", (t) async {
     shaderEnv();
     _screen(t);
     await t.pumpWidget(appHost(const _Panel()));
     await t.longPress(_saved(SavedColors.defaults.first));
-    await t.pump();
+    await t.pumpAndSettle();
+    // The long press alone only opens UIKit's menu.
+    expect(SavedColors.shared.value, SavedColors.defaults);
+    await t.tap(find.text('Delete'));
+    await t.pumpAndSettle();
     expect(_saved(SavedColors.defaults.first), findsNothing);
     expect(SavedColors.shared.value, SavedColors.defaults.sublist(1));
   }, variant: ios);

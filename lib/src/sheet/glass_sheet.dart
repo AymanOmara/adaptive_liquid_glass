@@ -2,12 +2,15 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/cupertino.dart';
 
+import '../core/effective_glass_mode.dart';
 import '../core/glass.dart';
 import '../core/glass_colors.dart';
+import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
 import '../core/liquid_glass_theme.dart';
 import '../group/glass_group.dart';
+import '../layer/glass_layer_anchor.dart';
 import '../liquid_glass.dart';
 import '../native/glass_batch.dart';
 import 'sheet_metrics.dart';
@@ -100,8 +103,9 @@ class GlassSheet extends StatelessWidget {
     // #1C1C1E instead of black in dark mode.
     return CupertinoUserInterfaceLevel(
       data: CupertinoUserInterfaceLevelData.elevated,
-      child: Builder(
-        builder: (context) => _surface(
+      child: GlassModeBuilder(
+        mode: mode,
+        builder: (context, effective) => _surface(
           context,
           t,
           inset,
@@ -109,6 +113,7 @@ class GlassSheet extends StatelessWidget {
           opaque,
           opaqueShape,
           content,
+          shader: effective == EffectiveGlassMode.shader && opaque < 1,
         ),
       ),
     );
@@ -121,8 +126,9 @@ class GlassSheet extends StatelessWidget {
     double glassRadius,
     double opaque,
     ShapeBorder opaqueShape,
-    Widget content,
-  ) {
+    Widget content, {
+    required bool shader,
+  }) {
     final surface = CupertinoDynamicColor.resolve(
       GlassColors.sheetBackground,
       context,
@@ -151,22 +157,30 @@ class GlassSheet extends StatelessWidget {
             ),
           if (opaque > 0)
             Positioned.fill(
-              child: Opacity(
-                opacity: opaque,
-                child: DecoratedBox(
-                  decoration: ShapeDecoration(
-                    shape: opaqueShape,
-                    color: surface,
+              child: GlassLayerContent(
+                enabled: shader,
+                child: Opacity(
+                  opacity: opaque,
+                  child: DecoratedBox(
+                    decoration: ShapeDecoration(
+                      shape: opaqueShape,
+                      color: surface,
+                    ),
                   ),
                 ),
               ),
             ),
-          // Ungrouped glass in the sheet shares one native view (iOS 26+),
-          // above the sheet's own surfaces.
-          if (LiquidGlassTheme.of(context).batchImplicitGroups)
-            GlassBatch(child: content)
-          else
-            content,
+          // Shader glass on the shared layer draws after the route: the
+          // surface and content above it are deferred with it, or they
+          // would end up beneath (blurred by) the sheet's glass.
+          GlassLayerContent(
+            enabled: shader,
+            // Ungrouped glass in the sheet shares one native view (iOS
+            // 26+), above the sheet's own surfaces.
+            child: LiquidGlassTheme.of(context).batchImplicitGroups
+                ? GlassBatch(child: content)
+                : content,
+          ),
         ],
       ),
     );

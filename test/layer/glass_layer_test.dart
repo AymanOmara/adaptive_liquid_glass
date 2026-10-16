@@ -101,6 +101,39 @@ void main() {
     expect(b.debugLayer, isNull);
   }, variant: android);
 
+  testWidgets('a rounded clip around glass clips the pass and content', (
+    t,
+  ) async {
+    env();
+    await t.pumpWidget(
+      app(
+        Scaffold(
+          body: Center(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: button('a'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.pump();
+    final b = backdrops(t).single;
+    final box = t.getRect(find.byType(ClipRRect));
+    final inside = box.center;
+    final corner = box.topLeft + const Offset(1, 1);
+    // The pass (not drawn without the shader in tests) is planned shaped.
+    final pass = b.sharedLayer!.debugLastPlan!.single.passes.single;
+    expect(pass.clipPath!.contains(inside), isTrue);
+    expect(pass.clipPath!.contains(corner), isFalse);
+    // The group's content composites under the same rounded clip.
+    final clip = b.sharedLayer!.painter!.debugLayer!.firstChild;
+    expect(clip, isA<ClipPathLayer>());
+    final path = (clip! as ClipPathLayer).clipPath!;
+    expect(path.contains(inside), isTrue);
+    expect(path.contains(corner), isFalse);
+  }, variant: android);
+
   testWidgets('a dialog route gets its own layer', (t) async {
     env();
     await t.pumpWidget(app(Scaffold(body: Center(child: button('page')))));
@@ -287,5 +320,52 @@ void main() {
     Navigator.of(t.element(find.text('top'))).pop();
     await t.pumpAndSettle();
     expect(inScene(layer.painter!), isTrue);
+  }, variant: android);
+
+  // The sheet's glass is a sibling behind its content: on the layer the
+  // glass draws after the route, so the content must be deferred too or
+  // it ends up blurred beneath it.
+  testWidgets('a glass sheet\'s content draws over its glass', (t) async {
+    env();
+    await t.pumpWidget(
+      app(
+        Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: GestureDetector(
+                onTap: () => showGlassSheet<void>(
+                  context: context,
+                  builder: (_) => const SizedBox(
+                    height: 200,
+                    child: Center(child: Text('inside')),
+                  ),
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.tap(find.text('open'));
+    await t.pumpAndSettle();
+    final text = t.renderObject(find.text('inside'));
+    RenderGlassBackdrop? deferred;
+    for (RenderObject? p = text.parent; p != null; p = p.parent) {
+      if (p is RenderGlassBackdrop) {
+        deferred = p;
+        break;
+      }
+    }
+    expect(deferred?.sharedLayer, isNotNull);
+    final layer = deferred!.sharedLayer!;
+    final glass = backdrops(
+      t,
+    ).firstWhere((b) => b != deferred && identical(b.sharedLayer, layer));
+    // Content composites with or after the glass's stratum, glass first.
+    final plan = layer.debugLastPlan!;
+    int stratumOf(Object id) => plan.indexWhere((s) => s.groups.contains(id));
+    expect(stratumOf(glass), isNonNegative);
+    expect(stratumOf(deferred), greaterThanOrEqualTo(stratumOf(glass)));
   }, variant: android);
 }

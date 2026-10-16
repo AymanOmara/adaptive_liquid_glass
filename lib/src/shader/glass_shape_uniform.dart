@@ -18,6 +18,7 @@ class GlassShapeUniform {
     this.smoothing,
     this.opacity = 1,
     this.clip,
+    this.light = 0,
   });
 
   /// Shape bounds.
@@ -56,6 +57,10 @@ class GlassShapeUniform {
   /// The group's clip in texture space (physical px); null is unbounded.
   final Rect? clip;
 
+  /// SwiftUI's press light on this shape, 0..1
+  /// (`GlassPressGeometry.light`): a lift over the whole shape.
+  final double light;
+
   /// A copy with the shared-layer fields replaced.
   GlassShapeUniform inGroup({
     required int group,
@@ -73,5 +78,6 @@ class GlassShapeUniform {
     smoothing: smoothing,
     opacity: opacity,
     clip: clip,
+    light: light,
   );
 }

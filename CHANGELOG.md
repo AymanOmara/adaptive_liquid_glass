@@ -1,3 +1,55 @@
+## 0.2.4 (2026-10-17)
+
+- `GlassSearchable`: the close button's shadow is no longer cut to a box
+  as it appears and hides (a tint showed along its top and end edges).
+- Shader mode (iOS and the Android shared layer): pressed interactive
+  glass lights up as SwiftUI's does. It now adds white over the whole
+  pressed shape (`GlassVariantConstants.pressLift`), not only the glow
+  under the finger, and both come on at the touch and go off 0.33 s after
+  the release, as native mode's, instead of following the press spring.
+  In-shape error against SwiftUI over a press: 8.1 -> 1.5 light,
+  10.1 -> 2.1 dark (of 255).
+- Android shared glass layer: a rounded, superellipse, oval, path or
+  `PhysicalModel` clip around glass now clips the glass and its content to
+  that shape, not to its bounding rectangle.
+- `GlassColorPicker`: a long press on a saved colour opens the context
+  menu with Delete, as UIKit does, instead of removing it at once
+  (`deleteColorLabel` names the item).
+- `GlassColorPicker`: the sheet's grid is UIKit's size, 14.33 pt in and
+  357.33 x 296 on an iPhone 17 Pro (was 2 pt narrower with square cells).
+- `GlassDatePicker` (compact, date and time): the capsules sit 4 pt apart,
+  as SwiftUI's (measured; was 8).
+- `GlassSearchable(placement: navigationBar)`: laid out as SwiftUI's
+  active `.navigationBarDrawer` search (measured): a 44-pt field and close
+  button 8 pt under the safe area and 16 pt from the sides, the scope bar
+  10 pt under the field, the content 8 pt under the field or 10 pt under
+  the scopes (was the bottom field's 48-pt sizes, 12 pt in).
+- `GlassContextMenu`: the page behind the menu is dimmed but no longer
+  blurred, as UIKit's (measured over sharp stripes: edges stay sharp).
+  It also saves a full-screen backdrop filter.
+- `GlassContextMenu` opens and closes with UIKit's motion, fitted from
+  60 fps recordings: the dim leads, the item lifts on a critically damped
+  spring, the menu grows from nothing at its edge by the item with a 2%
+  overshoot; closing, the menu is gone in three frames and the item
+  settles back (was a 300 ms ease with the menu from half size).
+- `GlassColorPicker`: the sheet's colours are UIKit's, measured in light
+  and dark: the "+" stays light grey in dark mode, the dark fields are
+  #1C1C1E, the dark separator is a faint white line, the checkerboard's
+  other cells are clear, and the selection ring is 2.33 pt (dark in dark
+  mode). These were estimated before.
+- Native mode: pressed interactive glass lights up as SwiftUI's does, with
+  white over the whole shape and a glow under the finger. The light comes
+  on at the touch and goes off 0.33 s after the release (measured). It
+  was missing: Flutter keeps the touches, so SwiftUI never saw the press.
+- `GlassRefreshScrollPhysics`: a pull released short of the refresh
+  bounces back as UIScrollView's, fitted from 60 fps recordings
+  (critically damped, already moving at release; rms 0.9 pt). It was
+  Flutter's bouncing simulation, 8 pt rms off and slower to start.
+- Android, iOS look (shader glass): a glass sheet's content (and its
+  opaque surface) draws over the sheet's glass again instead of blurred
+  beneath it. Affects `showGlassSheet`, `GlassColorPicker` and the date
+  pickers.
+
 ## 0.2.3 (2026-10-15)
 
 - `SliverGlassNavigationBar.materialBuilder`: wrap or replace the

@@ -368,11 +368,12 @@ struct RefreshReference: View {
 
 /// A list with a `ColorPicker` row (red); with `present`, 1 s after launch
 /// it presents the system colour picker (UIColorPickerViewController,
-/// what `ColorPicker` opens) over it. Light.
+/// what `ColorPicker` opens) over it. Light, or dark with `dark`.
 @available(iOS 26.0, *)
 struct ColorSheetReference: View {
   @State private var colour = Color.red
   let present: Bool
+  var dark = false
   var body: some View {
     List { ColorPicker("Colour", selection: $colour) }
       .onAppear {
@@ -380,13 +381,13 @@ struct ColorSheetReference: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
           let picker = UIColorPickerViewController()
           picker.selectedColor = .red
-          picker.overrideUserInterfaceStyle = .light
+          picker.overrideUserInterfaceStyle = dark ? .dark : .light
           UIApplication.shared.connectedScenes
             .compactMap { ($0 as? UIWindowScene)?.keyWindow?.rootViewController }
             .first?.present(picker, animated: false)
         }
       }
-      .environment(\.colorScheme, .light)
+      .preferredColorScheme(dark ? .dark : .light)
   }
 }
 
@@ -433,18 +434,34 @@ struct TimeWheelReference: View {
 }
 
 /// The search scene with All/Mail/Notes scopes and no suggestions,
-/// activated 0.6 s after launch, `query` already typed. Light.
+/// activated 0.6 s after launch, `query` already typed. Light. `drawer`
+/// puts the field in the navigation bar's drawer (iPad / Mac style).
 @available(iOS 26.0, *)
 struct SearchScopesReference: View {
   @State private var query: String
   @State private var active = false
   @State private var scope = 0
-  init(query: String) { _query = State(initialValue: query) }
+  var drawer = false
+  var plain = false
+  init(query: String, drawer: Bool = false, plain: Bool = false) {
+    _query = State(initialValue: query)
+    self.drawer = drawer
+    self.plain = plain
+  }
   var body: some View {
     NavigationStack {
-      List(0..<20) { i in Text("Row \(i)") }
+      Group {
+        if plain {
+          // Red rows from the content's top edge: where the content starts.
+          List(0..<20) { i in Text("Row \(i)").listRowBackground(Color.red) }
+            .listStyle(.plain)
+        } else {
+          List(0..<20) { i in Text("Row \(i)") }
+        }
+      }
         .navigationTitle("Search")
-        .searchable(text: $query, isPresented: $active)
+        .searchable(text: $query, isPresented: $active,
+                    placement: drawer ? .navigationBarDrawer(displayMode: .always) : .automatic)
         .searchScopes($scope) {
           Text("All").tag(0)
           Text("Mail").tag(1)
@@ -466,15 +483,32 @@ struct UIKitContextMenuReference: View {
   var x: CGFloat = 201
   var size = CGSize(width: 200, height: 120)
   var white = false
+  /// Black and white stripes 100 pt wide behind the card: sharp edges
+  /// whose spread measures the page's blur.
+  var stripes = false
+  /// Opens on a tap on the page instead of 1.5 s after launch, so a
+  /// motion recording can start it (`-controls contextmenuuikitmotion`).
+  var openOnTap = false
   var body: some View {
     ZStack {
       Color(white: white ? 1 : 0.5).ignoresSafeArea()
+        .onTapGesture {
+          if openOnTap { ContextMenuOpener.open(at: CGPoint(x: x, y: 362)) }
+        }
+      if stripes {
+        HStack(spacing: 0) {
+          ForEach(0..<5) { i in (i % 2 == 0 ? Color.black : Color.white).frame(width: 100) }
+        }
+        .frame(width: 402, alignment: .leading)
+        .ignoresSafeArea()
+      }
       UIKitMenuCard().frame(width: size.width, height: size.height)
         .border(white ? Color.black : Color.clear, width: white ? 1 : 0)
         .position(x: x, y: 300)
     }
     .environment(\.colorScheme, .light)
     .onAppear {
+      guard !openOnTap else { return }
       DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
         ContextMenuOpener.open(at: CGPoint(x: x, y: 362))
       }

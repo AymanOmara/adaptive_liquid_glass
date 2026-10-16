@@ -18,7 +18,7 @@ and CHANGELOG.md.
       navigation bar first if asked for
   - example app toggle: done for the iOS look
     (`supportLiquidGlassOnAndroid`, 2026-10-15); README Android section
-    done. Still: re-check every Known limitations entry is still true
+    done. Known limitations re-checked 2026-10-16
 
 3- release readiness: 0.1.0 shipped 2026-10-08. 1.0 only after:
   - usability pass: done 2026-10-14 (additive part); the 1.0 breaks it
@@ -52,22 +52,22 @@ and CHANGELOG.md.
   close button and colour row measured 2026-10-13; colour sheet, refresh
   threshold/spinner/rubber band/dark spinner and search close-button
   reveal and hide 2026-10-14):
-  searchable scope bar and suggestions platter (keyboard tutorial covered
-  them), date wheel time-column spacing (UIKit packs them unevenly), cover
-  drag thresholds (SwiftUI's cover has no drag), context menu (synthetic
-  touches cannot open SwiftUI's). Motion still open: the wheel's step
-  (VoiceOver-only, no touch drives it), context menu.
+  scope bar, suggestions, date wheel time columns and context menu
+  layout (UIKit's interaction) are measured; nothing left
+  estimated here (2026-10-16: date/time capsule gap, nav-bar search
+  drawer, and the context menu's page, dimmed but not blurred). Cover drag thresholds: nothing to measure
+  (SwiftUI's cover has no drag). Motion still open: the wheel's step
+  (VoiceOver-only, no touch drives it), the context menu's press before
+  its lift (open and close springs fitted 2026-10-16).
   Colour sheet (2026-10-14, second pass): side inset 8 (partial sheet
   detents now float at any height, SwiftUI .height(300...765) measured),
   segmented control 30.67, saved colours row, UIKit's Spectrum map
-  (mean |diff| 1.1/255) and an in-app eyedropper done. Left: the grid is
-  355.33 wide with square cells where UIKit's is 357.33 (cells 29.8 x
-  29.6); the loupe is estimated (UIKit's cannot be captured mid-drag);
-  dark-mode "+" colours estimated.
+  (mean |diff| 1.1/255) and an in-app eyedropper done. Left: the loupe is estimated (UIKit's cannot be captured mid-drag);
+  The sheet's colours were measured in light and dark (2026-10-17).
   Refresh: the rubber band is UIKit's only for scrollables inheriting
   bouncing physics (their own BouncingScrollPhysics keeps Flutter's
-  friction); the release bounce without a refresh is Flutter's,
-  unmeasured. Search hide: the button's glass does not merge into the
+  friction); the release bounce without a refresh is UIKit's (fitted
+  2026-10-16). Search hide: the button's glass does not merge into the
   field as SwiftUI's does (it fades).
 
 7- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)

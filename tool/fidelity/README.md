@@ -32,6 +32,8 @@ open build/fidelity/<run>/report.html
 `capture.sh <run-dir> [scene-id-prefix]` options (environment):
 
 - `CONSTANTS='{"regular":{...}}'` passes `-constants` to the Flutter renderer only.
+- `MODE=native` (`record_motion.sh`) renders the Flutter side with Apple's glass
+  (`-mode native`) instead of the shader.
 - `RENDERERS="flutter"` recaptures one side (default `"flutter swiftui"`).
 - `SCENES=tool/scenes/measure.json` captures another scene list (it must be
   synced into `example/assets/` and is passed to both hosts as `-sceneFile`).
@@ -226,6 +228,20 @@ first-change differences (frames, Flutter minus SwiftUI; each take starts
 its capture 0.8 s before the touch, so they are the touch-to-pixels latency
 difference plus idb's touch jitter), and `shift`/`release_shift` are the
 refinements applied on top.
+
+**Press light.** SwiftUI's pressed `.interactive()` glass lights the whole
+shape and, more, the area under the finger; the light is on in the frame of
+the touch and off 0.33 s after the release (`GlassPressController.light`).
+Measured on `press-capsule-photo-*` as the in-shape (8 pt inset) residual
+SwiftUI minus Flutter, minus the same residual before the touch, each clip
+aligned at its own first change. Fitted at the hold (lift + peak·G(σ), in
+/255): the shader without a lift left 11.9 + −2.8·G(σ 27) light and
+14.3 + 7.5·G(σ 55) dark; with `pressLift` 0.047 / 0.056 and `glowStrength`
+0.016 / 0.073 the hold mean is +0.5 / +0.6 (rms 2.7 / 3.1) and the in-shape
+|diff| over the whole press 1.5 / 2.1, from 8.1 / 10.1. What is left is
+±2 frames at the switch-off (idb's hold jitter) and SwiftUI's dark light
+fading more than 20% over the 0.33 s hold (residual −3.9 there). Static
+scenes are unchanged: the lift and glow are zero unless a shape is pressed.
 
 **Noise floor.** `--noise-ref DIR` scores each renderer's clips of one run
 against the same renderer's clips of another (`noise_report.json`). Measured

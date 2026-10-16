@@ -48,6 +48,11 @@ class ReferenceTwin extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(brightness: Brightness.light),
       themeMode: ThemeMode.light,
+      // The whole app dark, routes included (the colour sheet is one), as
+      // the SwiftUI reference under a dark system appearance.
+      builder: scene == 'colorrowdark'
+          ? (context, child) => _dark(context, child!)
+          : null,
       home: switch (scene) {
         'toolbar' => const _Toolbar(),
         'accessory' => const _Accessory(),

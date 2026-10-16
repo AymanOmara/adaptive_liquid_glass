@@ -9,6 +9,7 @@ import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/ios_text.dart';
 import '../liquid_glass.dart';
+import 'search_field_size.dart';
 import 'search_metrics.dart';
 
 /// iOS 26's search field: a glass capsule with a magnifying glass, the
@@ -118,10 +119,11 @@ class _GlassSearchFieldState extends State<GlassSearchField> {
   Widget _glass(BuildContext context, String placeholder) {
     Color resolve(Color c) => CupertinoDynamicColor.resolve(c, context);
     final secondary = resolve(GlassColors.secondaryLabel);
+    final size = SearchFieldSize.maybeOf(context);
     return SizedBox(
       // The capsule grows with Dynamic Type (never below its height).
       height:
-          SearchMetrics.height *
+          (size?.height ?? SearchMetrics.height) *
           IOSText.growth(
             MediaQuery.textScalerOf(context),
             SearchMetrics.fontSize,
@@ -129,9 +131,9 @@ class _GlassSearchFieldState extends State<GlassSearchField> {
       child: LiquidGlass(
         glass: widget.glass,
         mode: widget.mode,
-        padding: const EdgeInsetsDirectional.only(
-          start: SearchMetrics.startInset,
-          end: SearchMetrics.endInset,
+        padding: EdgeInsetsDirectional.only(
+          start: size?.startInset ?? SearchMetrics.startInset,
+          end: size?.endInset ?? SearchMetrics.endInset,
         ),
         child: Row(
           children: [

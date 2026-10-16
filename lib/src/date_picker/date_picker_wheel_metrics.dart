@@ -57,8 +57,12 @@ abstract final class DatePickerWheelMetrics {
   static const double timeColumnGap = 4;
 
   /// The gap between the date and time capsules in date-and-time mode
-  /// (estimated).
-  static const double capsuleGap = 8;
+  /// (measured: 4, `-controls datetimepicker`).
+  static const double capsuleGap = 4;
+
+  /// The gap above the time capsule when large text wraps it below the
+  /// date (estimated; SwiftUI does not wrap them).
+  static const double capsuleRunGap = 8;
 
   /// The gap between an inline calendar and the time row under it
   /// (estimated).

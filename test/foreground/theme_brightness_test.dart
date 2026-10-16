@@ -1,7 +1,6 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
-import 'package:adaptive_liquid_glass/src/shader/glass_backdrop.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -56,7 +55,7 @@ Widget _localApp({
 );
 
 Brightness _glassBrightness(WidgetTester t) =>
-    t.widget<GlassBackdrop>(find.byType(GlassBackdrop).last).config.brightness;
+    lastGlassBackdrop(t).config.brightness;
 
 Color? _spanColour(InlineSpan span) {
   final colour = span.style?.color;

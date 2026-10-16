@@ -31,8 +31,8 @@ import 'glass_context_menu_route.dart';
 ///
 /// A tap outside closes it; choosing an item closes it, then runs the
 /// item. Assistive tech gets the items as custom actions. On the Material
-/// path the long-press opens a Material popup menu. Not measured against
-/// SwiftUI (see `ContextMenuMetrics`).
+/// path the long-press opens a Material popup menu. Laid out as UIKit's
+/// UIContextMenuInteraction (measured; see `ContextMenuMetrics`).
 class GlassContextMenu extends StatelessWidget {
   /// Creates a context menu for [child].
   const GlassContextMenu({

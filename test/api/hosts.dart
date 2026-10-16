@@ -1,5 +1,7 @@
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
+import 'package:adaptive_liquid_glass/src/layer/glass_layer_anchor.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
+import 'package:adaptive_liquid_glass/src/shader/glass_backdrop.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,3 +39,18 @@ Widget appHost(Widget child) => MaterialApp(
   theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal)),
   home: Scaffold(body: Center(child: child)),
 );
+
+/// The last glass backdrop in the tree; content deferred to the shared
+/// layer (`GlassLayerContent`) has a backdrop that draws no glass.
+GlassBackdrop lastGlassBackdrop(WidgetTester t) {
+  final deferred = find
+      .descendant(
+        of: find.byType(GlassLayerContent),
+        matching: find.byType(GlassBackdrop),
+      )
+      .evaluate()
+      .toSet();
+  return t
+      .widgetList<GlassBackdrop>(find.byType(GlassBackdrop))
+      .lastWhere((w) => !deferred.any((e) => identical(e.widget, w)));
+}

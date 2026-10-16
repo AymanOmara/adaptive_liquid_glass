@@ -62,6 +62,7 @@ GlassBackdropDebugFrame? computeGroupFrame({
         tint: g.entry.glass.tintColor,
         unionId: g.entry.unionId,
         cornerExponent: g.circularCorners ? 2.0 : null,
+        light: g.entry.press.light,
       ),
   ]);
 
@@ -88,8 +89,10 @@ GlassBackdropDebugFrame? computeGroupFrame({
     final p = e.press.touch;
     final box = e.box;
     if (box == null) continue; // ghosts have no touch
-    if (p != null && e.press.glow > glow) {
-      glow = e.press.glow;
+    // SwiftUI's light, not the press spring: on at the touch, held a
+    // moment past the release (GlassPressController.light).
+    if (p != null && e.press.light > glow) {
+      glow = e.press.light;
       touch = pointToTextureSpace(
         MatrixUtils.transformPoint(box.getTransformTo(null), p),
         filterOriginGlobal: origin,
