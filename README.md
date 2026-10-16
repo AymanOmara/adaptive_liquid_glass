@@ -1501,8 +1501,9 @@ testWidgets('pays', (tester) async {
   composited after its glass. The example Gallery peaks about 0.9 GB over
   idle with every group shader glass (3.9 GB group by group). Limits of
   the layer: non-glass content painted after a group in the same route
-  and overlapping its glass draws beneath that glass (wrap content laid
-  over glass in a sibling, like the tab bar's row, is handled); groups of
+  and overlapping its glass draws beneath that glass (the package's own
+  content laid over glass in a sibling, like the tab bar's row and a
+  sheet's content, is handled); groups of
   one stratum share the largest blur; clips are rectangular (a rounded
   clip around glass clips to its bounds); route transitions that snapshot
   the page show the glass outside the snapshot; menus draw their glass

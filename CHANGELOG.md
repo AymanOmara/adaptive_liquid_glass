@@ -1,3 +1,10 @@
+## Unreleased
+
+- Android, iOS look (shader glass): a glass sheet's content (and its
+  opaque surface) draws over the sheet's glass again instead of blurred
+  beneath it. Affects `showGlassSheet`, `GlassColorPicker` and the date
+  pickers.
+
 ## 0.2.3 (2026-10-15)
 
 - `SliverGlassNavigationBar.materialBuilder`: wrap or replace the
