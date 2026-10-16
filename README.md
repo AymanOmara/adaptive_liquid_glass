@@ -1457,9 +1457,11 @@ testWidgets('pays', (tester) async {
 
 ## Known limitations
 
-- **Context menu not measured:** synthetic touches on the simulator do
-  not open SwiftUI's `.contextMenu`, so `GlassContextMenu` follows the
-  system's look but has not been measured. Of the newer components'
+- **Context menu:** `GlassContextMenu`'s layout (lift, gap to the menu,
+  side margins) is measured from UIKit's UIContextMenuInteraction, which
+  SwiftUI's `.contextMenu` rides on; synthetic touches on the simulator
+  do not open SwiftUI's own, so its motion and the blur behind the lifted
+  item are estimated. Of the newer components'
   motion, the disclosure spring, the refresh snap-back, threshold and
   rubber band, the colour grid's ring and `GlassSearchable`'s
   close-button reveal and hide are measured; the wheel picker's
@@ -1512,9 +1514,10 @@ testWidgets('pays', (tester) async {
   Fonts stay Roboto (not SF Pro), and scroll physics,
   the back gesture and haptics stay Android's; making those iOS-like is
   not part of the package.
-- **Unmeasured geometry:** `GlassSearchable`'s scope bar and suggestions,
-  the date wheel's time columns and the full-screen cover's drag
-  thresholds follow iOS by eye, not by measurement.
+- **Estimated spacing:** in the navigation-bar placement,
+  `GlassSearchable`'s field inset and the gap above its scope bar follow
+  iOS by eye. The full-screen cover's `dragToDismiss` borrows the
+  sheet's thresholds by design (SwiftUI's cover has no drag to dismiss).
 - **Colour picker sheet:** laid out as iOS 26.4's
   UIColorPickerViewController (measured, saved colours and Spectrum map
   included). Its eyedropper reads only what the app itself draws (the

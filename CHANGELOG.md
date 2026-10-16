@@ -8,6 +8,8 @@
   (`deleteColorLabel` names the item).
 - `GlassColorPicker`: the sheet's grid is UIKit's size, 14.33 pt in and
   357.33 x 296 on an iPhone 17 Pro (was 2 pt narrower with square cells).
+- `GlassDatePicker` (compact, date and time): the capsules sit 4 pt apart,
+  as SwiftUI's (measured; was 8).
 
 ## 0.2.3 (2026-10-15)
 

@@ -553,6 +553,13 @@ def last_components(d):
         tc["band_width_24"] = r(bx[-1][1] - bx[0][0])
     if tc:
         out["date_wheel_time"] = tc
+    # Date-and-time compact picker (`-controls datetimepicker`): the gap
+    # between its date and time capsules, along their centre line.
+    if (d / "datetimepicker.png").exists():
+        a = load(d, "datetimepicker.png")
+        caps = [c for c in runs(a[int(300 * S)].max(axis=-1) < 245)
+                if c[1] - c[0] > 20]
+        out["date_picker_time"] = {"capsule_gap": r(caps[1][0] - caps[0][1])}
     # Search scopes (typed query, bar at the top) and suggestions.
     if (d / "searchscopesquery.png").exists():
         a = load(d, "searchscopesquery.png")
@@ -730,7 +737,7 @@ def main():
         comp.update(more_components(d / "swiftui"))
     if any((d / "swiftui" / f).exists() for f in
            ("timewheel.png", "searchscopesquery.png", "colorsheet_tap.png",
-            "contextmenuuikit.png")):
+            "contextmenuuikit.png", "datetimepicker.png")):
         comp.update(last_components(d / "swiftui"))
     print(json.dumps(comp, indent=1))
     if "--dry" in sys.argv:

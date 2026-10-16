@@ -621,6 +621,13 @@ void main() {
     );
   });
 
+  test('date and time capsules', () {
+    expect(
+      DatePickerWheelMetrics.capsuleGap,
+      moreOrLessEquals(n(m('date_picker_time'), 'capsule_gap'), epsilon: pt),
+    );
+  });
+
   test('date wheel time columns', () {
     final t = m('date_wheel_time');
     Map<String, dynamic> k(String key) => t[key] as Map<String, dynamic>;

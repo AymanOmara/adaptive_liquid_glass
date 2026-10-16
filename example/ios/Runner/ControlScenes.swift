@@ -51,6 +51,7 @@ enum ControlScenes {
     case "stepper": root = AnyView(StepperReference())
     case "picker": root = AnyView(PickerReference())
     case "datepicker": root = AnyView(DatePickerReference())
+    case "datetimepicker": root = AnyView(DatePickerReference(time: true))
     case "searchtab": root = AnyView(SearchTabReference())
     case "swipe": root = AnyView(SwipeReference(tall: false))
     case "swipetall": root = AnyView(SwipeReference(tall: true))
@@ -687,11 +688,12 @@ struct PickerReference: View {
 /// open. White page.
 @available(iOS 26.0, *)
 struct DatePickerReference: View {
-  @State private var date = Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 6))!
+  var time = false
+  @State private var date = Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 6, hour: 9, minute: 41))!
   var body: some View {
     ZStack(alignment: .topLeading) {
       Color.white
-      DatePicker("", selection: $date, displayedComponents: .date)
+      DatePicker("", selection: $date, displayedComponents: time ? [.date, .hourAndMinute] : .date)
         .labelsHidden().fixedSize().position(x: 201, y: 300)
     }
     .frame(width: 402, height: 874)

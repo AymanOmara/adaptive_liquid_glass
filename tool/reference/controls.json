@@ -482,6 +482,9 @@
         ],
         "dim": "#CECED2"
       }
+    },
+    "date_picker_time": {
+      "capsule_gap": 4.0
     }
   }
 }

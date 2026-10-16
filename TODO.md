@@ -18,7 +18,7 @@ and CHANGELOG.md.
       navigation bar first if asked for
   - example app toggle: done for the iOS look
     (`supportLiquidGlassOnAndroid`, 2026-10-15); README Android section
-    done. Still: re-check every Known limitations entry is still true
+    done. Known limitations re-checked 2026-10-16
 
 3- release readiness: 0.1.0 shipped 2026-10-08. 1.0 only after:
   - usability pass: done 2026-10-14 (additive part); the 1.0 breaks it
@@ -52,10 +52,11 @@ and CHANGELOG.md.
   close button and colour row measured 2026-10-13; colour sheet, refresh
   threshold/spinner/rubber band/dark spinner and search close-button
   reveal and hide 2026-10-14):
-  searchable scope bar and suggestions platter (keyboard tutorial covered
-  them), date wheel time-column spacing (UIKit packs them unevenly), cover
-  drag thresholds (SwiftUI's cover has no drag), context menu (synthetic
-  touches cannot open SwiftUI's). Motion still open: the wheel's step
+  scope bar, suggestions, date wheel time columns and context menu
+  layout (UIKit's interaction) are measured; left estimated: the
+  nav-bar placement's search inset and scope gap, the context menu's
+  blur (date/time capsule gap measured 2026-10-16: 4). Cover drag thresholds: nothing to measure
+  (SwiftUI's cover has no drag). Motion still open: the wheel's step
   (VoiceOver-only, no touch drives it), context menu.
   Colour sheet (2026-10-14, second pass): side inset 8 (partial sheet
   detents now float at any height, SwiftUI .height(300...765) measured),

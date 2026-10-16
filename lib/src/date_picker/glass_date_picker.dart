@@ -244,7 +244,7 @@ class _GlassDatePickerState extends State<GlassDatePicker> {
     // than overflowing.
     GlassDatePickerMode.dateAndTime => Wrap(
       spacing: DatePickerWheelMetrics.capsuleGap,
-      runSpacing: DatePickerWheelMetrics.capsuleGap,
+      runSpacing: DatePickerWheelMetrics.capsuleRunGap,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [_dateCapsule(), _timeCapsule()],
     ),
