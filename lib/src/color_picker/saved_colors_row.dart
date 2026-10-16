@@ -88,20 +88,12 @@ class SavedColorsRow extends StatelessWidget {
             child: Container(
               width: ColorPickerMetrics.savedSwatch,
               height: ColorPickerMetrics.savedSwatch,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                color: CupertinoDynamicColor.resolve(
-                  GlassColors.colorPickerAddFill,
-                  context,
-                ),
+                color: GlassColors.colorPickerAddFill,
               ),
-              child: CustomPaint(
-                painter: _PlusPainter(
-                  CupertinoDynamicColor.resolve(
-                    GlassColors.colorPickerAddGlyph,
-                    context,
-                  ),
-                ),
+              child: const CustomPaint(
+                painter: _PlusPainter(GlassColors.colorPickerAddGlyph),
               ),
             ),
           ),

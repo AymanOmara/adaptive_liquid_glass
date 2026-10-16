@@ -153,7 +153,9 @@ Every preset still chains: `Glass.smoke.interactive()`.
 
 With `onPressed` the glass is a button: it gets button semantics, takes
 focus, answers Enter and Space, and its glass turns interactive (the press
-stretch and glow on iOS, the ripple on Android). Pass
+stretch and light on iOS, the ripple on Android; the light is SwiftUI's,
+measured: white over the whole shape plus a glow under the finger, on at
+the touch and held 0.33 s past the release). Pass
 `Glass.regular.interactive(false)` to keep the tap without the press
 visuals.
 
@@ -1518,9 +1520,9 @@ testWidgets('pays', (tester) async {
   not part of the package.
 - **Full-screen cover drag:** SwiftUI's cover has no drag to dismiss, so
   `dragToDismiss` (off by default) borrows the sheet's thresholds.
-- **Colour picker sheet:** laid out as iOS 26.4's
-  UIColorPickerViewController (measured, saved colours and Spectrum map
-  included). Its eyedropper reads only what the app itself draws (the
+- **Colour picker sheet:** laid out and coloured as iOS 26.4's
+  UIColorPickerViewController, light and dark (measured, saved colours and
+  Spectrum map included). Its eyedropper reads only what the app itself draws (the
   page under the sheet): not other apps, the status bar or platform views
   such as maps, web views and native-mode glass. Saved colours live in
   memory unless the app passes `savedColors` / `onSavedColorsChanged` and

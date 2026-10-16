@@ -13,11 +13,8 @@ class CheckerboardPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = GlassColors.colorPickerCheckerLight,
-    );
-    final dark = Paint()..color = GlassColors.colorPickerCheckerDark;
+    // The other cells stay clear: UIKit's show the sheet through them.
+    final dark = Paint()..color = GlassColors.colorPickerChecker;
     final columns = (size.width / cell).ceil();
     final rows = (size.height / cell).ceil();
     for (var y = 0; y < rows; y++) {

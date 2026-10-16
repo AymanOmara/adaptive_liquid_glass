@@ -15,7 +15,7 @@ Widget? newComponentTwin(String scene) => switch (scene) {
   'refreshmotion' => const _RefreshMotion(),
   'refreshmotiondark' => const _RefreshMotion(dark: true),
   'searchmotion' => const _SearchMotion(),
-  'colorrow' => const _ColorRow(),
+  'colorrow' || 'colorrowdark' => const _ColorRow(),
   'contextmenuuikitmotion' => const _ContextMenuMotion(),
   _ => null,
 };

@@ -63,7 +63,7 @@ and CHANGELOG.md.
   detents now float at any height, SwiftUI .height(300...765) measured),
   segmented control 30.67, saved colours row, UIKit's Spectrum map
   (mean |diff| 1.1/255) and an in-app eyedropper done. Left: the loupe is estimated (UIKit's cannot be captured mid-drag);
-  dark-mode "+" colours estimated.
+  The sheet's colours were measured in light and dark (2026-10-17).
   Refresh: the rubber band is UIKit's only for scrollables inheriting
   bouncing physics (their own BouncingScrollPhysics keeps Flutter's
   friction); the release bounce without a refresh is UIKit's (fitted

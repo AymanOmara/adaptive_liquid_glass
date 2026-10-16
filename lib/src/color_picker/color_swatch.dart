@@ -31,7 +31,10 @@ class _Swatch extends StatelessWidget {
               color: color,
               border: selected
                   ? Border.all(
-                      color: GlassColors.colorPickerSelection,
+                      color: CupertinoDynamicColor.resolve(
+                        GlassColors.colorPickerSelection,
+                        context,
+                      ),
                       width: ColorPickerMetrics.gridSelectionRing,
                     )
                   : null,

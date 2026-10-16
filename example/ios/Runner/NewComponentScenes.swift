@@ -368,11 +368,12 @@ struct RefreshReference: View {
 
 /// A list with a `ColorPicker` row (red); with `present`, 1 s after launch
 /// it presents the system colour picker (UIColorPickerViewController,
-/// what `ColorPicker` opens) over it. Light.
+/// what `ColorPicker` opens) over it. Light, or dark with `dark`.
 @available(iOS 26.0, *)
 struct ColorSheetReference: View {
   @State private var colour = Color.red
   let present: Bool
+  var dark = false
   var body: some View {
     List { ColorPicker("Colour", selection: $colour) }
       .onAppear {
@@ -380,13 +381,13 @@ struct ColorSheetReference: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
           let picker = UIColorPickerViewController()
           picker.selectedColor = .red
-          picker.overrideUserInterfaceStyle = .light
+          picker.overrideUserInterfaceStyle = dark ? .dark : .light
           UIApplication.shared.connectedScenes
             .compactMap { ($0 as? UIWindowScene)?.keyWindow?.rootViewController }
             .first?.present(picker, animated: false)
         }
       }
-      .environment(\.colorScheme, .light)
+      .preferredColorScheme(dark ? .dark : .light)
   }
 }
 

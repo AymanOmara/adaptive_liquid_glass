@@ -730,6 +730,44 @@ def last_components(d):
                 "channel_pitch": r((tr[-1][0] - tr[0][0]) / (len(tr) - 1)),
                 "hex_top": r(hy[0] - gy[0]), "hex_width": r(hx[1] - hx[0]),
             })
+    # The sheet's colours, light and dark system appearance: the colorrow
+    # scene's sheet after a tap on the swatch, then on the grid swatch at
+    # (188, 524) (colorsheet_sel / colorsheetdark_sel). Points are for
+    # iPhone 17 Pro, where the sheet sits 265 pt down.
+    colours = {}
+    for name, key in (("colorsheet_sel", "light"), ("colorsheetdark_sel", "dark")):
+        if not (d / f"{name}.png").exists():
+            continue
+        a = load(d, f"{name}.png")
+        px = lambda x, y: a[int(y * S), int(x * S)]
+        bg = px(196.5, 690)
+        # The separator: the one row at x 201 that differs from the sheet.
+        col = a[int(745 * S):int(762 * S), int(201 * S)]
+        line = [i for i in range(len(col)) if np.abs(col[i] - bg).max() > 12]
+        # The checker's grey cell at the clear end of the opacity track,
+        # and the clear one beside it (the sheet).
+        # The selected swatch's ring: the run of the ring's colour where
+        # the swatch starts, on the row through its centre.
+        row = a[int(524 * S), int(165 * S):int(212 * S)]
+        ring = row[18]
+        width = 0
+        while np.abs(row[18 + width] - ring).max() <= 2:
+            width += 1
+        colours[key] = {
+            "sheet": hexc(bg),
+            "plus_fill": hexc(px(352, 782)),
+            "plus_glyph": hexc(px(360.7, 789.5)),
+            "field": hexc(px(310, 714.9)),
+            "separator": hexc(col[line[-1]]) if line else None,
+            "separator_px": len(line),
+            "checker_grey": hexc(px(27, 706)),
+            "checker_clear": hexc(px(27, 715)),
+            "selection_ring": hexc(ring),
+            "selection_ring_width": r(width / S),
+            "thumb_ring": hexc(px(258.7, 714.9)),
+        }
+    if colours:
+        out["color_sheet_colours"] = colours
     # Context menu (UIKit interaction opened programmatically).
     cm = {}
     for name, cx in (("contextmenuuikit", 201), ("contextmenuuikitleft", 110),
@@ -790,7 +828,7 @@ def main():
     if any((d / "swiftui" / f).exists() for f in
            ("timewheel.png", "searchscopesquery.png", "colorsheet_tap.png",
             "contextmenuuikit.png", "contextmenuuikitstripes.png",
-            "datetimepicker.png",
+            "datetimepicker.png", "colorsheet_sel.png",
             "searchdrawerquery.png")):
         comp.update(last_components(d / "swiftui"))
     print(json.dumps(comp, indent=1))

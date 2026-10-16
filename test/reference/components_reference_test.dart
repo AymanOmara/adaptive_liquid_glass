@@ -50,6 +50,13 @@ void main() {
         ((got.b - expected.b).abs() * 255).round() <= 2,
     'within 2/255 of $expected',
   );
+  Matcher sameColourWithin(Color expected, int steps) => predicate<Color>(
+    (got) =>
+        ((got.r - expected.r).abs() * 255).round() <= steps &&
+        ((got.g - expected.g).abs() * 255).round() <= steps &&
+        ((got.b - expected.b).abs() * 255).round() <= steps,
+    'within $steps/255 of $expected',
+  );
 
   test('toggle', () {
     final t = m('toggle');
@@ -806,6 +813,63 @@ void main() {
     );
   });
 
+  test('colour picker sheet colours, light and dark (UIKit)', () {
+    final sc = m('color_sheet_colours');
+    final light = sc['light'] as Map<String, dynamic>;
+    final dark = sc['dark'] as Map<String, dynamic>;
+    Color over(Color fg, Color bg) => Color.alphaBlend(fg, bg);
+    for (final mode in [light, dark]) {
+      expect(
+        GlassColors.colorPickerAddFill,
+        sameColour(hex(mode, 'plus_fill')),
+      );
+      expect(
+        GlassColors.colorPickerAddGlyph,
+        sameColour(hex(mode, 'plus_glyph')),
+      );
+      expect(
+        GlassColors.colorPickerThumbRing,
+        sameColour(hex(mode, 'thumb_ring')),
+      );
+      expect(n(mode, 'separator_px'), 1);
+      expect(
+        ColorPickerMetrics.gridSelectionRing,
+        moreOrLessEquals(n(mode, 'selection_ring_width'), epsilon: 0.01),
+      );
+      // The clear cell shows the sheet; the grey one is tinted a little by
+      // the colour fading in over it.
+      expect(
+        hex(mode, 'checker_clear'),
+        sameColourWithin(hex(mode, 'sheet'), 8),
+      );
+      expect(
+        GlassColors.colorPickerChecker,
+        sameColourWithin(hex(mode, 'checker_grey'), 4),
+      );
+    }
+    expect(GlassColors.colorPickerField.color, sameColour(hex(light, 'field')));
+    expect(
+      GlassColors.colorPickerField.darkColor,
+      sameColour(hex(dark, 'field')),
+    );
+    expect(
+      GlassColors.colorPickerSeparator.color,
+      sameColour(hex(light, 'separator')),
+    );
+    expect(
+      over(GlassColors.colorPickerSeparator.darkColor, hex(dark, 'sheet')),
+      sameColour(hex(dark, 'separator')),
+    );
+    expect(
+      GlassColors.colorPickerSelection.color,
+      sameColour(hex(light, 'selection_ring')),
+    );
+    expect(
+      GlassColors.colorPickerSelection.darkColor,
+      sameColour(hex(dark, 'selection_ring')),
+    );
+  });
+
   test('colour picker sheet: saved colours and eyedropper (UIKit)', () {
     final c = m('color_sheet');
     expect(
@@ -821,10 +885,7 @@ void main() {
       moreOrLessEquals(n(c, 'saved_pitch'), epsilon: pt),
     );
     expect(SavedColors.defaults.length, n(c, 'saved_count'));
-    expect(
-      GlassColors.colorPickerAddFill.color,
-      sameColour(hex(c, 'plus_fill')),
-    );
+    expect(GlassColors.colorPickerAddFill, sameColour(hex(c, 'plus_fill')));
     // Level with the current colour's swatch.
     expect(
       n(c, 'saved_top'),

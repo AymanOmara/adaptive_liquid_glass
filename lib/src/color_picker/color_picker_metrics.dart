@@ -188,8 +188,9 @@ abstract final class ColorPickerMetrics {
   /// The grid's outer corner radius (measured, continuous corners).
   static const double gridRadius = 8;
 
-  /// The selected grid swatch's ring thickness (estimated).
-  static const double gridSelectionRing = 2;
+  /// The selected grid swatch's ring thickness, inside the swatch
+  /// (measured: 7 px, light and dark).
+  static const double gridSelectionRing = 7 / 3;
 
   /// The spectrum map's corner radius (measured, about 8, as the grid's).
   static const double spectrumRadius = 8;
