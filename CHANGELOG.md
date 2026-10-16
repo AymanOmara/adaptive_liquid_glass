@@ -1,3 +1,9 @@
+## Unreleased
+
+- Android shared glass layer: a rounded, superellipse, oval, path or
+  `PhysicalModel` clip around glass now clips the glass and its content to
+  that shape, not to its bounding rectangle.
+
 ## 0.2.3 (2026-10-15)
 
 - `SliverGlassNavigationBar.materialBuilder`: wrap or replace the

@@ -101,6 +101,39 @@ void main() {
     expect(b.debugLayer, isNull);
   }, variant: android);
 
+  testWidgets('a rounded clip around glass clips the pass and content', (
+    t,
+  ) async {
+    env();
+    await t.pumpWidget(
+      app(
+        Scaffold(
+          body: Center(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: button('a'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.pump();
+    final b = backdrops(t).single;
+    final box = t.getRect(find.byType(ClipRRect));
+    final inside = box.center;
+    final corner = box.topLeft + const Offset(1, 1);
+    // The pass (not drawn without the shader in tests) is planned shaped.
+    final pass = b.sharedLayer!.debugLastPlan!.single.passes.single;
+    expect(pass.clipPath!.contains(inside), isTrue);
+    expect(pass.clipPath!.contains(corner), isFalse);
+    // The group's content composites under the same rounded clip.
+    final clip = b.sharedLayer!.painter!.debugLayer!.firstChild;
+    expect(clip, isA<ClipPathLayer>());
+    final path = (clip! as ClipPathLayer).clipPath!;
+    expect(path.contains(inside), isTrue);
+    expect(path.contains(corner), isFalse);
+  }, variant: android);
+
   testWidgets('a dialog route gets its own layer', (t) async {
     env();
     await t.pumpWidget(app(Scaffold(body: Center(child: button('page')))));

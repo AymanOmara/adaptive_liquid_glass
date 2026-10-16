@@ -25,6 +25,7 @@ LayerGroupInput g(
   double aspect = 1,
   int shapes = 1,
   Rect? clip,
+  Path? clipPath,
   double opacity = 1,
   GlassBackdropConfig config = _config,
   double smoothing = 0,
@@ -59,6 +60,7 @@ LayerGroupInput g(
   bounds: bounds,
   config: config,
   clip: clip,
+  clipPath: clipPath,
   opacity: opacity,
 );
 
@@ -116,6 +118,63 @@ void main() {
     expect(plan, hasLength(1));
     final s1 = plan.single.passes.single.uniforms.shapes[1];
     expect(s1.clip, const Rect.fromLTWH(200, 0, 800, 800)); // x dpr 2
+  });
+
+  test('a rounded clip shapes its group in the pass only', () {
+    final round = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          const Rect.fromLTWH(0, 0, 100, 40),
+          const Radius.circular(20),
+        ),
+      );
+    final plan = planGlassLayer([
+      g('g0', const Rect.fromLTWH(0, 0, 100, 40), clipPath: round),
+      g('g1', const Rect.fromLTWH(0, 100, 100, 40)),
+    ]);
+    final pass = plan.single.passes.single;
+    final p = pass.clipPath!;
+    expect(p.contains(const Offset(50, 20)), isTrue);
+    expect(p.contains(const Offset(1, 1)), isFalse); // g0's corner
+    expect(p.contains(const Offset(1, 101)), isTrue); // g1 stays square
+    expect(p.contains(const Offset(50, 70)), isFalse); // between groups
+  });
+
+  test("a neighbour's margin does not undo a rounded clip", () {
+    final round = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          const Rect.fromLTWH(100, 0, 100, 100),
+          const Radius.circular(30),
+        ),
+      );
+    const dpr1 = GlassBackdropConfig(
+      spacing: 0,
+      lightAngle: -2,
+      devicePixelRatio: 1,
+      constants: GlassConstants.standard,
+      brightness: Brightness.light,
+      highContrast: false,
+    );
+    final plan = planGlassLayer([
+      // g0's bounds (shadow margin) reach over g1's left corners.
+      g('g0', const Rect.fromLTWH(0, 0, 103, 100), config: dpr1),
+      g(
+        'g1',
+        const Rect.fromLTWH(96, -4, 108, 108),
+        clipPath: round,
+        config: dpr1,
+      ),
+    ]);
+    final p = plan.single.passes.single.clipPath!;
+    expect(p.contains(const Offset(101, 1)), isFalse); // g1's corner
+    expect(p.contains(const Offset(150, 50)), isTrue);
+    expect(p.contains(const Offset(50, 50)), isTrue);
+  });
+
+  test('no shaped clip: the pass clips to its bounds', () {
+    final plan = planGlassLayer([g('g0', const Rect.fromLTWH(0, 0, 50, 50))]);
+    expect(plan.single.passes.single.clipPath, isNull);
   });
 
   test('invisible and fully clipped groups are dropped', () {

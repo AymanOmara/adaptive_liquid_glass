@@ -103,6 +103,63 @@ void main() {
     expect(c.clip, const Rect.fromLTWH(0, 0, 100, 60));
   });
 
+  testWidgets('rectangular clips leave no clip path', (tester) async {
+    final c = await chainOf(
+      tester,
+      const ClipRect(child: ClipRRect(child: probe)),
+    );
+    expect(c.clip, isNotNull);
+    expect(c.clipPath, isNull);
+  });
+
+  testWidgets('a rounded clip keeps its shape in global px', (tester) async {
+    final c = await chainOf(
+      tester,
+      const Padding(
+        padding: EdgeInsets.only(left: 10, top: 5),
+        child: ClipRRect(
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+          child: probe,
+        ),
+      ),
+    );
+    expect(c.clip, const Rect.fromLTWH(10, 5, 20, 20));
+    final p = c.clipPath!;
+    expect(p.contains(const Offset(20, 15)), isTrue);
+    expect(p.contains(const Offset(10.5, 5.5)), isFalse); // corner
+    expect(p.contains(const Offset(29.5, 24.5)), isFalse);
+  });
+
+  testWidgets('ovals, physical models and paths intersect', (tester) async {
+    final c = await chainOf(
+      tester,
+      const PhysicalModel(
+        color: Color(0xFF000000),
+        clipBehavior: Clip.antiAlias,
+        borderRadius: BorderRadius.all(Radius.circular(4)),
+        child: ClipOval(child: probe),
+      ),
+    );
+    final p = c.clipPath!;
+    expect(p.contains(const Offset(10, 10)), isTrue);
+    expect(p.contains(const Offset(2, 2)), isFalse); // outside the oval
+    expect(p.contains(const Offset(10, 1)), isTrue);
+  });
+
+  testWidgets('Clip.none and a plain ClipPath clip nothing extra', (
+    tester,
+  ) async {
+    final c = await chainOf(
+      tester,
+      const ClipRRect(
+        clipBehavior: Clip.none,
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+        child: ClipPath(child: probe),
+      ),
+    );
+    expect(c.clipPath, isNull);
+  });
+
   testWidgets('order follows child order', (tester) async {
     await tester.pumpWidget(
       const Directionality(

@@ -11,6 +11,7 @@ class PaintChain {
     required this.painted,
     required this.opacity,
     required this.clip,
+    this.clipPath,
     required this.order,
   });
 
@@ -24,6 +25,12 @@ class PaintChain {
   /// Intersection of the ancestors' approximate paint clips, global logical
   /// px; null when nothing clips.
   final Rect? clip;
+
+  /// Intersection of the ancestors' clips that are not plain rectangles
+  /// (`ClipRRect`, `ClipRSuperellipse`, `ClipOval`, `ClipPath`, a
+  /// `PhysicalModel`'s shape), global logical px; null when every clip is a
+  /// rectangle. [clip] bounds it.
+  final Path? clipPath;
 
   /// Child index at each level, from the stop ancestor down: paint order
   /// when compared lexicographically.
@@ -46,6 +53,43 @@ bool _indexedStackShows(RenderObject parent, RenderObject child) {
     if (identical(c, child)) shown = true;
   });
   return shown;
+}
+
+/// [parent]'s clip of its children in its own coordinates when it is not
+/// a plain rectangle; null otherwise.
+Path? _shapedClipOf(RenderObject parent) {
+  if (parent is! RenderBox || !parent.hasSize) return null;
+  final box = Offset.zero & parent.size;
+  Path? rrect(RRect r) => r.isRect ? null : (Path()..addRRect(r));
+  return switch (parent) {
+    RenderClipRRect(clipBehavior: Clip.none) ||
+    RenderClipRSuperellipse(clipBehavior: Clip.none) ||
+    RenderClipOval(clipBehavior: Clip.none) ||
+    RenderClipPath(clipBehavior: Clip.none) ||
+    RenderPhysicalModel(clipBehavior: Clip.none) ||
+    RenderPhysicalShape(clipBehavior: Clip.none) => null,
+    RenderClipRRect(:final clipper?) => rrect(clipper.getClip(parent.size)),
+    RenderClipRRect(:final borderRadius, :final textDirection) => rrect(
+      borderRadius.resolve(textDirection).toRRect(box),
+    ),
+    RenderClipRSuperellipse(:final clipper?) =>
+      Path()..addRSuperellipse(clipper.getClip(parent.size)),
+    RenderClipRSuperellipse(:final borderRadius, :final textDirection) =>
+      borderRadius.resolve(textDirection) == BorderRadius.zero
+          ? null
+          : (Path()..addRSuperellipse(
+              borderRadius.resolve(textDirection).toRSuperellipse(box),
+            )),
+    RenderClipOval(:final clipper) =>
+      Path()..addOval(clipper?.getClip(parent.size) ?? box),
+    RenderClipPath(:final clipper?) => clipper.getClip(parent.size),
+    RenderPhysicalModel(shape: BoxShape.circle) => Path()..addOval(box),
+    RenderPhysicalModel(:final borderRadius?) => rrect(
+      borderRadius.toRRect(box),
+    ),
+    RenderPhysicalShape(:final clipper?) => clipper.getClip(parent.size),
+    _ => null,
+  };
 }
 
 int _indexOf(RenderObject parent, RenderObject child) {
@@ -73,6 +117,7 @@ PaintChain describePaintChain(RenderObject node, Set<RenderObject> stopAt) {
   var painted = true;
   var opacity = 1.0;
   Rect? clip;
+  Path? clipPath;
   final order = <int>[];
   RenderObject child = node;
   for (var parent = node.parent; parent != null; parent = parent.parent) {
@@ -87,6 +132,14 @@ PaintChain describePaintChain(RenderObject node, Set<RenderObject> stopAt) {
     if (c != null) {
       final global = MatrixUtils.transformRect(parent.getTransformTo(null), c);
       clip = clip == null ? global : clip.intersect(global);
+      final shaped = _shapedClipOf(
+        parent,
+      )?.transform(parent.getTransformTo(null).storage);
+      if (shaped != null) {
+        clipPath = clipPath == null
+            ? shaped
+            : Path.combine(PathOperation.intersect, clipPath, shaped);
+      }
     }
     child = parent;
   }
@@ -94,6 +147,7 @@ PaintChain describePaintChain(RenderObject node, Set<RenderObject> stopAt) {
     painted: painted,
     opacity: opacity,
     clip: clip,
+    clipPath: clipPath,
     order: order.reversed.toList(),
   );
 }

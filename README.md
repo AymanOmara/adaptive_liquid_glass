@@ -1503,8 +1503,7 @@ testWidgets('pays', (tester) async {
   the layer: non-glass content painted after a group in the same route
   and overlapping its glass draws beneath that glass (wrap content laid
   over glass in a sibling, like the tab bar's row, is handled); groups of
-  one stratum share the largest blur; clips are rectangular (a rounded
-  clip around glass clips to its bounds); route transitions that snapshot
+  one stratum share the largest blur; route transitions that snapshot
   the page show the glass outside the snapshot; menus draw their glass
   group by group. The tab bar's vibrant labels read the layer's glass as
   they do in place (about 100 MB more over the Gallery's run).

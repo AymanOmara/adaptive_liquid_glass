@@ -32,6 +32,7 @@ class LayerGroupInput {
     required this.bounds,
     required this.config,
     this.clip,
+    this.clipPath,
     this.opacity = 1,
     this.content,
   });
@@ -56,6 +57,10 @@ class LayerGroupInput {
 
   /// Ancestor clip in global logical px; null is unbounded.
   final Rect? clip;
+
+  /// Ancestor clips that are not rectangles (rounded, oval, path), global
+  /// logical px; null when [clip] is the whole clip.
+  final Path? clipPath;
 
   /// Ancestor opacity, 0..1.
   final double opacity;
@@ -102,6 +107,7 @@ class LayerPass {
     required this.blurSigma,
     required this.blurAspect,
     required this.bounds,
+    this.clipPath,
     required this.groups,
   });
 
@@ -116,6 +122,11 @@ class LayerPass {
 
   /// Clip of the pass in global logical px.
   final Rect bounds;
+
+  /// Where the pass may draw inside [bounds], global logical px, when a
+  /// group's ancestors clip it to a non-rectangular shape: the union of
+  /// each group's region, cut to its shape. Null draws all of [bounds].
+  final Path? clipPath;
 
   /// The groups drawn, in paint order.
   final List<Object> groups;
@@ -342,6 +353,38 @@ LayerPass _pass(List<LayerGroupInput> gs, (double, double) blur) {
     blurSigma: blur.$1,
     blurAspect: blur.$2,
     bounds: gs.map((g) => g.region).reduce((a, b) => a.expandToInclude(b)),
+    clipPath: _passClipPath(gs),
     groups: [for (final g in gs) g.id],
   );
+}
+
+Path? _passClipPath(List<LayerGroupInput> gs) {
+  if (gs.every((g) => g.clipPath == null)) return null;
+  Path? allowed;
+  Path? cutAway;
+  for (final g in gs) {
+    final region = Path()..addRect(g.region);
+    final shape = g.clipPath;
+    final p = shape == null
+        ? region
+        : Path.combine(PathOperation.intersect, region, shape);
+    allowed = allowed == null
+        ? p
+        : Path.combine(PathOperation.union, allowed, p);
+    if (shape == null) continue;
+    // A neighbour's shadow margin reaches over this group's glass; what the
+    // shape cuts off that glass stays cut in the shared pass too.
+    final off = Path.combine(
+      PathOperation.difference,
+      // 1 px past the body: its anti-aliased rim.
+      Path()..addRect(g.glass.inflate(1)),
+      shape,
+    );
+    cutAway = cutAway == null
+        ? off
+        : Path.combine(PathOperation.union, cutAway, off);
+  }
+  return cutAway == null
+      ? allowed
+      : Path.combine(PathOperation.difference, allowed!, cutAway);
 }
