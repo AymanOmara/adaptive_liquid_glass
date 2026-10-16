@@ -141,6 +141,66 @@ void main() {
       );
     });
 
+    test("a release short of the refresh bounces back as UIKit's", () {
+      // SwiftUI List, 60 fps dumps after release: overscroll per frame
+      // (null: a repeated frame).
+      final takes = {
+        97.0: [
+          97.0,
+          84.3,
+          null,
+          63.7,
+          55.0,
+          47.7,
+          41.0,
+          35.7,
+          30.7,
+          26.3,
+          22.7,
+        ],
+        121.3: [121.3, 107.0, 94.3, 82.7, 72.3, 63.3, 55.3, 48.0, 41.7],
+      };
+      takes.forEach((from, frames) {
+        final sim = physics.createBallisticSimulation(_at(from), 0)!;
+        for (var i = 0; i < frames.length; i++) {
+          final measured = frames[i];
+          if (measured == null) continue;
+          expect(-sim.x(i / 60), closeTo(measured, 2.5), reason: '$from @ $i');
+        }
+        expect(-sim.x(1), closeTo(0, 0.5));
+        // Critically damped: never past the top.
+        for (var t = 0.0; t < 2; t += 0.01) {
+          expect(sim.x(t), lessThanOrEqualTo(0.01));
+        }
+      });
+      // Flutter's bouncing simulation is far slower to start.
+      final flutter = const BouncingScrollPhysics().createBallisticSimulation(
+        _at(121.3),
+        0,
+      )!;
+      expect(-flutter.x(4 / 60), greaterThan(72.3 + 10));
+    });
+
+    test('a fling up past the launch keeps the bouncing simulation', () {
+      const bouncing = BouncingScrollPhysics();
+      final fast = physics.createBallisticSimulation(_at(50), 3000)!;
+      final reference = bouncing.createBallisticSimulation(_at(50), 3000)!;
+      expect(fast.x(0.1), closeTo(reference.x(0.1), 1e-6));
+      // Other edges keep it too.
+      final bottom = FixedScrollMetrics(
+        minScrollExtent: 0,
+        maxScrollExtent: 2000,
+        pixels: 2050,
+        viewportDimension: 874,
+        axisDirection: AxisDirection.down,
+        devicePixelRatio: 3,
+      );
+      expect(
+        physics.createBallisticSimulation(bottom, 0)!.x(0.1),
+        closeTo(bouncing.createBallisticSimulation(bottom, 0)!.x(0.1), 1e-6),
+      );
+    });
+
     test('applyTo keeps the type and the parent', () {
       final applied = physics.applyTo(const AlwaysScrollableScrollPhysics());
       expect(applied, isA<GlassRefreshScrollPhysics>());

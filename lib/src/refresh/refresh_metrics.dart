@@ -65,4 +65,21 @@ abstract final class RefreshMetrics {
   /// SwiftUI damping fraction for the settle into the hold (overdamped:
   /// a fast start and a long tail, as UIScrollView's bounce).
   static const double holdDamping = 1.43;
+
+  /// SwiftUI spring response for the content's bounce back after a pull
+  /// released short of the refresh. Fitted to SwiftUI's List on iOS 26.4
+  /// (`-controls refreshmotion`, 97- and 121-pt pulls released, 60 fps
+  /// dumps; jointly with [bounceDamping] and [bounceLaunch], rms 0.9 pt).
+  /// Flutter's bouncing simulation is off by 8 pt rms on the same takes.
+  static const double bounceResponse = 0.58;
+
+  /// SwiftUI damping fraction for the bounce back: critically damped
+  /// (free fits gave 1.00 and 1.01).
+  static const double bounceDamping = 1;
+
+  /// The bounce back's starting speed toward the rest, in units of the
+  /// overscroll times the spring's angular frequency: UIScrollView starts
+  /// it moving rather than from rest, whatever the finger's speed (0.69
+  /// and 0.73 in the two takes, finger moving down at release).
+  static const double bounceLaunch = 0.71;
 }

@@ -1530,7 +1530,9 @@ testWidgets('pays', (tester) async {
   `GlassRefreshScrollPhysics`; the refresh still starts at UIKit's
   finger travel (315 pt). `SliverGlassRefresh` needs
   `GlassRefreshScrollPhysics` on its `CustomScrollView` for the same
-  curve. The release's bounce back is Flutter's.
+  curve. Released short of the refresh, the content springs back on
+  UIKit's measured curve (within 2.5 pt per frame); a fling up faster
+  than that start keeps Flutter's simulation.
 
 ## License
 

@@ -23,6 +23,10 @@
   spring, the menu grows from nothing at its edge by the item with a 2%
   overshoot; closing, the menu is gone in three frames and the item
   settles back (was a 300 ms ease with the menu from half size).
+- `GlassRefreshScrollPhysics`: a pull released short of the refresh
+  bounces back as UIScrollView's, fitted from 60 fps recordings
+  (critically damped, already moving at release; rms 0.9 pt). It was
+  Flutter's bouncing simulation, 8 pt rms off and slower to start.
 
 ## 0.2.3 (2026-10-15)
 

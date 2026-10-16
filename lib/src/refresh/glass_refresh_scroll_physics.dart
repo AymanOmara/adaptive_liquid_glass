@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import '../core/swiftui_spring.dart';
 import 'refresh_metrics.dart';
 
 /// `BouncingScrollPhysics` with UIScrollView's rubber band under a pull
@@ -25,9 +26,13 @@ import 'refresh_metrics.dart';
 /// follows `r × (1 − 1 / (x × c / r + 1))` for a finger travel `x` past the
 /// top, with `c` = [RefreshMetrics.rubberBandStiffness] and `r` =
 /// [RefreshMetrics.rubberBandReach] of the viewport (fitted to UIKit's
-/// List on iOS 26.4). Moving the finger back retraces the curve. Every
-/// other edge, the release and the bounce back are
-/// `BouncingScrollPhysics`'.
+/// List on iOS 26.4). Moving the finger back retraces the curve.
+///
+/// Released past the top, the content springs back as UIScrollView's
+/// does: critically damped ([RefreshMetrics.bounceResponse]), already
+/// moving toward the rest ([RefreshMetrics.bounceLaunch]). A fling up
+/// faster than that start keeps `BouncingScrollPhysics`' simulation, as
+/// does every other edge.
 class GlassRefreshScrollPhysics extends BouncingScrollPhysics {
   /// Creates the physics.
   const GlassRefreshScrollPhysics({super.decelerationRate, super.parent});
@@ -38,6 +43,35 @@ class GlassRefreshScrollPhysics extends BouncingScrollPhysics {
         decelerationRate: decelerationRate,
         parent: buildParent(ancestor),
       );
+
+  @override
+  Simulation? createBallisticSimulation(
+    ScrollMetrics position,
+    double velocity,
+  ) {
+    final overscroll = position.minScrollExtent - position.pixels;
+    if (position.axisDirection != AxisDirection.down || overscroll <= 0) {
+      return super.createBallisticSimulation(position, velocity);
+    }
+    final spring = swiftUISpring(
+      response: RefreshMetrics.bounceResponse,
+      dampingFraction: RefreshMetrics.bounceDamping,
+    );
+    final launch =
+        RefreshMetrics.bounceLaunch *
+        (2 * math.pi / RefreshMetrics.bounceResponse) *
+        overscroll;
+    if (velocity > launch) {
+      return super.createBallisticSimulation(position, velocity);
+    }
+    return ScrollSpringSimulation(
+      spring,
+      position.pixels,
+      position.minScrollExtent,
+      launch,
+      tolerance: toleranceFor(position),
+    );
+  }
 
   @override
   double applyPhysicsToUserOffset(ScrollMetrics position, double offset) {

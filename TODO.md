@@ -66,8 +66,8 @@ and CHANGELOG.md.
   dark-mode "+" colours estimated.
   Refresh: the rubber band is UIKit's only for scrollables inheriting
   bouncing physics (their own BouncingScrollPhysics keeps Flutter's
-  friction); the release bounce without a refresh is Flutter's,
-  unmeasured. Search hide: the button's glass does not merge into the
+  friction); the release bounce without a refresh is UIKit's (fitted
+  2026-10-16). Search hide: the button's glass does not merge into the
   field as SwiftUI's does (it fades).
 
 7- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
