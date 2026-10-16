@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.4 (2026-10-17)
 
 - `GlassSearchable`: the close button's shadow is no longer cut to a box
   as it appears and hides (a tint showed along its top and end edges).
