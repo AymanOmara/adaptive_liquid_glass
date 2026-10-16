@@ -18,6 +18,11 @@
 - `GlassContextMenu`: the page behind the menu is dimmed but no longer
   blurred, as UIKit's (measured over sharp stripes: edges stay sharp).
   It also saves a full-screen backdrop filter.
+- `GlassContextMenu` opens and closes with UIKit's motion, fitted from
+  60 fps recordings: the dim leads, the item lifts on a critically damped
+  spring, the menu grows from nothing at its edge by the item with a 2%
+  overshoot; closing, the menu is gone in three frames and the item
+  settles back (was a 300 ms ease with the menu from half size).
 
 ## 0.2.3 (2026-10-15)
 

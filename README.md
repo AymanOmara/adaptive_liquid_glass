@@ -1457,14 +1457,13 @@ testWidgets('pays', (tester) async {
 
 ## Known limitations
 
-- **Context menu:** `GlassContextMenu`'s layout (lift, gap to the menu,
-  side margins) is measured from UIKit's UIContextMenuInteraction, which
-  SwiftUI's `.contextMenu` rides on; synthetic touches on the simulator
-  do not open SwiftUI's own, so its motion is estimated. Of the newer components'
-  motion, the disclosure spring, the refresh snap-back, threshold and
-  rubber band, the colour grid's ring and `GlassSearchable`'s
-  close-button reveal and hide are measured; the wheel picker's
-  VoiceOver step is not.
+- **Context menu:** `GlassContextMenu`'s layout and its opening and
+  closing springs are measured from UIKit's UIContextMenuInteraction
+  (which SwiftUI's `.contextMenu` rides on), opened programmatically:
+  synthetic touches on the simulator open neither, so the press before
+  the lift (the item easing under the finger) is not measured. Of the
+  newer components' motion, only the wheel picker's VoiceOver step is
+  unmeasured.
 - **Native mode, runtime light→dark flip:** on iOS 26, 71 of 72 measured
   brightness flips at runtime match SwiftUI. One does not: a regular glass
   capsule over a photo, flipped from light to dark, keeps part of Apple's

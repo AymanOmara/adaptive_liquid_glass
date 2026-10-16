@@ -485,9 +485,15 @@ struct UIKitContextMenuReference: View {
   /// Black and white stripes 100 pt wide behind the card: sharp edges
   /// whose spread measures the page's blur.
   var stripes = false
+  /// Opens on a tap on the page instead of 1.5 s after launch, so a
+  /// motion recording can start it (`-controls contextmenuuikitmotion`).
+  var openOnTap = false
   var body: some View {
     ZStack {
       Color(white: white ? 1 : 0.5).ignoresSafeArea()
+        .onTapGesture {
+          if openOnTap { ContextMenuOpener.open(at: CGPoint(x: x, y: 362)) }
+        }
       if stripes {
         HStack(spacing: 0) {
           ForEach(0..<5) { i in (i % 2 == 0 ? Color.black : Color.white).frame(width: 100) }
@@ -501,6 +507,7 @@ struct UIKitContextMenuReference: View {
     }
     .environment(\.colorScheme, .light)
     .onAppear {
+      guard !openOnTap else { return }
       DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
         ContextMenuOpener.open(at: CGPoint(x: x, y: 362))
       }

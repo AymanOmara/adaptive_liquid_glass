@@ -57,7 +57,8 @@ and CHANGELOG.md.
   estimated here (2026-10-16: date/time capsule gap, nav-bar search
   drawer, and the context menu's page, dimmed but not blurred). Cover drag thresholds: nothing to measure
   (SwiftUI's cover has no drag). Motion still open: the wheel's step
-  (VoiceOver-only, no touch drives it), context menu.
+  (VoiceOver-only, no touch drives it), the context menu's press before
+  its lift (open and close springs fitted 2026-10-16).
   Colour sheet (2026-10-14, second pass): side inset 8 (partial sheet
   detents now float at any height, SwiftUI .height(300...765) measured),
   segmented control 30.67, saved colours row, UIKit's Spectrum map
