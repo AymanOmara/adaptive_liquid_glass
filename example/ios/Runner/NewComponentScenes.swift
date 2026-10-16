@@ -482,9 +482,19 @@ struct UIKitContextMenuReference: View {
   var x: CGFloat = 201
   var size = CGSize(width: 200, height: 120)
   var white = false
+  /// Black and white stripes 100 pt wide behind the card: sharp edges
+  /// whose spread measures the page's blur.
+  var stripes = false
   var body: some View {
     ZStack {
       Color(white: white ? 1 : 0.5).ignoresSafeArea()
+      if stripes {
+        HStack(spacing: 0) {
+          ForEach(0..<5) { i in (i % 2 == 0 ? Color.black : Color.white).frame(width: 100) }
+        }
+        .frame(width: 402, alignment: .leading)
+        .ignoresSafeArea()
+      }
       UIKitMenuCard().frame(width: size.width, height: size.height)
         .border(white ? Color.black : Color.clear, width: white ? 1 : 0)
         .position(x: x, y: 300)

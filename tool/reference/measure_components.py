@@ -749,6 +749,22 @@ def last_components(d):
                     "dim": hexc(bg)}
     if cm:
         out["context_menu"] = cm
+    # The page behind the menu over 100-pt black and white stripes
+    # (`-controls contextmenuuikitstripes`): how far each stripe edge
+    # spreads (10-90 % of the step) under the row at 750, below the menu.
+    if (d / "contextmenuuikitstripes.png").exists():
+        a = load(d, "contextmenuuikitstripes.png")
+        row = a[int(750 * S)].mean(axis=-1)
+        spread = []
+        for e in (100, 200, 300):
+            seg = row[int((e - 6) * S):int((e + 6) * S)]
+            n = (seg - seg.min()) / (seg.max() - seg.min())
+            spread.append(float(((n > 0.1) & (n < 0.9)).sum()) / S)
+        out["context_menu_page"] = {
+            "edge_spread": r(max(spread)),
+            "white": hexc(a[int(750 * S), int(150 * S)]),
+            "black": hexc(a[int(750 * S), int(50 * S)]),
+        }
     return out
 
 
@@ -773,7 +789,8 @@ def main():
         comp.update(more_components(d / "swiftui"))
     if any((d / "swiftui" / f).exists() for f in
            ("timewheel.png", "searchscopesquery.png", "colorsheet_tap.png",
-            "contextmenuuikit.png", "datetimepicker.png",
+            "contextmenuuikit.png", "contextmenuuikitstripes.png",
+            "datetimepicker.png",
             "searchdrawerquery.png")):
         comp.update(last_components(d / "swiftui"))
     print(json.dumps(comp, indent=1))

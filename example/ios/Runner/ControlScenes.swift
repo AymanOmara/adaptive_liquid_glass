@@ -46,6 +46,7 @@ enum ControlScenes {
     case "contextmenuopen": root = AnyView(ContextMenuReference(open: true))
     case "contextmenuuikit": root = AnyView(UIKitContextMenuReference())
     case "contextmenuuikitleft": root = AnyView(UIKitContextMenuReference(x: 110))
+    case "contextmenuuikitstripes": root = AnyView(UIKitContextMenuReference(stripes: true))
     case "contextmenuuikitwide": root = AnyView(
       UIKitContextMenuReference(size: CGSize(width: 360, height: 80), white: true))
     case "stepper": root = AnyView(StepperReference())

@@ -498,6 +498,11 @@
       "scope_top": 124.0,
       "content_top": 122.0,
       "content_top_scopes": 166.0
+    },
+    "context_menu_page": {
+      "edge_spread": 0.0,
+      "white": "#CECED2",
+      "black": "#050409"
     }
   }
 }

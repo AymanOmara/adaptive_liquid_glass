@@ -56,6 +56,24 @@ void main() {
     expect(log, ['delete']);
   }, variant: ios);
 
+  testWidgets('the page behind is dimmed, not blurred, as UIKit', (t) async {
+    shaderEnv();
+    await t.pumpWidget(_app([]));
+    final before = t.widgetList(find.byType(BackdropFilter)).length;
+    await t.longPress(find.text('Card'));
+    await t.pumpAndSettle();
+    // Only the menu's own glass may add a backdrop; no full-page blur.
+    final pageBlurs = t
+        .widgetList<BackdropFilter>(find.byType(BackdropFilter))
+        .skip(before)
+        .where(
+          (b) =>
+              t.getSize(find.byWidget(b)) ==
+              t.view.physicalSize / t.view.devicePixelRatio,
+        );
+    expect(pageBlurs, isEmpty);
+  }, variant: ios);
+
   testWidgets('a tap outside closes it without choosing', (t) async {
     shaderEnv();
     final log = <String>[];

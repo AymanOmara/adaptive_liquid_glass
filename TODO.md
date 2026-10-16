@@ -53,9 +53,9 @@ and CHANGELOG.md.
   threshold/spinner/rubber band/dark spinner and search close-button
   reveal and hide 2026-10-14):
   scope bar, suggestions, date wheel time columns and context menu
-  layout (UIKit's interaction) are measured; left estimated: the
-  context menu's blur (date/time capsule gap and nav-bar search drawer
-  measured 2026-10-16). Cover drag thresholds: nothing to measure
+  layout (UIKit's interaction) are measured; nothing left
+  estimated here (2026-10-16: date/time capsule gap, nav-bar search
+  drawer, and the context menu's page, dimmed but not blurred). Cover drag thresholds: nothing to measure
   (SwiftUI's cover has no drag). Motion still open: the wheel's step
   (VoiceOver-only, no touch drives it), context menu.
   Colour sheet (2026-10-14, second pass): side inset 8 (partial sheet

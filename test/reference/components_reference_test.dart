@@ -885,5 +885,11 @@ void main() {
     Map<String, dynamic> scene(String key) => c[key] as Map<String, dynamic>;
     expect(over(128), sameColour(hex(scene('contextmenuuikit'), 'dim')));
     expect(over(255), sameColour(hex(scene('contextmenuuikitwide'), 'dim')));
+    // Over black and white stripes the page stays sharp (no blur) and
+    // both take the same dim.
+    final page = m('context_menu_page');
+    expect(n(page, 'edge_spread'), lessThanOrEqualTo(1 / 3));
+    expect(over(255), sameColour(hex(page, 'white')));
+    expect(over(0), sameColour(hex(page, 'black')));
   });
 }

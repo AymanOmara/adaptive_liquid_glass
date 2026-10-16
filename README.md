@@ -1460,8 +1460,7 @@ testWidgets('pays', (tester) async {
 - **Context menu:** `GlassContextMenu`'s layout (lift, gap to the menu,
   side margins) is measured from UIKit's UIContextMenuInteraction, which
   SwiftUI's `.contextMenu` rides on; synthetic touches on the simulator
-  do not open SwiftUI's own, so its motion and the blur behind the lifted
-  item are estimated. Of the newer components'
+  do not open SwiftUI's own, so its motion is estimated. Of the newer components'
   motion, the disclosure spring, the refresh snap-back, threshold and
   rubber band, the colour grid's ring and `GlassSearchable`'s
   close-button reveal and hide are measured; the wheel picker's

@@ -7,11 +7,11 @@ import 'dart:ui' show Rect, Size;
 /// contextmenuuikit`, `…left`, `…wide`; "components" → "context_menu" in
 /// tool/reference/controls.json). Synthetic touches still do not open
 /// SwiftUI's own. The menu itself is the measured glass menu
-/// (`MenuMetrics`); the blur is not measured (the scenes are flat).
+/// (`MenuMetrics`). The page behind is dimmed (`GlassColors
+/// .contextMenuBarrier`) but not blurred: over 100-pt black and white
+/// stripes its edges stay one pixel sharp (`-controls
+/// contextmenuuikitstripes`).
 abstract final class ContextMenuMetrics {
-  /// The blur of the page behind the lifted item (estimated).
-  static const double blur = 16;
-
   /// The gap between the lifted item and the menu (measured: 16 under a
   /// 200 x 120 and a 360 x 80 card).
   static const double gap = 16;

@@ -1,5 +1,3 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/widgets.dart';
 
 import '../core/glass_colors.dart';
@@ -11,7 +9,7 @@ import 'context_menu_metrics.dart';
 import 'glass_context_menu_layout.dart';
 
 /// The route a long-press on a `GlassContextMenu` pushes: the page
-/// blurred and dimmed, the item lifted where it was, the glass menu by it.
+/// dimmed (UIKit does not blur it), the item lifted where it was, the glass menu by it.
 class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
   /// Creates the route.
   GlassContextMenuRoute({
@@ -65,25 +63,19 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
     final page = iosPageText(
       Stack(
         children: [
-          // The page behind, blurred and dimmed; a tap closes the menu.
+          // The page behind, dimmed and left sharp, as UIKit's (measured);
+          // a tap closes the menu.
           Positioned.fill(
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => Navigator.of(context).pop(),
               child: AnimatedBuilder(
                 animation: animation,
-                builder: (context, _) {
-                  final sigma = ContextMenuMetrics.blur * animation.value;
-                  return BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
-                    child: ColoredBox(
-                      color: GlassColors.contextMenuBarrier.withValues(
-                        alpha:
-                            GlassColors.contextMenuBarrier.a * animation.value,
-                      ),
-                    ),
-                  );
-                },
+                builder: (context, _) => ColoredBox(
+                  color: GlassColors.contextMenuBarrier.withValues(
+                    alpha: GlassColors.contextMenuBarrier.a * animation.value,
+                  ),
+                ),
               ),
             ),
           ),

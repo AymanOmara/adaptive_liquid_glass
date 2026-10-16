@@ -15,6 +15,9 @@
   button 8 pt under the safe area and 16 pt from the sides, the scope bar
   10 pt under the field, the content 8 pt under the field or 10 pt under
   the scopes (was the bottom field's 48-pt sizes, 12 pt in).
+- `GlassContextMenu`: the page behind the menu is dimmed but no longer
+  blurred, as UIKit's (measured over sharp stripes: edges stay sharp).
+  It also saves a full-screen backdrop filter.
 
 ## 0.2.3 (2026-10-15)
 
