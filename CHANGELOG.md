@@ -43,6 +43,10 @@
   bounces back as UIScrollView's, fitted from 60 fps recordings
   (critically damped, already moving at release; rms 0.9 pt). It was
   Flutter's bouncing simulation, 8 pt rms off and slower to start.
+- Android, iOS look (shader glass): a glass sheet's content (and its
+  opaque surface) draws over the sheet's glass again instead of blurred
+  beneath it. Affects `showGlassSheet`, `GlassColorPicker` and the date
+  pickers.
 
 ## 0.2.3 (2026-10-15)
 
