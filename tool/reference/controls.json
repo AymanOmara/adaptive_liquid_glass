@@ -485,6 +485,19 @@
     },
     "date_picker_time": {
       "capsule_gap": 4.0
+    },
+    "search_drawer": {
+      "top": 70.0,
+      "height": 44.0,
+      "start_inset": 16.0,
+      "field_end": 331.0,
+      "close_start": 342.0,
+      "close_end_inset": 16.0,
+      "icon_start": 14.0,
+      "clear_end": 16.0,
+      "scope_top": 124.0,
+      "content_top": 122.0,
+      "content_top_scopes": 166.0
     }
   }
 }

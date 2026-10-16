@@ -10,6 +10,11 @@
   357.33 x 296 on an iPhone 17 Pro (was 2 pt narrower with square cells).
 - `GlassDatePicker` (compact, date and time): the capsules sit 4 pt apart,
   as SwiftUI's (measured; was 8).
+- `GlassSearchable(placement: navigationBar)`: laid out as SwiftUI's
+  active `.navigationBarDrawer` search (measured): a 44-pt field and close
+  button 8 pt under the safe area and 16 pt from the sides, the scope bar
+  10 pt under the field, the content 8 pt under the field or 10 pt under
+  the scopes (was the bottom field's 48-pt sizes, 12 pt in).
 
 ## 0.2.3 (2026-10-15)
 

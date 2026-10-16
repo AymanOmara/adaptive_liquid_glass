@@ -1514,10 +1514,8 @@ testWidgets('pays', (tester) async {
   Fonts stay Roboto (not SF Pro), and scroll physics,
   the back gesture and haptics stay Android's; making those iOS-like is
   not part of the package.
-- **Estimated spacing:** in the navigation-bar placement,
-  `GlassSearchable`'s field inset and the gap above its scope bar follow
-  iOS by eye. The full-screen cover's `dragToDismiss` borrows the
-  sheet's thresholds by design (SwiftUI's cover has no drag to dismiss).
+- **Full-screen cover drag:** SwiftUI's cover has no drag to dismiss, so
+  `dragToDismiss` (off by default) borrows the sheet's thresholds.
 - **Colour picker sheet:** laid out as iOS 26.4's
   UIColorPickerViewController (measured, saved colours and Spectrum map
   included). Its eyedropper reads only what the app itself draws (the

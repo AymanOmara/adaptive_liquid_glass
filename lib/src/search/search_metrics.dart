@@ -46,19 +46,51 @@ abstract final class SearchMetrics {
   /// The active field's inset from the content's sides (measured).
   static const double inset = 12;
 
-  /// The active field's gap above the keyboard (measured); also its
-  /// inset from the top in the navigation-bar placement (estimated).
+  /// The active field's gap above the keyboard (measured).
   static const double verticalInset = 12;
+
+  // Navigation-bar placement: SwiftUI's `.navigationBarDrawer` field while
+  // active (`-controls searchdrawerquery`, `searchdrawerplain`, `…query`;
+  // "components" → "search_drawer").
+
+  /// The field's top below the safe area's (measured: 70 under a 62-pt
+  /// safe area).
+  static const double drawerTop = 8;
+
+  /// The field's and the close button's height (measured: 44, smaller
+  /// than the bottom field).
+  static const double drawerHeight = 44;
+
+  /// The field's, close button's and scope bar's inset from the screen's
+  /// sides (measured).
+  static const double drawerInset = 16;
+
+  /// The magnifying glass's inset from the field's start (measured: its
+  /// ink 14 in, 6 less than the bottom field's).
+  static const double drawerStartInset = startInset - 6;
+
+  /// The clear button's inset from the field's end (measured: its ink
+  /// 16 from the end, 5 less than the bottom field's).
+  static const double drawerEndInset = endInset - 5;
+
+  /// The gap between the field and the close button (measured).
+  static const double drawerCancelGap = 11;
+
+  /// The gap between the field and the scope bar (measured).
+  static const double drawerScopeGap = 10;
+
+  /// The gap between the field, or the scope bar under it, and the
+  /// content (measured: 8 under the field, 10 under the scope bar).
+  static const double drawerContentGap = 8;
+
+  /// See [drawerContentGap].
+  static const double drawerScopeContentGap = 10;
 
   /// The gap between the active field and the close button (measured).
   static const double cancelGap = 12;
 
   /// The close button's diameter: a glass xmark circle (measured).
   static const double cancelSize = 48;
-
-  /// The gap between the field and the scope bar in the navigation-bar
-  /// placement (estimated).
-  static const double scopeGap = 8;
 
   /// The scope bar's height (measured: 32, GlassSegmentedControl's).
   static const double scopeBarHeight = 32;

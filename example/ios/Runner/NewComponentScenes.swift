@@ -433,18 +433,34 @@ struct TimeWheelReference: View {
 }
 
 /// The search scene with All/Mail/Notes scopes and no suggestions,
-/// activated 0.6 s after launch, `query` already typed. Light.
+/// activated 0.6 s after launch, `query` already typed. Light. `drawer`
+/// puts the field in the navigation bar's drawer (iPad / Mac style).
 @available(iOS 26.0, *)
 struct SearchScopesReference: View {
   @State private var query: String
   @State private var active = false
   @State private var scope = 0
-  init(query: String) { _query = State(initialValue: query) }
+  var drawer = false
+  var plain = false
+  init(query: String, drawer: Bool = false, plain: Bool = false) {
+    _query = State(initialValue: query)
+    self.drawer = drawer
+    self.plain = plain
+  }
   var body: some View {
     NavigationStack {
-      List(0..<20) { i in Text("Row \(i)") }
+      Group {
+        if plain {
+          // Red rows from the content's top edge: where the content starts.
+          List(0..<20) { i in Text("Row \(i)").listRowBackground(Color.red) }
+            .listStyle(.plain)
+        } else {
+          List(0..<20) { i in Text("Row \(i)") }
+        }
+      }
         .navigationTitle("Search")
-        .searchable(text: $query, isPresented: $active)
+        .searchable(text: $query, isPresented: $active,
+                    placement: drawer ? .navigationBarDrawer(displayMode: .always) : .automatic)
         .searchScopes($scope) {
           Text("All").tag(0)
           Text("Mail").tag(1)

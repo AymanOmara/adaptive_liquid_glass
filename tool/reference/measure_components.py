@@ -553,6 +553,42 @@ def last_components(d):
         tc["band_width_24"] = r(bx[-1][1] - bx[0][0])
     if tc:
         out["date_wheel_time"] = tc
+    # Search in the navigation bar's drawer, active (`-controls
+    # searchdrawerquery`): the field, close button and scope bar; the
+    # plain-list scenes' red rows mark where the content starts.
+    if (d / "searchdrawerquery.png").exists():
+        a = load(d, "searchdrawerquery.png")
+        bright = a.min(axis=-1) >= 250
+        fy = [q for q in runs(bright[:, int(100 * S)]) if q[1] - q[0] > 30][0]
+        mid = int((fy[0] + fy[1]) / 2 * S)
+        # Lifted runs, merged across glyphs (the shadow between the field
+        # and the close button is wider than 6 pt).
+        fx = []
+        for q in runs(a[mid].min(axis=-1) >= 250):
+            if fx and q[0] - fx[-1][1] < 6:
+                fx[-1] = (fx[-1][0], q[1])
+            else:
+                fx.append(q)
+        field, close = (fx[0][0], fx[-2][1]), fx[-1]
+        fend = field[1]
+        band = a[int(fy[0] * S):int(fy[1] * S)]
+        ink = runs((band.max(axis=-1) < 128).any(axis=0))
+        ink = [q for q in ink if field[0] < q[0] < fend]
+        sc = [q for q in runs(a[:, int(201 * S)].max(axis=-1) >= 248) if q[0] > fy[1] + 5][0]
+        out["search_drawer"] = {
+            "top": r(fy[0]), "height": r(fy[1] - fy[0]),
+            "start_inset": r(field[0]), "field_end": r(fend),
+            "close_start": r(close[0]), "close_end_inset": r(W - close[1]),
+            "icon_start": r(ink[0][0] - field[0]),
+            "clear_end": r(fend - ink[-1][1]),
+            "scope_top": r(sc[0]),
+        }
+        for name, key in (("searchdrawerplain.png", "content_top"),
+                          ("searchdrawerplainquery.png", "content_top_scopes")):
+            if (d / name).exists():
+                p = load(d, name)
+                red = (p[..., 0] > 200) & (p[..., 1] < 80) & (p[..., 2] < 80)
+                out["search_drawer"][key] = r(np.flatnonzero(red[:, int(201 * S)])[0] / S)
     # Date-and-time compact picker (`-controls datetimepicker`): the gap
     # between its date and time capsules, along their centre line.
     if (d / "datetimepicker.png").exists():
@@ -737,7 +773,8 @@ def main():
         comp.update(more_components(d / "swiftui"))
     if any((d / "swiftui" / f).exists() for f in
            ("timewheel.png", "searchscopesquery.png", "colorsheet_tap.png",
-            "contextmenuuikit.png", "datetimepicker.png")):
+            "contextmenuuikit.png", "datetimepicker.png",
+            "searchdrawerquery.png")):
         comp.update(last_components(d / "swiftui"))
     print(json.dumps(comp, indent=1))
     if "--dry" in sys.argv:

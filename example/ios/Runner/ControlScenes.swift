@@ -88,6 +88,10 @@ enum ControlScenes {
     case "timewheel": root = AnyView(TimeWheelReference())
     case "searchscopes": root = AnyView(SearchScopesReference(query: ""))
     case "searchscopesquery": root = AnyView(SearchScopesReference(query: "Ro"))
+    case "searchdrawer": root = AnyView(SearchScopesReference(query: "", drawer: true))
+    case "searchdrawerquery": root = AnyView(SearchScopesReference(query: "Ro", drawer: true))
+    case "searchdrawerplain": root = AnyView(SearchScopesReference(query: "", drawer: true, plain: true))
+    case "searchdrawerplainquery": root = AnyView(SearchScopesReference(query: "Ro", drawer: true, plain: true))
     default: return false
     }
     window?.rootViewController = UIHostingController(rootView: root)

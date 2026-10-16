@@ -555,6 +555,37 @@ void main() {
     );
   });
 
+  test('search in the navigation bar drawer', () {
+    final s = m('search_drawer');
+    // iPhone 17 Pro's safe area top.
+    const safeTop = 62.0;
+    final bottom = n(s, 'top') + n(s, 'height');
+    for (final (got, want) in [
+      (SearchMetrics.drawerTop, n(s, 'top') - safeTop),
+      (SearchMetrics.drawerHeight, n(s, 'height')),
+      (SearchMetrics.drawerInset, n(s, 'start_inset')),
+      (SearchMetrics.drawerInset, n(s, 'close_end_inset')),
+      (SearchMetrics.drawerCancelGap, n(s, 'close_start') - n(s, 'field_end')),
+      (SearchMetrics.drawerStartInset, n(s, 'icon_start')),
+      // The bottom field's clear glyph ends 21 from its end (measured,
+      // `-controls searchscopesquery`) with endInset 8.
+      (
+        SearchMetrics.drawerEndInset,
+        SearchMetrics.endInset - (21 - n(s, 'clear_end')),
+      ),
+      (SearchMetrics.drawerScopeGap, n(s, 'scope_top') - bottom),
+      (SearchMetrics.drawerContentGap, n(s, 'content_top') - bottom),
+      (
+        SearchMetrics.drawerScopeContentGap,
+        n(s, 'content_top_scopes') -
+            n(s, 'scope_top') -
+            SearchMetrics.scopeBarHeight,
+      ),
+    ]) {
+      expect(got, moreOrLessEquals(want, epsilon: pt));
+    }
+  });
+
   test('searchable', () {
     final s = m('searchable');
     expect(SearchMetrics.inset, moreOrLessEquals(n(s, 'inset'), epsilon: pt));
