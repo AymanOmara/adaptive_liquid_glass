@@ -76,7 +76,8 @@ class GlassFrameUniforms {
   /// Touch point, physical px, texture space.
   final Offset? touch;
 
-  /// Touch glow strength 0..1.
+  /// Touch glow strength 0..1: the pressed member's press light
+  /// (`GlassPressGeometry.light`).
   final double glow;
 }
 
@@ -137,6 +138,7 @@ List<GlassShapeUniform> mergeUnions(List<GlassShapeUniform> shapes) {
       smoothing: prev.smoothing,
       opacity: prev.opacity,
       clip: prev.clip,
+      light: math.max(prev.light, s.light),
     );
   }
   return out;
@@ -162,7 +164,7 @@ const int kGlassUniformFloats = kClipAt + 4 * kMaxPassShapes;
 /// | 424–431 | uVar[30..31]   | regular P, then clear P                   |
 /// | 432–439 | uVar[32..33]   | regular Q, then clear Q                   |
 /// | 440–447 | uVar[34..35]   | regular R, then clear R                   |
-/// | 448–543 | uExtra[N]      | group index, smoothing px, opacity, 0     |
+/// | 448–543 | uExtra[N]      | group index, smoothing px, opacity, light |
 /// | 544–639 | uClip[N]       | clip x0, y0, x1, y1 px                    |
 ///
 /// Per variant: A = (lens decay px, lens band px, lens strength, dispersion),
@@ -185,7 +187,7 @@ const int kGlassUniformFloats = kClipAt + 4 * kMaxPassShapes;
 /// P = (ambientMix, ambientReach px, toneLumaMix, shadowOffsetY px) (item 8;
 /// P.z round 3),
 /// Q = (dispersionTangent, lensEllipse, backdropInset px, ambientLift).
-/// R = (backdropReach px, bandSplitDrop, 0, 0).
+/// R = (backdropReach px, bandSplitDrop, pressLift, 0).
 List<double> packGlassUniforms(GlassFrameUniforms u) {
   final dpr = u.devicePixelRatio;
   final shapes = u.shapes.where(_drawable).take(kMaxPassShapes).toList();
@@ -243,7 +245,7 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
       s.group.toDouble(),
       s.smoothing ?? u.smoothing,
       s.opacity,
-      0,
+      s.light,
     ]);
     f.setAll(kClipAt + i * 4, [
       clip?.left ?? -1e9,
@@ -362,7 +364,7 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
   }
   // What lies beyond the backdrop inset: R per variant (uVar[34..35]).
   for (final v in variantSets) {
-    f.setAll(k, [v.backdropReach * dpr, v.bandSplitDrop, 0, 0]);
+    f.setAll(k, [v.backdropReach * dpr, v.bandSplitDrop, v.pressLift, 0]);
     k += 4;
   }
   return f;

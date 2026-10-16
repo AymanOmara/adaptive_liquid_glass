@@ -30,14 +30,14 @@ uniform vec4 uVar[36];     // per variant (regular A-L, then clear A-L, then
                            //   P(ambient mix, ambient reach px, luma-keyed tone mix, shadow y offset px) (item 8;
                            //   P.z item 8 round 3)
                            //   Q(sideways dispersion, ellipse normal mix, backdrop inset px, ambient lift), regular then clear
-                           //   R(backdrop reach px, -, -, -), regular then clear
+                           //   R(backdrop reach px, band split drop, press lift, -), regular then clear
 // Shared glass layer (docs/superpowers/plans/2026-10-15-shared-glass-layer.md):
 // one pass may draw several groups. Shapes of a group are contiguous; the
 // smooth union and the attribute blend run within a group, groups combine
 // with min. A pixel takes the clip and opacity of its nearest shape's group.
 // One group with opacity 1 and an unbounded clip is the old single-group
 // shader exactly.
-uniform vec4 uExtra[24];   // group index, smoothing px, opacity, -
+uniform vec4 uExtra[24];   // group index, smoothing px, opacity, press light 0..1
 uniform vec4 uClip[24];    // clip x0, y0, x1, y1 px
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
@@ -217,6 +217,7 @@ void main() {
   float clearMix = 0.0;
   float halfMin = 0.0;  // half the shorter side, for the lens size factor
   float fillScale = 0.0;  // per-shape fillOpacity factor (fill size scaling)
+  float light = 0.0;  // per-shape press light (SwiftUI's pressed lift)
   vec4 tint = vec4(0.0);
   vec4 rcB = vec4(0.0);  // attribute-blended rect, for the ambient colour
   float wk = ownK * 0.5 + 1.0;
@@ -233,6 +234,7 @@ void main() {
       clearMix *= s;
       halfMin *= s;
       fillScale *= s;
+      light *= s;
       tint *= s;
       rcB *= s;
       dmin = e;
@@ -242,12 +244,14 @@ void main() {
     clearMix += w * info.y;
     halfMin += w * 0.5 * min(uRects[i].z, uRects[i].w);
     fillScale += w * info.w;
+    light += w * uExtra[i].w;
     tint += w * uTints[i];
     rcB += w * uRects[i];
   }
   clearMix /= wsum;
   halfMin /= wsum;
   fillScale /= wsum;
+  light /= wsum;
   tint /= wsum;
   rcB /= wsum;
 
@@ -580,6 +584,10 @@ void main() {
   }
   col += (rimTarget - col) * ra;
 
+  // SwiftUI's pressed glass lights the whole shape (R.z) and, more, the
+  // area under the finger (the Gaussian below); both follow the press
+  // light, not the press spring.
+  col += R4.z * light;
   if (uTouch.z > 0.0) {
     vec2 dt = px - uTouch.xy;
     float gr = max(uTouch.w, 1.0);

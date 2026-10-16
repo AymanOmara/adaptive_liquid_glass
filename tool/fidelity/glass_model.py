@@ -57,6 +57,7 @@ VARIANT_DEFAULTS = {
     "backdropReach": 0.0,
     "bandSplitDrop": 0.0,
     "glowStrength": 0.25,
+    "pressLift": 0.0,
     "postBlurShare": 0.0,
     "normalRadiusScale": 1.0,
     "lensEdge": 0.0,
