@@ -288,4 +288,51 @@ void main() {
     await t.pumpAndSettle();
     expect(inScene(layer.painter!), isTrue);
   }, variant: android);
+
+  // The sheet's glass is a sibling behind its content: on the layer the
+  // glass draws after the route, so the content must be deferred too or
+  // it ends up blurred beneath it.
+  testWidgets('a glass sheet\'s content draws over its glass', (t) async {
+    env();
+    await t.pumpWidget(
+      app(
+        Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: GestureDetector(
+                onTap: () => showGlassSheet<void>(
+                  context: context,
+                  builder: (_) => const SizedBox(
+                    height: 200,
+                    child: Center(child: Text('inside')),
+                  ),
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.tap(find.text('open'));
+    await t.pumpAndSettle();
+    final text = t.renderObject(find.text('inside'));
+    RenderGlassBackdrop? deferred;
+    for (RenderObject? p = text.parent; p != null; p = p.parent) {
+      if (p is RenderGlassBackdrop) {
+        deferred = p;
+        break;
+      }
+    }
+    expect(deferred?.sharedLayer, isNotNull);
+    final layer = deferred!.sharedLayer!;
+    final glass = backdrops(
+      t,
+    ).firstWhere((b) => b != deferred && identical(b.sharedLayer, layer));
+    // Content composites with or after the glass's stratum, glass first.
+    final plan = layer.debugLastPlan!;
+    int stratumOf(Object id) => plan.indexWhere((s) => s.groups.contains(id));
+    expect(stratumOf(glass), isNonNegative);
+    expect(stratumOf(deferred), greaterThanOrEqualTo(stratumOf(glass)));
+  }, variant: android);
 }
