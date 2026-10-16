@@ -201,7 +201,7 @@ void main() {
   test('Task 17d keys pack into F, I and J (pre-17d behaviour by default)', () {
     final d = packGlassUniforms(frame(const []));
     // F.yzw: the fitted glow, no post-lens blur, outline normals.
-    expect(d.sublist(325, 328), [closeTo(0.027, 1e-6), 0, 1]);
+    expect(d.sublist(325, 328), [closeTo(0.016, 1e-6), 0, 1]);
     expect(d.sublist(337, 340), [0, closeTo(0.6 * 3, 1e-12), 0]);
     expect(d.sublist(344, 347), [0.5, 0, 0]); // K.w = blurSizeRef·dpr
     expect(d.sublist(340, 344), [0, 1.5 * 3, 1 * 3, 1]);
@@ -387,6 +387,52 @@ void main() {
     expect(merged.single.clip, clip);
   });
 
+  test('press light packs per shape into uExtra.w, kept by inGroup', () {
+    const r = Rect.fromLTWH(1, 2, 30, 40);
+    final pressed = const GlassShapeUniform(
+      rect: r,
+      radius: 10,
+      variant: GlassVariant.regular,
+      light: 0.8,
+    ).inGroup(group: 1, smoothing: 12);
+    expect(pressed.light, 0.8);
+    final f = packGlassUniforms(frame([s(r), pressed]));
+    expect(f[kExtraAt + 3], 0);
+    expect(f[kExtraAt + 7], closeTo(0.8, 1e-9));
+  });
+
+  test('mergeUnions keeps the brightest press light', () {
+    final merged = mergeUnions([
+      s(const Rect.fromLTWH(0, 0, 10, 10), union: 'u'),
+      const GlassShapeUniform(
+        rect: Rect.fromLTWH(20, 0, 10, 10),
+        radius: 5,
+        variant: GlassVariant.regular,
+        unionId: 'u',
+        light: 0.6,
+      ),
+    ]);
+    expect(merged.single.light, 0.6);
+  });
+
+  test(
+    'pressLift packs into R.z per variant; standard lifts pressed glass',
+    () {
+      final c = GlassConstants.fromJson({
+        'regular': {'pressLift': 0.1},
+        'clear': {'pressLift': 0.2},
+      });
+      final f = packGlassUniforms(frame(const [], constants: c));
+      expect(f[442], closeTo(0.1, 1e-9));
+      expect(f[446], closeTo(0.2, 1e-9));
+      // Fitted on press-capsule-photo: SwiftUI's whole pressed shape lifts
+      // about 12/255 (light) and 14/255 (dark).
+      const std = GlassConstants.standard;
+      expect(std.regular.pressLift * 255, closeTo(11.9, 0.5));
+      expect(std.regularDark.pressLift * 255, closeTo(14.3, 0.5));
+    },
+  );
+
   test('count is capped at 24', () {
     final f = packGlassUniforms(
       frame(List.generate(30, (i) => s(Rect.fromLTWH(i * 10.0, 0, 5, 5)))),
@@ -511,7 +557,7 @@ void main() {
     // The inset is a length (x dpr 3).
     expect(f.sublist(432, 436), [0.5, 1, 12, 0.5]);
     expect(f.sublist(436, 440), [-3, 0, 0, 0]);
-    expect(f.sublist(440, 444), [3, 0.5, 0, 0]);
+    expect(f.sublist(440, 444), [3, 0.5, closeTo(0.047, 1e-9), 0]);
   });
 
   test('ambient colour packs into P after the M-O blocks (item 8)', () {

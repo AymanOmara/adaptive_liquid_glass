@@ -4,6 +4,7 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/core/shape_border.dart';
 import 'package:adaptive_liquid_glass/src/degraded/degraded_glass.dart';
+import 'package:adaptive_liquid_glass/src/interaction/glass_press_controller.dart';
 import 'package:adaptive_liquid_glass/src/material/material_glass.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_backdrop.dart';
@@ -622,6 +623,40 @@ void main() {
     final after = backdropOf(t).debugLastFrame!.uniforms;
     expect(after.shapes.single.rect, before);
     expect(after.glow, 0);
+  }, variant: ios);
+
+  testWidgets('pressed shader glass lights at the touch, as SwiftUI', (
+    t,
+  ) async {
+    env();
+    const r = Rect.fromLTWH(100, 100, 120, 40);
+    await t.pumpWidget(
+      at(
+        r,
+        LiquidGlass(
+          glass: Glass.regular.interactive(),
+          child: const SizedBox.expand(),
+        ),
+      ),
+    );
+    final gesture = await t.startGesture(r.center);
+    await t.pump();
+    // Full light in the frame of the touch, before the spring moves.
+    var u = backdropOf(t).debugLastFrame!.uniforms;
+    expect(u.glow, 1);
+    expect(u.shapes.single.light, 1);
+    await gesture.up();
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 200));
+    // Held past the release (kPressLightHold), fading a little.
+    u = backdropOf(t).debugLastFrame!.uniforms;
+    expect(u.glow, inExclusiveRange(1 - kPressLightHoldFade, 1));
+    expect(u.shapes.single.light, u.glow);
+    await t.pump(kPressLightHold);
+    u = backdropOf(t).debugLastFrame!.uniforms;
+    expect(u.glow, 0);
+    expect(u.shapes.single.light, 0);
+    await t.pumpAndSettle();
   }, variant: ios);
 
   testWidgets('non-interactive glass ignores presses', (t) async {

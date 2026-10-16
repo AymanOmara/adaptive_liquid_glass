@@ -1,5 +1,12 @@
 ## Unreleased
 
+- Shader mode (iOS and the Android shared layer): pressed interactive
+  glass lights up as SwiftUI's does. It now adds white over the whole
+  pressed shape (`GlassVariantConstants.pressLift`), not only the glow
+  under the finger, and both come on at the touch and go off 0.33 s after
+  the release, as native mode's, instead of following the press spring.
+  In-shape error against SwiftUI over a press: 8.1 -> 1.5 light,
+  10.1 -> 2.1 dark (of 255).
 - Android shared glass layer: a rounded, superellipse, oval, path or
   `PhysicalModel` clip around glass now clips the glass and its content to
   that shape, not to its bounding rectangle.

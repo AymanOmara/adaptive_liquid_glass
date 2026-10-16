@@ -153,7 +153,9 @@ Every preset still chains: `Glass.smoke.interactive()`.
 
 With `onPressed` the glass is a button: it gets button semantics, takes
 focus, answers Enter and Space, and its glass turns interactive (the press
-stretch and glow on iOS, the ripple on Android). Pass
+stretch and light on iOS, the ripple on Android; the light is SwiftUI's,
+measured: white over the whole shape plus a glow under the finger, on at
+the touch and held 0.33 s past the release). Pass
 `Glass.regular.interactive(false)` to keep the tap without the press
 visuals.
 

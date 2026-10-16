@@ -39,10 +39,12 @@ const GlassConstants _standard = GlassConstants(
     shadowRadius: 20.8906,
     shadowOpacity: 0.0494,
     tintStrength: 1.024,
-    // SwiftUI's touch glow lifts luma 0.019 (light) / 0.041 (dark) at
-    // the peak; 0.25 lifted 0.175 / 0.238. Scaled to match; clear
-    // takes the regular values (unmeasured).
-    glowStrength: 0.027,
+    // SwiftUI's pressed glass (press-capsule-photo, SwiftUI minus shader
+    // at the hold, in the shape): a lift over the whole shape plus a
+    // Gaussian under the finger, 11.9 + 4.1·G light and 14.3 + 18.5·G
+    // dark, out of 255. Clear takes the regular values (unmeasured).
+    glowStrength: 0.016,
+    pressLift: 0.047,
   ),
   clear: GlassVariantConstants(
     postJacobianMax: 1.15,
@@ -74,7 +76,8 @@ const GlassConstants _standard = GlassConstants(
     shadowRadius: 29.31,
     shadowOpacity: 0.0015,
     tintStrength: 0.35,
-    glowStrength: 0.027,
+    glowStrength: 0.016,
+    pressLift: 0.047,
   ),
   regularDark: GlassVariantConstants(
     blurSigma: 8.2468,
@@ -120,7 +123,8 @@ const GlassConstants _standard = GlassConstants(
     shadowRadius: 20.3036,
     shadowOpacity: 0.0264,
     tintStrength: 1.0054,
-    glowStrength: 0.043,
+    glowStrength: 0.073,
+    pressLift: 0.056,
   ),
   clearDark: GlassVariantConstants(
     postJacobianMax: 1.15,
@@ -166,7 +170,8 @@ const GlassConstants _standard = GlassConstants(
     shadowRadius: 13.0732,
     shadowOpacity: 0.0017,
     tintStrength: 0.35,
-    glowStrength: 0.043,
+    glowStrength: 0.073,
+    pressLift: 0.056,
   ),
   cornerExponent: 2,
   // Task A1 (model sweep 1.0-1.6 against SwiftUI's `.continuous` rects,
@@ -191,9 +196,8 @@ const GlassConstants _standard = GlassConstants(
     // measured 0.0103 at 0.011.
     pressStretch: 0.006,
     // Gaussian σ of the touch glow: SwiftUI 42.3 (light) / 42.5 (dark) pt,
-    // Flutter at 41 measured 46.0 / 40.9. SwiftUI's glow is 6–9× fainter
-    // (lift 0.019 vs 0.175 light, 0.041 vs 0.238 dark at glowStrength
-    // 0.25); each variant's glowStrength fits the amplitude.
+    // Flutter at 41 measured 46.0 / 40.9. Each variant's glowStrength
+    // fits the amplitude and pressLift the light over the whole shape.
     glowRadius: 40,
     // Press-in and release differ: SwiftUI (0.280, 0.633) in and
     // (0.383, 0.545) out (median over 7 clips, bbox height). Circles
