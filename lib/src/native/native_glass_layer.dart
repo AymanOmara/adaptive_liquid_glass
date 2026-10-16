@@ -8,6 +8,7 @@ import '../core/glass_variant.dart';
 import '../group/entry_geometry.dart';
 import '../group/glass_entry.dart';
 import '../group/glass_group_scope.dart';
+import '../group/glass_press_geometry.dart';
 import '../group/glass_registry.dart';
 import 'glass_batch.dart';
 
@@ -38,6 +39,37 @@ List<EntryGeometry>? nativeGroupGeometry(
     g.entry.lastDrawnLocal = MatrixUtils.transformRect(fromGlobal, g.drawn);
   }
   return out;
+}
+
+/// The light SwiftUI's pressed `.interactive()` glass takes on, in native
+/// mode: white added over the whole shape plus a Gaussian under the finger.
+///
+/// Measured on iOS 26.4 (`tool/fidelity/record_motion.sh`, `MODE=native`,
+/// `press-capsule-photo-*`: a 200x56 regular capsule over the photo, held
+/// 0.7 s off centre): SwiftUI's pressed frame minus this package's native
+/// pressed frame (same Apple glass, same growth; the rest frames match
+/// exactly), fitted inside the shape with the finger fixed. Light: lift
+/// 10.2/255 + 5.0/255 Gaussian of σ 39 pt (rms 12.6 -> 4.0); dark: 12.6 +
+/// 17.8, σ 43 pt (rms 20.5 -> 4.9). The lifts are asked about 10% above
+/// those: SwiftUI adds 89% (light) and 93% (dark) of a `.plusLighter` white
+/// inside the glass (measured). Clear glass is unmeasured and takes these
+/// values.
+abstract final class NativePressLight {
+  /// White added over a pressed light-mode shape.
+  static const double lightLift = 0.045;
+
+  /// Peak of the light-mode Gaussian under the finger.
+  static const double lightGlow = 0.020;
+
+  /// White added over a pressed dark-mode shape.
+  static const double darkLift = 0.053;
+
+  /// Peak of the dark-mode Gaussian under the finger.
+  static const double darkGlow = 0.070;
+
+  /// The Gaussian's σ, points (fits: 39 light, 43 dark; the shader path's
+  /// measured glow is 42).
+  static const double sigma = 41;
 }
 
 /// Hosts SwiftUI's own Liquid Glass (a `GlassEffectContainer` with one
@@ -326,6 +358,7 @@ class _NativeGlassViewState extends State<NativeGlassView> {
           final id => unions.putIfAbsent(id, () => unions.length),
         },
         'fills': _fills(entry, geometry.drawn),
+        'glow': ?_glow(entry, geometry.drawn),
         'opacity': ?opacity,
       });
     }
@@ -340,6 +373,32 @@ class _NativeGlassViewState extends State<NativeGlassView> {
     if (last != null && _samePayload(last, payload)) return;
     _lastSent = payload;
     channel.invokeMethod<void>('setShapes', payload);
+  }
+
+  /// [entry]'s press light as x, y (points, relative to the drawn glass
+  /// [drawn], global), the Gaussian's peak and σ, and the lift over the
+  /// whole shape; null when not pressed.
+  ///
+  /// SwiftUI's `.interactive()` glass lights up only under its own touches,
+  /// which Flutter keeps, so the press's light is drawn here, scaled by
+  /// [GlassPressGeometry.light]; see [NativePressLight].
+  List<double>? _glow(GlassEntry entry, Rect drawn) {
+    final press = entry.press;
+    final touch = press.touch;
+    final box = entry.box;
+    if (touch == null || press.light <= 0 || box == null || !box.attached) {
+      return null;
+    }
+    final p = MatrixUtils.transformPoint(box.getTransformTo(null), touch);
+    return [
+      p.dx - drawn.left,
+      p.dy - drawn.top,
+      (_dark ? NativePressLight.darkGlow : NativePressLight.lightGlow) *
+          press.light,
+      NativePressLight.sigma,
+      (_dark ? NativePressLight.darkLift : NativePressLight.lightLift) *
+          press.light,
+    ];
   }
 
   /// [entry]'s content fills, flattened as x, y, w, h (points, relative to

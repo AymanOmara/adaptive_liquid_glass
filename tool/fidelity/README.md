@@ -32,6 +32,8 @@ open build/fidelity/<run>/report.html
 `capture.sh <run-dir> [scene-id-prefix]` options (environment):
 
 - `CONSTANTS='{"regular":{...}}'` passes `-constants` to the Flutter renderer only.
+- `MODE=native` (`record_motion.sh`) renders the Flutter side with Apple's glass
+  (`-mode native`) instead of the shader.
 - `RENDERERS="flutter"` recaptures one side (default `"flutter swiftui"`).
 - `SCENES=tool/scenes/measure.json` captures another scene list (it must be
   synced into `example/assets/` and is passed to both hosts as `-sceneFile`).

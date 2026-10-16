@@ -176,6 +176,65 @@ void main() {
     expect(find.byType(GlassBackdrop), findsOneWidget);
   }, variant: ios);
 
+  testWidgets("a press sends SwiftUI's measured press light", (t) async {
+    iosEnv();
+    final sent = mockNative(t);
+    Widget app(Brightness b) => themed(
+      Builder(
+        builder: (context) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(platformBrightness: b),
+          child: Align(
+            alignment: AlignmentDirectional.topStart,
+            child: Padding(
+              padding: const EdgeInsets.all(50),
+              child: GlassGroup(
+                child: LiquidGlass(
+                  glass: Glass.regular.interactive(),
+                  child: const SizedBox(width: 200, height: 56),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    Map<Object?, Object?> shape() =>
+        (sent.last['shapes']! as List).single as Map<Object?, Object?>;
+
+    await t.pumpWidget(app(Brightness.light));
+    await t.pump();
+    expect(shape()['glow'], isNull);
+
+    final gesture = await t.startGesture(const Offset(110, 70));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 500));
+    var glow = (shape()['glow']! as List).cast<double>();
+    // The finger, relative to the drawn (pressed, grown) glass.
+    final drawnLeft = 50 + (shape()['x']! as double) - kNativeOverhang;
+    final drawnTop = 50 + (shape()['y']! as double) - kNativeOverhang;
+    expect(glow[0] + drawnLeft, closeTo(110, 1e-6));
+    expect(glow[1] + drawnTop, closeTo(70, 1e-6));
+    expect(glow[2], closeTo(NativePressLight.lightGlow, 0.003));
+    expect(glow[3], NativePressLight.sigma);
+    expect(glow[4], closeTo(NativePressLight.lightLift, 0.005));
+
+    await t.pumpWidget(app(Brightness.dark));
+    await t.pump(const Duration(milliseconds: 16));
+    glow = (shape()['glow']! as List).cast<double>();
+    expect(glow[2], closeTo(NativePressLight.darkGlow, 0.008));
+    expect(glow[4], closeTo(NativePressLight.darkLift, 0.006));
+
+    // SwiftUI keeps the light a moment past the release.
+    await gesture.up();
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 200));
+    expect(shape()['glow'], isNotNull);
+    await t.pump(const Duration(milliseconds: 200));
+    expect(shape()['glow'], isNull);
+    await t.pumpAndSettle();
+    expect(shape()['glow'], isNull);
+  }, variant: ios);
+
   testWidgets('native payload carries the platform brightness', (t) async {
     iosEnv();
     final sent = mockNative(t);

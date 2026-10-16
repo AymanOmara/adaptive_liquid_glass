@@ -21,15 +21,38 @@ double pressScaleFor(GlassMotionConstants motion, Size size) {
   );
 }
 
+/// How long SwiftUI's pressed `.interactive()` glass stays lit after the
+/// finger lifts, then goes dark within a frame. Measured on iOS 26.4
+/// (`record_motion.sh MODE=native`, `press-capsule-photo-*`): 20 frames
+/// after the release starts, light and dark.
+const Duration kPressLightHold = Duration(milliseconds: 330);
+
+/// The share of the press light lost over [kPressLightHold] (measured: 13
+/// to 11 of 255 light, 17 to 12 dark).
+const double kPressLightHoldFade = 0.2;
+
 /// Drives `.interactive()`: a spring from 0 (rest) to 1 (pressed).
 class GlassPressController extends ChangeNotifier {
   /// Creates a controller.
   GlassPressController({required TickerProvider vsync, required this.motion})
-    : _controller = AnimationController.unbounded(vsync: vsync) {
+    : _controller = AnimationController.unbounded(vsync: vsync),
+      _lightHold = AnimationController(
+        vsync: vsync,
+        duration: kPressLightHold,
+      ) {
     _controller.addListener(notifyListeners);
+    _lightHold
+      ..addListener(notifyListeners)
+      ..addStatusListener((_) => notifyListeners());
   }
 
   final AnimationController _controller;
+
+  /// Runs over [kPressLightHold] after the finger lifts.
+  final AnimationController _lightHold;
+
+  /// Whether a finger is down.
+  bool _down = false;
 
   /// Motion constants.
   GlassMotionConstants motion;
@@ -47,6 +70,8 @@ class GlassPressController extends ChangeNotifier {
   void down(Offset local, Size size) {
     _touch = local;
     _size = size;
+    _down = true;
+    _lightHold.stop();
     _animateTo(1, motion.pressResponse, motion.pressDamping);
   }
 
@@ -57,7 +82,23 @@ class GlassPressController extends ChangeNotifier {
   }
 
   /// Pointer released or cancelled.
-  void up() => _animateTo(0, motion.releaseResponse, motion.releaseDamping);
+  void up() {
+    if (_down) {
+      _down = false;
+      _lightHold.forward(from: 0);
+    }
+    _animateTo(0, motion.releaseResponse, motion.releaseDamping);
+  }
+
+  /// The light of SwiftUI's pressed glass, 0..1: full from the touch,
+  /// held [kPressLightHold] past the release (fading by
+  /// [kPressLightHoldFade]), then off. Unlike [amount] it has no spring:
+  /// SwiftUI's light switches on in the frame of the touch.
+  double get light {
+    if (_down) return 1;
+    if (!_lightHold.isAnimating) return 0;
+    return 1 - kPressLightHoldFade * _lightHold.value;
+  }
 
   void _animateTo(double target, double response, double damping) {
     // The unbounded controller leaves the spring's residual (within its
@@ -80,12 +121,13 @@ class GlassPressController extends ChangeNotifier {
   /// Current deformation; [GlassPressGeometry.identity] at rest.
   GlassPressGeometry geometry() {
     final a = amount;
-    if (a.abs() < 1e-4 && !_controller.isAnimating) {
+    final light = this.light;
+    if (a.abs() < 1e-4 && !_controller.isAnimating && light == 0) {
       return GlassPressGeometry.identity;
     }
     final glow = a.clamp(0.0, 1.0);
     if (reduceMotion || _size.isEmpty) {
-      return GlassPressGeometry(glow: glow, touch: _touch);
+      return GlassPressGeometry(glow: glow, light: light, touch: _touch);
     }
     final centre = _size.center(Offset.zero);
     final touch = _touch ?? centre;
@@ -105,6 +147,7 @@ class GlassPressController extends ChangeNotifier {
         dy * motion.pressStretch * a * _size.height / 4 + ey * _size.height / 2,
       ),
       glow: glow,
+      light: light,
       touch: touch,
     );
   }
@@ -138,6 +181,7 @@ class GlassPressController extends ChangeNotifier {
   @override
   void dispose() {
     _controller.dispose();
+    _lightHold.dispose();
     super.dispose();
   }
 }

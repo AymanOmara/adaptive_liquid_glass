@@ -108,6 +108,9 @@ struct GlassSpec: Identifiable, Equatable {
   /// System fills drawn as the glass's own content (vibrant, as iOS 26's
   /// tab bar pill), in points relative to the shape.
   let fills: [GlassFill]
+  /// The press's light (`glow`: x, y in points relative to the shape, the
+  /// Gaussian's peak and σ, the lift over the whole shape); nil at rest.
+  let glow: GlassGlow?
   /// Opacity of the Flutter ancestors between the shape and a batch's view
   /// (`GlassBatch`); 1 when Dart sends none.
   let opacity: Double
@@ -125,6 +128,12 @@ struct GlassSpec: Identifiable, Equatable {
     interactive = s["interactive"] as? Bool ?? false
     union = s["union"] as? Int
     opacity = s["opacity"] as? Double ?? 1
+    if let g = s["glow"] as? [Double], g.count == 5, g[3] > 0 {
+      glow = GlassGlow(
+        center: CGPoint(x: g[0], y: g[1]), peak: g[2], sigma: g[3], lift: g[4])
+    } else {
+      glow = nil
+    }
     let f = s["fills"] as? [Double] ?? []
     fills = stride(from: 0, to: f.count - 5, by: 6).enumerated().map { i, k in
       GlassFill(
@@ -132,6 +141,37 @@ struct GlassSpec: Identifiable, Equatable {
         frame: CGRect(x: f[k], y: f[k + 1], width: f[k + 2], height: f[k + 3]),
         opacity: f[k + 4], style: Int(f[k + 5]))
     }
+  }
+}
+
+/// The light of a pressed `.interactive()` shape, which SwiftUI draws only
+/// under its own touches: white added over the whole shape ([lift]) and
+/// under the finger, fading as a Gaussian of [sigma] points ([peak]).
+@available(iOS 26.0, *)
+struct GlassGlow: Equatable {
+  let center: CGPoint
+  let peak: Double
+  let sigma: Double
+  let lift: Double
+
+  /// Out to 3σ, where the Gaussian is 1% of its peak.
+  var reach: Double { sigma * 3 }
+
+  /// The Gaussian over a shape of [size], centred on the finger.
+  func gradient(in size: CGSize) -> RadialGradient {
+    let steps = 16
+    let stops = (0...steps).map { i -> Gradient.Stop in
+      let t = Double(i) / Double(steps)
+      let r = t * 3
+      return Gradient.Stop(
+        color: Color.white.opacity(peak * exp(-r * r / 2)), location: t)
+    }
+    return RadialGradient(
+      gradient: Gradient(stops: stops),
+      center: UnitPoint(
+        x: size.width > 0 ? center.x / size.width : 0.5,
+        y: size.height > 0 ? center.y / size.height : 0.5),
+      startRadius: 0, endRadius: reach)
   }
 }
 
@@ -209,6 +249,16 @@ struct GlassHostView: View {
           .blendMode(f.blendMode)
           .frame(width: f.frame.width, height: f.frame.height)
           .offset(x: f.frame.minX, y: f.frame.minY)
+      }
+      if let g = s.glow {
+        Color.white.opacity(g.lift)
+          .blendMode(.plusLighter)
+          .allowsHitTesting(false)
+        // Shape-sized, so it never changes the stack's layout.
+        Rectangle()
+          .fill(g.gradient(in: s.frame.size))
+          .blendMode(.plusLighter)
+          .allowsHitTesting(false)
       }
     }
       .frame(width: s.frame.width, height: s.frame.height)

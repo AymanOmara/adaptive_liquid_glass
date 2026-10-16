@@ -1470,8 +1470,12 @@ testWidgets('pays', (tester) async {
   previous look (SSIM 0.84 against a dark launch, which matches). Apple's
   glass appears to keep state from glass drawn earlier in the process; it
   is not fixed by rebuilding the glass.
-- **Native interactive glass:** pressing native glass gets this package's
-  stretch and growth, but not SwiftUI's own touch glow.
+- **Native interactive glass:** Flutter keeps the touches, so SwiftUI's
+  own press never runs on native glass. The package draws its growth,
+  stretch and light instead, measured from SwiftUI's (on at the touch,
+  held 0.33 s past the release; in-shape error over a press 1.1 light,
+  1.6 dark, from 4.1 and 6.0). The light is measured on regular glass
+  only; clear glass uses the same values.
 - **Tab bar:** close to iOS 26.4's `TabView`, not identical. Over photos
   the shader-drawn bar draws untinted labels vibrant, as iOS does (each
   glyph takes the hue of the glass behind it); the selected tint follows

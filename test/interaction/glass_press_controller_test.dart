@@ -75,6 +75,42 @@ void main() {
     expect(g.glow, greaterThan(0.9));
   });
 
+  testWidgets("the press light is SwiftUI's: on at once, held past release", (
+    t,
+  ) async {
+    final c = GlassPressController(
+      vsync: const TestVSync(),
+      motion: motion.motion,
+    );
+    addTearDown(c.dispose);
+    expect(c.light, 0);
+    c.down(const Offset(50, 20), const Size(100, 40));
+    // Full in the frame of the touch, before the press spring has moved.
+    expect(c.light, 1);
+    expect(c.geometry().light, 1);
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 500));
+
+    c.up();
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 160));
+    expect(c.light, closeTo(1 - kPressLightHoldFade / 2, 0.05));
+    await t.pump(const Duration(milliseconds: 160));
+    expect(c.light, closeTo(1 - kPressLightHoldFade, 0.02));
+    await t.pump(const Duration(milliseconds: 20));
+    // Off within a frame of the hold, while the release spring still runs.
+    expect(c.light, 0);
+    expect(c.geometry().light, 0);
+    expect(c.amount.abs(), greaterThan(1e-3));
+
+    // A new press mid-hold lights it fully again.
+    c.down(const Offset(50, 20), const Size(100, 40));
+    c.up();
+    c.down(const Offset(50, 20), const Size(100, 40));
+    expect(c.light, 1);
+    await t.pumpAndSettle();
+  });
+
   test('press scale grows a fixed area, capped (SwiftUI, Task 16b)', () {
     const m = GlassMotionConstants(
       pressGrowthArea: 1800,

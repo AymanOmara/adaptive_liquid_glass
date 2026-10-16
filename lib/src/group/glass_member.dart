@@ -70,7 +70,7 @@ class GlassMember extends StatefulWidget {
 /// State of [GlassMember]. Library-public so the widget and its tests can
 /// name the type; not exported by `adaptive_liquid_glass.dart`.
 class GlassMemberState extends State<GlassMember>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   /// The registry record for this member.
   late final GlassEntry entry = GlassEntry(
     shape: widget.shape,
