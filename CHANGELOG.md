@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.5 (2026-10-17)
 
 - Colour picker eyedropper: the loupe is now UIColorPickerViewController's,
   measured on iOS 26.4: a 148-pt disk of the picked colour around a 5-pt
