@@ -368,4 +368,52 @@ void main() {
     expect(stratumOf(glass), isNonNegative);
     expect(stratumOf(deferred), greaterThanOrEqualTo(stratumOf(glass)));
   }, variant: android);
+
+  testWidgets('glass under a zoom transition snapshot draws in place', (
+    t,
+  ) async {
+    env();
+    final nav = GlobalKey<NavigatorState>();
+    await t.pumpWidget(
+      LiquidGlassTheme(
+        data: const LiquidGlassThemeData(defaultMode: GlassRenderMode.shader),
+        child: MaterialApp(
+          navigatorKey: nav,
+          theme: ThemeData(
+            pageTransitionsTheme: const PageTransitionsTheme(
+              builders: {TargetPlatform.android: ZoomPageTransitionsBuilder()},
+            ),
+          ),
+          home: Scaffold(body: Center(child: button('a'))),
+        ),
+      ),
+    );
+    await t.pump();
+    expect(backdrops(t).single.sharedLayer, isNotNull);
+
+    nav.currentState!.push(
+      MaterialPageRoute<void>(
+        builder: (_) => Scaffold(body: Center(child: button('b'))),
+      ),
+    );
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 100));
+    // Both pages are snapshotted mid-transition: the layer, painted after
+    // the route, would draw their glass outside the zoomed snapshot.
+    final mid = t
+        .renderObjectList<RenderGlassBackdrop>(
+          find.byType(GlassBackdrop, skipOffstage: false),
+        )
+        .toList();
+    expect(mid, hasLength(2));
+    expect(mid.map((b) => b.sharedLayer), everyElement(isNull));
+
+    await t.pumpAndSettle();
+    final settled = t
+        .renderObjectList<RenderGlassBackdrop>(
+          find.byType(GlassBackdrop, skipOffstage: false),
+        )
+        .toList();
+    expect(settled.map((b) => b.sharedLayer), everyElement(isNotNull));
+  }, variant: android);
 }

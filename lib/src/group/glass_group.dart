@@ -108,6 +108,12 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
   /// shader there.
   ShaderGlassTicket? _budgetTicket;
 
+  /// The ancestor snapshot (a Zoom page transition's), during which the
+  /// glass leaves the shared layer.
+  late final GlassSnapshotWatch _snapshot = GlassSnapshotWatch(() {
+    if (mounted && _active) setState(() {});
+  });
+
   Timer? _sampler;
   Brightness? _sampled;
   Brightness? _pending;
@@ -265,6 +271,7 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
     GlassBackdropSources.instance.revision.removeListener(_onSources);
     _sampler?.cancel();
     _budgetTicket?.release();
+    _snapshot.dispose();
     _morph.dispose();
     _registry.dispose();
     super.dispose();
@@ -333,7 +340,7 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
     // Shader glass in a route draws through the route's shared layer
     // (one pass for many groups), which needs no budget.
     final shared = rendering == GlassMemberRendering.backdrop
-        ? sharedGlassLayerOf(context, environment.platform)
+        ? sharedGlassLayerOf(context, environment.platform, snapshot: _snapshot)
         : null;
     rendering = shared != null
         ? _releaseBudget(rendering)

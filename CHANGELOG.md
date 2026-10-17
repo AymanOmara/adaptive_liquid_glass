@@ -1,3 +1,11 @@
+## Unreleased
+
+- Android shared glass layer: glass on a page pushed or covered with
+  `ZoomPageTransitionsBuilder` (any `SnapshotWidget` ancestor) now zooms
+  and fades with the page. While the transition snapshots the page, its
+  glass draws group by group inside the snapshot; it stayed full-size and
+  unfaded outside it before.
+
 ## 0.2.4 (2026-10-17)
 
 - `GlassSearchable`: the close button's shadow is no longer cut to a box
