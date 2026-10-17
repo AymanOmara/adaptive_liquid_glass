@@ -108,8 +108,8 @@ class _GlassGroupState extends State<GlassGroup> with TickerProviderStateMixin {
   /// shader there.
   ShaderGlassTicket? _budgetTicket;
 
-  /// The ancestor snapshot (a Zoom page transition's), during which the
-  /// glass leaves the shared layer.
+  /// The ancestor SnapshotWidget while it paints the page itself (a Zoom
+  /// page transition's), during which the glass leaves the shared layer.
   late final GlassSnapshotWatch _snapshot = GlassSnapshotWatch(() {
     if (mounted && _active) setState(() {});
   });

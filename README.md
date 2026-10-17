@@ -1507,8 +1507,8 @@ testWidgets('pays', (tester) async {
   (`ZoomPageTransitionsBuilder`; a transient peak of about 0.5 GB on the
   emulator, with 8 groups as with 24, since the snapshot renders once). A
   transition that moves the page through its own painter without a
-  snapshot (`allowSnapshotting: false` on a Zoom transition) still
-  leaves the glass in place. The tab bar's vibrant labels read the layer's glass as
+  snapshot (`allowSnapshotting: false` on a Zoom transition) draws the
+  glass in place, inside the page, for the transition only. The tab bar's vibrant labels read the layer's glass as
   they do in place (about 100 MB more over the Gallery's run).
   `LiquidGlassThemeData.androidShaderBudget` (default null: no cap) still
   caps the groups that draw group by group; the rest draw a frosted blur.
