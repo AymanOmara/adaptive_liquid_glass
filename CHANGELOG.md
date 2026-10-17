@@ -14,8 +14,11 @@
   `GlassRefreshScrollPhysics` (about 35 pt more pull at 300 pt of travel).
 - `GlassRefreshScrollPhysics`: a fling up from the pull runs the measured
   bounce spring at the fling's speed and, past the top, hands off to
-  `BouncingScrollPhysics`' deceleration (it switched to Flutter's whole
-  simulation before, with a jump at the spring's starting speed).
+  `BouncingScrollPhysics`' deceleration, as UIScrollView does (measured:
+  two flicks carried 225 and 7 pt into SwiftUI's List, matched within
+  1.1 pt rms). It switched to Flutter's whole simulation before, with a
+  jump at the spring's starting speed. Pull to refresh leaves Known
+  limitations.
 - `GlassRefresh` no longer makes its scrollable replace its scroll position
   on every frame of a pull.
 - Android shared glass layer: glass on a page pushed or covered with

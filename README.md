@@ -1486,8 +1486,9 @@ testWidgets('pays', (tester) async {
 - **Photos picker:** items are copied into a temporary or cache directory
   before `onPicked` runs, so very large videos (and H.264 conversions) take
   time to arrive, and the copies stay until `clearGlassPickedPhotos()` or
-  the OS deletes them. Android re-encodes videos on the device's codecs,
-  slower than real time on low-end phones and emulators. The Android
+  the OS deletes them. On Android the H.264 conversion (HEVC videos with
+  `compatibleFormat`) runs on the device's codecs, slower than real time
+  on low-end phones and emulators. The Android
   document-picker fallback (before Android 11, or without the SDK
   extension) cannot enforce `maxSelection` in its UI; extra items are
   dropped from the end and counted in `GlassPickedPhotos.droppedCount`.
@@ -1529,13 +1530,6 @@ testWidgets('pays', (tester) async {
   memory unless the app passes `savedColors` / `onSavedColorsChanged` and
   stores them; a long press opens UIKit's context menu to delete one. The
   loupe's size and magnification are estimated.
-- **Pull to refresh:** the pull follows UIScrollView's rubber band
-  (measured within 4 pt of UIKit's for 50-300 pt of finger travel) and,
-  released short of the refresh, springs back on UIKit's measured curve
-  (within 2.5 pt per frame), whatever bouncing physics the scrollable
-  uses. A fling up fast enough to pass the top carries on into the
-  content on `BouncingScrollPhysics`' deceleration; UIKit's for that case
-  is not measured.
 
 ## License
 

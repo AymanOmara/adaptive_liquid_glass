@@ -192,6 +192,62 @@ void main() {
       expect(edge.x(0.1), closeTo(launched.x(0.1), 0.1));
     });
 
+    test("a fling up past the top follows UIKit's (iOS 26.4)", () {
+      // SwiftUI List, pulled then flicked up; overscroll per frame from
+      // the release (tool/fidelity, touch paths on iPhone 17 Pro). The
+      // release speeds are fitted (the finger's is not recorded).
+      // Take 2: 91.7 pt, 1346 pt/s; crosses the top by 7 pt.
+      const short = [
+        91.67, 71.00, 54.67, 42.00, 32.00, 24.00, 18.00, 13.33, 9.67, //
+        6.67, 4.67, 3.00, 1.67, 1.00, 0.33, 0.00, -0.67, -1.00, -1.33,
+        -1.67, -2.00, -2.33, -2.67, -3.00, -3.33, -3.33, -3.67,
+      ];
+      final shortSim = physics.createBallisticSimulation(_at(91.67), 1346)!;
+      for (var i = 0; i < short.length; i++) {
+        expect(
+          -shortSim.x(i / 60),
+          closeTo(short[i], 1.5),
+          reason: 'take 2 @ $i',
+        );
+      }
+      // The scroll stops where the simulation is done, as UIKit's does
+      // (both near 7 pt/s).
+      var rest = 0.0;
+      while (!shortSim.isDone(rest)) {
+        rest += 1 / 60;
+      }
+      expect(-shortSim.x(rest), closeTo(-7, 1));
+      // Take 1: 55 pt, 1491 pt/s; carries 230 pt into the content. Its
+      // frames 0.152 and 0.169 s were captured early (a jump, then held).
+      final long = {
+        0.0: 55.00,
+        0.0167: 32.67,
+        0.0336: 16.33,
+        0.05: 4.33,
+        0.0667: -4.00,
+        0.0834: -11.33,
+        0.1005: -18.67,
+        0.1168: -25.33,
+        0.1334: -32.00,
+        0.1834: -51.00,
+        0.2: -56.67,
+        0.25: -73.33,
+        0.3005: -88.00,
+        0.35: -101.67,
+        0.4: -113.67,
+        0.5: -134.67,
+        0.6: -152.00,
+        0.7: -166.00,
+        0.8: -177.67,
+        0.9: -187.00,
+        1.0001: -194.67,
+      };
+      final longSim = physics.createBallisticSimulation(_at(55), 1491)!;
+      long.forEach((t, measured) {
+        expect(-longSim.x(t), closeTo(measured, 2), reason: 'take 1 @ $t');
+      });
+    });
+
     test('a fling that reaches the top carries on into the content', () {
       const bouncing = BouncingScrollPhysics();
       final fast = physics.createBallisticSimulation(_at(50), 3000)!;
