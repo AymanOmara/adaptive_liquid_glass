@@ -81,6 +81,7 @@ enum ControlScenes {
     case "label": root = AnyView(LabelReference())
     case "link": root = AnyView(LinkReference())
     case "wheel": root = AnyView(WheelReference())
+    case "wheelstep": root = AnyView(WheelReference(step: true))
     case "datewheel": root = AnyView(DateWheelReference())
     case "searchactive": root = AnyView(SearchActiveReference())
     case "refresh": root = AnyView(RefreshReference())

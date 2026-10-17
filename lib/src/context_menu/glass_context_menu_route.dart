@@ -20,6 +20,7 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
     required this.preview,
     required this.previewRect,
     required this.items,
+    this.pressedScale = 1,
     this.mode,
     this.capturedThemes,
     this.barrierLabel,
@@ -33,6 +34,10 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
 
   /// The menu's rows.
   final List<GlassMenuItem> items;
+
+  /// How far the press had grown the item about its centre when the menu
+  /// opened: the lift carries on from there (`ContextMenuMetrics.pressed`).
+  final double pressedScale;
 
   /// The rendering path.
   final GlassRenderMode? mode;
@@ -60,7 +65,8 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
   // opening ones from the push, the closing ones from where the opening
   // had got to when the menu began to close.
   double? _closeFrom;
-  double _dimFrom = 1, _liftFrom = 1, _menuFrom = 1;
+  double _dimFrom = 1, _menuFrom = 1;
+  Rect? _liftFrom;
 
   static double _spring(SpringDescription s, double t) =>
       t <= 0 ? 0 : SpringSimulation(s, 0, 1, 0).x(t);
@@ -87,11 +93,25 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
       ? _openDim(v)
       : _dimFrom * (1 - _spring(ContextMenuMetrics.closeDimSpring, _closeT(v)));
 
-  /// The item's lift, 0 (in place) .. 1 (lifted).
-  double _lift(double v) => _closeFrom == null
-      ? _openLift(v)
-      : _liftFrom *
-            (1 - _spring(ContextMenuMetrics.closeLiftSpring, _closeT(v)));
+  /// Where the item is: from its pressed size to [lifted] on opening,
+  /// from wherever it had got back to its own rect on closing.
+  Rect _previewAt(double v, Rect lifted) {
+    if (_closeFrom == null) {
+      final pressed = Rect.fromCenter(
+        center: previewRect.center,
+        width: previewRect.width * pressedScale,
+        height: previewRect.height * pressedScale,
+      );
+      return Rect.lerp(pressed, lifted, _openLift(v))!;
+    }
+    return Rect.lerp(
+      _liftFrom,
+      previewRect,
+      _spring(ContextMenuMetrics.closeLiftSpring, _closeT(v)),
+    )!;
+  }
+
+  Rect? _lifted;
 
   /// The menu's scale (from its edge by the item) and opacity.
   double _menu(double v) => _closeFrom == null
@@ -109,7 +129,7 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
       if (status == AnimationStatus.reverse && _closeFrom == null) {
         final v = animation!.value;
         _dimFrom = _openDim(v);
-        _liftFrom = _openLift(v);
+        _liftFrom = _previewAt(v, _lifted ?? previewRect);
         _menuFrom = _openMenu(v).clamp(0.0, 1.0);
         _closeFrom = v;
       }
@@ -127,6 +147,7 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
       previewRect,
       MediaQuery.sizeOf(context),
     );
+    _lifted = lifted;
     final page = iosPageText(
       Stack(
         children: [
@@ -154,17 +175,17 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
               child: AnimatedBuilder(
                 animation: animation,
                 builder: (context, child) {
-                  // From where the item is to where UIKit lifts it.
-                  final t = _lift(animation.value);
-                  final grow = previewRect.width > 0
-                      ? lifted.width / previewRect.width
+                  // From where the press left the item to where UIKit
+                  // lifts it.
+                  final at = _previewAt(animation.value, lifted);
+                  final s = previewRect.width > 0
+                      ? at.width / previewRect.width
                       : 1.0;
-                  final s = 1 + (grow - 1) * t;
                   return Transform(
                     transform: Matrix4.identity()
                       ..translateByDouble(
-                        (lifted.left - previewRect.left) * t,
-                        (lifted.top - previewRect.top) * t,
+                        at.left - previewRect.left,
+                        at.top - previewRect.top,
                         0,
                         1,
                       )

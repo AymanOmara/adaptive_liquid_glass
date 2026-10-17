@@ -39,6 +39,11 @@ uniform vec4 uVar[36];     // per variant (regular A-L, then clear A-L, then
 // shader exactly.
 uniform vec4 uExtra[24];   // group index, smoothing px, opacity, press light 0..1
 uniform vec4 uClip[24];    // clip x0, y0, x1, y1 px
+// Per-shape frost the input's blur lacks: one blur serves a whole pass (a
+// group, or a stratum of the shared layer) at its members' smallest sigma;
+// a shape that needs more adds the rest here (the Gaussians compose:
+// sigma_shape^2 = sigma_input^2 + extra^2).
+uniform vec4 uBlur[24];    // extra sigma x px, extra sigma y px, taps, -
 // uTexture is the backdrop already blurred by ImageFilter.blur (composed
 // before this shader). FlutterFragCoord is screen-global; uSize is the
 // blurred input's size, which may exceed the screen on the right/bottom, so
@@ -220,6 +225,7 @@ void main() {
   float light = 0.0;  // per-shape press light (SwiftUI's pressed lift)
   vec4 tint = vec4(0.0);
   vec4 rcB = vec4(0.0);  // attribute-blended rect, for the ambient colour
+  vec4 xb = vec4(0.0);  // extra frost (uBlur)
   float wk = ownK * 0.5 + 1.0;
   float dmin = 1e6;
   for (int i = 0; i < 24; i++) {
@@ -237,6 +243,7 @@ void main() {
       light *= s;
       tint *= s;
       rcB *= s;
+      xb *= s;
       dmin = e;
     }
     float w = exp(-(e - dmin) / wk);
@@ -247,6 +254,7 @@ void main() {
     light += w * uExtra[i].w;
     tint += w * uTints[i];
     rcB += w * uRects[i];
+    xb += w * uBlur[i];
   }
   clearMix /= wsum;
   halfMin /= wsum;
@@ -254,6 +262,7 @@ void main() {
   light /= wsum;
   tint /= wsum;
   rcB /= wsum;
+  xb /= wsum;
 
   vec4 A = mix(uVar[0], uVar[12], clearMix);
   vec4 B = mix(uVar[1], uVar[13], clearMix);
@@ -439,20 +448,44 @@ void main() {
       }
     }
   }
+  // Extra frost (uBlur): equal-weight samples of a 2-D Gaussian (Rayleigh
+  // radii, golden-angle turns) around the lens sample, added as a
+  // difference so the post-lens blur and dispersion keep their own taps.
+  // The input is already blurred, so the sparse taps do not alias much:
+  // 16-32 taps are within about 1-3 of 255 of an exact blur on text and
+  // photos (Dart picks the count from the ratio to the input's sigma).
+  float xr2 = 0.0;
+  if (xb.z >= 1.0 && max(xb.x, xb.y) >= 0.25) {
+    int n = int(xb.z + 0.5);
+    vec3 acc = vec3(0.0);
+    vec2 dir = vec2(1.0, 0.0);
+    // cos and sin of the golden angle.
+    mat2 turn = mat2(-0.7373688, 0.6754903, -0.6754903, -0.7373688);
+    for (int i = 0; i < 32; i++) {
+      if (i >= n) break;
+      float r = sqrt(-2.0 * log(1.0 - (float(i) + 0.5) / float(n)));
+      acc += tex(sp + dir * xb.xy * r).rgb;
+      dir = turn * dir;
+    }
+    col += acc / float(n) - base;
+    xr2 = xb.x * xb.y;
+  }
   float hmw = max(halfMin, 1.0);
   float wideW = E.y + (E.z - E.y) * (depth - lensAmt) / hmw;
   if (E.w > 0.0) wideW -= F.x * max(0.0, 1.0 - hmw / E.w);
   wideW = E.x > 0.0 ? clamp(wideW, 0.0, 1.0) : 0.0;
   if (wideW > 0.0) {
+    // The tail is core + wide; the input carries only part of the core.
+    float wsig = sqrt(E.x * E.x + xr2);
     vec3 ring1 = vec3(0.0);
     for (int i = 0; i < 6; i++) {
       float a = float(i) * 1.0471976;
-      ring1 += tex(sp + (E.x * 1.0823922) * vec2(cos(a), sin(a))).rgb;
+      ring1 += tex(sp + (wsig * 1.0823922) * vec2(cos(a), sin(a))).rgb;
     }
     vec3 ring2 = vec3(0.0);
     for (int i = 0; i < 10; i++) {
       float a = 0.31415927 + float(i) * 0.62831853;
-      ring2 += tex(sp + (E.x * 2.6131259) * vec2(cos(a), sin(a))).rgb;
+      ring2 += tex(sp + (wsig * 2.6131259) * vec2(cos(a), sin(a))).rgb;
     }
     vec3 wide = ring1 * (0.8535534 / 6.0) + ring2 * (0.1464466 / 10.0);
     col = mix(col, wide, wideW);

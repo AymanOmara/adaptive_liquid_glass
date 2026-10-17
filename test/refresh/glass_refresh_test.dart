@@ -271,8 +271,10 @@ void main() {
       await gesture.moveBy(const Offset(0, 30));
       await t.pump(_frame);
     }
+    // Armed by the finger's travel (UIKit's band in this short viewport
+    // stops short of the trigger distance).
     final pulled = contentOffset(t);
-    expect(pulled, greaterThan(RefreshMetrics.triggerDistance));
+    expect(pulled, greaterThan(RefreshMetrics.indicatorExtent + 50));
     await gesture.up();
     await t.pump();
     // The release's ballistic reports on the next frame, which triggers.

@@ -30,9 +30,14 @@ import 'refresh_metrics.dart';
 ///
 /// Released past the top, the content springs back as UIScrollView's
 /// does: critically damped ([RefreshMetrics.bounceResponse]), already
-/// moving toward the rest ([RefreshMetrics.bounceLaunch]). A fling up
-/// faster than that start keeps `BouncingScrollPhysics`' simulation, as
-/// does every other edge.
+/// moving toward the rest ([RefreshMetrics.bounceLaunch]); a fling up
+/// faster than that start sets the spring's speed instead. A spring fast
+/// enough to reach the top carries on into the content on
+/// `BouncingScrollPhysics`' deceleration from there (UIScrollView's
+/// 0.998 per ms), as UIKit's does: two flicks released at 55 and 92 pt
+/// past the top, carried 225 and 7 pt into SwiftUI's List, matched
+/// within 1.1 pt rms on iOS 26.4. Every other edge keeps
+/// `BouncingScrollPhysics`' simulation.
 class GlassRefreshScrollPhysics extends BouncingScrollPhysics {
   /// Creates the physics.
   const GlassRefreshScrollPhysics({super.decelerationRate, super.parent});
@@ -61,16 +66,46 @@ class GlassRefreshScrollPhysics extends BouncingScrollPhysics {
         RefreshMetrics.bounceLaunch *
         (2 * math.pi / RefreshMetrics.bounceResponse) *
         overscroll;
-    if (velocity > launch) {
-      return super.createBallisticSimulation(position, velocity);
-    }
-    return ScrollSpringSimulation(
+    final back = ScrollSpringSimulation(
       spring,
       position.pixels,
       position.minScrollExtent,
-      launch,
+      math.max(velocity, launch),
       tolerance: toleranceFor(position),
     );
+    final reach = _reachTop(back, position.minScrollExtent);
+    if (reach == null) return back;
+    final on = super.createBallisticSimulation(
+      position.copyWith(pixels: position.minScrollExtent),
+      back.dx(reach),
+    );
+    return on == null ? back : _HandOffSimulation(back, reach, on);
+  }
+
+  /// When [spring] first reaches [top], or null if it settles short of
+  /// it (a critically damped spring passes its rest only when launched
+  /// faster than its angular frequency times the distance).
+  static double? _reachTop(Simulation spring, double top) {
+    const step = 1 / 240;
+    var before = 0.0;
+    for (var t = step; t < 2; t += step) {
+      if (spring.x(t) < top) {
+        before = t;
+        continue;
+      }
+      var after = t;
+      for (var i = 0; i < 30; i++) {
+        final mid = (before + after) / 2;
+        if (spring.x(mid) < top) {
+          before = mid;
+        } else {
+          after = mid;
+        }
+      }
+      // The spring settles on [top]: reaching it at rest is no hand-off.
+      return spring.dx(after) > 1 ? after : null;
+    }
+    return null;
   }
 
   @override
@@ -100,4 +135,23 @@ class GlassRefreshScrollPhysics extends BouncingScrollPhysics {
     final to = reach * (1 - 1 / (travel * stiffness / reach + 1));
     return free + to - from;
   }
+}
+
+/// [first] until [at], then [then] from where [first] left off.
+class _HandOffSimulation extends Simulation {
+  _HandOffSimulation(this.first, this.at, this.then)
+    : super(tolerance: first.tolerance);
+
+  final Simulation first;
+  final double at;
+  final Simulation then;
+
+  @override
+  double x(double time) => time < at ? first.x(time) : then.x(time - at);
+
+  @override
+  double dx(double time) => time < at ? first.dx(time) : then.dx(time - at);
+
+  @override
+  bool isDone(double time) => time >= at && then.isDone(time - at);
 }

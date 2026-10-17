@@ -397,9 +397,18 @@ abstract final class GlassColors {
   /// The saved colours' "+" glyph (measured: #4A4A4A, light and dark).
   static const Color colorPickerAddGlyph = Color(0xFF4A4A4A);
 
-  /// The eyedropper loupe's shadow and its centre pixel's outer outline
-  /// (estimated: black at 25%).
-  static const Color colorPickerLoupeShade = Color(0x40000000);
+  /// The eyedropper loupe's shadow (fitted: black at 31%).
+  static const Color colorPickerLoupeShade = Color(0x4F000000);
+
+  /// The loupe's ring and centre outline over a light colour (measured:
+  /// #979797; white over a darker one).
+  static const Color colorPickerLoupeRingOnLight = Color(0xFF979797);
+
+  /// The loupe's grid over a light colour (measured: black at 40%).
+  static const Color colorPickerLoupeGridOnLight = Color(0x66000000);
+
+  /// The loupe's grid over a darker colour (measured: white at 70%).
+  static const Color colorPickerLoupeGridOnDark = Color(0xB3FFFFFF);
 
   /// The hex row's label (measured: the system blue).
   static const CupertinoDynamicColor colorPickerHexLabel = systemBlue;

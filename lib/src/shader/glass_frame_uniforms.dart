@@ -31,6 +31,9 @@ const int kExtraAt = kVarAt + 4 * 36;
 /// See [kRectsAt].
 const int kClipAt = kExtraAt + 4 * kMaxPassShapes;
 
+/// See [kRectsAt].
+const int kBlurAt = kClipAt + 4 * kMaxPassShapes;
+
 /// Everything the shader needs for one frame.
 @immutable
 class GlassFrameUniforms {
@@ -46,6 +49,8 @@ class GlassFrameUniforms {
     this.opaqueColor,
     this.touch,
     this.glow = 0,
+    this.blurSigma = 0,
+    this.blurAspect = 1,
   });
 
   /// Light or dark appearance (selects constant sets).
@@ -79,6 +84,13 @@ class GlassFrameUniforms {
   /// Touch glow strength 0..1: the pressed member's press light
   /// (`GlassPressGeometry.light`).
   final double glow;
+
+  /// The blur already applied to the input (logical px): each shape's
+  /// [GlassShapeUniform.blurSigma] beyond it is added in the shader.
+  final double blurSigma;
+
+  /// sigmaX / [blurSigma].
+  final double blurAspect;
 }
 
 /// Largest usable `postBlurShare` (the composed blur keeps √0.1 of σ).
@@ -102,6 +114,35 @@ double composedBlurSigma(GlassVariantConstants v, double halfMin) {
 double composedBlurAspect(GlassVariantConstants v, Size size) {
   if (v.blurAspectPower == 0 || size.width <= 0 || size.height <= 0) return 1;
   return math.pow(size.height / size.width, v.blurAspectPower).toDouble();
+}
+
+/// The frost [s] wants beyond the input's blur ([u]'s), per axis in
+/// logical px, and the taps the shader spends on it; null when there is
+/// none worth drawing (under 0.1 px). Gaussians compose by their variances.
+(double, double, double)? extraBlurOf(
+  GlassShapeUniform s,
+  GlassFrameUniforms u,
+) {
+  if (s.blurSigma <= 0) return null;
+  double extra(double want, double have) =>
+      math.sqrt(math.max(0.0, want * want - have * have));
+  final ia = u.blurSigma > 0 ? u.blurAspect : 1.0;
+  final haveX = u.blurSigma * ia;
+  final haveY = u.blurSigma / ia;
+  final x = extra(s.blurSigma * s.blurAspect, haveX);
+  final y = extra(s.blurSigma / s.blurAspect, haveY);
+  if (math.max(x, y) < 0.1) return null;
+  // Sparse taps alias less on a smoother input; measured on text and photo
+  // backdrops (error under about 1.5 of 255 mean up to 4x, 2.6 at 7x).
+  final ratio = math.max(x, y) / math.max(math.min(haveX, haveY), 0.25);
+  final taps = ratio <= 1.5
+      ? 12.0
+      : ratio <= 2.5
+      ? 16.0
+      : ratio <= 4
+      ? 24.0
+      : 32.0;
+  return (x, y, taps);
 }
 
 bool _drawable(GlassShapeUniform s) =>
@@ -139,13 +180,17 @@ List<GlassShapeUniform> mergeUnions(List<GlassShapeUniform> shapes) {
       opacity: prev.opacity,
       clip: prev.clip,
       light: math.max(prev.light, s.light),
+      blurSigma: prev.blurSigma >= s.blurSigma ? prev.blurSigma : s.blurSigma,
+      blurAspect: prev.blurSigma >= s.blurSigma
+          ? prev.blurAspect
+          : s.blurAspect,
     );
   }
   return out;
 }
 
 /// Number of user floats after `uSize`.
-const int kGlassUniformFloats = kClipAt + 4 * kMaxPassShapes;
+const int kGlassUniformFloats = kBlurAt + 4 * kMaxPassShapes;
 
 /// Packs [u] into the float layout documented in `shaders/liquid_glass.frag`
 /// (N = [kMaxPassShapes] = 24):
@@ -166,6 +211,7 @@ const int kGlassUniformFloats = kClipAt + 4 * kMaxPassShapes;
 /// | 440–447 | uVar[34..35]   | regular R, then clear R                   |
 /// | 448–543 | uExtra[N]      | group index, smoothing px, opacity, light |
 /// | 544–639 | uClip[N]       | clip x0, y0, x1, y1 px                    |
+/// | 640–735 | uBlur[N]       | extra sigma x px, extra sigma y px, taps, 0 |
 ///
 /// Per variant: A = (lens decay px, lens band px, lens strength, dispersion),
 /// B = (rim width px, rim intensity, fillOpacity, dim),
@@ -253,6 +299,10 @@ List<double> packGlassUniforms(GlassFrameUniforms u) {
       clip?.right ?? 1e9,
       clip?.bottom ?? 1e9,
     ]);
+    final extra = extraBlurOf(s, u);
+    if (extra != null) {
+      f.setAll(kBlurAt + i * 4, [extra.$1 * dpr, extra.$2 * dpr, extra.$3, 0]);
+    }
     if (tint != null) {
       f.setAll(kTintsAt + i * 4, [
         tint.r,

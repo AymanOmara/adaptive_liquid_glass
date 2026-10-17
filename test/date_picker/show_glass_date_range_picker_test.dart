@@ -151,16 +151,10 @@ void main() {
         ),
       );
       for (final d in ['8', '9', '10']) {
-        expect(
-          t.getSemantics(find.text(d)),
-          isSemantics(isSelected: true),
-        );
+        expect(t.getSemantics(find.text(d)), isSemantics(isSelected: true));
       }
       for (final d in ['7', '11']) {
-        expect(
-          t.getSemantics(find.text(d)),
-          isSemantics(isSelected: false),
-        );
+        expect(t.getSemantics(find.text(d)), isSemantics(isSelected: false));
       }
       handle.dispose();
     }, variant: ios);

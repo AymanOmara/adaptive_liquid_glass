@@ -12,6 +12,7 @@ import 'package:flutter/material.dart'
         SegmentedButton;
 import 'package:flutter/physics.dart';
 
+import '../button/glass_button_glyph_effect.dart';
 import '../controls/glass_segment.dart';
 import '../controls/glass_segmented_control.dart';
 import '../core/cupertino_l10n.dart';
@@ -20,6 +21,7 @@ import '../core/glass.dart';
 import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
+import '../group/glass_group.dart';
 import '../list/list_metrics.dart';
 import 'glass_search_controller.dart';
 import 'glass_search_field.dart';
@@ -229,7 +231,9 @@ class _GlassSearchableState extends State<GlassSearchable>
   /// Dismissal, as SwiftUI's (iOS 26.4, fitted): the row jumps to the idle
   /// insets with the close button still in its room, then the field's
   /// end springs over the room on [SearchMetrics.hide] while the button
-  /// fades. Without motion the button just goes.
+  /// holds the row's end, its glass merging into the field's as they
+  /// meet, then shrinking about its own centre as its glyph fades.
+  /// Without motion the button just goes.
   void _startHide() {
     _reveal.stop();
     if (_reveal.value <= 0 ||
@@ -418,55 +422,70 @@ class _GlassSearchableState extends State<GlassSearchable>
   }
 
   /// The field and, while any part of it shows, Cancel sliding out from
-  /// the end.
-  Widget _fieldRow(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: GlassSearchField(
-          controller: _controller.textController,
-          focusNode: _focusNode,
-          placeholder: widget.placeholder,
-          semanticLabel: widget.semanticLabel,
-          onChanged: widget.onChanged,
-          onSubmitted: widget.onSubmitted,
-          glass: widget.glass,
-          mode: widget.mode,
+  /// the end, both in one group (SwiftUI's one `GlassEffectContainer`):
+  /// the group's spacing is the gap between them, so the glasses stay
+  /// whole while shown and merge as the hide closes the gap.
+  Widget _fieldRow(BuildContext context) => GlassGroup(
+    mode: widget.mode,
+    spacing: _cancelGap,
+    child: Row(
+      children: [
+        Expanded(
+          child: GlassSearchField(
+            controller: _controller.textController,
+            focusNode: _focusNode,
+            placeholder: widget.placeholder,
+            semanticLabel: widget.semanticLabel,
+            onChanged: widget.onChanged,
+            onSubmitted: widget.onSubmitted,
+            glass: widget.glass,
+            mode: widget.mode,
+          ),
         ),
-      ),
-      if (_cancelMounted)
-        AnimatedBuilder(
-          animation: Listenable.merge([_reveal, _hide]),
-          builder: (context, _) {
-            if (_hiding) return _hidingCancel(context);
-            // iOS 26.4 (fitted, `-controls search` tapped): the field
-            // narrows first, then the close button grows in place from
-            // about a third of its size as it fades in, overshooting a
-            // little with the spring.
-            final t = _reveal.value;
-            final slot = (t / SearchMetrics.revealSplit).clamp(0.0, 1.0);
-            final grow = math.max(
-              0.0,
-              (t - SearchMetrics.revealSplit) / (1 - SearchMetrics.revealSplit),
-            );
-            // No clip: the button is transparent until its room is
-            // whole, and a clip would cut its shadow to a box.
-            return Align(
-              alignment: AlignmentDirectional.centerStart,
-              widthFactor: slot,
-              child: Opacity(
-                opacity: math.min(grow, 1.0),
-                child: Padding(
-                  padding: EdgeInsetsDirectional.only(start: _cancelGap),
-                  child: Transform.scale(
-                    scale: lerpDouble(SearchMetrics.revealScale, 1, grow),
-                    child: _cancelButton(context),
+        if (_cancelMounted)
+          AnimatedBuilder(
+            animation: Listenable.merge([_reveal, _hide]),
+            builder: (context, _) {
+              if (_hiding) return _hidingCancel(context);
+              // iOS 26.4 (fitted, `-controls search` tapped): the field
+              // narrows first, then the close button grows in place from
+              // about a third of its size as it fades in, overshooting a
+              // little with the spring.
+              final t = _reveal.value;
+              final slot = (t / SearchMetrics.revealSplit).clamp(0.0, 1.0);
+              final grow = math.max(
+                0.0,
+                (t - SearchMetrics.revealSplit) /
+                    (1 - SearchMetrics.revealSplit),
+              );
+              // No clip: the button is transparent until its room is
+              // whole, and a clip would cut its shadow to a box.
+              return Align(
+                alignment: AlignmentDirectional.centerStart,
+                widthFactor: slot,
+                child: Opacity(
+                  opacity: math.min(grow, 1.0),
+                  child: Padding(
+                    padding: EdgeInsetsDirectional.only(start: _cancelGap),
+                    child: Transform.scale(
+                      scale: lerpDouble(SearchMetrics.revealScale, 1, grow),
+                      // Its own group while it fades in: a member of the
+                      // row's group would show its glass at full opacity
+                      // as the glyph fades in.
+                      child: ImplicitGlassGroup(
+                        child: GlassGroup(
+                          mode: widget.mode,
+                          child: _cancelButton(context),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
-        ),
-    ],
+              );
+            },
+          ),
+      ],
+    ),
   );
 
   bool get _drawer =>
@@ -480,21 +499,44 @@ class _GlassSearchableState extends State<GlassSearchable>
       _cancelGap +
       (_drawer ? SearchMetrics.drawerHeight : SearchMetrics.cancelSize);
 
-  /// The close button while hiding: full size, fading over the first
-  /// [SearchMetrics.hideFade] of the hide as its room closes, cut only at
-  /// the room's end so its shadow keeps its round edge elsewhere.
+  /// The close button while hiding: full size, holding the row's end
+  /// edge while the field's end springs over its room, so its glass
+  /// meets the field's and the row's group merges them (SwiftUI's one
+  /// container) rather than fading; on the seconds since the jump its
+  /// glyph fades out and its glass shrinks about its own centre,
+  /// keeping the merge (measured, iOS 26.4). The room's end edge still
+  /// cuts it, keeping anything from drawing past the row.
   Widget _hidingCancel(BuildContext context) {
-    final p = _hide.value;
+    final t =
+        (_hide.lastElapsedDuration ?? Duration.zero).inMicroseconds /
+        Duration.microsecondsPerSecond;
+    final q =
+        ((t - SearchMetrics.hideGlyphFadeStart) /
+                (SearchMetrics.hideGlyphFadeEnd -
+                    SearchMetrics.hideGlyphFadeStart))
+            .clamp(0.0, 1.0);
+    final u =
+        ((t - SearchMetrics.hideShrinkStart) /
+                (SearchMetrics.hideShrinkEnd - SearchMetrics.hideShrinkStart))
+            .clamp(0.0, 1.0);
+    final scale = 1 - math.pow(u, SearchMetrics.hideShrinkPower).toDouble();
     return ClipRect(
       clipper: _EndEdgeClipper(Directionality.of(context)),
       child: Align(
-        alignment: AlignmentDirectional.centerStart,
-        widthFactor: (1 - p).clamp(0.0, 1.0),
-        child: Opacity(
-          opacity: (1 - p / SearchMetrics.hideFade).clamp(0.0, 1.0),
+        alignment: AlignmentDirectional.centerEnd,
+        widthFactor: (1 - _hide.value).clamp(0.0, 1.0),
+        child: GlassButtonGlyphEffect(
+          blur: q * SearchMetrics.hideGlyphBlur,
+          opacity: 1 - q,
+          // SwiftUI's glyph keeps most of its size as it blurs while the
+          // glass shrinks under it (measured: 0.8 at 0.083 s).
+          scale: (1 - SearchMetrics.hideGlyphShrink * q) / math.max(scale, 0.3),
           child: Padding(
             padding: EdgeInsetsDirectional.only(start: _cancelGap),
-            child: _cancelButton(context),
+            // About the button's centre, not the room's: the glass
+            // shape shrinks inside the group and stays merged with the
+            // field's as it goes.
+            child: Transform.scale(scale: scale, child: _cancelButton(context)),
           ),
         ),
       ),

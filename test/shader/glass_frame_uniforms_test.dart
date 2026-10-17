@@ -50,7 +50,7 @@ void main() {
         }),
       ),
     );
-    expect(f.length, 640);
+    expect(f.length, 736);
     expect(f.sublist(0, 4), [1, 3, -2, 0]);
     expect(f.sublist(4, 8), [
       60,

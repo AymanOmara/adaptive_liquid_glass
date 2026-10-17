@@ -56,9 +56,9 @@ and CHANGELOG.md.
   layout (UIKit's interaction) are measured; nothing left
   estimated here (2026-10-16: date/time capsule gap, nav-bar search
   drawer, and the context menu's page, dimmed but not blurred). Cover drag thresholds: nothing to measure
-  (SwiftUI's cover has no drag). Motion still open: the wheel's step
-  (VoiceOver-only, no touch drives it), the context menu's press before
-  its lift (open and close springs fitted 2026-10-16).
+  (SwiftUI's cover has no drag). Motion: the wheel's VoiceOver step (a
+  one-frame jump, 2026-10-17) and the context menu's press before its
+  lift are measured; none left open.
   Colour sheet (2026-10-14, second pass): side inset 8 (partial sheet
   detents now float at any height, SwiftUI .height(300...765) measured),
   segmented control 30.67, saved colours row, UIKit's Spectrum map
@@ -67,8 +67,11 @@ and CHANGELOG.md.
   Refresh: the rubber band is UIKit's only for scrollables inheriting
   bouncing physics (their own BouncingScrollPhysics keeps Flutter's
   friction); the release bounce without a refresh is UIKit's (fitted
-  2026-10-16). Search hide: the button's glass does not merge into the
-  field as SwiftUI's does (it fades).
+  2026-10-16).
+  Search hide: the button's glass merges into the field (2026-10-17,
+  build/motion/search-hide-full), shrinks and its glyph blurs out as
+  SwiftUI's (row-tracked error 1.6-2.0); left: the field's end reaches
+  the button about a frame early.
 
 7- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
   Still scenes, whole-crop mean |diff| native/shader (2026-10-13, with

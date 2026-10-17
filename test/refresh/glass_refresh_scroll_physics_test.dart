@@ -181,12 +181,103 @@ void main() {
       expect(-flutter.x(4 / 60), greaterThan(72.3 + 10));
     });
 
-    test('a fling up past the launch keeps the bouncing simulation', () {
+    test('a fling up faster than the launch speeds the spring up', () {
+      final launched = physics.createBallisticSimulation(_at(50), 0)!;
+      final flung = physics.createBallisticSimulation(_at(50), 600)!;
+      expect(flung.dx(0), closeTo(600, 1e-6));
+      expect(flung.x(0.05), greaterThan(launched.x(0.05)));
+      // Just past the launch: no jump between the two.
+      final launch = launched.dx(0);
+      final edge = physics.createBallisticSimulation(_at(50), launch + 1)!;
+      expect(edge.x(0.1), closeTo(launched.x(0.1), 0.1));
+    });
+
+    test("a fling up past the top follows UIKit's (iOS 26.4)", () {
+      // SwiftUI List, pulled then flicked up; overscroll per frame from
+      // the release (tool/fidelity, touch paths on iPhone 17 Pro). The
+      // release speeds are fitted (the finger's is not recorded).
+      // Take 2: 91.7 pt, 1346 pt/s; crosses the top by 7 pt.
+      const short = [
+        91.67, 71.00, 54.67, 42.00, 32.00, 24.00, 18.00, 13.33, 9.67, //
+        6.67, 4.67, 3.00, 1.67, 1.00, 0.33, 0.00, -0.67, -1.00, -1.33,
+        -1.67, -2.00, -2.33, -2.67, -3.00, -3.33, -3.33, -3.67,
+      ];
+      final shortSim = physics.createBallisticSimulation(_at(91.67), 1346)!;
+      for (var i = 0; i < short.length; i++) {
+        expect(
+          -shortSim.x(i / 60),
+          closeTo(short[i], 1.5),
+          reason: 'take 2 @ $i',
+        );
+      }
+      // The scroll stops where the simulation is done, as UIKit's does
+      // (both near 7 pt/s).
+      var rest = 0.0;
+      while (!shortSim.isDone(rest)) {
+        rest += 1 / 60;
+      }
+      expect(-shortSim.x(rest), closeTo(-7, 1));
+      // Take 1: 55 pt, 1491 pt/s; carries 230 pt into the content. Its
+      // frames 0.152 and 0.169 s were captured early (a jump, then held).
+      final long = {
+        0.0: 55.00,
+        0.0167: 32.67,
+        0.0336: 16.33,
+        0.05: 4.33,
+        0.0667: -4.00,
+        0.0834: -11.33,
+        0.1005: -18.67,
+        0.1168: -25.33,
+        0.1334: -32.00,
+        0.1834: -51.00,
+        0.2: -56.67,
+        0.25: -73.33,
+        0.3005: -88.00,
+        0.35: -101.67,
+        0.4: -113.67,
+        0.5: -134.67,
+        0.6: -152.00,
+        0.7: -166.00,
+        0.8: -177.67,
+        0.9: -187.00,
+        1.0001: -194.67,
+      };
+      final longSim = physics.createBallisticSimulation(_at(55), 1491)!;
+      long.forEach((t, measured) {
+        expect(-longSim.x(t), closeTo(measured, 2), reason: 'take 1 @ $t');
+      });
+    });
+
+    test('a fling that reaches the top carries on into the content', () {
       const bouncing = BouncingScrollPhysics();
       final fast = physics.createBallisticSimulation(_at(50), 3000)!;
-      final reference = bouncing.createBallisticSimulation(_at(50), 3000)!;
-      expect(fast.x(0.1), closeTo(reference.x(0.1), 1e-6));
-      // Other edges keep it too.
+      // On the measured spring until the top...
+      final spring = physics.createBallisticSimulation(_at(50), 0)!;
+      expect(fast.x(0), -50);
+      expect(fast.x(0.005), lessThan(0));
+      expect(spring.x(0.005), lessThan(fast.x(0.005)));
+      // ...then BouncingScrollPhysics' deceleration from the top.
+      var reach = 0.0;
+      while (fast.x(reach) < 0) {
+        reach += 1 / 1000;
+      }
+      final speed = fast.dx(reach);
+      expect(speed, greaterThan(1000));
+      final on = bouncing.createBallisticSimulation(
+        FixedScrollMetrics(
+          minScrollExtent: 0,
+          maxScrollExtent: 2000,
+          pixels: 0,
+          viewportDimension: 874,
+          axisDirection: AxisDirection.down,
+          devicePixelRatio: 3,
+        ),
+        speed,
+      )!;
+      expect(fast.x(reach + 0.3), closeTo(on.x(0.3), 2));
+      expect(fast.isDone(reach + 0.3), isFalse);
+      expect(fast.isDone(30), isTrue);
+      // Other edges keep the bouncing simulation.
       final bottom = FixedScrollMetrics(
         minScrollExtent: 0,
         maxScrollExtent: 2000,
@@ -278,9 +369,121 @@ void main() {
       );
     }, variant: ios);
 
+    testWidgets('a list with its own bouncing physics gets it too', (t) async {
+      for (final own in const [
+        BouncingScrollPhysics(),
+        AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+      ]) {
+        final (start, end) = await pullOverscroll(t, own: own);
+        expect(
+          end,
+          closeTo(_pull(physics, 150, from: start, viewport: 500), 0.5),
+          reason: '$own',
+        );
+      }
+    }, variant: ios);
+
+    testWidgets('own bouncing physics bounce back on the measured curve', (
+      t,
+    ) async {
+      shaderEnv();
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await t.pumpWidget(
+        plainHost(
+          SizedBox(
+            width: 300,
+            height: 500,
+            child: GlassRefresh(
+              mode: GlassRenderMode.shader,
+              onRefresh: () async {},
+              child: ListView(
+                controller: controller,
+                physics: const BouncingScrollPhysics(),
+                children: [
+                  for (var i = 0; i < 40; i++)
+                    SizedBox(height: 44, child: Text('Row $i')),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      final gesture = await t.startGesture(t.getCenter(find.text('Row 2')));
+      await gesture.moveBy(const Offset(0, 20));
+      await t.pump(const Duration(milliseconds: 16));
+      for (var i = 0; i < 20; i++) {
+        await gesture.moveBy(const Offset(0, 5));
+        await t.pump(const Duration(milliseconds: 16));
+      }
+      // Held still before the release: no fling.
+      await t.pump(const Duration(milliseconds: 200));
+      final released = -controller.position.pixels;
+      expect(released, greaterThan(50));
+      await gesture.up();
+      final bounce = physics.createBallisticSimulation(_at(released), 0)!;
+      await t.pump();
+      for (var i = 1; i <= 12; i++) {
+        await t.pump(const Duration(milliseconds: 16));
+        expect(
+          controller.position.pixels,
+          closeTo(bounce.x(i * 0.016), 1),
+          reason: 'frame $i',
+        );
+      }
+      await t.pumpAndSettle();
+      expect(controller.position.pixels, 0);
+    }, variant: ios);
+
     testWidgets('clamping platforms keep their physics', (t) async {
       final (_, end) = await pullOverscroll(t);
       expect(end, 0);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets("SliverGlassRefresh's CustomScrollView gets it", (t) async {
+      shaderEnv();
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await t.pumpWidget(
+        plainHost(
+          SizedBox(
+            width: 300,
+            height: 500,
+            child: CustomScrollView(
+              controller: controller,
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
+              slivers: [
+                SliverGlassRefresh(
+                  mode: GlassRenderMode.shader,
+                  onRefresh: () async {},
+                ),
+                SliverList.list(
+                  children: [
+                    for (var i = 0; i < 40; i++)
+                      SizedBox(height: 44, child: Text('Row $i')),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      final gesture = await t.startGesture(t.getCenter(find.text('Row 2')));
+      await gesture.moveBy(const Offset(0, 20));
+      await t.pump(const Duration(milliseconds: 16));
+      final start = -controller.position.pixels;
+      for (var i = 0; i < 20; i++) {
+        await gesture.moveBy(const Offset(0, 5));
+        await t.pump(const Duration(milliseconds: 16));
+      }
+      expect(
+        -controller.position.pixels,
+        closeTo(_pull(physics, 100, from: start, viewport: 500), 0.5),
+      );
+      await gesture.up();
+      await t.pumpAndSettle();
+    }, variant: ios);
   });
 }

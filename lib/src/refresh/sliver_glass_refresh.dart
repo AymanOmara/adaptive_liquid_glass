@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 import '../core/glass_render_mode.dart';
 import 'glass_refresh_indicator.dart';
 import 'refresh_metrics.dart';
+import 'uikit_pull_adapter.dart';
 
 /// iOS 26's pull to refresh as a sliver, like SwiftUI's `.refreshable`:
 /// put it first in a [CustomScrollView]'s `slivers`.
@@ -27,7 +28,8 @@ import 'refresh_metrics.dart';
 /// The scrollable must be able to overscroll from the top, so it needs
 /// `BouncingScrollPhysics` (e.g. `AlwaysScrollableScrollPhysics(parent:
 /// BouncingScrollPhysics())`); with clamping physics the control never
-/// arms. On the Material path the same sliver is used — a sliver cannot
+/// arms. Its pull follows UIScrollView's rubber band and bounce, as
+/// [GlassRefreshScrollPhysics]', whichever bouncing physics it uses. On the Material path the same sliver is used — a sliver cannot
 /// host Material's `RefreshIndicator` — and the indicator's own Material
 /// path shows a `CircularProgressIndicator`.
 class SliverGlassRefresh extends StatefulWidget {
@@ -63,6 +65,20 @@ class SliverGlassRefresh extends StatefulWidget {
 }
 
 class _SliverGlassRefreshState extends State<SliverGlassRefresh> {
+  final _pullAdapter = UIKitPullAdapter();
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _pullAdapter.attach(Scrollable.maybeOf(context));
+  }
+
+  @override
+  void dispose() {
+    _pullAdapter.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) => CupertinoSliverRefreshControl(
     refreshTriggerPullDistance: RefreshMetrics.triggerDistance,

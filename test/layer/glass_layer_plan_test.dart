@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/layer/glass_layer_plan.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_backdrop_config.dart';
@@ -204,7 +206,7 @@ void main() {
     expect(
       {for (final p in passes) p.blurSigma: p.groups},
       {
-        1.1: ['g0', 'g1'],
+        1: ['g0', 'g1'],
         4: ['g2'],
         8: ['g3', 'g4'],
       },
@@ -219,16 +221,62 @@ void main() {
     expect(plan.single.passes.map((p) => p.blurSigma), [1, 2]);
   });
 
-  test('by default a stratum is one pass with the strongest blur', () {
+  test('by default a stratum is one pass with the weakest blur', () {
     final plan = planGlassLayer([
-      g('g0', const Rect.fromLTWH(0, 0, 10, 10), sigma: 1),
-      g('g1', const Rect.fromLTWH(20, 0, 10, 10), sigma: 4, aspect: 0.9),
-      g('g2', const Rect.fromLTWH(40, 0, 10, 10), sigma: 2),
+      g('g0', const Rect.fromLTWH(0, 0, 10, 10), sigma: 2),
+      g('g1', const Rect.fromLTWH(20, 0, 10, 10), sigma: 1, aspect: 0.9),
+      g('g2', const Rect.fromLTWH(40, 0, 10, 10), sigma: 4),
     ]);
     final pass = plan.single.passes.single;
-    expect(pass.blurSigma, 4);
+    expect(pass.blurSigma, 1);
     expect(pass.blurAspect, 0.9);
+    expect(pass.uniforms.blurSigma, 1);
+    expect(pass.uniforms.blurAspect, 0.9);
     expect(pass.groups, ['g0', 'g1', 'g2']);
+  });
+
+  test('each shape keeps its own frost: the shader adds what the pass '
+      'blur lacks', () {
+    LayerGroupInput frosted(String id, Rect r, double want) => LayerGroupInput(
+      id: id,
+      order: [int.parse(id.substring(1))],
+      frame: GlassBackdropDebugFrame(
+        GlassFrameUniforms(
+          shapes: [
+            GlassShapeUniform(
+              rect: r.deflate(4),
+              radius: 4,
+              variant: GlassVariant.regular,
+              blurSigma: want,
+            ),
+          ],
+          devicePixelRatio: 2,
+          lightAngle: -2,
+          smoothing: 0,
+          constants: GlassConstants.standard,
+          blurSigma: want,
+        ),
+        r,
+        r.topLeft,
+        want,
+        1,
+      ),
+      bounds: r,
+      config: _config,
+    );
+    final pass = planGlassLayer([
+      frosted('g0', const Rect.fromLTWH(0, 0, 40, 40), 2),
+      frosted('g1', const Rect.fromLTWH(60, 0, 200, 200), 6),
+    ]).single.passes.single;
+    expect(pass.blurSigma, 2);
+    final f = packGlassUniforms(pass.uniforms);
+    // The small shape needs nothing more; the large one sqrt(6^2 - 2^2),
+    // in physical px (dpr 2), with taps for a ratio of about 2.8.
+    expect(f.sublist(kBlurAt, kBlurAt + 4), [0, 0, 0, 0]);
+    final big = f.sublist(kBlurAt + 4, kBlurAt + 8);
+    expect(big[0], closeTo(math.sqrt(32) * 2, 1e-9));
+    expect(big[1], closeTo(math.sqrt(32) * 2, 1e-9));
+    expect(big[2], 24);
   });
 
   test('different shader globals never share a pass', () {

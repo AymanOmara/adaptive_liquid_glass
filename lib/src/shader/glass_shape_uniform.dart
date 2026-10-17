@@ -19,6 +19,8 @@ class GlassShapeUniform {
     this.opacity = 1,
     this.clip,
     this.light = 0,
+    this.blurSigma = 0,
+    this.blurAspect = 1,
   });
 
   /// Shape bounds.
@@ -61,6 +63,13 @@ class GlassShapeUniform {
   /// (`GlassPressGeometry.light`): a lift over the whole shape.
   final double light;
 
+  /// The frost this shape wants (`composedBlurSigma`, logical px); the
+  /// shader adds what the pass's blur lacks. 0 asks for none beyond it.
+  final double blurSigma;
+
+  /// sigmaX / [blurSigma] (`composedBlurAspect`).
+  final double blurAspect;
+
   /// A copy with the shared-layer fields replaced.
   GlassShapeUniform inGroup({
     required int group,
@@ -79,5 +88,7 @@ class GlassShapeUniform {
     opacity: opacity,
     clip: clip,
     light: light,
+    blurSigma: blurSigma,
+    blurAspect: blurAspect,
   );
 }

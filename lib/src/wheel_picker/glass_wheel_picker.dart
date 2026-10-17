@@ -139,15 +139,8 @@ class _GlassWheelPickerState<T> extends State<GlassWheelPicker<T>> {
   void _step(int direction) {
     final i = (_reported + direction).clamp(0, widget.items.length - 1);
     if (i == _reported || !_controller.hasClients) return;
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _controller.jumpToItem(i);
-    } else {
-      _controller.animateToItem(
-        i,
-        duration: WheelPickerMetrics.stepDuration,
-        curve: Curves.easeOut,
-      );
-    }
+    // UIKit's VoiceOver increase and decrease jump the row in one frame.
+    _controller.jumpToItem(i);
   }
 
   @override

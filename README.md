@@ -80,7 +80,7 @@ documented there), then score with
 
 ```yaml
 dependencies:
-  adaptive_liquid_glass: ^0.2.4
+  adaptive_liquid_glass: ^0.2.5
 ```
 
 ```dart
@@ -338,6 +338,7 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `AdaptiveLiquidGlass.reduceTransparency` | Override the system's Reduce Transparency (null follows it) | already opaque |
 | `GlassAdaptive` | Your own widget on the Material path, the glass one elsewhere | your `material` builder |
 | `GlassBackdropSource`, `GlassForeground` | Adaptive label colour over busy content | — |
+| `GlassOverlayContent` | Content laid over glass from outside its group stays above it on Android's shared layer | — |
 | `GlassSystemColors` | iOS 26's red, blue, orange and green | — |
 | `GlassButton` (`+ .icon`), `GlassButtonRole`, `GlassButtonStyle`, `GlassButtonShape`, `GlassControlSize`, `GlassControlSizeScope` | SwiftUI's glass, prominent, bordered, borderless and plain buttons, roles, sizes, shapes, loading | `FilledButton` / `IconButton` / `TextButton` |
 | `GlassFloatingActionButton` (`+ .extended`) | The screen's primary action: a large prominent glass circle, or capsule with a label | `FloatingActionButton` |
@@ -1459,13 +1460,6 @@ testWidgets('pays', (tester) async {
 
 ## Known limitations
 
-- **Context menu:** `GlassContextMenu`'s layout and its opening and
-  closing springs are measured from UIKit's UIContextMenuInteraction
-  (which SwiftUI's `.contextMenu` rides on), opened programmatically:
-  synthetic touches on the simulator open neither, so the press before
-  the lift (the item easing under the finger) is not measured. Of the
-  newer components' motion, only the wheel picker's VoiceOver step is
-  unmeasured.
 - **Native mode, runtime light→dark flip:** on iOS 26, 71 of 72 measured
   brightness flips at runtime match SwiftUI. One does not: a regular glass
   capsule over a photo, flipped from light to dark, keeps part of Apple's
@@ -1477,7 +1471,8 @@ testWidgets('pays', (tester) async {
   stretch and light instead, measured from SwiftUI's (on at the touch,
   held 0.33 s past the release; in-shape error over a press 1.1 light,
   1.6 dark, from 4.1 and 6.0). The light is measured on regular glass
-  only; clear glass uses the same values.
+  only; clear glass uses the same values and is further off (in-shape
+  error about 2.5x regular's on the same recording).
 - **Tab bar:** close to iOS 26.4's `TabView`, not identical. Over photos
   the shader-drawn bar draws untinted labels vibrant, as iOS does (each
   glyph takes the hue of the glass behind it); the selected tint follows
@@ -1488,8 +1483,9 @@ testWidgets('pays', (tester) async {
 - **Photos picker:** items are copied into a temporary or cache directory
   before `onPicked` runs, so very large videos (and H.264 conversions) take
   time to arrive, and the copies stay until `clearGlassPickedPhotos()` or
-  the OS deletes them. Android re-encodes videos on the device's codecs,
-  slower than real time on low-end phones and emulators. The Android
+  the OS deletes them. On Android the H.264 conversion (HEVC videos with
+  `compatibleFormat`) runs on the device's codecs, slower than real time
+  on low-end phones and emulators. The Android
   document-picker fallback (before Android 11, or without the SDK
   extension) cannot enforce `maxSelection` in its UI; extra items are
   dropped from the end and counted in `GlassPickedPhotos.droppedCount`.
@@ -1507,12 +1503,15 @@ testWidgets('pays', (tester) async {
   composited after its glass. The example Gallery peaks about 0.9 GB over
   idle with every group shader glass (3.9 GB group by group). Limits of
   the layer: non-glass content painted after a group in the same route
-  and overlapping its glass draws beneath that glass (the package's own
+  and overlapping its glass draws beneath that glass; wrap such content in
+  `GlassOverlayContent` to keep it above (the package's own
   content laid over glass in a sibling, like the tab bar's row and a
-  sheet's content, is handled); groups of
-  one stratum share the largest blur; route transitions that snapshot
-  the page show the glass outside the snapshot; menus draw their glass
-  group by group. The tab bar's vibrant labels read the layer's glass as
+  sheet's content, is handled); menus draw their glass group by group, and so does a page while a transition snapshots it
+  (`ZoomPageTransitionsBuilder`; a transient peak of about 0.5 GB on the
+  emulator, with 8 groups as with 24, since the snapshot renders once). A
+  transition that moves the page through its own painter without a
+  snapshot (`allowSnapshotting: false` on a Zoom transition) draws the
+  glass in place, inside the page, for the transition only. The tab bar's vibrant labels read the layer's glass as
   they do in place (about 100 MB more over the Gallery's run).
   `LiquidGlassThemeData.androidShaderBudget` (default null: no cap) still
   caps the groups that draw group by group; the rest draw a frosted blur.
@@ -1522,24 +1521,12 @@ testWidgets('pays', (tester) async {
 - **Full-screen cover drag:** SwiftUI's cover has no drag to dismiss, so
   `dragToDismiss` (off by default) borrows the sheet's thresholds.
 - **Colour picker sheet:** laid out and coloured as iOS 26.4's
-  UIColorPickerViewController, light and dark (measured, saved colours and
-  Spectrum map included). Its eyedropper reads only what the app itself draws (the
+  UIColorPickerViewController, light and dark (measured, saved colours,
+  Spectrum map and the eyedropper's loupe included). Its eyedropper reads only what the app itself draws (the
   page under the sheet): not other apps, the status bar or platform views
   such as maps, web views and native-mode glass. Saved colours live in
   memory unless the app passes `savedColors` / `onSavedColorsChanged` and
-  stores them; a long press opens UIKit's context menu to delete one. The
-  loupe's size and magnification are estimated.
-- **Pull to refresh:** `GlassRefresh` gives a scrollable that inherits
-  bouncing physics UIScrollView's rubber band under the pull (measured
-  within 4 pt of UIKit's for 50-300 pt of finger travel). A scrollable
-  that sets its own `BouncingScrollPhysics` keeps Flutter's harder
-  friction (about 35 pt less at 300 pt of travel) unless it uses
-  `GlassRefreshScrollPhysics`; the refresh still starts at UIKit's
-  finger travel (315 pt). `SliverGlassRefresh` needs
-  `GlassRefreshScrollPhysics` on its `CustomScrollView` for the same
-  curve. Released short of the refresh, the content springs back on
-  UIKit's measured curve (within 2.5 pt per frame); a fling up faster
-  than that start keeps Flutter's simulation.
+  stores them; a long press opens UIKit's context menu to delete one.
 
 ## License
 

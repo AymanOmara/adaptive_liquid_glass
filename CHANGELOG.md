@@ -1,7 +1,66 @@
-## 0.2.4 (2026-10-17)
+## 0.2.5 (2026-10-17)
 
-- `GlassSearchable`: the close button's shadow is no longer cut to a box
-  as it appears and hides (a tint showed along its top and end edges).
+- Colour picker eyedropper: the loupe is now UIColorPickerViewController's,
+  measured on iOS 26.4: a 148-pt disk of the picked colour around a 5-pt
+  ring, one 13.78-pt cell per captured pixel on a grid, the centre cell
+  outlined, and a soft shadow (black 31%, blur 19). Ring, grid and outline
+  are grey over light colours and white over darker ones (the switch lies
+  between greys 212 and 233). It was a 120-pt estimate with 11 cells. The
+  colour picker leaves Known limitations' "estimated".
+- `GlassWheelPicker`: VoiceOver's increase and decrease now jump the row
+  in one frame, as UIKit's do (`UIAccessibilityPickerComponent`'s
+  increment on iOS 26.4, logged per display frame: the row moves within
+  the next frame, nothing in between). They eased over 0.2 s before. The
+  wheel picker leaves Known limitations.
+- `GlassContextMenu`: the press before the lift follows UIKit's, measured
+  from idb long presses on UIContextMenuInteraction. 0.24 s after
+  touch-down the item eases up under the finger (to about 1.06), the
+  press is held at 0.415 s (a release after that still opens the menu),
+  and at 0.8 s the menu opens and the item lifts on from its pressed
+  size. Released earlier, it rises on for 0.07 s, then settles back. It
+  opened at Flutter's 0.5-s long press, from rest, before. SwiftUI's own
+  `.contextMenu`, opened by idb's long press, matches the twin within a
+  frame; the context menu leaves Known limitations.
+- Pull to refresh: a scrollable that sets its own `BouncingScrollPhysics`
+  under `GlassRefresh`, and `SliverGlassRefresh`'s `CustomScrollView`, now
+  get UIScrollView's rubber band and bounce back too; they no longer need
+  `GlassRefreshScrollPhysics` (about 35 pt more pull at 300 pt of travel).
+- `GlassRefreshScrollPhysics`: a fling up from the pull runs the measured
+  bounce spring at the fling's speed and, past the top, hands off to
+  `BouncingScrollPhysics`' deceleration, as UIScrollView does (measured:
+  two flicks carried 225 and 7 pt into SwiftUI's List, matched within
+  1.1 pt rms). It switched to Flutter's whole simulation before, with a
+  jump at the spring's starting speed. Pull to refresh leaves Known
+  limitations.
+- `GlassRefresh` no longer makes its scrollable replace its scroll position
+  on every frame of a pull.
+- Android shared glass layer: glass on a page pushed or covered with
+  `ZoomPageTransitionsBuilder` (any `SnapshotWidget` ancestor) now zooms
+  and fades with the page. While the transition snapshots the page, its
+  glass draws group by group inside the snapshot; it stayed full-size and
+  unfaded outside it before.
+- Android shared glass layer: the same holds for a Zoom transition with
+  `allowSnapshotting: false`, which moves the live page through its
+  painter; the glass draws in place while the route animates.
+- `GlassSearchable`: as the close button hides, it holds the row's end
+  while the field's end springs over it, and its glass merges into the
+  field's (one glass group, as SwiftUI's container), shrinking about its
+  centre as it goes, while its glyph blurs out over about 7 frames as
+  SwiftUI's does. Its glass vanished at the start of the hide before.
+  Checked against SwiftUI frame by frame (iOS 26.4 simulator, row-tracked
+  error of the button region 1.6-2.0 of 255, from 2.1-2.3 with a flat
+  fade).
+- `GlassOverlayContent`: content an app lays over glass from outside the
+  glass's group (a Stack sibling, a badge) stays above the glass on
+  Android's shared layer, where it drew beneath it; elsewhere it paints in
+  place.
+- Shader glass: each shape is frosted to its own blur. A pass (a group, or
+  a stratum of the Android shared layer) blurs at its members' smallest
+  sigma and the shader adds the rest to the shapes that want more (12-32
+  taps), where all of them took the largest before: small and clear glass
+  next to a large regular card no longer frosts like the card. Against
+  drawing each group alone, the Android probe's mean error fell from 4.5
+  to 0.5 (photo) and 2.7 to 0.5 (text) of 255.
 - Shader mode (iOS and the Android shared layer): pressed interactive
   glass lights up as SwiftUI's does. It now adds white over the whole
   pressed shape (`GlassVariantConstants.pressLift`), not only the glow
@@ -9,6 +68,11 @@
   the release, as native mode's, instead of following the press spring.
   In-shape error against SwiftUI over a press: 8.1 -> 1.5 light,
   10.1 -> 2.1 dark (of 255).
+
+## 0.2.4 (2026-10-17)
+
+- `GlassSearchable`: the close button's shadow is no longer cut to a box
+  as it appears and hides (a tint showed along its top and end edges).
 - Android shared glass layer: a rounded, superellipse, oval, path or
   `PhysicalModel` clip around glass now clips the glass and its content to
   that shape, not to its bounding rectangle.

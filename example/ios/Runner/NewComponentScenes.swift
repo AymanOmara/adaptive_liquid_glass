@@ -272,9 +272,11 @@ struct LinkReference: View {
 }
 
 /// A wheel picker of the numbers 0…30 (10 selected) at its own size,
-/// centred at 201, 300. White page.
+/// centred at 201, 300. White page. `step`: 1.5 s in, VoiceOver's
+/// increase (WheelStepProbe).
 @available(iOS 26.0, *)
 struct WheelReference: View {
+  var step = false
   @State private var choice = 10
   var body: some View {
     Page {
@@ -283,6 +285,95 @@ struct WheelReference: View {
       }
       .pickerStyle(.wheel).fixedSize().position(x: 201, y: 300)
     }
+    .onAppear {
+      guard step else { return }
+      DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { WheelStepProbe.run() }
+    }
+  }
+}
+
+/// Performs VoiceOver's increase on the key window's UIPickerView (its
+/// adjustable accessibility element, as VoiceOver's swipe up does) and
+/// logs each of the column's tables' scroll offset (presentation/model)
+/// and the element's value every display frame for 1 s to
+/// `<tmp>/wheel-step` (t from the increase). Reference harness only.
+enum WheelStepProbe {
+  private static var link: CADisplayLink?
+  private static var start = 0.0
+  private static var lines: [String] = []
+  private static var columns: [UIScrollView] = []
+  private static weak var element: NSObject?
+
+  static func run() {
+    // The UIKit accessibility bundle carries UIPickerView's elements; it
+    // loads with VoiceOver, so load it here.
+    Bundle(path: "/System/Library/AccessibilityBundles/UIKit.axbundle")?.load()
+    guard let window = UIApplication.shared.connectedScenes
+      .compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first,
+      let picker = find(UIPickerView.self, in: window) else {
+      return NSLog("WheelStepProbe: no UIPickerView")
+    }
+    let scrolls = all(UIScrollView.self, in: picker)
+    columns = scrolls
+    NSLog("WheelStepProbe: scroll views \(scrolls.map { "\(type(of: $0)) \($0.frame)" })")
+    guard let found = adjustable(in: picker) else {
+      return NSLog("WheelStepProbe: no adjustable element")
+    }
+    element = found
+    lines = []
+    start = CACurrentMediaTime()
+    sample()
+    found.accessibilityIncrement()
+    sample()
+    let l = CADisplayLink(target: Ticker.shared, selector: #selector(Ticker.tick))
+    l.add(to: .main, forMode: .common)
+    link = l
+  }
+
+  fileprivate static func sample() {
+    let ys = columns.map { c in
+      String(format: "%.3f/%.3f", c.layer.presentation()?.bounds.origin.y ?? .nan, c.contentOffset.y)
+    }
+    lines.append(String(format: "%.4f ", CACurrentMediaTime() - start)
+      + ys.joined(separator: " ") + " " + (element?.accessibilityValue ?? "-"))
+    if CACurrentMediaTime() - start > 1 {
+      link?.invalidate()
+      link = nil
+      let url = FileManager.default.temporaryDirectory.appendingPathComponent("wheel-step")
+      try? lines.joined(separator: "\n").write(to: url, atomically: true, encoding: .utf8)
+      NSLog("WheelStepProbe: wrote \(lines.count) samples")
+    }
+  }
+
+  private final class Ticker: NSObject {
+    static let shared = Ticker()
+    @objc func tick() { WheelStepProbe.sample() }
+  }
+
+  private static func adjustable(in root: NSObject) -> NSObject? {
+    var queue: [NSObject] = [root]
+    while !queue.isEmpty {
+      let o = queue.removeFirst()
+      if o !== root, o.accessibilityTraits.contains(.adjustable) { return o }
+      if let v = o as? UIView { queue += v.subviews }
+      let n = o.accessibilityElementCount()
+      if n != NSNotFound, n > 0 {
+        queue += (0..<n).compactMap { o.accessibilityElement(at: $0) as? NSObject }
+      } else if let e = o.accessibilityElements {
+        queue += e.compactMap { $0 as? NSObject }
+      }
+    }
+    return root.accessibilityTraits.contains(.adjustable) ? root : nil
+  }
+
+  private static func find<T: UIView>(_ type: T.Type, in view: UIView) -> T? {
+    if let v = view as? T { return v }
+    for sub in view.subviews { if let f = find(type, in: sub) { return f } }
+    return nil
+  }
+
+  private static func all<T: UIView>(_ type: T.Type, in view: UIView) -> [T] {
+    ((view as? T).map { [$0] } ?? []) + view.subviews.flatMap { all(type, in: $0) }
   }
 }
 
@@ -520,7 +611,7 @@ struct UIKitContextMenuReference: View {
 private struct UIKitMenuCard: UIViewRepresentable {
   func makeCoordinator() -> Delegate { Delegate() }
   func makeUIView(context: Context) -> UIView {
-    let card = UIView()
+    let card = TouchLoggingView()
     card.backgroundColor = .white
     card.layer.cornerRadius = 20
     card.layer.cornerCurve = .continuous
@@ -555,10 +646,35 @@ private struct UIKitMenuCard: UIViewRepresentable {
   }
 }
 
+/// Writes each touch-down's and touch-up's `CACurrentMediaTime` to
+/// `<tmp>/touch-down` and `<tmp>/touch-up`, so a recording of the press
+/// before the lift finds the touch on the frame dump's clock (idb's touch
+/// lands some frames after it is sent).
+private final class TouchLoggingView: UIView {
+  override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    super.touchesBegan(touches, with: event)
+    log("touch-down")
+  }
+  override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+    super.touchesEnded(touches, with: event)
+    log("touch-up")
+  }
+  override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+    super.touchesCancelled(touches, with: event)
+    log("touch-cancel")
+  }
+  private func log(_ name: String) {
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent(name)
+    try? "\(CACurrentMediaTime())".write(to: url, atomically: true, encoding: .utf8)
+  }
+}
+
 /// Opens the first UIContextMenuInteraction under the key window at
 /// `point` (window coordinates) through UIKit's private
-/// `_presentMenuAtLocation:`: idb's synthetic long press does not open
-/// SwiftUI's `.contextMenu`. Reference harness only.
+/// `_presentMenuAtLocation:`, for captures without a press. idb's long
+/// press (`tap 201 362 --duration 1.5`, on the card at 362 on screen)
+/// opens SwiftUI's `.contextMenu` and this one alike. Reference harness
+/// only.
 enum ContextMenuOpener {
   static func open(at point: CGPoint) {
     guard let window = UIApplication.shared.connectedScenes

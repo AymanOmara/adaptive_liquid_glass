@@ -55,15 +55,44 @@ abstract final class ColorPickerMetrics {
   /// 16-38 pt down).
   static const double eyedropperCentre = 27;
 
-  /// The eyedropper's loupe diameter (estimated; UIKit's samples the
-  /// whole screen, which a simulator capture cannot show mid-drag).
-  static const double loupe = 120;
+  // The eyedropper's loupe, measured from UIColorPickerViewController's
+  // on iOS 26.4 (simctl recordVideo of held drags over white, greys and
+  // blue; the render-server capture leaves the loupe out).
 
-  /// The pixels across the loupe (estimated).
-  static const int loupeCells = 11;
+  /// The loupe's diameter: a disk of the sampled colour (measured: 148).
+  static const double loupe = 148;
 
-  /// The loupe's ring of the colour under it (estimated).
-  static const double loupeRing = 8;
+  /// One captured pixel's cell, in pt: a 1-pt drag moves the grid three
+  /// cells on a 3x screen (measured: 13.78, nine cells across the ring).
+  static const double loupeCell = 13.78;
+
+  /// The cells drawn across the loupe (the window shows about 8.2).
+  static const int loupeCells = 9;
+
+  /// The ring's stroke, inside the sampled-colour band (measured: 5 pt,
+  /// 57.1-62.1 pt from the centre).
+  static const double loupeRing = 5;
+
+  /// The ring's centre line from the loupe's centre.
+  static const double loupeRingRadius = 59.6;
+
+  /// The grid lines between the cells (measured: about 1 pt).
+  static const double loupeGridLine = 1;
+
+  /// The centre cell's outline stroke, round-joined around the cell
+  /// (measured: 4 pt, outer corners about 2 pt round).
+  static const double loupeOutline = 4;
+
+  /// The loupe's shadow blur sigma and drop (fitted: black at 31%,
+  /// sigma 19.1, 1 pt down, rms 0.55/255 around the loupe).
+  static const double loupeShadowSigma = 19.1;
+
+  /// The loupe's shadow drop.
+  static const double loupeShadowDrop = 1;
+
+  /// The sampled colour's luminance from which the ring, outline and grid
+  /// turn dark (measured: grey 233 drew them grey, 212 white).
+  static const double loupeLightLuminance = 0.74;
 
   /// The segmented control's top (measured: 53).
   static const double segmentTop = 53;

@@ -18,13 +18,13 @@ CAPSULE = {"w": 200, "h": 56, "shape": "capsule", "radius": 0}
 CIRCLE = {"w": 72, "h": 72, "shape": "circle", "radius": 0}
 
 
-def centred(spec, y):
-    return {**spec, "x": (W - spec["w"]) / 2, "y": y, "variant": "regular", "tint": None}
+def centred(spec, y, variant="regular"):
+    return {**spec, "x": (W - spec["w"]) / 2, "y": y, "variant": variant, "tint": None}
 
 
-def press(id_, brightness, shape, touch):
+def press(id_, brightness, shape, touch, variant="regular"):
     return {"id": id_, "kind": "press", "background": "photo", "brightness": brightness,
-            "shape": centred(shape, 560), "touch": touch, "hold_ms": 700}
+            "shape": centred(shape, 560, variant), "touch": touch, "hold_ms": 700}
 
 
 # Touch near the capsule's right end (dx = 0.79 of the half width, dy = 0)
@@ -35,6 +35,9 @@ motion = [
     press("press-capsule-photo-light", "light", CAPSULE, CAPSULE_TOUCH),
     press("press-capsule-photo-dark", "dark", CAPSULE, CAPSULE_TOUCH),
     press("press-circle-photo-light", "light", CIRCLE, {"x": 201, "y": 596}),
+    # Clear glass's press light (native mode draws it; measured 2026-10-17).
+    press("press-clear-capsule-photo-light", "light", CAPSULE, CAPSULE_TOUCH, "clear"),
+    press("press-clear-capsule-photo-dark", "dark", CAPSULE, CAPSULE_TOUCH, "clear"),
 ]
 
 
