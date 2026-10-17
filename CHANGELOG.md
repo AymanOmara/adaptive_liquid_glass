@@ -1,5 +1,12 @@
 ## Unreleased
 
+- Colour picker eyedropper: the loupe is now UIColorPickerViewController's,
+  measured on iOS 26.4: a 148-pt disk of the picked colour around a 5-pt
+  ring, one 13.78-pt cell per captured pixel on a grid, the centre cell
+  outlined, and a soft shadow (black 31%, blur 19). Ring, grid and outline
+  are grey over light colours and white over darker ones (the switch lies
+  between greys 212 and 233). It was a 120-pt estimate with 11 cells. The
+  colour picker leaves Known limitations' "estimated".
 - `GlassWheelPicker`: VoiceOver's increase and decrease now jump the row
   in one frame, as UIKit's do (`UIAccessibilityPickerComponent`'s
   increment on iOS 26.4, logged per display frame: the row moves within

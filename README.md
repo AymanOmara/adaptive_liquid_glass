@@ -1518,13 +1518,12 @@ testWidgets('pays', (tester) async {
 - **Full-screen cover drag:** SwiftUI's cover has no drag to dismiss, so
   `dragToDismiss` (off by default) borrows the sheet's thresholds.
 - **Colour picker sheet:** laid out and coloured as iOS 26.4's
-  UIColorPickerViewController, light and dark (measured, saved colours and
-  Spectrum map included). Its eyedropper reads only what the app itself draws (the
+  UIColorPickerViewController, light and dark (measured, saved colours,
+  Spectrum map and the eyedropper's loupe included). Its eyedropper reads only what the app itself draws (the
   page under the sheet): not other apps, the status bar or platform views
   such as maps, web views and native-mode glass. Saved colours live in
   memory unless the app passes `savedColors` / `onSavedColorsChanged` and
-  stores them; a long press opens UIKit's context menu to delete one. The
-  loupe's size and magnification are estimated.
+  stores them; a long press opens UIKit's context menu to delete one.
 
 ## License
 
