@@ -39,6 +39,13 @@
   and fades with the page. While the transition snapshots the page, its
   glass draws group by group inside the snapshot; it stayed full-size and
   unfaded outside it before.
+- Android shared glass layer: the same holds for a Zoom transition with
+  `allowSnapshotting: false`, which moves the live page through its
+  painter; the glass draws in place while the route animates.
+- `GlassOverlayContent`: content an app lays over glass from outside the
+  glass's group (a Stack sibling, a badge) stays above the glass on
+  Android's shared layer, where it drew beneath it; elsewhere it paints in
+  place.
 - Shader glass: each shape is frosted to its own blur. A pass (a group, or
   a stratum of the Android shared layer) blurs at its members' smallest
   sigma and the shader adds the rest to the shapes that want more (12-32
