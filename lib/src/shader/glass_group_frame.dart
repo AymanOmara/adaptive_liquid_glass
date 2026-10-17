@@ -63,24 +63,32 @@ GlassBackdropDebugFrame? computeGroupFrame({
         unionId: g.entry.unionId,
         cornerExponent: g.circularCorners ? 2.0 : null,
         light: g.entry.press.light,
+        blurSigma: composedBlurSigma(
+          c.of(g.entry.glass.variant, config.brightness),
+          g.drawn.shortestSide / 2,
+        ),
+        blurAspect: composedBlurAspect(
+          c.of(g.entry.glass.variant, config.brightness),
+          g.drawn.size,
+        ),
       ),
   ]);
 
-  // One blur per group: the largest of the drawn shapes' sigmas, each
+  // One blur per group: the smallest of the drawn shapes' sigmas (each
   // scaled down on shapes smaller than blurSizeRef and by the post-lens
-  // share. Known limitation: a group mixing regular and clear (or large
-  // and small) glass blurs every member as strongly as the strongest one.
-  // The strongest member also sets the blur's aspect (blurAspectPower).
-  var blurSigma = -1.0;
+  // share), with its aspect (blurAspectPower). The shader adds the rest
+  // to members that want more (GlassShapeUniform.blurSigma), so a group
+  // mixing regular and clear, or large and small, glass frosts each
+  // member as on its own.
+  var blurSigma = double.infinity;
   var blurAspect = 1.0;
-  for (final g in drawn) {
-    final v = c.of(g.entry.glass.variant, config.brightness);
-    final s = composedBlurSigma(v, g.drawn.shortestSide / 2);
-    if (s > blurSigma) {
-      blurSigma = s;
-      blurAspect = composedBlurAspect(v, g.drawn.size);
+  for (final s in shapes) {
+    if (s.blurSigma < blurSigma) {
+      blurSigma = s.blurSigma;
+      blurAspect = s.blurAspect;
     }
   }
+  if (blurSigma == double.infinity) blurSigma = 0;
 
   Offset? touch;
   var glow = 0.0;
@@ -114,6 +122,8 @@ GlassBackdropDebugFrame? computeGroupFrame({
       opaqueColor: config.opaqueColor,
       touch: touch,
       glow: glow,
+      blurSigma: blurSigma,
+      blurAspect: blurAspect,
     ),
     localBounds,
     origin,

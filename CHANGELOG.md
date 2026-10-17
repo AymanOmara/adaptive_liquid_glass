@@ -15,6 +15,13 @@
   and fades with the page. While the transition snapshots the page, its
   glass draws group by group inside the snapshot; it stayed full-size and
   unfaded outside it before.
+- Shader glass: each shape is frosted to its own blur. A pass (a group, or
+  a stratum of the Android shared layer) blurs at its members' smallest
+  sigma and the shader adds the rest to the shapes that want more (12-32
+  taps), where all of them took the largest before: small and clear glass
+  next to a large regular card no longer frosts like the card. Against
+  drawing each group alone, the Android probe's mean error fell from 4.5
+  to 0.5 (photo) and 2.7 to 0.5 (text) of 255.
 
 ## 0.2.4 (2026-10-17)
 

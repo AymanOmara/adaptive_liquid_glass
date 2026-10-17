@@ -1509,9 +1509,7 @@ testWidgets('pays', (tester) async {
   the layer: non-glass content painted after a group in the same route
   and overlapping its glass draws beneath that glass (the package's own
   content laid over glass in a sibling, like the tab bar's row and a
-  sheet's content, is handled); groups of
-  one stratum share the largest blur; menus draw their glass group by
-  group, and so does a page while a transition snapshots it
+  sheet's content, is handled); menus draw their glass group by group, and so does a page while a transition snapshots it
   (`ZoomPageTransitionsBuilder`; a transient peak of about 0.5 GB on the
   emulator, with 8 groups as with 24, since the snapshot renders once). A
   transition that moves the page through its own painter without a

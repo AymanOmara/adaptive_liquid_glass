@@ -193,7 +193,7 @@ void main() {
     expect(shapes.map((s) => s.cornerExponent), [null, null]);
   }, variant: ios);
 
-  testWidgets('frost blur sigma is the largest of the drawn variants', (
+  testWidgets('frost blur sigma is the smallest of the drawn variants', (
     t,
   ) async {
     env();
@@ -233,7 +233,7 @@ void main() {
     await t.pumpWidget(group(Brightness.light, [Glass.clear, Glass.regular]));
     expect(
       backdropOf(t).debugLastFrame!.blurSigma,
-      math.max(sigma(c.clear), sigma(c.regular)),
+      math.min(sigma(c.clear), sigma(c.regular)),
     );
     await t.pumpWidget(group(Brightness.dark, [Glass.regular]));
     expect(backdropOf(t).debugLastFrame!.blurSigma, sigma(c.regularDark));
@@ -267,9 +267,15 @@ void main() {
     // Half the shorter side 10 -> sigma 6 x 10 / 40.
     await t.pumpWidget(group(c, [20]));
     expect(backdropOf(t).debugLastFrame!.blurSigma, closeTo(1.5, 1e-9));
-    // The group blurs with the largest member's sigma (half side 50 -> 6).
+    // The group blurs with the smallest member's sigma; the larger member
+    // (half side 50 -> 6) keeps its own, added in the shader.
     await t.pumpWidget(group(c, [20, 100]));
-    expect(backdropOf(t).debugLastFrame!.blurSigma, closeTo(6.0, 1e-9));
+    final frame = backdropOf(t).debugLastFrame!;
+    expect(frame.blurSigma, closeTo(1.5, 1e-9));
+    expect(frame.uniforms.shapes.map((s) => s.blurSigma), [
+      closeTo(1.5, 1e-9),
+      closeTo(6.0, 1e-9),
+    ]);
     // blurSizeRef 0 disables the scaling.
     final off = GlassConstants.fromJson({
       'regular': {'blurSigma': 6.0, 'blurSizeRef': 0.0},

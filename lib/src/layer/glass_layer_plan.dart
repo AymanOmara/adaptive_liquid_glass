@@ -9,12 +9,11 @@ import '../shader/glass_frame_uniforms.dart';
 import '../shader/glass_texture_space.dart';
 
 /// Most blurs (passes) one stratum draws per set of shader globals; past
-/// it the closest sigmas merge and the larger wins. Each pass costs a
+/// it the closest sigmas merge and the smallest is blurred, the shader
+/// adding the rest to each shape that wants more. Each pass costs a
 /// full-screen offscreen target under Impeller (measured: about 380 MB of
 /// host graphics memory per extra pass on the emulator Gallery), so the
-/// default is 1: a stratum of glass in one theme is one pass, and glass of
-/// several sizes there shares the strongest frost. One group (or groups of
-/// one size) keeps its exact blur.
+/// default is 1: a stratum of glass in one theme is one pass.
 /// `--dart-define=ADAPTIVE_LIQUID_GLASS_LAYER_BLURS=<n>` raises it.
 const int kMaxPassesPerStratum = int.fromEnvironment(
   'ADAPTIVE_LIQUID_GLASS_LAYER_BLURS',
@@ -194,7 +193,8 @@ class _PassKey {
 /// over another group's content, draws after it as before). Within a
 /// stratum, groups sharing shader globals and blur draw in one pass of up
 /// to [kMaxPassShapes] shapes; at most [maxBlurs] blurs per set of globals
-/// (closest sigmas merge, the larger kept).
+/// (closest sigmas merge, the smaller kept; the shader frosts each shape to
+/// its own sigma).
 List<LayerStratum> planGlassLayer(
   List<LayerGroupInput> groups, {
   int maxBlurs = kMaxPassesPerStratum,
@@ -270,7 +270,9 @@ List<LayerPass> _passes(List<LayerGroupInput> members, int maxBlurs) {
   return out;
 }
 
-/// Each group's (sigma, aspect), merged down to [maxBlurs] distinct values.
+/// Each group's (sigma, aspect), merged down to [maxBlurs] distinct values:
+/// a merged cluster takes its smallest (a blur cannot be taken back; the
+/// shader adds to the others).
 Map<LayerGroupInput, (double, double)> _blurClusters(
   List<LayerGroupInput> list,
   int maxBlurs,
@@ -297,8 +299,8 @@ Map<LayerGroupInput, (double, double)> _blurClusters(
   }
   final merged = <(double, double), (double, double)>{};
   for (final c in clusters) {
-    // The largest sigma (and its aspect) wins.
-    final top = keys[c.last];
+    // The smallest sigma (and its aspect) is blurred.
+    final top = keys[c.first];
     for (final i in c) {
       merged[keys[i]] = top;
     }
@@ -349,6 +351,8 @@ LayerPass _pass(List<LayerGroupInput> gs, (double, double) blur) {
       opaqueColor: u0.opaqueColor,
       touch: touch,
       glow: glow,
+      blurSigma: blur.$1,
+      blurAspect: blur.$2,
     ),
     blurSigma: blur.$1,
     blurAspect: blur.$2,
