@@ -10,6 +10,7 @@ import '../core/glass_system_colors.dart';
 import '../foreground/glass_foreground.dart';
 import '../foreground/glass_label_style.dart';
 import '../liquid_glass.dart';
+import 'glass_button_glyph_effect.dart';
 import 'glass_button_metrics.dart';
 import 'glass_button_metrics_scope.dart';
 import 'glass_button_role.dart';
@@ -294,7 +295,9 @@ class GlassButton extends StatelessWidget {
 
   Widget _content(GlassButtonMetrics m) {
     if (child != null) return child!;
-    final i = Icon(icon);
+    final Widget i = Builder(
+      builder: (c) => GlassButtonGlyphEffect.wrap(c, Icon(icon)),
+    );
     if (label == null) return i;
     return Row(
       mainAxisSize: MainAxisSize.min,

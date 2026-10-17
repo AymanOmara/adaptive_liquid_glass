@@ -12,6 +12,7 @@ import 'package:flutter/material.dart'
         SegmentedButton;
 import 'package:flutter/physics.dart';
 
+import '../button/glass_button_glyph_effect.dart';
 import '../controls/glass_segment.dart';
 import '../controls/glass_segmented_control.dart';
 import '../core/cupertino_l10n.dart';
@@ -231,7 +232,8 @@ class _GlassSearchableState extends State<GlassSearchable>
   /// insets with the close button still in its room, then the field's
   /// end springs over the room on [SearchMetrics.hide] while the button
   /// holds the row's end, its glass merging into the field's as they
-  /// meet and its glyph fading. Without motion the button just goes.
+  /// meet, then shrinking about its own centre as its glyph fades.
+  /// Without motion the button just goes.
   void _startHide() {
     _reveal.stop();
     if (_reveal.value <= 0 ||
@@ -500,21 +502,41 @@ class _GlassSearchableState extends State<GlassSearchable>
   /// The close button while hiding: full size, holding the row's end
   /// edge while the field's end springs over its room, so its glass
   /// meets the field's and the row's group merges them (SwiftUI's one
-  /// container) rather than fading; only its glyph fades, over the
-  /// first [SearchMetrics.hideFade] of the hide. The room's end edge
-  /// still cuts it, keeping anything from drawing past the row.
+  /// container) rather than fading; on the seconds since the jump its
+  /// glyph fades out and its glass shrinks about its own centre,
+  /// keeping the merge (measured, iOS 26.4). The room's end edge still
+  /// cuts it, keeping anything from drawing past the row.
   Widget _hidingCancel(BuildContext context) {
-    final p = _hide.value;
+    final t =
+        (_hide.lastElapsedDuration ?? Duration.zero).inMicroseconds /
+        Duration.microsecondsPerSecond;
+    final q =
+        ((t - SearchMetrics.hideGlyphFadeStart) /
+                (SearchMetrics.hideGlyphFadeEnd -
+                    SearchMetrics.hideGlyphFadeStart))
+            .clamp(0.0, 1.0);
+    final u =
+        ((t - SearchMetrics.hideShrinkStart) /
+                (SearchMetrics.hideShrinkEnd - SearchMetrics.hideShrinkStart))
+            .clamp(0.0, 1.0);
+    final scale = 1 - math.pow(u, SearchMetrics.hideShrinkPower).toDouble();
     return ClipRect(
       clipper: _EndEdgeClipper(Directionality.of(context)),
       child: Align(
         alignment: AlignmentDirectional.centerEnd,
-        widthFactor: (1 - p).clamp(0.0, 1.0),
-        child: Opacity(
-          opacity: (1 - p / SearchMetrics.hideFade).clamp(0.0, 1.0),
+        widthFactor: (1 - _hide.value).clamp(0.0, 1.0),
+        child: GlassButtonGlyphEffect(
+          blur: q * SearchMetrics.hideGlyphBlur,
+          opacity: 1 - q,
+          // SwiftUI's glyph keeps most of its size as it blurs while the
+          // glass shrinks under it (measured: 0.8 at 0.083 s).
+          scale: (1 - SearchMetrics.hideGlyphShrink * q) / math.max(scale, 0.3),
           child: Padding(
             padding: EdgeInsetsDirectional.only(start: _cancelGap),
-            child: _cancelButton(context),
+            // About the button's centre, not the room's: the glass
+            // shape shrinks inside the group and stays merged with the
+            // field's as it goes.
+            child: Transform.scale(scale: scale, child: _cancelButton(context)),
           ),
         ),
       ),
