@@ -42,6 +42,13 @@
 - Android shared glass layer: the same holds for a Zoom transition with
   `allowSnapshotting: false`, which moves the live page through its
   painter; the glass draws in place while the route animates.
+- `GlassSearchable`: as the close button hides, it holds the row's end
+  while the field's end springs over it, and its glass merges into the
+  field's (one glass group, as SwiftUI's container); only its glyph fades.
+  Its glass vanished at the start of the hide before. Checked against
+  SwiftUI frame by frame (iOS 26.4): SwiftUI's button glass also shrinks
+  as it merges and its glyph blurs out over about 6 frames (ours fades in
+  about 1).
 - `GlassOverlayContent`: content an app lays over glass from outside the
   glass's group (a Stack sibling, a badge) stays above the glass on
   Android's shared layer, where it drew beneath it; elsewhere it paints in
