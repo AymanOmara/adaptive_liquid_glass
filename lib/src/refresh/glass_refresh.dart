@@ -12,6 +12,7 @@ import '../core/swiftui_spring.dart';
 import 'glass_refresh_indicator.dart';
 import 'glass_refresh_scroll_physics.dart';
 import 'refresh_metrics.dart';
+import 'uikit_pull_adapter.dart';
 
 /// iOS 26's pull to refresh around any scrollable, like SwiftUI's
 /// `.refreshable`.
@@ -32,8 +33,7 @@ import 'refresh_metrics.dart';
 /// physics (iOS's default) gets UIScrollView's rubber band under the pull
 /// ([GlassRefreshScrollPhysics]), so the content travels as far as iOS's
 /// for the same finger travel; one that sets its own `BouncingScrollPhysics`
-/// keeps Flutter's friction unless it uses [GlassRefreshScrollPhysics]
-/// instead. Clamping physics also work (the pull is then tracked from the
+/// gets the same pull and bounce from its position. Clamping physics also work (the pull is then tracked from the
 /// overscroll). On the Material path this is Material's
 /// own [RefreshIndicator].
 class GlassRefresh extends StatefulWidget {
@@ -127,8 +127,35 @@ class _GlassRefreshState extends State<GlassRefresh>
   bool get _reduceMotion =>
       MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
+  /// UIKit's pull for a child that sets its own bouncing physics.
+  final _pullAdapter = UIKitPullAdapter();
+
+  /// Follows the first scrollable below, which reports at depth 0 (the
+  /// first finger on it comes before any of its notifications).
+  void _findScrollable() {
+    ScrollableState? found;
+    void visit(Element element) {
+      if (found != null) return;
+      if (element is StatefulElement && element.state is ScrollableState) {
+        found = element.state as ScrollableState;
+      } else {
+        element.visitChildren(visit);
+      }
+    }
+
+    if (!mounted) return;
+    context.visitChildElements(visit);
+    _pullAdapter.attach(found);
+  }
+
+  void _findScrollableAfterFrame() =>
+      WidgetsBinding.instance.addPostFrameCallback((_) => _findScrollable());
+
   bool _onScroll(ScrollNotification notification) {
     if (notification.depth != 0) return false;
+    _pullAdapter.attach(
+      notification.context?.findAncestorStateOfType<ScrollableState>(),
+    );
     _overscroll.value =
         notification.metrics.minScrollExtent - notification.metrics.pixels;
     if (notification is ScrollStartNotification) {
@@ -282,10 +309,18 @@ class _GlassRefreshState extends State<GlassRefresh>
     super.initState();
     _controller = AnimationController.unbounded(vsync: this);
     _holdDepth = AnimationController.unbounded(vsync: this);
+    _findScrollableAfterFrame();
+  }
+
+  @override
+  void didUpdateWidget(GlassRefresh oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _findScrollableAfterFrame();
   }
 
   @override
   void dispose() {
+    _pullAdapter.dispose();
     _controller.dispose();
     _holdDepth.dispose();
     _overscroll.dispose();
@@ -315,16 +350,22 @@ class _GlassRefreshState extends State<GlassRefresh>
         inherited is GlassRefreshScrollPhysics) {
       return child;
     }
-    return ScrollConfiguration(
-      behavior: behavior.copyWith(
+    // One behaviour per inherited one: a new one each frame would make
+    // the scrollable replace its position on every frame of the pull.
+    if (!identical(behavior, _bandFor)) {
+      _bandFor = behavior;
+      _band = behavior.copyWith(
         physics: GlassRefreshScrollPhysics(
           decelerationRate: inherited.decelerationRate,
           parent: inherited.parent,
         ),
-      ),
-      child: child,
-    );
+      );
+    }
+    return ScrollConfiguration(behavior: _band!, child: child);
   }
+
+  ScrollBehavior? _bandFor;
+  ScrollBehavior? _band;
 
   /// The child is shifted down by what the hold adds beyond the pull
   /// (the release's bounce returns into the hold, not past it), clipped

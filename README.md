@@ -1533,17 +1533,13 @@ testWidgets('pays', (tester) async {
   memory unless the app passes `savedColors` / `onSavedColorsChanged` and
   stores them; a long press opens UIKit's context menu to delete one. The
   loupe's size and magnification are estimated.
-- **Pull to refresh:** `GlassRefresh` gives a scrollable that inherits
-  bouncing physics UIScrollView's rubber band under the pull (measured
-  within 4 pt of UIKit's for 50-300 pt of finger travel). A scrollable
-  that sets its own `BouncingScrollPhysics` keeps Flutter's harder
-  friction (about 35 pt less at 300 pt of travel) unless it uses
-  `GlassRefreshScrollPhysics`; the refresh still starts at UIKit's
-  finger travel (315 pt). `SliverGlassRefresh` needs
-  `GlassRefreshScrollPhysics` on its `CustomScrollView` for the same
-  curve. Released short of the refresh, the content springs back on
-  UIKit's measured curve (within 2.5 pt per frame); a fling up faster
-  than that start keeps Flutter's simulation.
+- **Pull to refresh:** the pull follows UIScrollView's rubber band
+  (measured within 4 pt of UIKit's for 50-300 pt of finger travel) and,
+  released short of the refresh, springs back on UIKit's measured curve
+  (within 2.5 pt per frame), whatever bouncing physics the scrollable
+  uses. A fling up fast enough to pass the top carries on into the
+  content on `BouncingScrollPhysics`' deceleration; UIKit's for that case
+  is not measured.
 
 ## License
 
