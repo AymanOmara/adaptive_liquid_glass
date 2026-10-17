@@ -1471,7 +1471,8 @@ testWidgets('pays', (tester) async {
   stretch and light instead, measured from SwiftUI's (on at the touch,
   held 0.33 s past the release; in-shape error over a press 1.1 light,
   1.6 dark, from 4.1 and 6.0). The light is measured on regular glass
-  only; clear glass uses the same values.
+  only; clear glass uses the same values and is further off (in-shape
+  error about 2.5x regular's on the same recording).
 - **Tab bar:** close to iOS 26.4's `TabView`, not identical. Over photos
   the shader-drawn bar draws untinted labels vibrant, as iOS does (each
   glyph takes the hue of the glass behind it); the selected tint follows
