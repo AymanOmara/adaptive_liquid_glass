@@ -71,7 +71,8 @@ class _GlassContextMenuState extends State<GlassContextMenu>
   /// The finger is down (the item grows) rather than lifted early (it
   /// settles back).
   bool _pressing = false;
-  double _releaseFrom = 1;
+  double _releaseFrom = 1, _releaseVelocity = 0;
+  double _pressedFor = 0;
 
   /// Where the press was recognized; the menu opens at
   /// [ContextMenuMetrics.pressLift].
@@ -91,6 +92,7 @@ class _GlassContextMenuState extends State<GlassContextMenu>
   void _tick(Duration elapsed) {
     final t = _seconds(elapsed);
     if (_pressing) {
+      _pressedFor = t;
       _scale.value = ContextMenuMetrics.pressed(t);
       final at = _openAt;
       if (at != null && t >= _seconds(ContextMenuMetrics.pressLift)) {
@@ -100,14 +102,14 @@ class _GlassContextMenuState extends State<GlassContextMenu>
       }
       return;
     }
-    final k = SpringSimulation(
+    final release = SpringSimulation(
       ContextMenuMetrics.pressReleaseSpring,
-      0,
+      _releaseFrom,
       1,
-      0,
-    ).x(t);
-    if (k >= 0.999) return _reset();
-    _scale.value = 1 + (_releaseFrom - 1) * (1 - k);
+      _releaseVelocity,
+    );
+    if (release.isDone(t)) return _reset();
+    _scale.value = release.x(t);
   }
 
   void _reset() {
@@ -121,6 +123,7 @@ class _GlassContextMenuState extends State<GlassContextMenu>
     if (_effective() == EffectiveGlassMode.material) return;
     _ticker.stop();
     _pressing = true;
+    _pressedFor = 0;
     _openAt = null;
     _ticker.start();
   }
@@ -130,6 +133,7 @@ class _GlassContextMenuState extends State<GlassContextMenu>
     _ticker.stop();
     _pressing = false;
     _releaseFrom = _scale.value;
+    _releaseVelocity = ContextMenuMetrics.pressedVelocity(_pressedFor);
     _ticker.start();
   }
 

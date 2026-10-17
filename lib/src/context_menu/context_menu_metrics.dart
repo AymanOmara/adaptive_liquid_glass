@@ -10,7 +10,9 @@ import '../core/swiftui_spring.dart';
 /// opened programmatically in the reference harness (`-controls
 /// contextmenuuikit`, `…left`, `…wide`; "components" → "context_menu" in
 /// tool/reference/controls.json) and by idb's long press for the press
-/// before the lift. Synthetic touches still do not open SwiftUI's own.
+/// before the lift. SwiftUI's own, opened by idb's long press
+/// (`-controls contextmenu`), presses, lifts, dims and closes as the
+/// Flutter twin within a frame.
 /// The menu itself is the measured glass menu
 /// (`MenuMetrics`). The page behind is dimmed (`GlassColors
 /// .contextMenuBarrier`) but not blurred: over 100-pt black and white
@@ -49,19 +51,29 @@ abstract final class ContextMenuMetrics {
   /// its pressed size (measured: 0.75–0.85 s, mean 0.8).
   static const Duration pressLift = Duration(milliseconds: 800);
 
-  /// A press released early: the item settling back (fitted over 1-2 px,
-  /// rms 0.2 pt).
+  /// A press released early: the item settling back to rest, carrying on
+  /// with the speed it was growing at (fitted to presses released at 0.3
+  /// s, timed from touchesEnded, rms 0.3 pt: it rises for 0.07 s more).
   static final SpringDescription pressReleaseSpring = swiftUISpring(
-    response: 0.17,
+    response: 0.445,
     dampingFraction: 1,
   );
+
+  static double _pressT(double t) => t - pressDelay.inMicroseconds / 1e6;
 
   /// The item's scale [t] seconds after touch-down, while the finger is
   /// down and before the lift.
   static double pressed(double t) {
-    final s = t - pressDelay.inMicroseconds / 1e6;
+    final s = _pressT(t);
     if (s <= 0) return 1;
     return 1 + (pressGrow - 1) * SpringSimulation(pressSpring, 0, 1, 0).x(s);
+  }
+
+  /// How fast [pressed] grows [t] seconds after touch-down, per second.
+  static double pressedVelocity(double t) {
+    final s = _pressT(t);
+    if (s <= 0) return 0;
+    return (pressGrow - 1) * SpringSimulation(pressSpring, 0, 1, 0).dx(s);
   }
 
   /// Opening: the page's dim (fitted, rms 2.3%).

@@ -580,8 +580,10 @@ private final class TouchLoggingView: UIView {
 
 /// Opens the first UIContextMenuInteraction under the key window at
 /// `point` (window coordinates) through UIKit's private
-/// `_presentMenuAtLocation:`: idb's synthetic long press does not open
-/// SwiftUI's `.contextMenu`. Reference harness only.
+/// `_presentMenuAtLocation:`, for captures without a press. idb's long
+/// press (`tap 201 362 --duration 1.5`, on the card at 362 on screen)
+/// opens SwiftUI's `.contextMenu` and this one alike. Reference harness
+/// only.
 enum ContextMenuOpener {
   static func open(at point: CGPoint) {
     guard let window = UIApplication.shared.connectedScenes

@@ -1459,11 +1459,8 @@ testWidgets('pays', (tester) async {
 
 ## Known limitations
 
-- **Context menu:** `GlassContextMenu` is measured from UIKit's
-  UIContextMenuInteraction, which SwiftUI's `.contextMenu` rides on:
-  synthetic touches on the simulator do not open SwiftUI's own. Of the
-  newer components' motion, only the wheel picker's VoiceOver step is
-  unmeasured.
+- **Wheel picker:** of the newer components' motion, only the wheel
+  picker's VoiceOver step is unmeasured.
 - **Native mode, runtime light→dark flip:** on iOS 26, 71 of 72 measured
   brightness flips at runtime match SwiftUI. One does not: a regular glass
   capsule over a photo, flipped from light to dark, keeps part of Apple's

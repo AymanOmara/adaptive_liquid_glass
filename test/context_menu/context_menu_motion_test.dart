@@ -200,13 +200,18 @@ void main() {
       );
     }, variant: ios);
 
-    testWidgets('released at 0.3 s it settles back without the menu', (
+    testWidgets('released at 0.3 s it rises on, settles back, opens no menu', (
       t,
     ) async {
       final g = await press(t);
       await t.pump(const Duration(milliseconds: 300));
-      expect(scale(t), greaterThan(1.003));
+      final released = scale(t);
+      expect(released, greaterThan(1.003));
       await g.up();
+      // UIKit's item carries on growing for 0.07 s, then settles back.
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 50));
+      expect(scale(t), greaterThan(released));
       await t.pumpAndSettle();
       expect(scale(t), 1);
       expect(find.byType(GlassMenuPanel), findsNothing);

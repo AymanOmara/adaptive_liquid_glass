@@ -5,9 +5,10 @@
   touch-down the item eases up under the finger (to about 1.06), the
   press is held at 0.415 s (a release after that still opens the menu),
   and at 0.8 s the menu opens and the item lifts on from its pressed
-  size. Released earlier, the item settles back. It opened at Flutter's
-  0.5-s long press, from rest, before; Known limitations no longer lists
-  it.
+  size. Released earlier, it rises on for 0.07 s, then settles back. It
+  opened at Flutter's 0.5-s long press, from rest, before. SwiftUI's own
+  `.contextMenu`, opened by idb's long press, matches the twin within a
+  frame; the context menu leaves Known limitations.
 - Pull to refresh: a scrollable that sets its own `BouncingScrollPhysics`
   under `GlassRefresh`, and `SliverGlassRefresh`'s `CustomScrollView`, now
   get UIScrollView's rubber band and bounce back too; they no longer need
