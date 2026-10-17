@@ -44,11 +44,12 @@
   painter; the glass draws in place while the route animates.
 - `GlassSearchable`: as the close button hides, it holds the row's end
   while the field's end springs over it, and its glass merges into the
-  field's (one glass group, as SwiftUI's container); only its glyph fades.
-  Its glass vanished at the start of the hide before. Checked against
-  SwiftUI frame by frame (iOS 26.4): SwiftUI's button glass also shrinks
-  as it merges and its glyph blurs out over about 6 frames (ours fades in
-  about 1).
+  field's (one glass group, as SwiftUI's container), shrinking about its
+  centre as it goes, while its glyph blurs out over about 7 frames as
+  SwiftUI's does. Its glass vanished at the start of the hide before.
+  Checked against SwiftUI frame by frame (iOS 26.4 simulator, row-tracked
+  error of the button region 1.6-2.0 of 255, from 2.1-2.3 with a flat
+  fade).
 - `GlassOverlayContent`: content an app lays over glass from outside the
   glass's group (a Stack sibling, a badge) stays above the glass on
   Android's shared layer, where it drew beneath it; elsewhere it paints in

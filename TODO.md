@@ -69,8 +69,9 @@ and CHANGELOG.md.
   friction); the release bounce without a refresh is UIKit's (fitted
   2026-10-16).
   Search hide: the button's glass merges into the field (2026-10-17,
-  build/motion/search-hide-full); left: SwiftUI's button glass shrinks as
-  it merges and its glyph blurs out over ~6 frames (ours fades in ~1).
+  build/motion/search-hide-full), shrinks and its glyph blurs out as
+  SwiftUI's (row-tracked error 1.6-2.0); left: the field's end reaches
+  the button about a frame early.
 
 7- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
   Still scenes, whole-crop mean |diff| native/shader (2026-10-13, with
