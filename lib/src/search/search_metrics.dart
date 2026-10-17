@@ -144,28 +144,39 @@ abstract final class SearchMetrics {
     dampingFraction: 0.56,
   );
 
-  /// Seconds into the hide before the close button's glyph fades: it
-  /// holds full opacity over the row's jump, then fades linearly to
-  /// nothing by [hideGlyphFadeEnd] (measured from a 60 fps recording of
-  /// SwiftUI, iOS 26.4, build/motion/search-hide-full: the glyph reads
-  /// ~27% at 0.083 s; the linear fit is at most 0.07 off it).
-  static const double hideGlyphFadeStart = 0.05;
+  /// Seconds into the hide before the close button's glyph blurs out:
+  /// SwiftUI blurs it rather than fading it flat, its blur growing and
+  /// its opacity falling together to nothing by [hideGlyphFadeEnd]
+  /// (measured from a 60 fps recording of SwiftUI, iOS 26.4,
+  /// build/motion/search-hide-full: sigma about 1 pt and 80% at
+  /// 0.05 s, 2 pt and 70% at 0.083 s, 4 pt by 0.10 s, a faint blob
+  /// gone by 0.15 s).
+  static const double hideGlyphFadeStart = 0.033;
 
-  /// Seconds into the hide when the glyph is fully gone (measured: 0.10,
-  /// the recording's last frame that shows it).
-  static const double hideGlyphFadeEnd = 0.10;
+  /// Seconds into the hide when the glyph is gone (measured, as
+  /// [hideGlyphFadeStart]).
+  static const double hideGlyphFadeEnd = 0.15;
+
+  /// The glyph's blur at [hideGlyphFadeEnd], in points; it grows
+  /// linearly from none at [hideGlyphFadeStart] (measured, as
+  /// [hideGlyphFadeStart]).
+  static const double hideGlyphBlur = 7;
+
+  /// How much the glyph itself shrinks by [hideGlyphFadeEnd], whatever
+  /// its glass does (measured, as [hideGlyphFadeStart]).
+  static const double hideGlyphShrink = 0.4;
 
   /// Seconds into the hide before the button's glass shrinks about its
   /// own centre, its shape still merging into the field's inside the
   /// row's group. The centre does not move and the scale holds 1 until
   /// this moment (measured from the same recording as
   /// [hideGlyphFadeStart]).
-  static const double hideShrinkStart = 0.05;
+  static const double hideShrinkStart = 0.083;
 
   /// Seconds into the hide when the glass is fully shrunk (measured: the
   /// recording shows ~0.78 at 0.075 s, 0.47 at 0.10 s, 0.29 at 0.117 s
   /// and nothing by about 0.125-0.133).
-  static const double hideShrinkEnd = 0.133;
+  static const double hideShrinkEnd = 0.167;
 
   /// The shrink's curve: scale = 1 - u^[hideShrinkPower] for u the
   /// clamped progress from [hideShrinkStart] to [hideShrinkEnd] (fitted

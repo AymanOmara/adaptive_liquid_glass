@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/button/glass_button_glyph_effect.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/search/search_metrics.dart';
@@ -140,10 +141,12 @@ void main() {
     expect(spring.damping, closeTo(4 * math.pi * 0.56 / 0.26, 1e-6));
     // Glyph fade and glass shrink on the measured clock (rms 0.03 in
     // scale for the shrink's power).
-    expect(SearchMetrics.hideGlyphFadeStart, 0.05);
-    expect(SearchMetrics.hideGlyphFadeEnd, 0.10);
-    expect(SearchMetrics.hideShrinkStart, 0.05);
-    expect(SearchMetrics.hideShrinkEnd, 0.133);
+    expect(SearchMetrics.hideGlyphFadeStart, 0.033);
+    expect(SearchMetrics.hideGlyphFadeEnd, 0.15);
+    expect(SearchMetrics.hideGlyphBlur, 7);
+    expect(SearchMetrics.hideGlyphShrink, 0.4);
+    expect(SearchMetrics.hideShrinkStart, 0.083);
+    expect(SearchMetrics.hideShrinkEnd, 0.167);
     expect(SearchMetrics.hideShrinkPower, 1.3);
   });
 
@@ -190,21 +193,24 @@ void main() {
       widest = math.max(widest, end);
       final button = find.byType(SearchCancelButton);
       if (button.evaluate().isNotEmpty) {
-        final opacity = t
-            .widget<Opacity>(
-              find.ancestor(of: button, matching: find.byType(Opacity)).first,
-            )
-            .opacity;
-        // The glyph fades on the clock since the jump, not the spring.
-        expect(
-          opacity,
-          closeTo(
-            ((SearchMetrics.hideGlyphFadeEnd - s) /
+        final effect = t.widget<GlassButtonGlyphEffect>(
+          find
+              .ancestor(
+                of: button,
+                matching: find.byType(GlassButtonGlyphEffect),
+              )
+              .first,
+        );
+        // The glyph blurs out on the clock since the jump, not the spring.
+        final q =
+            ((s - SearchMetrics.hideGlyphFadeStart) /
                     (SearchMetrics.hideGlyphFadeEnd -
                         SearchMetrics.hideGlyphFadeStart))
-                .clamp(0.0, 1.0),
-            0.01,
-          ),
+                .clamp(0.0, 1.0);
+        expect(effect.opacity, closeTo(1 - q, 0.01), reason: 'frame $frame');
+        expect(
+          effect.blur,
+          closeTo(q * SearchMetrics.hideGlyphBlur, 0.01),
           reason: 'frame $frame',
         );
       }
@@ -242,21 +248,18 @@ void main() {
       same(groupOf(find.byType(GlassSearchField))),
     );
 
-    // The glyph is faded to nothing while its glass is not: both shapes
+    // The glyph mostly blurred out while its glass is not: both shapes
     // still drawn, and overlapping — the smooth union merging them.
-    expect(
-      t
-          .widget<Opacity>(
-            find
-                .ancestor(
-                  of: find.byType(SearchCancelButton),
-                  matching: find.byType(Opacity),
-                )
-                .first,
+    final effect = t.widget<GlassButtonGlyphEffect>(
+      find
+          .ancestor(
+            of: find.byType(SearchCancelButton),
+            matching: find.byType(GlassButtonGlyphEffect),
           )
-          .opacity,
-      0.0,
+          .first,
     );
+    expect(effect.opacity, lessThan(0.4));
+    expect(effect.blur, greaterThan(4));
     final frame = t
         .renderObjectList<RenderGlassBackdrop>(find.byType(GlassBackdrop))
         .single
@@ -267,7 +270,7 @@ void main() {
     expect(rects[1].left, lessThan(rects[0].right));
   }, variant: ios);
 
-  testWidgets('dismissing: the glyph fades and the glass shrinks on the '
+  testWidgets('dismissing: the glyph blurs out and the glass shrinks on the '
       'measured clock', (t) async {
     shaderEnv();
     final controller = GlassSearchController();
@@ -279,11 +282,11 @@ void main() {
     await t.pump();
 
     double glyphOpacity() => t
-        .widget<Opacity>(
+        .widget<GlassButtonGlyphEffect>(
           find
               .ancestor(
                 of: find.byType(SearchCancelButton),
-                matching: find.byType(Opacity),
+                matching: find.byType(GlassButtonGlyphEffect),
               )
               .first,
         )
@@ -303,17 +306,18 @@ void main() {
 
     // t = 0.04 s: the jump's hold — both still whole.
     await t.pump(const Duration(milliseconds: 40));
-    expect(glyphOpacity(), 1.0);
+    expect(glyphOpacity(), closeTo(1.0, 0.1));
     expect(glassScale(), 1.0);
-    // t = 0.075 s: the glass about 0.78 (measured).
-    await t.pump(const Duration(milliseconds: 35));
+    // t = 0.11 s: the glyph mostly blurred out, the glass just
+    // shrinking.
+    await t.pump(const Duration(milliseconds: 70));
+    expect(glyphOpacity(), lessThan(0.4));
     expect(glassScale(), greaterThan(0.7));
     expect(glassScale(), lessThan(0.85));
-    // t = 0.11 s: the glyph gone and the glass under half (measured:
-    // 0.47 at 0.10 s, 0.29 at 0.117 s).
-    await t.pump(const Duration(milliseconds: 35));
+    // t = 0.15 s: the glyph gone, the glass mostly merged away.
+    await t.pump(const Duration(milliseconds: 40));
     expect(glyphOpacity(), 0.0);
-    expect(glassScale(), lessThan(0.45));
+    expect(glassScale(), lessThan(0.3));
     await t.pumpAndSettle();
     expect(find.byType(SearchCancelButton), findsNothing);
   }, variant: ios);

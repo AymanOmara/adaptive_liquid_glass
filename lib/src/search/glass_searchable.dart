@@ -12,6 +12,7 @@ import 'package:flutter/material.dart'
         SegmentedButton;
 import 'package:flutter/physics.dart';
 
+import '../button/glass_button_glyph_effect.dart';
 import '../controls/glass_segment.dart';
 import '../controls/glass_segmented_control.dart';
 import '../core/cupertino_l10n.dart';
@@ -509,8 +510,8 @@ class _GlassSearchableState extends State<GlassSearchable>
     final t =
         (_hide.lastElapsedDuration ?? Duration.zero).inMicroseconds /
         Duration.microsecondsPerSecond;
-    final glyph =
-        ((SearchMetrics.hideGlyphFadeEnd - t) /
+    final q =
+        ((t - SearchMetrics.hideGlyphFadeStart) /
                 (SearchMetrics.hideGlyphFadeEnd -
                     SearchMetrics.hideGlyphFadeStart))
             .clamp(0.0, 1.0);
@@ -518,22 +519,24 @@ class _GlassSearchableState extends State<GlassSearchable>
         ((t - SearchMetrics.hideShrinkStart) /
                 (SearchMetrics.hideShrinkEnd - SearchMetrics.hideShrinkStart))
             .clamp(0.0, 1.0);
+    final scale = 1 - math.pow(u, SearchMetrics.hideShrinkPower).toDouble();
     return ClipRect(
       clipper: _EndEdgeClipper(Directionality.of(context)),
       child: Align(
         alignment: AlignmentDirectional.centerEnd,
         widthFactor: (1 - _hide.value).clamp(0.0, 1.0),
-        child: Opacity(
-          opacity: glyph,
+        child: GlassButtonGlyphEffect(
+          blur: q * SearchMetrics.hideGlyphBlur,
+          opacity: 1 - q,
+          // SwiftUI's glyph keeps most of its size as it blurs while the
+          // glass shrinks under it (measured: 0.8 at 0.083 s).
+          scale: (1 - SearchMetrics.hideGlyphShrink * q) / math.max(scale, 0.3),
           child: Padding(
             padding: EdgeInsetsDirectional.only(start: _cancelGap),
             // About the button's centre, not the room's: the glass
             // shape shrinks inside the group and stays merged with the
             // field's as it goes.
-            child: Transform.scale(
-              scale: 1 - math.pow(u, SearchMetrics.hideShrinkPower).toDouble(),
-              child: _cancelButton(context),
-            ),
+            child: Transform.scale(scale: scale, child: _cancelButton(context)),
           ),
         ),
       ),
