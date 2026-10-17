@@ -9,8 +9,9 @@ import '../core/swiftui_spring.dart';
 /// (what SwiftUI's `.contextMenu` rides on) on iPhone 17 Pro / iOS 26.4,
 /// opened programmatically in the reference harness (`-controls
 /// contextmenuuikit`, `…left`, `…wide`; "components" → "context_menu" in
-/// tool/reference/controls.json). Synthetic touches still do not open
-/// SwiftUI's own. The menu itself is the measured glass menu
+/// tool/reference/controls.json) and by idb's long press for the press
+/// before the lift. Synthetic touches still do not open SwiftUI's own.
+/// The menu itself is the measured glass menu
 /// (`MenuMetrics`). The page behind is dimmed (`GlassColors
 /// .contextMenuBarrier`) but not blurred: over 100-pt black and white
 /// stripes its edges stay one pixel sharp (`-controls
@@ -19,6 +20,49 @@ abstract final class ContextMenuMetrics {
   // Motion, fitted from 60 fps frame dumps of UIKit's menu opening and
   // closing (`-controls contextmenuuikitmotion`, a tap opens it and a
   // second closes it; tool/fidelity/record_component_motion.sh).
+
+  // The press before the lift, fitted from 60 fps frame dumps of idb long
+  // presses of 0.3, 0.6 and 1.5 s on a 200 x 120 card (`-controls
+  // contextmenuuikitmotion`), timed from the card's touchesBegan.
+
+  /// The press: how long after touch-down the item starts to grow
+  /// (fitted: 0.24 s).
+  static const Duration pressDelay = Duration(milliseconds: 240);
+
+  /// The press: the item easing up under the finger toward [pressGrow]
+  /// (fitted, rms 0.2 pt; no overshoot). The lift interrupts it at about
+  /// 1.06.
+  static final SpringDescription pressSpring = swiftUISpring(
+    response: 1,
+    dampingFraction: 1,
+  );
+
+  /// The press: the scale [pressSpring] heads for (fitted: 1.074).
+  static const double pressGrow = 1.074;
+
+  /// How long the finger must stay down for the menu to open: a release
+  /// after it still opens the menu (measured: a 0.3-s press settles back,
+  /// a 0.6-s one opens; UIKit cancels the item's touches at 0.415 s).
+  static const Duration pressRecognize = Duration(milliseconds: 415);
+
+  /// When, after touch-down, the menu opens and the item lifts on from
+  /// its pressed size (measured: 0.75–0.85 s, mean 0.8).
+  static const Duration pressLift = Duration(milliseconds: 800);
+
+  /// A press released early: the item settling back (fitted over 1-2 px,
+  /// rms 0.2 pt).
+  static final SpringDescription pressReleaseSpring = swiftUISpring(
+    response: 0.17,
+    dampingFraction: 1,
+  );
+
+  /// The item's scale [t] seconds after touch-down, while the finger is
+  /// down and before the lift.
+  static double pressed(double t) {
+    final s = t - pressDelay.inMicroseconds / 1e6;
+    if (s <= 0) return 1;
+    return 1 + (pressGrow - 1) * SpringSimulation(pressSpring, 0, 1, 0).x(s);
+  }
 
   /// Opening: the page's dim (fitted, rms 2.3%).
   static final SpringDescription dimSpring = swiftUISpring(

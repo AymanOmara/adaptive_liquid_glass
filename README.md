@@ -1459,11 +1459,9 @@ testWidgets('pays', (tester) async {
 
 ## Known limitations
 
-- **Context menu:** `GlassContextMenu`'s layout and its opening and
-  closing springs are measured from UIKit's UIContextMenuInteraction
-  (which SwiftUI's `.contextMenu` rides on), opened programmatically:
-  synthetic touches on the simulator open neither, so the press before
-  the lift (the item easing under the finger) is not measured. Of the
+- **Context menu:** `GlassContextMenu` is measured from UIKit's
+  UIContextMenuInteraction, which SwiftUI's `.contextMenu` rides on:
+  synthetic touches on the simulator do not open SwiftUI's own. Of the
   newer components' motion, only the wheel picker's VoiceOver step is
   unmeasured.
 - **Native mode, runtime light→dark flip:** on iOS 26, 71 of 72 measured

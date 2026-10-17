@@ -41,6 +41,34 @@ final _closeCard = <double, double>{
   9.3: 0.96,
 };
 
+/// The press before the lift, idb long presses on the same card timed
+/// from its touchesBegan: seconds after touch-down and the card's scale
+/// (200 wide).
+final _press = <double, double>{
+  0.2: 1.0,
+  0.33: 1.01,
+  0.43: 1.0233,
+  0.53: 1.04,
+  0.66: 1.0567,
+  0.75: 1.0633,
+};
+
+const _card2 = Key('card');
+
+Widget _menuApp() => CupertinoApp(
+  home: Center(
+    child: GlassContextMenu(
+      items: [GlassMenuItem(label: 'Copy', onSelected: () {})],
+      child: const SizedBox(
+        key: _card2,
+        width: 200,
+        height: 120,
+        child: ColoredBox(color: Color(0xFFFFFFFF)),
+      ),
+    ),
+  ),
+);
+
 void main() {
   setUp(() => GlassProgram.instance.debugReset(skipLoad: true));
   tearDown(() => GlassPlatform.instance.debugReset());
@@ -132,4 +160,64 @@ void main() {
       }
     }
   }, variant: ios);
+
+  group('the press before the lift follows UIKit', () {
+    Future<TestGesture> press(WidgetTester t) async {
+      shaderEnv();
+      await host(t);
+      await t.pumpWidget(_menuApp());
+      final g = await t.startGesture(t.getCenter(find.byKey(_card2)));
+      // The frame the press starts on: its time 0.
+      await t.pump();
+      return g;
+    }
+
+    double scale(WidgetTester t) =>
+        t.getRect(find.byKey(_card2).first).width / 200;
+
+    testWidgets('the item eases up under the finger, then lifts on', (t) async {
+      final g = await press(t);
+      var elapsed = 0;
+      for (final MapEntry(key: s, value: v) in _press.entries) {
+        final ms = (s * 1000).round();
+        await t.pump(Duration(milliseconds: ms - elapsed));
+        elapsed = ms;
+        expect(scale(t), closeTo(v, 0.004), reason: '$s s');
+      }
+      expect(find.byType(GlassMenuPanel), findsNothing);
+      await t.pump(Duration(milliseconds: 800 - elapsed + 16));
+      await t.pump(const Duration(milliseconds: 16));
+      expect(find.byType(GlassMenuPanel), findsOneWidget);
+      // The lift carries on from the pressed size (UIKit's first lifted
+      // frame is already 1.117).
+      final lifted = t.getRect(find.byKey(_card2).last).width / 200;
+      expect(lifted, greaterThan(1.06));
+      await g.up();
+      await t.pumpAndSettle();
+      expect(
+        t.getRect(find.byKey(_card2).last).width / 200,
+        closeTo(1.13, 0.01),
+      );
+    }, variant: ios);
+
+    testWidgets('released at 0.3 s it settles back without the menu', (
+      t,
+    ) async {
+      final g = await press(t);
+      await t.pump(const Duration(milliseconds: 300));
+      expect(scale(t), greaterThan(1.003));
+      await g.up();
+      await t.pumpAndSettle();
+      expect(scale(t), 1);
+      expect(find.byType(GlassMenuPanel), findsNothing);
+    }, variant: ios);
+
+    testWidgets('released at 0.6 s the menu still opens', (t) async {
+      final g = await press(t);
+      await t.pump(const Duration(milliseconds: 600));
+      await g.up();
+      await t.pumpAndSettle();
+      expect(find.byType(GlassMenuPanel), findsOneWidget);
+    }, variant: ios);
+  });
 }

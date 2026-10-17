@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart' show LongPressGestureRecognizer;
 import 'package:flutter/material.dart'
     show PopupMenuItem, RelativeRect, showMenu;
+import 'package:flutter/physics.dart' show SpringSimulation;
+import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter/services.dart' show HapticFeedback;
 
@@ -11,6 +14,7 @@ import '../core/liquid_glass_theme.dart';
 import '../core/render_mode_resolver.dart';
 import '../menu/glass_menu_item.dart';
 import '../platform/glass_platform.dart';
+import 'context_menu_metrics.dart';
 import 'glass_context_menu_route.dart';
 
 /// iOS 26's context menu, like SwiftUI's `.contextMenu`: a long-press
@@ -29,11 +33,15 @@ import 'glass_context_menu_route.dart';
 /// )
 /// ```
 ///
+/// While the finger is down the item eases up under it; the menu opens
+/// once the press is held long enough, even if the finger lifts before
+/// the menu shows (UIKit's timing, measured).
+///
 /// A tap outside closes it; choosing an item closes it, then runs the
 /// item. Assistive tech gets the items as custom actions. On the Material
 /// path the long-press opens a Material popup menu. Laid out as UIKit's
 /// UIContextMenuInteraction (measured; see `ContextMenuMetrics`).
-class GlassContextMenu extends StatelessWidget {
+class GlassContextMenu extends StatefulWidget {
   /// Creates a context menu for [child].
   const GlassContextMenu({
     super.key,
@@ -51,16 +59,99 @@ class GlassContextMenu extends StatelessWidget {
   /// The rendering path; see [GlassRenderMode].
   final GlassRenderMode? mode;
 
-  Future<void> _open(BuildContext context, Offset at) async {
+  @override
+  State<GlassContextMenu> createState() => _GlassContextMenuState();
+}
+
+class _GlassContextMenuState extends State<GlassContextMenu>
+    with SingleTickerProviderStateMixin {
+  late final Ticker _ticker = createTicker(_tick);
+  final _scale = ValueNotifier<double>(1);
+
+  /// The finger is down (the item grows) rather than lifted early (it
+  /// settles back).
+  bool _pressing = false;
+  double _releaseFrom = 1;
+
+  /// Where the press was recognized; the menu opens at
+  /// [ContextMenuMetrics.pressLift].
+  Offset? _openAt;
+
+  static double _seconds(Duration d) => d.inMicroseconds / 1e6;
+
+  EffectiveGlassMode _effective() => resolveGlassMode(
+    requested: widget.mode ?? LiquidGlassTheme.of(context).defaultMode,
+    environment: GlassPlatform.instance.environment.value,
+    highContrast: MediaQuery.highContrastOf(context),
+    supportLiquidGlassOnAndroid: LiquidGlassTheme.of(
+      context,
+    ).supportLiquidGlassOnAndroid,
+  );
+
+  void _tick(Duration elapsed) {
+    final t = _seconds(elapsed);
+    if (_pressing) {
+      _scale.value = ContextMenuMetrics.pressed(t);
+      final at = _openAt;
+      if (at != null && t >= _seconds(ContextMenuMetrics.pressLift)) {
+        final pressed = _scale.value;
+        _reset();
+        _open(at, pressed);
+      }
+      return;
+    }
+    final k = SpringSimulation(
+      ContextMenuMetrics.pressReleaseSpring,
+      0,
+      1,
+      0,
+    ).x(t);
+    if (k >= 0.999) return _reset();
+    _scale.value = 1 + (_releaseFrom - 1) * (1 - k);
+  }
+
+  void _reset() {
+    _ticker.stop();
+    _pressing = false;
+    _openAt = null;
+    _scale.value = 1;
+  }
+
+  void _down() {
+    if (_effective() == EffectiveGlassMode.material) return;
+    _ticker.stop();
+    _pressing = true;
+    _openAt = null;
+    _ticker.start();
+  }
+
+  void _cancel() {
+    if (!_pressing) return;
+    _ticker.stop();
+    _pressing = false;
+    _releaseFrom = _scale.value;
+    _ticker.start();
+  }
+
+  void _start(Offset at) {
+    if (_pressing) {
+      _openAt = at;
+    } else {
+      _open(at, 1);
+    }
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    _scale.dispose();
+    super.dispose();
+  }
+
+  Future<void> _open(Offset at, double pressedScale) async {
+    if (!mounted) return;
     HapticFeedback.heavyImpact();
-    final effective = resolveGlassMode(
-      requested: mode ?? LiquidGlassTheme.of(context).defaultMode,
-      environment: GlassPlatform.instance.environment.value,
-      highContrast: MediaQuery.highContrastOf(context),
-      supportLiquidGlassOnAndroid: LiquidGlassTheme.of(
-        context,
-      ).supportLiquidGlassOnAndroid,
-    );
+    final effective = _effective();
     final box = context.findRenderObject()! as RenderBox;
     final rect = box.localToGlobal(Offset.zero) & box.size;
     GlassMenuItem? chosen;
@@ -75,7 +166,7 @@ class GlassContextMenu extends StatelessWidget {
           screen.height - at.dy,
         ),
         items: [
-          for (final item in items)
+          for (final item in widget.items)
             PopupMenuItem(
               value: item,
               enabled: item.onSelected != null,
@@ -87,10 +178,11 @@ class GlassContextMenu extends StatelessWidget {
       final navigator = Navigator.of(context);
       chosen = await navigator.push(
         GlassContextMenuRoute(
-          preview: child,
+          preview: widget.child,
           previewRect: rect,
-          items: items,
-          mode: mode,
+          items: widget.items,
+          pressedScale: pressedScale,
+          mode: widget.mode,
           capturedThemes: InheritedTheme.capture(
             from: context,
             to: navigator.context,
@@ -103,15 +195,39 @@ class GlassContextMenu extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    customSemanticsActions: {
-      for (final item in items)
-        if (item.onSelected != null)
-          CustomSemanticsAction(label: item.label): item.onSelected!,
-    },
-    child: GestureDetector(
-      onLongPressStart: (d) => _open(context, d.globalPosition),
-      child: child,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final material = _effective() == EffectiveGlassMode.material;
+    return Semantics(
+      customSemanticsActions: {
+        for (final item in widget.items)
+          if (item.onSelected != null)
+            CustomSemanticsAction(label: item.label): item.onSelected!,
+      },
+      child: RawGestureDetector(
+        // The recognizer's duration is fixed when it is made.
+        key: ValueKey(material),
+        gestures: {
+          LongPressGestureRecognizer:
+              GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
+                () => LongPressGestureRecognizer(
+                  duration: material ? null : ContextMenuMetrics.pressRecognize,
+                  debugOwner: this,
+                ),
+                (r) {
+                  r
+                    ..onLongPressDown = ((_) => _down())
+                    ..onLongPressCancel = _cancel
+                    ..onLongPressStart = ((d) => _start(d.globalPosition));
+                },
+              ),
+        },
+        child: ValueListenableBuilder<double>(
+          valueListenable: _scale,
+          builder: (context, scale, child) =>
+              scale == 1 ? child! : Transform.scale(scale: scale, child: child),
+          child: widget.child,
+        ),
+      ),
+    );
+  }
 }

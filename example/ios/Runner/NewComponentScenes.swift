@@ -520,7 +520,7 @@ struct UIKitContextMenuReference: View {
 private struct UIKitMenuCard: UIViewRepresentable {
   func makeCoordinator() -> Delegate { Delegate() }
   func makeUIView(context: Context) -> UIView {
-    let card = UIView()
+    let card = TouchLoggingView()
     card.backgroundColor = .white
     card.layer.cornerRadius = 20
     card.layer.cornerCurve = .continuous
@@ -552,6 +552,29 @@ private struct UIKitMenuCard: UIViewRepresentable {
         ])
       }
     }
+  }
+}
+
+/// Writes each touch-down's and touch-up's `CACurrentMediaTime` to
+/// `<tmp>/touch-down` and `<tmp>/touch-up`, so a recording of the press
+/// before the lift finds the touch on the frame dump's clock (idb's touch
+/// lands some frames after it is sent).
+private final class TouchLoggingView: UIView {
+  override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    super.touchesBegan(touches, with: event)
+    log("touch-down")
+  }
+  override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+    super.touchesEnded(touches, with: event)
+    log("touch-up")
+  }
+  override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+    super.touchesCancelled(touches, with: event)
+    log("touch-cancel")
+  }
+  private func log(_ name: String) {
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent(name)
+    try? "\(CACurrentMediaTime())".write(to: url, atomically: true, encoding: .utf8)
   }
 }
 
