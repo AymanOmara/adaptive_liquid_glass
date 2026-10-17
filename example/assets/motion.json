@@ -69,6 +69,48 @@
       "hold_ms": 700
     },
     {
+      "id": "press-clear-capsule-photo-light",
+      "kind": "press",
+      "background": "photo",
+      "brightness": "light",
+      "shape": {
+        "w": 200,
+        "h": 56,
+        "shape": "capsule",
+        "radius": 0,
+        "x": 101.0,
+        "y": 560,
+        "variant": "clear",
+        "tint": null
+      },
+      "touch": {
+        "x": 280,
+        "y": 588
+      },
+      "hold_ms": 700
+    },
+    {
+      "id": "press-clear-capsule-photo-dark",
+      "kind": "press",
+      "background": "photo",
+      "brightness": "dark",
+      "shape": {
+        "w": 200,
+        "h": 56,
+        "shape": "capsule",
+        "radius": 0,
+        "x": 101.0,
+        "y": 560,
+        "variant": "clear",
+        "tint": null
+      },
+      "touch": {
+        "x": 280,
+        "y": 588
+      },
+      "hold_ms": 700
+    },
+    {
       "id": "press-size-circle44x44-photo-light",
       "kind": "press",
       "background": "photo",
