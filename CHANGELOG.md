@@ -61,11 +61,6 @@
   next to a large regular card no longer frosts like the card. Against
   drawing each group alone, the Android probe's mean error fell from 4.5
   to 0.5 (photo) and 2.7 to 0.5 (text) of 255.
-
-## 0.2.4 (2026-10-17)
-
-- `GlassSearchable`: the close button's shadow is no longer cut to a box
-  as it appears and hides (a tint showed along its top and end edges).
 - Shader mode (iOS and the Android shared layer): pressed interactive
   glass lights up as SwiftUI's does. It now adds white over the whole
   pressed shape (`GlassVariantConstants.pressLift`), not only the glow
@@ -73,6 +68,11 @@
   the release, as native mode's, instead of following the press spring.
   In-shape error against SwiftUI over a press: 8.1 -> 1.5 light,
   10.1 -> 2.1 dark (of 255).
+
+## 0.2.4 (2026-10-17)
+
+- `GlassSearchable`: the close button's shadow is no longer cut to a box
+  as it appears and hides (a tint showed along its top and end edges).
 - Android shared glass layer: a rounded, superellipse, oval, path or
   `PhysicalModel` clip around glass now clips the glass and its content to
   that shape, not to its bounding rectangle.
