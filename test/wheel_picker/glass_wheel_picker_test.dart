@@ -177,7 +177,10 @@ void main() {
       find.semantics.byLabel('Fruit'),
       SemanticsAction.increase,
     );
-    await t.pumpAndSettle();
+    await t.pump();
+    // UIKit's VoiceOver increase jumps a row in one frame (measured).
+    expect(t.hasRunningAnimations, isFalse);
+    expect(_controller(t).selectedItem, 1);
     expect(_state(t).selected, 'b');
     expect(
       t.getSemantics(finder),

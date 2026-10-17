@@ -1,5 +1,10 @@
 ## Unreleased
 
+- `GlassWheelPicker`: VoiceOver's increase and decrease now jump the row
+  in one frame, as UIKit's do (`UIAccessibilityPickerComponent`'s
+  increment on iOS 26.4, logged per display frame: the row moves within
+  the next frame, nothing in between). They eased over 0.2 s before. The
+  wheel picker leaves Known limitations.
 - `GlassContextMenu`: the press before the lift follows UIKit's, measured
   from idb long presses on UIContextMenuInteraction. 0.24 s after
   touch-down the item eases up under the finger (to about 1.06), the
