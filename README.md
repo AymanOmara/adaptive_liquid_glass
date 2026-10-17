@@ -338,6 +338,7 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `AdaptiveLiquidGlass.reduceTransparency` | Override the system's Reduce Transparency (null follows it) | already opaque |
 | `GlassAdaptive` | Your own widget on the Material path, the glass one elsewhere | your `material` builder |
 | `GlassBackdropSource`, `GlassForeground` | Adaptive label colour over busy content | — |
+| `GlassOverlayContent` | Content laid over glass from outside its group stays above it on Android's shared layer | — |
 | `GlassSystemColors` | iOS 26's red, blue, orange and green | — |
 | `GlassButton` (`+ .icon`), `GlassButtonRole`, `GlassButtonStyle`, `GlassButtonShape`, `GlassControlSize`, `GlassControlSizeScope` | SwiftUI's glass, prominent, bordered, borderless and plain buttons, roles, sizes, shapes, loading | `FilledButton` / `IconButton` / `TextButton` |
 | `GlassFloatingActionButton` (`+ .extended`) | The screen's primary action: a large prominent glass circle, or capsule with a label | `FloatingActionButton` |
@@ -1501,7 +1502,8 @@ testWidgets('pays', (tester) async {
   composited after its glass. The example Gallery peaks about 0.9 GB over
   idle with every group shader glass (3.9 GB group by group). Limits of
   the layer: non-glass content painted after a group in the same route
-  and overlapping its glass draws beneath that glass (the package's own
+  and overlapping its glass draws beneath that glass; wrap such content in
+  `GlassOverlayContent` to keep it above (the package's own
   content laid over glass in a sibling, like the tab bar's row and a
   sheet's content, is handled); menus draw their glass group by group, and so does a page while a transition snapshots it
   (`ZoomPageTransitionsBuilder`; a transient peak of about 0.5 GB on the
