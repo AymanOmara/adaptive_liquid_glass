@@ -136,15 +136,17 @@ abstract final class SearchMetrics {
   /// (iOS 26.4, `-controls searchmotion`, the close button tapped; 60 fps
   /// frame dumps): the row jumps to the idle insets in one frame, the
   /// button keeping its room, then the field's end springs over the room
-  /// on this spring, ~7 pt past its rest and back (rms 1.85 pt), while the
-  /// button fades (see [hideFade]).
+  /// on this spring, ~7 pt past its rest and back (rms 1.85 pt), while
+  /// the button's glass merges into the field's and its glyph fades (see
+  /// [hideFade]).
   static final SpringDescription hide = swiftUISpring(
     response: 0.26,
     dampingFraction: 0.56,
   );
 
-  /// The fraction of the [hide] spring over which the close button fades
-  /// out (measured: its glyph is half gone two frames in and gone by the
+  /// The fraction of the [hide] spring over which the close button's
+  /// glyph fades out, its glass merging into the field's instead
+  /// (measured: the glyph is half gone two frames in and gone by the
   /// fourth, as the field starts to move).
   static const double hideFade = 0.12;
 }

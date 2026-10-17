@@ -4,7 +4,9 @@ import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/search/search_metrics.dart';
+import 'package:adaptive_liquid_glass/src/shader/glass_backdrop.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
+import 'package:adaptive_liquid_glass/src/shader/render_glass_backdrop.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart' show SpringSimulation;
@@ -202,6 +204,53 @@ void main() {
       t.getTopRight(field).dx,
       moreOrLessEquals(screen - SearchMetrics.idleInset),
     );
+  }, variant: ios);
+
+  testWidgets('dismissing: the button\'s glass merges into the field\'s '
+      'rather than fading', (t) async {
+    shaderEnv();
+    final controller = GlassSearchController();
+    addTearDown(controller.dispose);
+    await t.pumpWidget(_app(controller: controller));
+    controller.activate();
+    await t.pumpAndSettle();
+    controller.cancel();
+    await t.pump();
+    // The middle of the hide: the glyph long gone, the glass mid-merge.
+    await t.pump(const Duration(milliseconds: 60));
+
+    GlassGroup groupOf(Finder of) => t.widget<GlassGroup>(
+      find.ancestor(of: of, matching: find.byType(GlassGroup)).first,
+    );
+    // The button's glass is in the field's group, where the two blend.
+    expect(
+      groupOf(find.byType(SearchCancelButton)),
+      same(groupOf(find.byType(GlassSearchField))),
+    );
+
+    // The glyph is faded to nothing while its glass is not: both shapes
+    // still drawn, and overlapping — the smooth union merging them.
+    expect(
+      t
+          .widget<Opacity>(
+            find
+                .ancestor(
+                  of: find.byType(SearchCancelButton),
+                  matching: find.byType(Opacity),
+                )
+                .first,
+          )
+          .opacity,
+      0.0,
+    );
+    final frame = t
+        .renderObjectList<RenderGlassBackdrop>(find.byType(GlassBackdrop))
+        .single
+        .debugLastFrame!;
+    expect(frame.uniforms.shapes, hasLength(2));
+    final rects = [for (final s in frame.uniforms.shapes) s.rect]
+      ..sort((a, b) => a.left.compareTo(b.left));
+    expect(rects[1].left, lessThan(rects[0].right));
   }, variant: ios);
 
   testWidgets('the close button is not clipped to a box, so its shadow '
