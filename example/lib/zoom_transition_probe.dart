@@ -4,6 +4,8 @@ import 'package:flutter/scheduler.dart';
 
 /// Shader glass on pages pushed with the Zoom page transition, which
 /// snapshots both pages. Pushes after 6 s with the animation slowed 40x;
+/// `--dart-define=DILATION=<x>` and `SNAPSHOT=false` change the slow-down
+/// and turn the transition's snapshot off.
 /// `flutter run -t lib/zoom_transition_probe.dart`.
 void main() => runApp(
   LiquidGlassTheme(
@@ -15,13 +17,20 @@ void main() => runApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {TargetPlatform.android: ZoomPageTransitionsBuilder()},
+          builders: {
+            TargetPlatform.android: ZoomPageTransitionsBuilder(
+              allowSnapshotting: _snapshot,
+            ),
+          },
         ),
       ),
       home: const _Page(label: 'First', hue: 200, next: true),
     ),
   ),
 );
+
+const int _dilation = int.fromEnvironment('DILATION', defaultValue: 40);
+const bool _snapshot = bool.fromEnvironment('SNAPSHOT', defaultValue: true);
 
 class _Page extends StatefulWidget {
   const _Page({required this.label, required this.hue, this.next = false});
@@ -41,7 +50,7 @@ class _PageState extends State<_Page> {
     if (!widget.next) return;
     Future<void>.delayed(const Duration(seconds: 6), () {
       if (!mounted) return;
-      timeDilation = 40;
+      timeDilation = _dilation.toDouble();
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => const _Page(label: 'Second', hue: 20),
