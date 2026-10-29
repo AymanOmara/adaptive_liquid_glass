@@ -33,32 +33,37 @@ final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate {
   private let result: FlutterResult
   private let onFinish: () -> Void
   private let options: Options
+  private let onItemReady: (([String: Any]) -> Void)?
   private var finished = false
 
   private init(
-    result: @escaping FlutterResult, options: Options, onFinish: @escaping () -> Void
+    result: @escaping FlutterResult, options: Options,
+    onItemReady: (([String: Any]) -> Void)?, onFinish: @escaping () -> Void
   ) {
     self.result = result
     self.options = options
+    self.onItemReady = onItemReady
     self.onFinish = onFinish
   }
 
   /// Deletes every copy made so far.
-  static func clearCopies() {
-    try? FileManager.default.removeItem(at: directory)
+  static func clearCopies() throws {
+    try GlassPhotoCache.clear(directory)
   }
 
   /// Presents the picker; [onFinish] runs once the result has been sent.
   /// Returns nil (after answering [result] with an error) when there is no
   /// view controller to present from.
   static func present(
-    arguments: Any?, result: @escaping FlutterResult, onFinish: @escaping () -> Void
+    arguments: Any?, result: @escaping FlutterResult,
+    onItemReady: (([String: Any]) -> Void)?, onFinish: @escaping () -> Void
   ) -> GlassPhotosPicker? {
     let args = arguments as? [String: Any] ?? [:]
     let maxSelection = (args["maxSelection"] as? NSNumber)?.intValue ?? 1
     var config = PHPickerConfiguration()
     config.selectionLimit = max(0, maxSelection)
     config.preferredAssetRepresentationMode = .current
+    config.selection = .ordered
     switch args["filter"] as? String {
     case "videos": config.filter = .videos
     case "any": config.filter = .any(of: [.images, .videos])
@@ -70,7 +75,8 @@ final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate {
         details: nil))
       return nil
     }
-    let session = GlassPhotosPicker(result: result, options: Options(args), onFinish: onFinish)
+    let session = GlassPhotosPicker(
+      result: result, options: Options(args), onItemReady: onItemReady, onFinish: onFinish)
     let picker = PHPickerViewController(configuration: config)
     picker.delegate = session
     presenter.present(picker, animated: true)
@@ -85,49 +91,50 @@ final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate {
       send([])
       return
     }
-    let group = DispatchGroup()
-    let collected = Collected(count: results.count)
+    // Import one item at a time. Unlimited selections must not start dozens
+    // of full-resolution decodes and video exports concurrently.
     let options = options
-    for (index, pick) in results.enumerated() {
-      let provider = pick.itemProvider
-      let isVideo = provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier)
-      let type = isVideo ? UTType.movie : UTType.image
-      // The concrete type (e.g. public.heic) names the extension and MIME.
-      let concrete =
-        provider.registeredTypeIdentifiers.compactMap { UTType($0) }
-        .first { $0.conforms(to: type) } ?? type
-      group.enter()
-      provider.loadFileRepresentation(forTypeIdentifier: concrete.identifier) { url, error in
-        // The provider deletes `url` when this block returns: copy now.
-        guard let url = url else {
-          collected.fail(error)
-          group.leave()
-          return
-        }
-        let copy: URL
+    Task.detached(priority: .userInitiated) {
+      var loaded: [[String: Any]] = []
+      var firstError: Error?
+      for pick in results {
+        let provider = pick.itemProvider
+        let isVideo = provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier)
+        let type = isVideo ? UTType.movie : UTType.image
+        let concrete = provider.registeredTypeIdentifiers.compactMap { UTType($0) }
+          .first { $0.conforms(to: type) } ?? type
         do {
-          copy = try Self.copy(url, type: concrete)
+          let copy: URL = try await withCheckedThrowingContinuation { continuation in
+            provider.loadFileRepresentation(forTypeIdentifier: concrete.identifier) { url, error in
+              // The provider deletes its URL on return: copy inside this callback.
+              guard let url = url else {
+                continuation.resume(throwing: error ?? NSError(
+                  domain: "adaptive_liquid_glass", code: 1,
+                  userInfo: [NSLocalizedDescriptionKey: "The selected item is unavailable."]))
+                return
+              }
+              do {
+                continuation.resume(returning: try Self.copy(url, type: concrete))
+              } catch {
+                continuation.resume(throwing: error)
+              }
+            }
+          }
+          let item = await Self.deliver(copy, type: concrete, isVideo: isVideo, options: options)
+          loaded.append(item)
+          await MainActor.run { self.onItemReady?(item) }
         } catch {
-          collected.fail(error)
-          group.leave()
-          return
-        }
-        Task {
-          let item = await Self.deliver(
-            copy, type: concrete, isVideo: isVideo, options: options)
-          collected.set(index, item)
-          group.leave()
+          if firstError == nil { firstError = error }
         }
       }
-    }
-    group.notify(queue: .main) {
-      let loaded = collected.items.compactMap { $0 }
-      if loaded.isEmpty, let error = collected.firstError {
-        self.result(FlutterError(
-          code: "load_failed", message: error.localizedDescription, details: nil))
-        self.onFinish()
-      } else {
-        self.send(loaded)
+      await MainActor.run {
+        if loaded.isEmpty, let error = firstError {
+          self.result(FlutterError(
+            code: "load_failed", message: error.localizedDescription, details: nil))
+          self.onFinish()
+        } else {
+          self.send(loaded)
+        }
       }
     }
   }
@@ -144,7 +151,7 @@ final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate {
       ? (type.preferredFilenameExtension ?? "") : url.pathExtension
     var dest = directory.appendingPathComponent(UUID().uuidString)
     if !ext.isEmpty { dest.appendPathExtension(ext) }
-    try FileManager.default.copyItem(at: url, to: dest)
+    try GlassPhotoCache.copy(from: url, to: dest)
     return dest
   }
 
@@ -174,7 +181,11 @@ final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate {
         item["durationMs"] = duration.seconds * 1000
       }
     } else {
-      url = reencode(url, type: type, options: options) ?? url
+      if let encoded = reencode(url, type: type, options: options) {
+        url = encoded
+      } else if options.compatible && (type.conforms(to: .heic) || type.conforms(to: .heif)) {
+        item["conversionFailed"] = true
+      }
       if let size = imageSize(url) {
         item["width"] = size.width
         item["height"] = size.height
@@ -301,40 +312,5 @@ final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate {
       top = presented
     }
     return top
-  }
-}
-
-/// The loaded items, in pick order, filled from several threads.
-private final class Collected: @unchecked Sendable {
-  private let lock = NSLock()
-  private var storage: [[String: Any]?]
-  private var error: Error?
-
-  init(count: Int) {
-    storage = [[String: Any]?](repeating: nil, count: count)
-  }
-
-  var items: [[String: Any]?] {
-    lock.lock()
-    defer { lock.unlock() }
-    return storage
-  }
-
-  var firstError: Error? {
-    lock.lock()
-    defer { lock.unlock() }
-    return error
-  }
-
-  func set(_ index: Int, _ item: [String: Any]) {
-    lock.lock()
-    storage[index] = item
-    lock.unlock()
-  }
-
-  func fail(_ error: Error?) {
-    lock.lock()
-    if self.error == nil { self.error = error }
-    lock.unlock()
   }
 }

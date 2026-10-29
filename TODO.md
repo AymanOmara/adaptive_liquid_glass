@@ -18,7 +18,10 @@ and CHANGELOG.md.
       navigation bar first if asked for
   - example app toggle: done for the iOS look
     (`supportLiquidGlassOnAndroid`, 2026-10-15); README Android section
-    done. Known limitations re-checked 2026-10-16
+    done. Known limitations re-checked 2026-10-18; local shared layers now
+    keep GlassScaffold/menu shader batching through transitions/followers.
+    Plain Flutter routes opt in with GlassLayerScope; GPU memory with this
+    new path still needs a device measurement.
 
 3- release readiness: 0.1.0 shipped 2026-10-08. 1.0 only after:
   - usability pass: done 2026-10-14 (additive part); the 1.0 breaks it
@@ -55,14 +58,16 @@ and CHANGELOG.md.
   scope bar, suggestions, date wheel time columns and context menu
   layout (UIKit's interaction) are measured; nothing left
   estimated here (2026-10-16: date/time capsule gap, nav-bar search
-  drawer, and the context menu's page, dimmed but not blurred). Cover drag thresholds: nothing to measure
-  (SwiftUI's cover has no drag). Motion: the wheel's VoiceOver step (a
+  drawer, and the context menu's page, dimmed but not blurred). Cover drag is now independently configurable and tested
+  (SwiftUI's cover has no drag; this is an optional app-defined gesture). Motion: the wheel's VoiceOver step (a
   one-frame jump, 2026-10-17) and the context menu's press before its
   lift are measured; none left open.
   Colour sheet (2026-10-14, second pass): side inset 8 (partial sheet
   detents now float at any height, SwiftUI .height(300...765) measured),
   segmented control 30.67, saved colours row, UIKit's Spectrum map
-  (mean |diff| 1.1/255) and an in-app eyedropper done. Left: the loupe is estimated (UIKit's cannot be captured mid-drag);
+  (mean |diff| 1.1/255) and an in-app eyedropper done. Loupe measured
+  2026-10-17; the shared saved palette persists locally on iOS/Android
+  (2026-10-18).
   The sheet's colours were measured in light and dark (2026-10-17).
   Refresh: the rubber band is UIKit's only for scrollables inheriting
   bouncing physics (their own BouncingScrollPhysics keeps Flutter's
@@ -74,6 +79,13 @@ and CHANGELOG.md.
   the button about a frame early.
 
 7- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
+  Update 2026-10-23: stock two-to-four-tab icon bars in native mode
+  use the complete system control on compatible Flutter SDKs. Native label
+  vibrancy and bar-edge refraction are fixed on that path; custom bars keep
+  the rendering differences below. Real quick taps, drags, Flutter overlay
+  exclusion and appearance replacement were tested on iOS 26.4.
+  Bundled Cupertino/Material icons use cached templates (normal/selected,
+  DPR and RTL); custom fonts/widgets retain the Flutter path.
   Still scenes, whole-crop mean |diff| native/shader (2026-10-13, with
   GlassTabBarItem.symbol, vibrancy): white 0.33/0.45, dark 0.34/0.63, photo
   1.30/3.81, dark photo 1.60/3.13, searchtab 0.71/0.81, accessory
@@ -85,8 +97,8 @@ and CHANGELOG.md.
   - vibrancy: done over shader glass (tab_vibrancy.frag): untinted
     glyph |diff| over the photo 12.4 -> 8.7 light, 11.2 -> 10.1 dark; the
     selected tint 24.4 -> 16.2 light, 22.4 -> 12.6 dark; the pill (photo
-    whole crop 4.39 -> 3.81). Native mode keeps
-    flat colours (Flutter cannot see UIKit glass)
+    whole crop 4.39 -> 3.81). Custom-rendered native bars keep
+    flat colours (Flutter cannot see UIKit glass).
   - held lens: done (2026-10-13). Elliptical normals and a thin crescent
     band, fringed warm/cool only at its round ends; the lens refracts
     only the bar it overhangs (backdropInset), so its bands stay dark
@@ -123,15 +135,16 @@ and CHANGELOG.md.
   (the app's PinnedBelowBarSliver). Kept app-side for now: sticky bottom
   action bar, stage tab strip with counts.
 
-10- refactor backlog P3 items (docs/superpowers/notes/refactor-backlog.md),
-  opportunistic (P3-1 constants split only).
+10- refactor backlog (docs/superpowers/notes/refactor-backlog.md):
+  constants split done 2026-10-14. The remaining P3-5 is Swift lifecycle
+  integration-test coverage, not an outstanding constants refactor.
 
 11- new SwiftUI components (2026-10-13), merged to main
   (bordered/borderedProminent/borderless/plain buttons, vertical GlassSlider,
   GlassRangeSlider, GlassPhotosPicker; 1081 tests pass). Open:
-  - open the photo picker for real on an iOS simulator and an Android
-    emulator (only unit tests with a mocked channel and the builds ran)
-  - SwiftPM build of the iOS plugin (only CocoaPods was built)
+  - real picker presentation verified 2026-10-18 on iOS 26.4 and Android
+    API 35; copying/conversion still takes time, with loading feedback
+  - SwiftPM iOS plugin build verified 2026-10-18 in an isolated smoke app
   - measure the bordered fill, press dim and disabled colours vs SwiftUI
 
 12- CashRoot required enhancements (from CashRoot's

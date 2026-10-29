@@ -2,7 +2,7 @@ import 'package:flutter/animation.dart' show Cubic, Curve, FlippedCurve;
 import 'package:flutter/physics.dart' show SpringDescription;
 
 import '../button/glass_button_metrics.dart';
-import '../sheet/sheet_metrics.dart';
+import '../core/swiftui_spring.dart';
 
 /// iOS 26's full-screen cover. The motion is fitted from a screen
 /// recording of SwiftUI's `.fullScreenCover` (iOS 26.4, iPhone 17 Pro,
@@ -11,8 +11,9 @@ import '../sheet/sheet_metrics.dart';
 /// height sliding up, 0.5% sliding down (worst frame 2.1%). SwiftUI's
 /// cover has no drag to dismiss (re-checked 2026-10-14: a downward drag
 /// leaves it in place), so there is nothing to measure: drag is off by
-/// default (`dragToDismiss`), and opting in borrows the sheet's thresholds
-/// below by design. SwiftUI's cover has no close button of its own
+/// default (`dragToDismiss`). Its optional app-defined gesture has its own
+/// configurable policy; its defaults below preserve existing behavior.
+/// SwiftUI's cover has no close button of its own
 /// either; ours is measured from a close-role toolbar button in it.
 abstract final class FullScreenCoverMetrics {
   /// The cover sliding up over the page (fitted: settled within a pixel
@@ -30,18 +31,21 @@ abstract final class FullScreenCoverMetrics {
   static const Curve reverseCurve = FlippedCurve(Cubic(0.28, 0.52, 0.19, 1));
 
   /// How far down a released cover is dismissed, as a fraction of its
-  /// height (the sheet's, [SheetMetrics.dismissFraction]).
-  static const double dismissFraction = SheetMetrics.dismissFraction;
+  /// height. An app-defined default, not a measured SwiftUI cover gesture.
+  static const double dismissFraction = 0.25;
 
   /// The downward fling speed, in logical pixels per second, that
-  /// dismisses the cover (the sheet's, [SheetMetrics.flingVelocity]).
-  static const double flingVelocity = SheetMetrics.flingVelocity;
+  /// dismisses the cover. An app-defined default.
+  static const double flingVelocity = 700;
 
   /// How much an upward drag moves the cover, per point dragged.
   static const double upwardResistance = 0.3;
 
-  /// A released cover springing back into place (the sheet's).
-  static final SpringDescription spring = SheetMetrics.spring;
+  /// The optional gesture's own return spring; independent of sheet tuning.
+  static final SpringDescription spring = swiftUISpring(
+    response: 0.4,
+    dampingFraction: 0.86,
+  );
 
   /// The close button's inset from the screen's trailing edge
   /// (measured: SwiftUI's close-role toolbar button, `-controls

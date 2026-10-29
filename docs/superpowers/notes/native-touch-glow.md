@@ -1,7 +1,15 @@
 # Native mode: SwiftUI's touch glow on pressed glass
 
-**Outcome (2026-10-14):** SwiftUI's own glow cannot be triggered with
-supported APIs (below).
+**Outcome (2026-10-14):** the generic Flutter-owned glass backend cannot
+trigger SwiftUI's own glow with supported APIs (below).
+
+**Update (2026-10-23):** newer Flutter provides the public synchronous
+`DoNotBlockGesture` platform-view policy. A complete native tab control can
+own both its content and real gestures with this policy; the stock SF-symbol
+tab path now uses it. The earlier two-policy engine description below applies
+to the older SDK. This does not solve the generic backend's split ownership:
+Flutter widgets above the shared glass still need their own gestures and
+must move with the app-controlled shapes. The generic press limitation stays.
 
 **Update (2026-10-17):** native mode now draws the press light itself, as
 it already drew the growth. `GlassPlatformView.swift` adds white with
@@ -21,6 +29,13 @@ inside glass, so the lifts are asked that much higher. In-shape |diff| over
 the whole press went from 4.09 to 1.11 (light) and from 6.04 to 1.61 (dark).
 At the hold, rms went from 12.6 to 4.2 and from 20.5 to 5.0, which is the
 model's floor.
+
+**Update (2026-10-18):** clear glass now uses a separately calibrated
+lift/glow instead of the regular coefficients. Fresh held-frame validation
+interior RGB MAE fell from 6.858 to 6.251 light and 7.246 to 6.378 dark
+(out of 255). This is a different region/window from the regular whole-motion
+figures above. Clear geometry/refraction residuals remain; see
+`native-limitations-2026-10-18.md` for captures, coefficients and fitter.
 
 ## Why
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:adaptive_liquid_glass/src/color_picker/color_hex.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/color_picker_metrics.dart';
 import 'package:adaptive_liquid_glass/src/color_picker/glass_color_picker_panel.dart';
@@ -7,6 +9,7 @@ import 'package:adaptive_liquid_glass/src/color_picker/spectrum_thumb.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../api/hosts.dart';
@@ -54,8 +57,20 @@ void main() {
   setUp(() {
     GlassProgram.instance.debugReset(skipLoad: true);
     SavedColors.debugReset();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('adaptive_liquid_glass'),
+          (_) async => null,
+        );
   });
-  tearDown(() => GlassPlatform.instance.debugReset());
+  tearDown(() {
+    GlassPlatform.instance.debugReset();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('adaptive_liquid_glass'),
+          null,
+        );
+  });
 
   test("UIKit's saved colours: black, blue, green, yellow, red (measured)", () {
     expect(SavedColors.defaults, const [
@@ -128,6 +143,29 @@ void main() {
     expect(_saved(_blue), findsOneWidget);
   }, variant: ios);
 
+  testWidgets('adding while storage loads keeps the previously saved colours', (
+    t,
+  ) async {
+    shaderEnv();
+    _screen(t);
+    final read = Completer<Object?>();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('adaptive_liquid_glass'),
+          (call) async {
+            if (call.method == 'getSavedColors') return read.future;
+            return null;
+          },
+        );
+    await t.pumpWidget(appHost(const _Panel()));
+    await t.tap(find.bySemanticsLabel('Add to saved colours'));
+    read.complete([0xFF123456]);
+    await t.pumpAndSettle();
+    expect(SavedColors.shared.value, const [Color(0xFF123456), _blue]);
+    expect(_saved(const Color(0xFF123456)), findsOneWidget);
+    expect(_saved(_blue), findsOneWidget);
+  }, variant: ios);
+
   testWidgets("a saved colour's context menu deletes it", (t) async {
     shaderEnv();
     _screen(t);
@@ -168,6 +206,17 @@ void main() {
     shaderEnv();
     _screen(t);
     final changes = <List<Color>>[];
+    final storageCalls = <MethodCall>[];
+    const channel = MethodChannel('adaptive_liquid_glass');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'getSavedColors' || call.method == 'setSavedColors') {
+        storageCalls.add(call);
+      }
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
     await t.pumpWidget(
       appHost(_Panel(saved: const [Color(0xFF123456)], onSaved: changes.add)),
     );
@@ -179,5 +228,6 @@ void main() {
     // The panel shows the change at once; the shared list is untouched.
     expect(_saved(_blue), findsOneWidget);
     expect(SavedColors.shared.value, SavedColors.defaults);
+    expect(storageCalls, isEmpty);
   }, variant: ios);
 }

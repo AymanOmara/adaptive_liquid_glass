@@ -8,6 +8,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import '../core/glass_colors.dart';
+import 'app_capture.dart';
 import 'color_picker_metrics.dart';
 import 'eyedropper_loupe.dart';
 
@@ -28,16 +29,24 @@ Color colorAtPixel(ByteData rgba, int width, int height, Offset p) {
 }
 
 /// UIColorPickerViewController's eyedropper within the app: captures what
-/// the app draws around [context] (its outermost repaint boundary, the
-/// page's route), then shows a loupe over it. Dragging moves the loupe,
+/// the app draws around [context], including embedded native views where
+/// native capture supports them, then shows a loupe. Dragging moves the loupe,
 /// letting go picks the pixel under its centre; a tap picks the pixel
 /// tapped. Completes with that colour, or null when nothing could be
 /// captured.
 ///
-/// Flutter can only read its own drawing: other apps, the status bar and
-/// platform views (maps, web views, native-mode glass) are not in the
-/// capture.
+/// iOS includes native glass and UIKit subviews. Android includes ordinary
+/// hybrid platform views on API 26+ while Flutter uses image/texture
+/// composition or its usual opaque SurfaceView. API 36+ also captures
+/// above-window Flutter surfaces in their real order and full-size direct
+/// surfaces positioned through layout, with aligned loupe sampling. Custom
+/// sizes, native view transforms, offsets through nested native containers,
+/// offset/above-window surfaces on older Android versions and
+/// unsupported hosts fall back to Flutter's outermost repaint boundary.
+/// Other apps and separate system/protected
+/// surfaces stay outside the capture.
 Future<Color?> pickColorFromApp(BuildContext context) async {
+  final view = View.of(context);
   RenderRepaintBoundary? boundary;
   context.visitAncestorElements((e) {
     final r = e.renderObject;
@@ -45,11 +54,28 @@ Future<Color?> pickColorFromApp(BuildContext context) async {
     return true;
   });
   final target = boundary;
-  if (target == null || !target.attached) return null;
-  if (target.debugNeedsPaint) await SchedulerBinding.instance.endOfFrame;
-  if (!context.mounted || !target.attached) return null;
-  final ratio = View.of(context).devicePixelRatio;
-  final image = await target.toImage(pixelRatio: ratio);
+  if (target != null && target.debugNeedsPaint) {
+    await SchedulerBinding.instance.endOfFrame;
+  }
+  if (!context.mounted) return null;
+  final native = await captureAppView(view);
+  ui.Image image;
+  double ratio;
+  Matrix4 fromGlobal;
+  if (native != null) {
+    image = native.image;
+    ratio = native.ratio;
+    fromGlobal = Matrix4.translationValues(native.offset.dx, native.offset.dy, 0);
+  } else {
+    if (!context.mounted || target == null || !target.attached) return null;
+    if (target.debugNeedsPaint) await SchedulerBinding.instance.endOfFrame;
+    if (!context.mounted || !target.attached) return null;
+    ratio = view.devicePixelRatio;
+    final transform = Matrix4.tryInvert(target.getTransformTo(null));
+    if (transform == null) return null;
+    fromGlobal = transform;
+    image = await target.toImage(pixelRatio: ratio);
+  }
   final bytes = await image.toByteData(
     format: ui.ImageByteFormat.rawStraightRgba,
   );
@@ -69,7 +95,7 @@ Future<Color?> pickColorFromApp(BuildContext context) async {
       image: image,
       bytes: bytes,
       ratio: ratio,
-      boundary: target,
+      fromGlobal: fromGlobal,
       onDone: (c) {
         entry.remove();
         // The loupe's last frame may still draw it.
@@ -87,14 +113,14 @@ class _EyedropperLayer extends StatefulWidget {
     required this.image,
     required this.bytes,
     required this.ratio,
-    required this.boundary,
+    required this.fromGlobal,
     required this.onDone,
   });
 
   final ui.Image image;
   final ByteData bytes;
   final double ratio;
-  final RenderRepaintBoundary boundary;
+  final Matrix4 fromGlobal;
   final ValueChanged<Color?> onDone;
 
   @override
@@ -107,9 +133,7 @@ class _EyedropperLayerState extends State<_EyedropperLayer> {
 
   /// [global] in the captured image's pixels.
   Offset _pixel(Offset global) {
-    final local = widget.boundary.attached
-        ? widget.boundary.globalToLocal(global)
-        : global;
+    final local = MatrixUtils.transformPoint(widget.fromGlobal, global);
     return local * widget.ratio;
   }
 

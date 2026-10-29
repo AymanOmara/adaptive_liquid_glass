@@ -6,6 +6,7 @@ import '../core/cupertino_l10n.dart';
 import '../core/glass_colors.dart';
 import '../core/glass_render_mode.dart';
 import '../layer/glass_layer.dart';
+import '../layer/glass_layer_scope.dart';
 import 'glass_menu_controller.dart';
 import 'glass_menu_controller_host.dart';
 import 'glass_menu_item.dart';
@@ -209,8 +210,8 @@ class _GlassMenuAnchorState extends State<GlassMenuAnchor>
     child: OverlayPortal(
       controller: _portal,
       // The menu follows its anchor through a CompositedTransformFollower
-      // and paints above the route's shared glass layer: its glass draws
-      // in place, group by group.
+      // and paints above the route's shared glass layer. Its local shader
+      // layer below travels with the follower; native batching stays out.
       overlayChildBuilder: (context) => GlassLayerOptOut(child: _menu(context)),
       child: _portal.isShowing
           ? SizedBox.fromSize(size: _openerSize)
@@ -257,12 +258,14 @@ class _GlassMenuAnchorState extends State<GlassMenuAnchor>
                 child: child,
               ),
             ),
-            child: GlassMenuPanel(
-              key: _panel,
-              items: widget.items,
-              mode: widget.mode,
-              onChoose: _choose,
-              highlighted: _highlighted,
+            child: GlassLayerScope(
+              child: GlassMenuPanel(
+                key: _panel,
+                items: widget.items,
+                mode: widget.mode,
+                onChoose: _choose,
+                highlighted: _highlighted,
+              ),
             ),
           ),
         ),

@@ -1,3 +1,5 @@
+import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart'
+    show GlassFullScreenCoverDragConfiguration;
 import 'package:adaptive_liquid_glass/src/button/glass_button.dart';
 import 'package:adaptive_liquid_glass/src/full_screen_cover/full_screen_cover_metrics.dart';
 import 'package:adaptive_liquid_glass/src/full_screen_cover/glass_full_screen_cover_handle.dart';
@@ -32,6 +34,8 @@ Widget _glassApp(
   TextDirection direction = TextDirection.ltr,
   String? semanticLabel,
   bool dragToDismiss = false,
+  GlassFullScreenCoverDragConfiguration dragConfiguration =
+      const GlassFullScreenCoverDragConfiguration(),
   bool showsCloseButton = false,
   String? closeButtonSemanticLabel,
   WidgetBuilder? body,
@@ -59,6 +63,7 @@ Widget _glassApp(
                       builder: body ?? _coverBody,
                       semanticLabel: semanticLabel,
                       dragToDismiss: dragToDismiss,
+                      dragConfiguration: dragConfiguration,
                       showsCloseButton: showsCloseButton,
                       closeButtonSemanticLabel: closeButtonSemanticLabel,
                     ),
@@ -75,6 +80,8 @@ Widget _glassApp(
 Widget _materialApp(
   void Function(GlassFullScreenCoverHandle<String> cover) onShown, {
   bool dragToDismiss = false,
+  GlassFullScreenCoverDragConfiguration dragConfiguration =
+      const GlassFullScreenCoverDragConfiguration(),
   bool showsCloseButton = false,
   String? closeButtonSemanticLabel,
   TextDirection direction = TextDirection.ltr,
@@ -89,6 +96,7 @@ Widget _materialApp(
             context: context,
             builder: (c) => const Text('Cover'),
             dragToDismiss: dragToDismiss,
+            dragConfiguration: dragConfiguration,
             showsCloseButton: showsCloseButton,
             closeButtonSemanticLabel: closeButtonSemanticLabel,
           ),
@@ -301,6 +309,69 @@ void main() {
     expect(t.getTopLeft(_background).dy, moreOrLessEquals(0));
   }, variant: ios);
 
+  for (final material in [false, true]) {
+    testWidgets('custom cover drag thresholds, material=$material', (t) async {
+      shaderEnv();
+      const policy = GlassFullScreenCoverDragConfiguration(
+        dismissFraction: 0.7,
+        flingVelocity: double.infinity,
+      );
+      await t.pumpWidget(
+        material
+            ? _materialApp(
+                (_) {},
+                dragToDismiss: true,
+                dragConfiguration: policy,
+              )
+            : _glassApp((_) {}, dragToDismiss: true, dragConfiguration: policy),
+      );
+      await t.tap(find.text('Open'));
+      await t.pumpAndSettle();
+      final surface = material ? find.byType(Dialog) : _background;
+      // A fast short fling closes with default policy, but not this policy.
+      await t.fling(surface, const Offset(0, 80), 3000);
+      await t.pumpAndSettle();
+      expect(find.text('Cover'), findsOneWidget);
+      final height = t.getSize(surface).height;
+      final g = await t.startGesture(t.getCenter(surface));
+      for (var i = 0; i < 10; i++) {
+        await g.moveBy(Offset(0, height * 0.08));
+        await t.pump(const Duration(milliseconds: 100));
+      }
+      await t.pump(const Duration(milliseconds: 300));
+      await g.up();
+      await t.pumpAndSettle();
+      expect(find.text('Cover'), findsNothing);
+    }, variant: material ? android : ios);
+  }
+
+  testWidgets('child scrolling does not drag or dismiss the cover', (t) async {
+    shaderEnv();
+    final scroll = ScrollController();
+    addTearDown(scroll.dispose);
+    await t.pumpWidget(
+      _glassApp(
+        (_) {},
+        dragToDismiss: true,
+        body: (_) => ListView(
+          controller: scroll,
+          children: [
+            const Text('Cover'),
+            for (var i = 0; i < 40; i++)
+              SizedBox(height: 60, child: Text('Row $i')),
+          ],
+        ),
+      ),
+    );
+    await t.tap(find.text('Open'));
+    await t.pumpAndSettle();
+    await t.drag(find.byType(ListView), const Offset(0, -300));
+    await t.pumpAndSettle();
+    expect(scroll.offset, greaterThan(200));
+    expect(t.getTopLeft(find.byType(ListView)).dy, 0);
+    expect(find.byType(ListView), findsOneWidget);
+  }, variant: ios);
+
   testWidgets('dragToDismiss: past a quarter it closes with null', (t) async {
     shaderEnv();
     GlassFullScreenCoverHandle<String>? cover;
@@ -350,6 +421,30 @@ void main() {
     );
     await t.pumpAndSettle();
     expect(find.text('Cover'), findsNothing);
+  }, variant: ios);
+
+  testWidgets('a downward fling while still above rest does not dismiss', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(_glassApp((_) {}, dragToDismiss: true));
+    await t.tap(find.text('Open'));
+    await t.pumpAndSettle();
+    final g = await t.startGesture(t.getCenter(_background));
+    await g.moveBy(
+      const Offset(0, -120),
+      timeStamp: const Duration(milliseconds: 10),
+    );
+    for (var i = 0; i < 10; i++) {
+      await g.moveBy(
+        const Offset(0, 2),
+        timeStamp: Duration(milliseconds: 1000 + i),
+      );
+    }
+    await g.up(timeStamp: const Duration(milliseconds: 1010));
+    await t.pumpAndSettle();
+    expect(find.text('Cover'), findsOneWidget);
+    expect(t.getTopLeft(_background).dy, 0);
   }, variant: ios);
 
   testWidgets('dragToDismiss: upward drags resist', (t) async {
@@ -403,6 +498,48 @@ void main() {
     await dragCover(t, 100);
     await t.pump();
     expect(t.getTopLeft(_background).dy, moreOrLessEquals(0));
+  }, variant: ios);
+
+  testWidgets('a queued dismiss action cannot close a newer route', (t) async {
+    shaderEnv();
+    late BuildContext coverContext;
+    GlassFullScreenCoverHandle<String>? cover;
+    await t.pumpWidget(
+      _glassApp(
+        (c) => cover = c,
+        dragToDismiss: true,
+        body: (context) {
+          coverContext = context;
+          return const Text('Cover');
+        },
+      ),
+    );
+    await t.tap(find.text('Open'));
+    await t.pumpAndSettle();
+    final dismiss = t
+        .widgetList<Semantics>(
+          find.ancestor(
+            of: find.text('Cover'),
+            matching: find.byType(Semantics),
+          ),
+        )
+        .firstWhere((s) => s.properties.onDismiss != null)
+        .properties
+        .onDismiss!;
+    Navigator.of(coverContext).push(
+      CupertinoPageRoute<void>(builder: (_) => const Text('Another page')),
+    );
+    await t.pumpAndSettle();
+    dismiss();
+    await t.pumpAndSettle();
+    expect(find.text('Another page'), findsOneWidget);
+    expect(cover!.isActive, true);
+    Navigator.of(coverContext).pop();
+    await t.pumpAndSettle();
+    expect(find.text('Cover'), findsOneWidget);
+    dismiss();
+    await t.pumpAndSettle();
+    expect(find.text('Cover'), findsNothing);
   }, variant: ios);
 
   testWidgets('dragToDismiss: assistive tech gets a dismiss action', (t) async {

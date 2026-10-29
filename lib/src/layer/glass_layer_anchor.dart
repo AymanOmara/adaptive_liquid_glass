@@ -7,6 +7,7 @@ import '../platform/glass_platform.dart';
 import '../shader/glass_backdrop.dart';
 import '../shader/glass_backdrop_config.dart';
 import 'glass_layer.dart';
+import 'glass_layer_scope.dart';
 import 'glass_layer_slot.dart';
 
 /// The shared layer of the route [context] is in, or null when the group
@@ -20,6 +21,9 @@ GlassLayer? sharedGlassLayerOf(
   GlassSnapshotWatch? snapshot,
 }) {
   if (!GlassSharedLayer.enabledFor(platform)) return null;
+  final scoped = GlassLayerScope.maybeOf(context);
+  // Its painter lives beside the groups, inside any snapshot or follower.
+  if (scoped != null) return scoped;
   if (GlassLayerOptOut.of(context)) return null;
   if (snapshot != null && (snapshot..update(context)).holdsPage) {
     return null;
@@ -153,6 +157,10 @@ class _GlassLayerAnchorState extends State<GlassLayerAnchor> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.layer != null &&
+        identical(GlassLayerScope.maybeOf(context), widget.layer)) {
+      return widget.child;
+    }
     if (Overlay.maybeOf(context) == null) return widget.child;
     return OverlayPortal(
       controller: _portal,

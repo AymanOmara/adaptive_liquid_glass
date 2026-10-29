@@ -3,23 +3,25 @@ import 'package:flutter/physics.dart' show SpringSimulation;
 import 'package:flutter/widgets.dart';
 
 import 'full_screen_cover_metrics.dart';
+import 'glass_full_screen_cover_drag_configuration.dart';
 
-/// Lets a full-screen cover be dragged down and released to dismiss, like
-/// iOS 26's sheet: past [FullScreenCoverMetrics.dismissFraction] of its
-/// height, or flung down faster than
-/// [FullScreenCoverMetrics.flingVelocity], it pops its route (respecting
-/// `PopScope`); otherwise it springs back. Assistive tech gets a dismiss
-/// action instead. With [enabled] false it is [child] alone.
+/// Optional cover drag with an explicit app-defined release policy.
+/// Respects PopScope, child scrollables and Reduce Motion. With [enabled]
+/// false it is [child] alone; SwiftUI's full-screen cover does not drag.
 class FullScreenCoverDragDismiss extends StatefulWidget {
   /// Creates the drag wrapper.
   const FullScreenCoverDragDismiss({
     super.key,
     required this.enabled,
     required this.child,
+    this.configuration = const GlassFullScreenCoverDragConfiguration(),
   });
 
   /// Whether a drag dismisses the cover.
   final bool enabled;
+
+  /// Release thresholds, resistance and return spring.
+  final GlassFullScreenCoverDragConfiguration configuration;
 
   /// The cover's page.
   final Widget child;
@@ -36,6 +38,8 @@ class _FullScreenCoverDragDismissState extends State<FullScreenCoverDragDismiss>
 
   /// Set once the cover is popping, so a late drag cannot pull it back.
   bool _dismissing = false;
+  double _dragOffset = 0;
+  int _settleRevision = 0;
 
   // Created here, not lazily: one first read in dispose would create
   // its ticker on a deactivated element.
@@ -51,24 +55,51 @@ class _FullScreenCoverDragDismissState extends State<FullScreenCoverDragDismiss>
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(FullScreenCoverDragDismiss oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.enabled && !widget.enabled) {
+      _settleRevision++;
+      _offset.stop();
+      _offset.value = 0;
+      _dragOffset = 0;
+    }
+  }
+
+  void _start(DragStartDetails details) {
+    if (_dismissing) return;
+    _settleRevision++;
+    _offset.stop();
+    final resistance = widget.configuration.upwardResistance;
+    _dragOffset = _offset.value < 0
+        ? (resistance > 0 ? _offset.value / resistance : 0)
+        : _offset.value;
+  }
+
   void _update(DragUpdateDetails d) {
     if (_dismissing) return;
-    _offset.stop();
-    final next = _offset.value + d.delta.dy;
-    // Down freely; up only a little, with resistance.
-    _offset.value = next < 0
-        ? next * FullScreenCoverMetrics.upwardResistance
-        : next;
+    _dragOffset += d.delta.dy;
+    // Apply resistance to total travel, not repeatedly to each displayed
+    // offset: the result must not depend on pointer-event frequency.
+    _offset.value = _dragOffset < 0
+        ? _dragOffset * widget.configuration.upwardResistance
+        : _dragOffset;
+  }
+
+  void _cancel() {
+    if (!_dismissing) _settle(0);
   }
 
   void _end(DragEndDetails d) {
     if (_dismissing) return;
     final v = d.velocity.pixelsPerSecond.dy;
     final height = context.size?.height ?? 0;
+    final policy = widget.configuration;
     final dismiss =
-        v > FullScreenCoverMetrics.flingVelocity ||
-        (_offset.value > height * FullScreenCoverMetrics.dismissFraction &&
-            v > -FullScreenCoverMetrics.flingVelocity);
+        _offset.value > 0 &&
+        (v > policy.flingVelocity ||
+            (_offset.value > height * policy.dismissFraction &&
+                v > -policy.flingVelocity));
     if (dismiss) {
       _dismiss();
     } else {
@@ -78,6 +109,7 @@ class _FullScreenCoverDragDismissState extends State<FullScreenCoverDragDismiss>
 
   /// Springs the cover back into place at [velocity].
   void _settle(double velocity) {
+    final revision = ++_settleRevision;
     if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
       _offset.value = 0;
       return;
@@ -85,23 +117,34 @@ class _FullScreenCoverDragDismissState extends State<FullScreenCoverDragDismiss>
     _offset
         .animateWith(
           SpringSimulation(
-            FullScreenCoverMetrics.spring,
+            widget.configuration.settleSpring ?? FullScreenCoverMetrics.spring,
             _offset.value,
             0,
             velocity,
           ),
         )
         .whenComplete(() {
-          if (mounted && !_dismissing) _offset.value = 0;
+          if (mounted && !_dismissing && revision == _settleRevision) {
+            _offset.value = 0;
+          }
         });
   }
 
   Future<void> _dismiss() async {
+    if (_dismissing) return;
     _dismissing = true;
     final route = ModalRoute.of(context);
+    if (route != null && !route.isCurrent) {
+      _dismissing = false;
+      _settle(0);
+      return;
+    }
     await Navigator.maybePop(context);
     // A PopScope that refused: spring back as after a short drag.
-    if (mounted && route != null && route.isCurrent) {
+    if (mounted &&
+        route != null &&
+        route.isActive &&
+        route.animation?.status != AnimationStatus.reverse) {
       _dismissing = false;
       _settle(0);
     }
@@ -121,8 +164,10 @@ class _FullScreenCoverDragDismissState extends State<FullScreenCoverDragDismiss>
               >(
                 VerticalDragGestureRecognizer.new,
                 (r) => r
+                  ..onStart = _start
                   ..onUpdate = _update
-                  ..onEnd = _end,
+                  ..onEnd = _end
+                  ..onCancel = _cancel,
               ),
         },
         child: AnimatedBuilder(

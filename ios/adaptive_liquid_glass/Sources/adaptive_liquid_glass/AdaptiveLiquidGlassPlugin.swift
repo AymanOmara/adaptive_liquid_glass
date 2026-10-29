@@ -5,9 +5,12 @@ public class AdaptiveLiquidGlassPlugin: NSObject, FlutterPlugin, FlutterStreamHa
   private var sink: FlutterEventSink?
   /// The open photo picker; one at a time.
   private var photosPicker: GlassPhotosPicker?
+  private var clearingPhotos = false
+  private var captureRegistrar: FlutterPluginRegistrar?
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let instance = AdaptiveLiquidGlassPlugin()
+    instance.captureRegistrar = registrar
     let method = FlutterMethodChannel(
       name: "adaptive_liquid_glass", binaryMessenger: registrar.messenger())
     registrar.addMethodCallDelegate(instance, channel: method)
@@ -16,12 +19,23 @@ public class AdaptiveLiquidGlassPlugin: NSObject, FlutterPlugin, FlutterStreamHa
       binaryMessenger: registrar.messenger())
     events.setStreamHandler(instance)
     registrar.register(
+      GlassNativeTabBarFactory(messenger: registrar.messenger()),
+      withId: "adaptive_liquid_glass/native_tabs",
+      // Public Flutter ABI value 2 is the synchronous hit-test policy. Dart
+      // creates this view only when its matching framework API is available;
+      // using the raw value keeps compilation compatible with older SDKs.
+      gestureRecognizersBlockingPolicy: FlutterPlatformViewGestureRecognizersBlockingPolicy(rawValue: 2))
+    registrar.register(
       GlassViewFactory(messenger: registrar.messenger()),
       withId: "adaptive_liquid_glass/native_glass")
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
+    #if DEBUG
+    case "debugNativeTabHosts":
+      result(captureRegistrar?.viewController?.children.filter { $0 is UITabBarController }.count ?? 0)
+    #endif
     case "getEnvironment":
       result([
         "iosMajorVersion": ProcessInfo.processInfo.operatingSystemVersion.majorVersion,
@@ -29,19 +43,72 @@ public class AdaptiveLiquidGlassPlugin: NSObject, FlutterPlugin, FlutterStreamHa
       ])
     case "symbol":
       result(Self.symbol(call.arguments as? [String: Any] ?? [:]))
-    case "pickPhotos":
-      if photosPicker != nil {
-        result(FlutterError(
-          code: "already_active", message: "A photo picker is already open.", details: nil))
+    case "captureApp":
+      GlassAppCapture.capture(view: captureRegistrar?.viewController?.view, result: result)
+    case "getSavedColors":
+      DispatchQueue.global(qos: .utility).async {
+        do {
+          let colors = try GlassSavedColors.load()
+          DispatchQueue.main.async { result(colors) }
+        } catch {
+          DispatchQueue.main.async {
+            result(FlutterError(code: "palette_read_failed", message: error.localizedDescription, details: nil))
+          }
+        }
+      }
+    case "setSavedColors":
+      guard let colors = call.arguments as? [Int64],
+            colors.allSatisfy({ $0 >= 0 && $0 <= 0xFFFFFFFF }) else {
+        result(FlutterError(code: "invalid_palette", message: "Expected ARGB colour integers.", details: nil))
         return
       }
-      photosPicker = GlassPhotosPicker.present(arguments: call.arguments, result: result) {
+      DispatchQueue.global(qos: .utility).async {
+        do {
+          try GlassSavedColors.save(colors)
+          DispatchQueue.main.async { result(nil) }
+        } catch {
+          DispatchQueue.main.async {
+            result(FlutterError(code: "palette_write_failed", message: error.localizedDescription, details: nil))
+          }
+        }
+      }
+    case "pickPhotos":
+      if photosPicker != nil || clearingPhotos {
+        result(FlutterError(
+          code: "already_active", message: "Photo picking or cleanup is already active.", details: nil))
+        return
+      }
+      let importName = (call.arguments as? [String: Any])?["importChannel"] as? String
+      let imports = importName.flatMap { name in
+        captureRegistrar.map { FlutterMethodChannel(name: name, binaryMessenger: $0.messenger()) }
+      }
+      let ready: (([String: Any]) -> Void)? = imports.map { channel in
+        { item in channel.invokeMethod("itemReady", arguments: item) }
+      }
+      photosPicker = GlassPhotosPicker.present(
+        arguments: call.arguments, result: result, onItemReady: ready) {
         [weak self] in self?.photosPicker = nil
       }
     case "clearPickedPhotos":
+      guard photosPicker == nil && !clearingPhotos else {
+        result(FlutterError(
+          code: "already_active", message: "Wait for the photo import before clearing picked files.", details: nil))
+        return
+      }
+      clearingPhotos = true
       DispatchQueue.global(qos: .utility).async {
-        GlassPhotosPicker.clearCopies()
-        DispatchQueue.main.async { result(nil) }
+        let failure: FlutterError?
+        do {
+          try GlassPhotosPicker.clearCopies()
+          failure = nil
+        } catch {
+          failure = FlutterError(
+            code: "cleanup_failed", message: error.localizedDescription, details: nil)
+        }
+        DispatchQueue.main.async {
+          self.clearingPhotos = false
+          result(failure)
+        }
       }
     default:
       result(FlutterMethodNotImplemented)

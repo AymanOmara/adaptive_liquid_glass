@@ -8,6 +8,7 @@ import '../core/glass_render_mode.dart';
 import '../core/liquid_glass_theme.dart';
 import '../core/render_mode_resolver.dart';
 import '../foreground/glass_backdrop_source.dart';
+import '../layer/glass_layer_scope.dart';
 import '../native/glass_batch.dart';
 import '../navigation/glass_navigation_bar.dart';
 import '../platform/glass_platform.dart';
@@ -52,6 +53,7 @@ import 'tab_bar_scroll_edge.dart';
 /// [floatingActionButton] step aside (see [hideBottomBarsWithKeyboard]).
 ///
 /// On the Material path the same layout holds Material's bars.
+/// Android shader glass shares a local layer, including during page transitions.
 class GlassScaffold extends StatefulWidget {
   /// Creates a scaffold.
   const GlassScaffold({
@@ -259,7 +261,7 @@ class _GlassScaffoldState extends State<GlassScaffold> {
   Widget build(BuildContext context) =>
       ValueListenableBuilder<GlassEnvironment>(
         valueListenable: GlassPlatform.instance.environment,
-        builder: (context, _, _) => _build(context),
+        builder: (context, _, _) => GlassLayerScope(child: _build(context)),
       );
 
   Widget _build(BuildContext context) {

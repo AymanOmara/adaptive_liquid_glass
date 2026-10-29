@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart'
     show FilteringTextInputFormatter, LengthLimitingTextInputFormatter;
@@ -117,9 +119,9 @@ class GlassColorPickerPanel extends StatefulWidget {
   /// The hex field's label.
   final String hexLabel;
 
-  /// The saved colours beside the current one. Null shares one in-memory
-  /// list between every picker (UIKit's saved colours on a fresh device
-  /// to begin with), kept until the app quits.
+  /// The saved colours beside the current one. Null shares one list between
+  /// every picker, saved across launches on iOS and Android. Other platforms
+  /// keep it in memory. A fresh installation starts with UIKit's defaults.
   final List<Color>? savedColors;
 
   /// Called with the new list when the "+" saves the current colour or a
@@ -164,6 +166,12 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
   Color get _opaque => _hsv.toColor();
 
   @override
+  void initState() {
+    super.initState();
+    if (_saved == null) unawaited(SavedColors.ensureLoaded());
+  }
+
+  @override
   void didUpdateWidget(GlassColorPickerPanel old) {
     super.didUpdateWidget(old);
     if (widget.value != old.value && widget.value != _emitted) {
@@ -171,16 +179,24 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
       _alpha = widget.supportsOpacity ? widget.value.a : 1;
       _emitted = widget.value;
     }
-    if (widget.savedColors != old.savedColors) _saved = widget.savedColors;
+    if (widget.savedColors != old.savedColors) {
+      _saved = widget.savedColors;
+      if (_saved == null) unawaited(SavedColors.ensureLoaded());
+    }
   }
 
-  void _setSaved(List<Color> next) {
+  void _editSaved(List<Color> Function(List<Color>) update) {
     if (_saved != null) {
+      final next = update(_saved!);
       setState(() => _saved = next);
+      widget.onSavedColorsChanged?.call(next);
     } else {
-      SavedColors.shared.value = next;
+      unawaited(
+        SavedColors.edit(update).then((next) {
+          if (mounted) widget.onSavedColorsChanged?.call(next);
+        }),
+      );
     }
-    widget.onSavedColorsChanged?.call(next);
   }
 
   Widget _savedRow(List<Color> saved) => SavedColorsRow(
@@ -192,8 +208,21 @@ class _GlassColorPickerPanelState extends State<GlassColorPickerPanel> {
       hsv: HSVColor.fromColor(c.withValues(alpha: 1)),
       alpha: widget.supportsOpacity ? c.a : null,
     ),
-    onAdd: () => _setSaved([...saved, _color]),
-    onRemove: (i) => _setSaved([...saved]..removeAt(i)),
+    onAdd: () {
+      final color = _color;
+      _editSaved((colors) => [...colors, color]);
+    },
+    onRemove: (i) {
+      final color = saved[i];
+      _editSaved((colors) {
+        // The storage read or another picker may have changed the row since
+        // its context menu opened. Remove that colour, never an unrelated index.
+        final index = colors.indexOf(color);
+        final next = [...colors];
+        if (index >= 0) next.removeAt(index);
+        return next;
+      });
+    },
   );
 
   void _set({HSVColor? hsv, double? alpha}) {

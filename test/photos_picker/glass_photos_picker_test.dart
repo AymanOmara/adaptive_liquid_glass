@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
@@ -44,6 +45,16 @@ List<MethodCall> _mock(Future<Object?> Function(MethodCall) reply) {
   return calls;
 }
 
+Future<void> _ready(String channel, Map<String, Object?> item) {
+  final done = Completer<void>();
+  ui.channelBuffers.push(
+    channel,
+    const StandardMethodCodec().encodeMethodCall(MethodCall('itemReady', item)),
+    (_) => done.complete(),
+  );
+  return done.future;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => GlassProgram.instance.debugReset(skipLoad: true));
@@ -54,6 +65,96 @@ void main() {
   });
 
   group('pickGlassPhotos', () {
+    testWidgets('ready items arrive before completion, once each', (t) async {
+      final reply = Completer<Object?>();
+      final calls = _mock((_) => reply.future);
+      final ready = <GlassPickedPhoto>[];
+      var finished = false;
+      final pending = pickGlassPhotos(onItemReady: ready.add)
+        ..then((_) => finished = true);
+      await t.pump();
+      final channel =
+          (calls.single.arguments as Map)['importChannel'] as String;
+      await _ready(channel, _image);
+      await _ready(channel, _image);
+      expect(ready.map((p) => p.path), ['/tmp/a.heic']);
+      expect(finished, isFalse);
+      reply.complete([_image, _video]);
+      final result = await pending;
+      expect(ready, result);
+      expect(ready, hasLength(2));
+    }, variant: _both);
+
+    testWidgets('older plugins deliver per-item callbacks with final result', (
+      t,
+    ) async {
+      _mock((_) async => [_image, _video]);
+      final ready = <GlassPickedPhoto>[];
+      final result = await pickGlassPhotos(onItemReady: ready.add);
+      expect(ready, result);
+    }, variant: _both);
+
+    testWidgets('callback errors are reported without breaking the import', (
+      t,
+    ) async {
+      final reply = Completer<Object?>();
+      final calls = _mock((_) => reply.future);
+      final reported = <FlutterErrorDetails>[];
+      final old = FlutterError.onError;
+      FlutterError.onError = reported.add;
+      addTearDown(() => FlutterError.onError = old);
+      final pending = pickGlassPhotos(
+        onItemReady: (_) => throw StateError('callback'),
+      );
+      await t.pump();
+      final channel =
+          (calls.single.arguments as Map)['importChannel'] as String;
+      await _ready(channel, _image);
+      reply.complete([_image]);
+      expect(await pending, hasLength(1));
+      expect(reported, hasLength(1));
+      expect(reported.single.exception, isA<StateError>());
+    }, variant: _both);
+
+    testWidgets('a later import failure preserves earlier notifications', (
+      t,
+    ) async {
+      final reply = Completer<Object?>();
+      final calls = _mock((_) => reply.future);
+      final ready = <GlassPickedPhoto>[];
+      final pending = pickGlassPhotos(onItemReady: ready.add);
+      final failed = expectLater(pending, throwsA(isA<PlatformException>()));
+      await t.pump();
+      final channel =
+          (calls.single.arguments as Map)['importChannel'] as String;
+      await _ready(channel, _image);
+      reply.completeError(PlatformException(code: 'load_failed'));
+      await failed;
+      expect(ready.single.path, '/tmp/a.heic');
+    }, variant: _both);
+
+    testWidgets('each request has an isolated import channel', (t) async {
+      final replies = [Completer<Object?>(), Completer<Object?>()];
+      var index = 0;
+      final calls = _mock((_) => replies[index++].future);
+      final first = <GlassPickedPhoto>[];
+      final second = <GlassPickedPhoto>[];
+      final a = pickGlassPhotos(onItemReady: first.add);
+      final b = pickGlassPhotos(onItemReady: second.add);
+      await t.pump();
+      final channels = calls
+          .map((c) => (c.arguments as Map)['importChannel'] as String)
+          .toList();
+      expect(channels[0], isNot(channels[1]));
+      await _ready(channels[1], _video);
+      expect(first, isEmpty);
+      expect(second.single.path, '/tmp/b.mov');
+      replies[0].complete([]);
+      replies[1].complete([_video]);
+      await Future.wait([a, b]);
+      expect(second, hasLength(1));
+    }, variant: _both);
+
     testWidgets('sends maxSelection and filter, parses the results', (t) async {
       final calls = _mock((_) async => [_image, _video]);
       final photos = await pickGlassPhotos(
@@ -190,6 +291,32 @@ void main() {
   });
 
   group('clearGlassPickedPhotos', () {
+    testWidgets('reports cleanup failure and permits retry', (t) async {
+      var failed = true;
+      final calls = _mock((_) async {
+        if (failed) {
+          throw PlatformException(
+            code: 'cleanup_failed',
+            message: 'Disk denied',
+          );
+        }
+        return null;
+      });
+      await expectLater(
+        clearGlassPickedPhotos(),
+        throwsA(
+          isA<PlatformException>().having(
+            (e) => e.code,
+            'code',
+            'cleanup_failed',
+          ),
+        ),
+      );
+      failed = false;
+      await clearGlassPickedPhotos();
+      expect(calls, hasLength(2));
+    }, variant: _both);
+
     testWidgets('asks the platform to delete the copies', (t) async {
       final calls = _mock((_) async => null);
       await clearGlassPickedPhotos();
@@ -206,6 +333,70 @@ void main() {
   });
 
   group('GlassPhotosPicker', () {
+    testWidgets('ready callback leaves the final batch callback intact', (
+      t,
+    ) async {
+      shaderEnv();
+      final reply = Completer<Object?>();
+      final calls = _mock((_) => reply.future);
+      final ready = <GlassPickedPhoto>[];
+      GlassPickedPhotos? picked;
+      await t.pumpWidget(
+        plainHost(
+          GlassPhotosPicker(
+            label: 'Pick',
+            onPicked: (photos) => picked = photos,
+            onItemReady: ready.add,
+          ),
+        ),
+      );
+      await t.tap(find.text('Pick'));
+      await t.pump();
+      final channel =
+          (calls.single.arguments as Map)['importChannel'] as String;
+      await _ready(channel, _image);
+      expect(picked, isNull);
+      reply.complete([_image, _video]);
+      await t.pump();
+      expect(picked, hasLength(2));
+      expect(ready, picked);
+      expect(t.widget<GlassButton>(find.byType(GlassButton)).loading, isFalse);
+    }, variant: _both);
+
+    testWidgets('notifies ready items while loading and stops after disposal', (
+      t,
+    ) async {
+      shaderEnv();
+      final reply = Completer<Object?>();
+      final calls = _mock((_) => reply.future);
+      final ready = <GlassPickedPhoto>[];
+      var picked = false;
+      await t.pumpWidget(
+        plainHost(
+          GlassPhotosPicker(
+            label: 'Pick',
+            onPicked: (_) => picked = true,
+            onItemReady: ready.add,
+          ),
+        ),
+      );
+      await t.tap(find.text('Pick'));
+      await t.pump();
+      final channel =
+          (calls.single.arguments as Map)['importChannel'] as String;
+      await _ready(channel, _image);
+      expect(ready, hasLength(1));
+      expect(picked, isFalse);
+      expect(t.widget<GlassButton>(find.byType(GlassButton)).loading, isTrue);
+      await t.pumpWidget(const SizedBox());
+      await _ready(channel, _video);
+      reply.complete([_image, _video]);
+      await t.pump();
+      expect(ready, hasLength(1));
+      expect(picked, isFalse);
+      expect(t.takeException(), isNull);
+    }, variant: _both);
+
     testWidgets('tapping opens the picker and passes the choice', (t) async {
       shaderEnv();
       final calls = _mock((_) async => [_image]);
@@ -323,6 +514,60 @@ void main() {
       await t.pump();
       expect(calls, hasLength(2));
     }, variant: ios);
+
+    testWidgets(
+      'shows loading until local files finish and resets after errors',
+      (t) async {
+        shaderEnv();
+        final reply = Completer<Object?>();
+        _mock((_) => reply.future);
+        Object? error;
+        await t.pumpWidget(
+          plainHost(
+            GlassPhotosPicker(
+              label: 'Pick',
+              onPicked: (_) {},
+              onError: (e) => error = e,
+            ),
+          ),
+        );
+        await t.tap(find.text('Pick'));
+        await t.pump();
+        expect(t.widget<GlassButton>(find.byType(GlassButton)).loading, isTrue);
+        reply.completeError(PlatformException(code: 'load_failed'));
+        await t.pump();
+        expect(error, isA<PlatformException>());
+        expect(
+          t.widget<GlassButton>(find.byType(GlassButton)).loading,
+          isFalse,
+        );
+      },
+      variant: _both,
+    );
+
+    testWidgets('does not call onError after the trigger is disposed', (
+      t,
+    ) async {
+      shaderEnv();
+      final reply = Completer<Object?>();
+      _mock((_) => reply.future);
+      var reported = false;
+      await t.pumpWidget(
+        plainHost(
+          GlassPhotosPicker(
+            label: 'Pick',
+            onPicked: (_) {},
+            onError: (_) => reported = true,
+          ),
+        ),
+      );
+      await t.tap(find.text('Pick'));
+      await t.pumpWidget(const SizedBox());
+      reply.completeError(PlatformException(code: 'load_failed'));
+      await t.pump();
+      expect(reported, isFalse);
+      expect(t.takeException(), isNull);
+    }, variant: _both);
 
     testWidgets('null onPicked disables the trigger', (t) async {
       shaderEnv();

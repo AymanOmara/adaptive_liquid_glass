@@ -235,6 +235,45 @@ void main() {
     expect(shape()['glow'], isNull);
   }, variant: ios);
 
+  testWidgets('clear native presses use their separately measured light', (
+    t,
+  ) async {
+    iosEnv();
+    final sent = mockNative(t);
+    for (final brightness in Brightness.values) {
+      await t.pumpWidget(
+        host(
+          MediaQuery(
+            data: MediaQueryData(platformBrightness: brightness),
+            child: Align(
+              alignment: AlignmentDirectional.topStart,
+              child: LiquidGlass(
+                glass: Glass.clear.interactive(),
+                child: const SizedBox(width: 200, height: 56),
+              ),
+            ),
+          ),
+        ),
+      );
+      await t.pump();
+      final gesture = await t.startGesture(const Offset(100, 28));
+      await t.pump();
+      final shape = (sent.last['shapes']! as List).single as Map;
+      final glow = shape['glow']! as List;
+      final dark = brightness == Brightness.dark;
+      expect(
+        glow[2],
+        dark ? NativePressLight.clearDarkGlow : NativePressLight.clearLightGlow,
+      );
+      expect(
+        glow[4],
+        dark ? NativePressLight.clearDarkLift : NativePressLight.clearLightLift,
+      );
+      await gesture.up();
+      await t.pumpAndSettle();
+    }
+  }, variant: ios);
+
   testWidgets('native payload carries the platform brightness', (t) async {
     iosEnv();
     final sent = mockNative(t);

@@ -38,7 +38,7 @@ import 'glass_color_picker_panel.dart';
 /// On the Material path it is a Material 3 [ListTile] opening a modal
 /// bottom sheet with the same content. The sheet's geometry is measured
 /// from UIKit on iOS 26.4, saved colours and the eyedropper included; the
-/// eyedropper reads only the app's own drawing.
+/// eyedropper includes supported native views within the app.
 class GlassColorPicker extends StatefulWidget {
   /// Creates a colour picker row.
   const GlassColorPicker({
@@ -105,8 +105,9 @@ class GlassColorPicker extends StatefulWidget {
   final String hexLabel;
 
   /// The saved colours beside the current one in the sheet. Null shares
-  /// one in-memory list between every picker, starting with UIKit's
-  /// (black, blue, green, yellow, red), kept until the app quits.
+  /// one list between every picker, persisted locally on iOS and Android,
+  /// starting with UIKit's black, blue, green, yellow and red. Other platforms
+  /// keep it in memory. Passing a list leaves storage under the app's control.
   final List<Color>? savedColors;
 
   /// Called with the new saved colours when the sheet's "+" saves the
@@ -125,9 +126,10 @@ class GlassColorPicker extends StatefulWidget {
 
   /// Whether the sheet has UIKit's eyedropper: it hides the sheet, shows
   /// a loupe over the app to drag, picks the pixel under it (keeping the
-  /// colour's opacity) and brings the sheet back. Flutter reads only what
-  /// the app itself draws: not other apps, the status bar or platform
-  /// views (maps, web views, native-mode glass).
+  /// colour opaque) and brings the sheet back. Captures UIKit views and
+  /// native glass on iOS, and ordinary Android window views on API 26+
+  /// with image/texture or opaque SurfaceView composition. Custom or
+  /// above-window surfaces and other hosts fall back to Flutter's drawing. Other apps and separate system/protected surfaces are excluded.
   final bool supportsEyedropper;
 
   /// The eyedropper's screen-reader label.

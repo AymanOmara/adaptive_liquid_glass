@@ -17,20 +17,30 @@ import 'paint_chain.dart';
 /// live slot of a layer paints every group's glass and then their content.
 class GlassLayerSlot extends LeafRenderObjectWidget {
   /// Creates a slot.
-  const GlassLayerSlot({super.key, required this.layer});
+  const GlassLayerSlot({
+    super.key,
+    required this.layer,
+    this.repaintBoundary = true,
+  });
+
+  /// Route-overlay slots repaint independently. Local slots must follow
+  /// ancestor paints, including menu animation transforms.
+  final bool repaintBoundary;
 
   /// The route's layer.
   final GlassLayer layer;
 
   @override
   RenderGlassLayerSlot createRenderObject(BuildContext context) =>
-      RenderGlassLayerSlot(layer);
+      RenderGlassLayerSlot(layer, repaintBoundary: repaintBoundary);
 
   @override
   void updateRenderObject(
     BuildContext context,
     RenderGlassLayerSlot renderObject,
-  ) => renderObject.glassLayer = layer;
+  ) => renderObject
+    ..glassLayer = layer
+    ..repaintBoundary = repaintBoundary;
 }
 
 class _Client {
@@ -43,7 +53,8 @@ class _Client {
 /// See [GlassLayerSlot].
 class RenderGlassLayerSlot extends RenderBox {
   /// Creates the slot.
-  RenderGlassLayerSlot(this._layer);
+  RenderGlassLayerSlot(this._layer, {bool repaintBoundary = true})
+    : _repaintBoundary = repaintBoundary;
 
   GlassLayer _layer;
 
@@ -63,7 +74,18 @@ class RenderGlassLayerSlot extends RenderBox {
   final List<BackdropKey> _keys = [];
 
   @override
-  bool get isRepaintBoundary => true;
+  bool get isRepaintBoundary => _repaintBoundary;
+
+  bool _repaintBoundary;
+
+  /// Whether the slot repaints independently of its ancestors.
+  bool get repaintBoundary => _repaintBoundary;
+  set repaintBoundary(bool value) {
+    if (_repaintBoundary == value) return;
+    _repaintBoundary = value;
+    markNeedsCompositingBitsUpdate();
+    markNeedsPaint();
+  }
 
   @override
   bool get alwaysNeedsCompositing => true;

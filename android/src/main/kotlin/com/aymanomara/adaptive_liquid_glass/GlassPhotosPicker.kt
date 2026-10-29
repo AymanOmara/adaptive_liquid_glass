@@ -53,6 +53,7 @@ internal class GlassPhotosPicker(private val context: Context) :
     private var pending: MethodChannel.Result? = null
     private var pendingMax = 1
     private var pendingOptions = Options()
+    private var pendingOnItemReady: ((Map<String, Any?>) -> Unit)? = null
     private val io = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
     private val dir get() = File(context.cacheDir, "adaptive_liquid_glass_picker")
@@ -62,6 +63,7 @@ internal class GlassPhotosPicker(private val context: Context) :
         filter: String,
         options: Options,
         result: MethodChannel.Result,
+        onItemReady: ((Map<String, Any?>) -> Unit)? = null,
     ) {
         val host = activity
         if (host == null) {
@@ -77,27 +79,38 @@ internal class GlassPhotosPicker(private val context: Context) :
         pending = result
         pendingMax = maxSelection
         pendingOptions = options
+        pendingOnItemReady = onItemReady
         try {
             host.startActivityForResult(intent, REQUEST_CODE)
         } catch (e: ActivityNotFoundException) {
             pending = null
+            pendingOnItemReady = null
             result.error("no_picker", e.message, null)
         }
     }
 
     /** Deletes every copy made so far, off the main thread. */
     fun clearCopies(result: MethodChannel.Result) {
+        if (pending != null) {
+            result.error("already_active", "Wait for the photo import before clearing picked files.", null)
+            return
+        }
         io.execute {
-            dir.deleteRecursively()
-            main.post { result.success(null) }
+            try {
+                GlassPhotoCache.clear(dir)
+                main.post { result.success(null) }
+            } catch (e: Exception) {
+                main.post { result.error("cleanup_failed", e.message, null) }
+            }
         }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
         if (requestCode != REQUEST_CODE) return false
         val result = pending ?: return true
-        pending = null
         if (resultCode != Activity.RESULT_OK || data == null) {
+            pending = null
+            pendingOnItemReady = null
             result.success(emptyList<Any>())
             return true
         }
@@ -117,23 +130,38 @@ internal class GlassPhotosPicker(private val context: Context) :
             uris = uris.take(pendingMax)
         }
         val options = pendingOptions
+        val ready = pendingOnItemReady
+        pendingOnItemReady = null
         io.execute {
             try {
-                val items = uris.map { copy(it, options) }
-                main.post { result.success(mapOf("items" to items, "dropped" to dropped)) }
+                val items = GlassPhotoCache.importItems(
+                    dir, uris, { uri, session -> copy(uri, options, session) },
+                    ready?.let { notify ->
+                        { item ->
+                            main.post { notify(item) }
+                            Unit
+                        }
+                    },
+                )
+                main.post {
+                    pending = null
+                    result.success(mapOf("items" to items, "dropped" to dropped))
+                }
             } catch (e: Exception) {
-                main.post { result.error("load_failed", e.message, null) }
+                main.post {
+                    pending = null
+                    result.error("load_failed", e.message, null)
+                }
             }
         }
         return true
     }
 
-    private fun copy(uri: Uri, options: Options): Map<String, Any?> {
+    private fun copy(uri: Uri, options: Options, directory: File): Map<String, Any?> {
         val resolver = context.contentResolver
         var mime = resolver.getType(uri)
         val ext = mime?.let { MimeTypeMap.getSingleton().getExtensionFromMimeType(it) }
-        dir.mkdirs()
-        var dest = File(dir, UUID.randomUUID().toString() + (ext?.let { ".$it" } ?: ""))
+        var dest = File(directory, UUID.randomUUID().toString() + (ext?.let { ".$it" } ?: ""))
         val input = resolver.openInputStream(uri)
             ?: throw IllegalStateException("Cannot open $uri")
         input.use { src -> dest.outputStream().use { src.copyTo(it) } }
@@ -141,7 +169,7 @@ internal class GlassPhotosPicker(private val context: Context) :
         val item = mutableMapOf<String, Any?>("isVideo" to isVideo)
         if (isVideo) {
             if (options.compatible && H264Transcoder.isHevc(dest)) {
-                val out = File(dir, dest.nameWithoutExtension + ".out.mp4")
+                val out = File(directory, dest.nameWithoutExtension + ".out.mp4")
                 if (H264Transcoder.transcode(dest, out)) {
                     dest.delete()
                     dest = out
@@ -153,9 +181,12 @@ internal class GlassPhotosPicker(private val context: Context) :
             }
             videoInfo(dest, item)
         } else {
-            reencode(dest, mime, options)?.let { (file, type) ->
-                dest = file
-                mime = type
+            val encoded = reencode(dest, mime, options)
+            if (encoded != null) {
+                dest = encoded.first
+                mime = encoded.second
+            } else if (options.compatible && (mime == "image/heic" || mime == "image/heif")) {
+                item["conversionFailed"] = true
             }
             imageSize(dest)?.let { (w, h) ->
                 item["width"] = w
@@ -222,7 +253,7 @@ internal class GlassPhotosPicker(private val context: Context) :
         val upright =
             Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true)
         val png = mime == "image/png"
-        val out = File(dir, file.nameWithoutExtension + if (png) ".out.png" else ".out.jpg")
+        val out = File(file.parentFile, file.nameWithoutExtension + if (png) ".out.png" else ".out.jpg")
         val written = try {
             out.outputStream().use {
                 upright.compress(

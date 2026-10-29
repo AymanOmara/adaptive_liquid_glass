@@ -5,19 +5,28 @@ import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.BinaryMessenger
+import android.os.Handler
+import android.os.Looper
+import java.util.concurrent.Executors
 
 /**
  * The Android side of `adaptive_liquid_glass`. Android draws Material 3 in
- * Dart; the only native work is the system photo picker behind
- * `pickGlassPhotos` (and `clearGlassPickedPhotos`). Every other method is not implemented, as before.
+ * Dart; native work hosts the system photo picker and stores the colour palette.
  */
 class AdaptiveLiquidGlassPlugin : FlutterPlugin, ActivityAware, MethodChannel.MethodCallHandler {
     private var channel: MethodChannel? = null
     private var photosPicker: GlassPhotosPicker? = null
     private var activityBinding: ActivityPluginBinding? = null
+    private var savedColors: GlassSavedColors? = null
+    private var storage = Executors.newSingleThreadExecutor()
+    private var captureMessenger: BinaryMessenger? = null
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        captureMessenger = binding.binaryMessenger
         photosPicker = GlassPhotosPicker(binding.applicationContext)
+        savedColors = GlassSavedColors(binding.applicationContext)
+        if (storage.isShutdown) storage = Executors.newSingleThreadExecutor()
         channel = MethodChannel(binding.binaryMessenger, "adaptive_liquid_glass").also {
             it.setMethodCallHandler(this)
         }
@@ -27,15 +36,52 @@ class AdaptiveLiquidGlassPlugin : FlutterPlugin, ActivityAware, MethodChannel.Me
         channel?.setMethodCallHandler(null)
         channel = null
         photosPicker = null
+        savedColors = null
+        storage.shutdown()
+        captureMessenger = null
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
+            "captureApp" -> GlassAppCapture.capture(activityBinding?.activity, captureMessenger, result)
+            "getSavedColors", "setSavedColors" -> {
+                val palette = savedColors
+                if (palette == null) {
+                    result.error("palette_unavailable", "The plugin is detached.", null)
+                    return
+                }
+                val colors = if (call.method == "setSavedColors") {
+                    val values = call.arguments as? List<*>
+                    if (values == null || values.any {
+                        (it !is Int && it !is Long) || (it as Number).toLong() !in 0L..0xFFFFFFFFL
+                    }) {
+                        result.error("invalid_palette", "Expected ARGB colour integers.", null)
+                        return
+                    }
+                    values.map { (it as Number).toLong() }
+                } else null
+                storage.execute {
+                    try {
+                        val response = if (colors == null) palette.load() else {
+                            palette.save(colors)
+                            null
+                        }
+                        Handler(Looper.getMainLooper()).post { result.success(response) }
+                    } catch (error: Exception) {
+                        Handler(Looper.getMainLooper()).post {
+                            result.error("palette_storage_failed", error.message, null)
+                        }
+                    }
+                }
+            }
             "pickPhotos" -> {
                 val picker = photosPicker
                 if (picker == null) {
                     result.error("no_activity", "The plugin is detached.", null)
                     return
+                }
+                val imports = call.argument<String>("importChannel")?.let { name ->
+                    captureMessenger?.let { MethodChannel(it, name) }
                 }
                 picker.pick(
                     maxSelection = call.argument<Int>("maxSelection") ?: 1,
@@ -47,6 +93,9 @@ class AdaptiveLiquidGlassPlugin : FlutterPlugin, ActivityAware, MethodChannel.Me
                         compatible = call.argument<Boolean>("compatibleFormat") ?: false,
                     ),
                     result = result,
+                    onItemReady = imports?.let { events ->
+                        { item -> events.invokeMethod("itemReady", item) }
+                    },
                 )
             }
             "clearPickedPhotos" -> {
