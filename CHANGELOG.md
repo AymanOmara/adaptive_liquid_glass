@@ -1,4 +1,16 @@
-## Unreleased
+## 0.3.0 (2026-10-29)
+
+Behaviour changes:
+
+- On iOS 26, a stock two-to-four-tab `GlassTabBar` now renders as the native
+  UIKit bar. Pass `mode: GlassRenderMode.shader` to keep the Flutter bar.
+- `clearGlassPickedPhotos()` now throws a `PlatformException`:
+  `already_active` while a picker or import is running, `cleanup_failed` when
+  the files cannot be deleted. Wrap launch-time cleanup in a try/catch.
+- The shared saved-colour palette now persists across launches.
+
+- Native tab bar: the Flutter bar keeps its state when a route entrance hands
+  it to the native control, instead of rebuilding from scratch.
 
 - Native tab bar: empty-string dot badges now use the complete system control
   on eligible stock bars. Verified 18-point dots, selection, count changes and
