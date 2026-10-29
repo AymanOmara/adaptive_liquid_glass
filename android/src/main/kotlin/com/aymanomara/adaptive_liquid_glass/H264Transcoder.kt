@@ -41,8 +41,12 @@ internal object H264Transcoder {
      * Writes [src] re-encoded as H.264 to [dest]; false (deleting any
      * partial [dest]) when a codec, the muxer or the audio format refuses.
      */
-    fun transcode(src: File, dest: File): Boolean = try {
-        run(src, dest)
+    fun transcode(
+        src: File,
+        dest: File,
+        encode: (File, File) -> Unit = ::run,
+    ): Boolean = try {
+        encode(src, dest)
         true
     } catch (e: Exception) {
         dest.delete()
@@ -139,7 +143,9 @@ internal object H264Transcoder {
             var inputDone = false
             var decoderDone = false
             var encoderDone = false
+            val activity = TranscodeProgress()
             while (!encoderDone) {
+                activity.checkActive()
                 if (!inputDone) {
                     val i = decoder.dequeueInputBuffer(TIMEOUT_US)
                     if (i >= 0) {
@@ -153,11 +159,13 @@ internal object H264Transcoder {
                             decoder.queueInputBuffer(i, 0, size, video.sampleTime, 0)
                             video.advance()
                         }
+                        activity.advanced()
                     }
                 }
                 // Drain the encoder first, then feed it one decoded frame.
                 var progress = true
                 while (progress && !encoderDone) {
+                    activity.checkActive()
                     progress = false
                     val e = encoder.dequeueOutputBuffer(info, TIMEOUT_US)
                     if (e == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
@@ -165,6 +173,7 @@ internal object H264Transcoder {
                         videoOut = muxer.addTrack(encoder.outputFormat)
                         muxer.start()
                         muxerStarted = true
+                        activity.advanced()
                         progress = true
                     } else if (e >= 0) {
                         val data = encoder.getOutputBuffer(e)!!
@@ -177,6 +186,7 @@ internal object H264Transcoder {
                         }
                         encoder.releaseOutputBuffer(e, false)
                         encoderDone = info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0
+                        activity.advanced()
                         progress = true
                     }
                     if (progress || decoderDone) continue
@@ -185,12 +195,14 @@ internal object H264Transcoder {
                         val render = info.size > 0
                         decoder.releaseOutputBuffer(d, render)
                         if (render) gl.draw(info.presentationTimeUs * 1000)
+                        activity.advanced()
                         if (info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) {
                             encoder.signalEndOfInputStream()
                             decoderDone = true
                         }
                         progress = true
                     } else if (d == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                        activity.advanced()
                         progress = true
                     }
                 }

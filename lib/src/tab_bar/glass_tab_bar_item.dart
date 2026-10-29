@@ -13,7 +13,9 @@ class GlassTabBarItem {
     required this.label,
     this.activeIcon,
     this.badge,
-  }) : iconWidget = null,
+  }) : symbolName = null,
+       activeSymbolName = null,
+       iconWidget = null,
        activeIconWidget = null,
        isSpacer = false;
 
@@ -28,7 +30,9 @@ class GlassTabBarItem {
     required this.label,
     this.activeIconWidget,
     this.badge,
-  }) : icon = null,
+  }) : symbolName = null,
+       activeSymbolName = null,
+       icon = null,
        activeIcon = null,
        isSpacer = false;
 
@@ -42,7 +46,9 @@ class GlassTabBarItem {
     String? activeSymbol,
     IconData? activeFallback,
     this.badge,
-  }) : iconWidget = _symbol(symbol, fallback),
+  }) : symbolName = symbol,
+       activeSymbolName = activeSymbol,
+       iconWidget = _symbol(symbol, fallback),
        activeIconWidget = activeSymbol == null
            ? null
            : _symbol(activeSymbol, activeFallback ?? fallback),
@@ -56,13 +62,22 @@ class GlassTabBarItem {
   /// press released over it leaves the lens on the selected tab. It must
   /// not be the selected tab.
   const GlassTabBarItem.spacer()
-    : icon = null,
+    : symbolName = null,
+      activeSymbolName = null,
+      icon = null,
       label = '',
       activeIcon = null,
       iconWidget = null,
       activeIconWidget = null,
       badge = null,
       isSpacer = true;
+
+  /// The SF Symbol supplied to [GlassTabBarItem.symbol], or null for
+  /// Flutter icons, custom widgets and spacers.
+  final String? symbolName;
+
+  /// The selected SF Symbol, when supplied to [GlassTabBarItem.symbol].
+  final String? activeSymbolName;
 
   /// Whether this is a [GlassTabBarItem.spacer].
   final bool isSpacer;

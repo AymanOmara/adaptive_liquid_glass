@@ -52,8 +52,10 @@ List<EntryGeometry>? nativeGroupGeometry(
 /// 10.2/255 + 5.0/255 Gaussian of σ 39 pt (rms 12.6 -> 4.0); dark: 12.6 +
 /// 17.8, σ 43 pt (rms 20.5 -> 4.9). The lifts are asked about 10% above
 /// those: SwiftUI adds 89% (light) and 93% (dark) of a `.plusLighter` white
-/// inside the glass (measured). Clear glass is unmeasured and takes these
-/// values.
+/// inside the glass (measured). Clear glass has a separate fit (2026-10-18,
+/// `tool/native/fit_press_light.py`): held validation interior MAE fell from
+/// 6.86 to 6.25 light and 7.25 to 6.38 dark, out of 255. Its remaining
+/// geometry/refraction residual cannot be corrected by white light alone.
 abstract final class NativePressLight {
   /// White added over a pressed light-mode shape.
   static const double lightLift = 0.045;
@@ -66,6 +68,18 @@ abstract final class NativePressLight {
 
   /// Peak of the dark-mode Gaussian under the finger.
   static const double darkGlow = 0.070;
+
+  /// Clear glass's fitted light-mode uniform lift.
+  static const double clearLightLift = 0.0475;
+
+  /// Clear glass's fitted light-mode finger glow.
+  static const double clearLightGlow = 0.042;
+
+  /// Clear glass's fitted dark-mode uniform lift.
+  static const double clearDarkLift = 0.044;
+
+  /// Clear glass's fitted dark-mode finger glow.
+  static const double clearDarkGlow = 0.042;
 
   /// The Gaussian's σ, points (fits: 39 light, 43 dark; the shader path's
   /// measured glow is 42).
@@ -390,14 +404,23 @@ class _NativeGlassViewState extends State<NativeGlassView> {
       return null;
     }
     final p = MatrixUtils.transformPoint(box.getTransformTo(null), touch);
+    final clear = entry.glass.variant == GlassVariant.clear;
+    final peak = clear
+        ? (_dark
+              ? NativePressLight.clearDarkGlow
+              : NativePressLight.clearLightGlow)
+        : (_dark ? NativePressLight.darkGlow : NativePressLight.lightGlow);
+    final lift = clear
+        ? (_dark
+              ? NativePressLight.clearDarkLift
+              : NativePressLight.clearLightLift)
+        : (_dark ? NativePressLight.darkLift : NativePressLight.lightLift);
     return [
       p.dx - drawn.left,
       p.dy - drawn.top,
-      (_dark ? NativePressLight.darkGlow : NativePressLight.lightGlow) *
-          press.light,
+      peak * press.light,
       NativePressLight.sigma,
-      (_dark ? NativePressLight.darkLift : NativePressLight.lightLift) *
-          press.light,
+      lift * press.light,
     ];
   }
 

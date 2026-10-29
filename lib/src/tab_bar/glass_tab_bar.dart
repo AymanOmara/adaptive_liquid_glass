@@ -42,6 +42,7 @@ import 'glass_tab_bar_item.dart';
 import 'glass_tab_bar_minimize_behavior.dart';
 import 'glass_tab_bar_style.dart';
 import 'hole_clipper.dart';
+import 'native_system_tab_bar.dart';
 import 'rim_fade.dart';
 import 'tab_bar_edge_to_edge.dart';
 import 'tab_bar_fill_scope.dart';
@@ -347,8 +348,12 @@ class _GlassTabBarState extends State<GlassTabBar>
   /// bar's own shadow (BarShadow); UIKit draws native glass's.
   bool _shaderBar = false;
 
-  /// Whether the bar itself is native (SwiftUI) glass.
+  /// Whether the bar resolves to native iOS glass.
   bool _nativeBar = false;
+
+  /// Keeps the Flutter bar's state when it moves between the route-entrance
+  /// position and [NativeSystemTabBar]'s fallback slot.
+  final _flutterBarKey = GlobalKey();
 
   /// The bar's path: with the shader lens the bar is shader glass too, so
   /// the lens can refract it (native glass is invisible to the shader). An
@@ -935,7 +940,7 @@ class _GlassTabBarState extends State<GlassTabBar>
           _nativeBar = barMode == EffectiveGlassMode.native;
           return mode == EffectiveGlassMode.material
               ? _materialBar(context)
-              : _glassBar(context);
+              : _glassBar(context, constraints);
         },
       );
     },
@@ -1021,7 +1026,73 @@ class _GlassTabBarState extends State<GlassTabBar>
         final text => Badge(label: Text(text), child: icon),
       };
 
-  Widget _glassBar(BuildContext context) {
+  Widget _glassBar(BuildContext context, BoxConstraints constraints) {
+    final routeAnimation = ModalRoute.of(context)?.animation;
+    if (_nativeBar && routeAnimation != null) {
+      // A temporary route transform must not permanently reject the native
+      // control's window-aligned layout. Attach it after the entrance settles.
+      return AnimatedBuilder(
+        animation: routeAnimation,
+        builder: (context, _) =>
+            routeAnimation.status == AnimationStatus.completed
+            ? _resolvedGlassBar(context, constraints)
+            : _flutterGlassBar(context),
+      );
+    }
+    return _resolvedGlassBar(context, constraints);
+  }
+
+  Widget _resolvedGlassBar(BuildContext context, BoxConstraints constraints) {
+    final nativeWidth = (_rowWidth + TabBarMetrics.inset * 2).roundToDouble();
+    final environment = GlassPlatform.instance.environment.value;
+    // UIKit owns the complete stock bar only when it can honor the requested
+    // layout and content. Custom Flutter icons, materials and accessories keep
+    // the existing renderer, as do reduced motion and adapted/wide layouts.
+    final nativeItems = nativeTabItems(widget.items);
+    if (_nativeBar &&
+        supportsNativeTabGestures &&
+        constraints.constrainWidth(nativeWidth) == nativeWidth &&
+        constraints.constrainHeight(widget.height) == widget.height &&
+        environment.platform == TargetPlatform.iOS &&
+        environment.iosMajorVersion == 26 &&
+        nativeItems != null &&
+        nativeItems.length >= 2 &&
+        nativeItems.length <= 4 &&
+        widget.height == 62 &&
+        widget.itemWidth == 86 &&
+        _itemWidth == 86 &&
+        (widget.glass ?? LiquidGlassTheme.of(context).defaultGlass) ==
+            Glass.regular &&
+        widget.indicatorColor == null &&
+        widget.onSearch == null &&
+        widget.enableFeedback &&
+        widget.labelMaxTextScale == null &&
+        widget.style == GlassTabBarStyle.automatic &&
+        widget.minimizeBehavior != GlassTabBarMinimizeBehavior.onScrollDown &&
+        !TabBarFillScope.of(context) &&
+        !_reduceMotion &&
+        MediaQuery.sizeOf(context).width < 600 &&
+        MediaQuery.viewInsetsOf(context).bottom == 0) {
+      return NativeSystemTabBar(
+        items: nativeItems,
+        selectedIndex: widget.selectedIndex,
+        onSelected: widget.onSelected,
+        tint: widget.tint == null
+            ? null
+            : CupertinoDynamicColor.resolve(widget.tint!, context),
+        dark: GlassGroupScope.brightnessOf(context) == Brightness.dark,
+        width: nativeWidth,
+        height: widget.height,
+        fallback: _flutterGlassBar(context),
+      );
+    }
+    return _flutterGlassBar(context);
+  }
+
+  Widget _flutterGlassBar(BuildContext context) =>
+      KeyedSubtree(key: _flutterBarKey, child: _flutterGlassBarBody(context));
+
+  Widget _flutterGlassBarBody(BuildContext context) {
     final selected = CupertinoDynamicColor.resolve(
       widget.tint ?? GlassColors.tabBarSelected,
       context,

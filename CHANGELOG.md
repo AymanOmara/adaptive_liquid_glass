@@ -1,3 +1,91 @@
+## Unreleased
+
+- Native tab bar: empty-string dot badges now use the complete system control
+  on eligible stock bars. Verified 18-point dots, selection, count changes and
+  badge removal with SF Symbols and bitmap icons in both appearances.
+
+- Native tab bar: refreshes cached icon templates when fonts load or change,
+  preventing a missing-font glyph from persisting after the real font arrives.
+  Pending older images cannot overwrite the refreshed templates.
+
+- Colour picker eyedropper: Android 16+ captures full-size direct Flutter
+  surfaces positioned through layout, including clipped edges. The native
+  surface offset is carried into loupe sampling, so picking a native overlay
+  colour stays aligned after the surface moves. Resized surfaces retain their
+  fallback after foreground checks exposed an unresolved rendering mismatch.
+
+- Colour picker eyedropper: on Android 16+ (API 36+), captures full-size,
+  untransformed Flutter surfaces above the app window and lower surfaces fully
+  covered by native views. Uses the public composition order and rejects an
+  order change during capture. Older Android versions retain their fallback
+  when the order cannot be established. Pixel integration checks passed on
+  API 37 and API 35.
+
+- Photos picker: optional `onItemReady` on the widget and function delivers
+  each copied/converted file before the full batch finishes. The final result
+  remains unchanged. Already delivered files survive a later Android import
+  failure; callback errors do not abort import, and disposed widgets are not
+  notified. Older native plugins deliver callbacks with the final result.
+
+- Photos picker: Android H.264 conversion detects 30 seconds without codec
+  polling progress and falls back to the original video with `conversionFailed`.
+  Partial output is discarded. Slow but progressing conversions have no total
+  time limit; a blocking call inside a platform codec cannot be interrupted.
+
+- Photos picker: failed Android import batches remove their own cache files
+  while preserving earlier successful picks. Interrupted iOS copies remove
+  partial destinations. Explicit cleanup reports `cleanup_failed` on deletion
+  failure on both platforms and can be retried.
+
+- Full-screen cover: optional drag dismissal has an independent
+  `GlassFullScreenCoverDragConfiguration` for distance, fling speed,
+  resistance and return spring. Existing defaults are preserved. Cancelled
+  drags return to rest, upward movement is independent of event frequency,
+  and a downward fling above the resting position cannot dismiss the cover.
+  This remains an app-defined extension, disabled by default.
+
+- Native tab bar: stock two-to-four-tab icon bars on iOS 26 can use
+  the complete UIKit control, fixing native label vibrancy and bar-edge
+  refraction during real presses and drags. Controlled selection, delayed
+  replies, theme changes, route transitions and Flutter overlays are handled.
+  Older Flutter SDKs and custom configurations retain the existing renderer.
+  Bundled Cupertino and Material glyphs use cached monochrome templates,
+  including selected artwork and directional mirroring; custom fonts and
+  widgets retain Flutter rendering.
+
+- Native glass: runtime appearance changes recreate the SwiftUI hosting
+  controller with the final UIKit style before attachment. This fixes the
+  regular photo capsule retaining its previous light appearance after a
+  dark-mode switch. Simulator image comparisons and repeated appearance,
+  geometry and disposal integration checks pass.
+
+- Colour picker eyedropper: captures native glass and UIKit views on iOS,
+  and ordinary Android window views on API 26+ with image/texture or
+  opaque SurfaceView composition. The Flutter engine is matched through
+  either its executor or its messenger, avoiding false capture rejection.
+  Surface and window pixels are composed in their actual order; custom or
+  above-window surfaces on older Android versions retain the Flutter fallback.
+  Unsupported captures retain the Flutter fallback; stale
+  dimensions, invalid image data and unavailable native plugins are rejected.
+- Native interactive clear glass: separate measured press-light values
+  reduce held-frame interior error 8.8% in light mode and 12.0% in dark
+  mode on the iOS 26.4 reference simulator. Optical/geometry differences
+  remain. `tool/native/fit_press_light.py` reproduces the fit and score.
+- Android shader glass: `GlassScaffold` and anchored menus keep a shared
+  layer inside their own subtree, including during page transitions.
+  `GlassLayerScope` provides the same behavior for custom route builders.
+  Returning to shared rendering releases the group's old shader filter.
+- Colour picker: the shared saved palette now persists locally on iOS
+  and Android, including deletions and alpha. App-controlled palettes
+  keep their existing storage contract; missing plugins and unavailable
+  stores fall back to the shared in-memory palette.
+- Photos picker: the trigger shows loading until imported files are ready,
+  ignores callbacks after disposal, and iOS imports one selection at a
+  time to bound concurrent decoding/conversion. Android rejects a second
+  picker session while files are still being copied. Failed HEIC/HEIF
+  compatibility conversion now sets `conversionFailed`, as videos do.
+  Cleanup rejects active imports instead of deleting their incoming files.
+
 ## 0.2.5 (2026-10-17)
 
 - Colour picker eyedropper: the loupe is now UIColorPickerViewController's,

@@ -307,6 +307,12 @@ glass of a route draws through one shared layer (one capture, one blur
 per stratum of overlapping glass); see Known limitations. Devices
 without shader support (not Impeller) get the frosted blur throughout.
 
+`GlassScaffold` keeps that layer inside the page during transitions.
+For routes using Flutter's `Scaffold`, use
+`GlassLayerScope(child: Scaffold(...))` to keep batching while the page
+zooms, fades or is snapshotted. Use `GlassOverlayContent` for later
+non-glass siblings that overlap glass and need to stay above it.
+
 `defaultMode: GlassRenderMode.shader` (with `initialize(mode:
 GlassRenderMode.shader)`) forces the shader on every platform, iOS 26
 included.
@@ -566,6 +572,18 @@ LiquidGlass(
 iOS 26's floating tab bar. Pressing turns the selected pill into a clear
 glass lens that magnifies the tabs under it; dragging slides it between
 tabs; letting go springs it to the nearest tab and calls `onSelected`.
+
+On iOS 26, `mode: GlassRenderMode.native` can use the complete system
+control for two to four SF Symbol, Cupertino or Material icon tabs at the
+normal bottom position. UIKit owns the vibrant labels and interactive lens
+together. Bundled Flutter icons become cached template images, preserving
+their normal and selected artwork without encoding images during a drag.
+Cached templates refresh when fonts finish loading or change. Empty-string
+badges use the system's 18-point dot, including on bitmap icon tabs.
+This requires Flutter's synchronous platform-view gesture policy (tested
+with Flutter 3.47.7); older Flutter SDKs keep the existing renderer without
+raising the package's minimum SDK. Custom layouts, materials, search,
+minimizing and Reduce Motion also keep that renderer.
 
 ```dart
 Stack(
@@ -1049,9 +1067,28 @@ and the slide's timing is fitted from a recording of SwiftUI's cover. On
 Android it is a Material 3 full-screen dialog.
 
 Two options SwiftUI's cover lacks, both off by default:
-`dragToDismiss: true` lets it be dragged down to close like a sheet, and
+`dragToDismiss: true` enables an app-defined downward dismissal gesture, and
 `showsCloseButton: true` adds a glass xmark close button top-trailing (a
 Material close icon on Android).
+
+Cover drag has its own policy, independent of sheets. Defaults preserve
+the existing quarter-height or 700 logical-pixels/second release behavior.
+Use `dragConfiguration` to choose distance, fling speed, upward resistance
+and return spring; `flingVelocity: double.infinity` requires distance alone.
+Cancelled or refused drags return to rest, and child scrollables keep their
+own gestures. Reduce Motion snaps the return into place.
+
+```dart
+showGlassFullScreenCover<void>(
+  context: context,
+  builder: (context) => PlayerView(),
+  dragToDismiss: true,
+  dragConfiguration: const GlassFullScreenCoverDragConfiguration(
+    dismissFraction: 0.35,
+    flingVelocity: 1000,
+  ),
+);
+```
 
 ### Menu button and controller
 
@@ -1256,7 +1293,7 @@ snackbar-styled surface at the bottom of the screen.
 ```dart
 GlassPhotosPicker(
   label: 'Select Photos',
-  maxSelection: 0, // unlimited; 1 (the default) picks one
+  maxSelection: 0, // no app cap; Android's system picker still has a maximum
   filter: GlassPhotosPickerFilter.any, // images (default), videos, any
   onPicked: (photos) => setState(() => _photos = photos),
 )
@@ -1289,6 +1326,13 @@ The result is a `GlassPickedPhotos`: an ordinary `List<GlassPickedPhoto>`
 that also has `droppedCount`, the items chosen beyond `maxSelection` and
 left out (only the Android document-picker fallback lets that happen).
 
+Both entry points accept optional `onItemReady: (photo) { ... }` to preview or
+upload each file while the rest are importing. `onPicked` and the returned
+future still contain the complete batch, so avoid processing the same file
+twice. Callback errors are reported through Flutter without stopping import.
+An older native plugin delivers these callbacks with the final result; rebuild
+the app to enable early delivery.
+
 Each `GlassPickedPhoto` is a copy in the `adaptive_liquid_glass_picker`
 folder of the app's temporary (iOS) or cache (Android) directory, with
 `path`, `isVideo`, `mimeType`, the upright `width` and `height` (photos
@@ -1302,13 +1346,21 @@ format unless asked otherwise (both on `GlassPhotosPicker` and
   videos into H.264 `.mp4` (iOS: `AVAssetExportSession`; Android:
   `MediaCodec`, audio copied as is, rotation kept). A video that fails to
   convert (no H.264 encoder for its size, an unsupported audio track)
-  arrives as HEVC with `conversionFailed: true`.
+  arrives as HEVC with `conversionFailed: true`. A HEIC/HEIF photo that
+  cannot be converted to JPEG also keeps its format with that flag set.
+  On Android, codec polling with no progress for 30 seconds also falls back
+  to the original video; progressing conversions have no total time limit.
 
 A re-encoded photo is upright and keeps its format where the platform can
 write it (iOS: HEIC, JPEG, PNG; Android: JPEG, PNG), else becomes JPEG;
 its metadata (EXIF, location) is dropped. GIFs are left as they are. The
 app owns the copies: move what it
 keeps, and call `clearGlassPickedPhotos()` to delete the folder.
+With `onItemReady`, files already delivered remain available if a later import
+fails, even when the final future throws. Without it, failed Android batches
+remove their session's files. iOS removes partial destinations when copying
+fails. Explicit cleanup reports `cleanup_failed` if deletion fails and can be
+retried.
 
 ### Swipe actions
 
@@ -1460,32 +1512,42 @@ testWidgets('pays', (tester) async {
 
 ## Known limitations
 
-- **Native mode, runtime light→dark flip:** on iOS 26, 71 of 72 measured
-  brightness flips at runtime match SwiftUI. One does not: a regular glass
-  capsule over a photo, flipped from light to dark, keeps part of Apple's
-  previous look (SSIM 0.84 against a dark launch, which matches). Apple's
-  glass appears to keep state from glass drawn earlier in the process; it
-  is not fixed by rebuilding the glass.
-- **Native interactive glass:** Flutter keeps the touches, so SwiftUI's
+- **Generic native interactive glass:** Flutter keeps the touches, so SwiftUI's
   own press never runs on native glass. The package draws its growth,
   stretch and light instead, measured from SwiftUI's (on at the touch,
-  held 0.33 s past the release; in-shape error over a press 1.1 light,
-  1.6 dark, from 4.1 and 6.0). The light is measured on regular glass
-  only; clear glass uses the same values and is further off (in-shape
-  error about 2.5x regular's on the same recording).
-- **Tab bar:** close to iOS 26.4's `TabView`, not identical. Over photos
-  the shader-drawn bar draws untinted labels vibrant, as iOS does (each
-  glyph takes the hue of the glass behind it); the selected tint follows
-  the glass only by half, and native-mode labels keep flat colours. The native-mode
-  lens is UIKit glass and does not bend the bar's edges as iOS's does.
-  Icons are CupertinoIcons unless you use `GlassTabBarItem.symbol` (SF
-  Symbols drawn by iOS).
-- **Photos picker:** items are copied into a temporary or cache directory
-  before `onPicked` runs, so very large videos (and H.264 conversions) take
-  time to arrive, and the copies stay until `clearGlassPickedPhotos()` or
-  the OS deletes them. On Android the H.264 conversion (HEVC videos with
+  held 0.33 s past the release; in-shape error over a regular-glass press
+  1.1 light, 1.6 dark, from 4.1 and 6.0). Clear glass now has its own
+  measured light coefficients: held-frame interior error fell from
+  6.86 to 6.25 light and 7.25 to 6.38 dark (of 255, iOS 26.4). Optical
+  and geometry differences remain; these held-frame measurements use a
+  different crop/window from the regular-glass recording above.
+- **Custom-rendered tab bars:** configurations outside the stock native
+  icon path above retain the Flutter renderer. Over photos its shader
+  draws untinted labels vibrant, but the selected tint follows the glass
+  only by half. Its native-mode labels keep flat colours, and its separate
+  native lens does not bend the bar's edges. Stock native bars now use the
+  complete system control, including native label vibrancy, real-touch
+  edge refraction and dot badges. Bundled glyph templates refresh after font
+  loads; arbitrary widgets and custom icon fonts still retain Flutter rendering, including
+  glyphs that may extend beyond UIKit's fixed icon box. Cupertino icons retain
+  their own glyph shapes.
+- **Photos picker:** each item must finish copying into the app's temporary
+  or cache directory and any requested conversion before it is usable. Optional
+  `onItemReady` delivers completed files early; `onPicked` and the final result
+  still wait for the full batch. Very large videos can therefore take time to
+  arrive. The trigger shows loading until the batch finishes; iOS imports
+  selections sequentially to bound concurrent decoding and conversion.
+  Successful copies stay until `clearGlassPickedPhotos()` or the OS deletes
+  them. On Android the
+  H.264 conversion (HEVC videos with
   `compatibleFormat`) runs on the device's codecs, slower than real time
-  on low-end phones and emulators. The Android
+  on low-end phones and emulators. A codec polling loop that makes no progress
+  for 30 seconds now abandons conversion and returns the original video with
+  `conversionFailed`; progressing conversions have no total time limit.
+  This does not interrupt a blocking call inside the platform codec itself.
+  Android's system Photo Picker also caps
+  selections at its platform maximum, including when `maxSelection` is 0;
+  0 removes the app's cap. The Android
   document-picker fallback (before Android 11, or without the SDK
   extension) cannot enforce `maxSelection` in its UI; extra items are
   dropped from the end and counted in `GlassPickedPhotos.droppedCount`.
@@ -1506,27 +1568,39 @@ testWidgets('pays', (tester) async {
   and overlapping its glass draws beneath that glass; wrap such content in
   `GlassOverlayContent` to keep it above (the package's own
   content laid over glass in a sibling, like the tab bar's row and a
-  sheet's content, is handled); menus draw their glass group by group, and so does a page while a transition snapshots it
-  (`ZoomPageTransitionsBuilder`; a transient peak of about 0.5 GB on the
-  emulator, with 8 groups as with 24, since the snapshot renders once). A
-  transition that moves the page through its own painter without a
-  snapshot (`allowSnapshotting: false` on a Zoom transition) draws the
-  glass in place, inside the page, for the transition only. The tab bar's vibrant labels read the layer's glass as
+  sheet's content, is handled). Menus and `GlassScaffold` use a local
+  shared layer that moves with their subtree, keeping batching through
+  snapshot and live page transitions. For a route built with Flutter's
+  `Scaffold`, wrap its content in `GlassLayerScope(child: Scaffold(...))`
+  for the same behavior. Without that scope, snapshot and live page
+  transitions draw glass group by group for the transition (a previously
+  measured transient peak of about 0.5 GB on the emulator). Memory use
+  with the new local scope has not been measured on a device.
+  The tab bar's vibrant labels read the layer's glass as
   they do in place (about 100 MB more over the Gallery's run).
   `LiquidGlassThemeData.androidShaderBudget` (default null: no cap) still
   caps the groups that draw group by group; the rest draw a frosted blur.
   Fonts stay Roboto (not SF Pro), and scroll physics,
   the back gesture and haptics stay Android's; making those iOS-like is
   not part of the package.
-- **Full-screen cover drag:** SwiftUI's cover has no drag to dismiss, so
-  `dragToDismiss` (off by default) borrows the sheet's thresholds.
 - **Colour picker sheet:** laid out and coloured as iOS 26.4's
   UIColorPickerViewController, light and dark (measured, saved colours,
-  Spectrum map and the eyedropper's loupe included). Its eyedropper reads only what the app itself draws (the
-  page under the sheet): not other apps, the status bar or platform views
-  such as maps, web views and native-mode glass. Saved colours live in
-  memory unless the app passes `savedColors` / `onSavedColorsChanged` and
-  stores them; a long press opens UIKit's context menu to delete one.
+  Spectrum map and the eyedropper's loupe included). Its eyedropper captures
+  the app under the sheet, including native glass and UIKit views on iOS.
+  Android API 26+ also captures ordinary native window views with Flutter's
+  image/texture composition or its usual opaque SurfaceView. Android 16+
+  (API 36+) also captures above-window Flutter surfaces in their real order
+  and lower surfaces fully covered by native views. Full-size surfaces directly
+  inside a `FlutterView` can also have layout offsets; capture and loupe sampling
+  account for their position and clipping. Custom sizes, native view transforms
+  and offsets through nested native containers retain Flutter's own drawing.
+  Older Android versions also fall back for offset or above-window surfaces;
+  other hosts retain that fallback too. Other apps, the status bar and
+  separate system/protected surfaces remain outside the capture. Saved colours persist
+  locally across launches on iOS and Android; other platforms and hosts
+  without the native plugin keep them in memory. An app that passes
+  `savedColors` / `onSavedColorsChanged` manages its own storage. A long
+  press opens UIKit's context menu to delete one.
 
 ## License
 

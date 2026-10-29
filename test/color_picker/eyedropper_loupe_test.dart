@@ -69,10 +69,7 @@ void main() {
     expect(at(-59.6, 0), closeTo(151, 3));
     expect(at(0, 59.6), closeTo(151, 3));
     // The grid line between cells, 1.5 cells out: black at 40% (146).
-    expect(
-      at(-1.5 * ColorPickerMetrics.loupeCell, 30),
-      closeTo(146, 12),
-    );
+    expect(at(-1.5 * ColorPickerMetrics.loupeCell, 30), closeTo(146, 12));
     // A cell: the captured pixel.
     expect(at(-27.5, 27.5), closeTo(253, 3));
     // The centre cell's outline, 4.5-8.5 pt out (measured 151), and the
@@ -94,10 +91,7 @@ void main() {
     expect(at(-59.6, 0), closeTo(255, 3));
     expect(at(-6.9, 0), closeTo(255, 3));
     // The grid: white at 70% over blue (measured red 178).
-    expect(
-      at(-1.5 * ColorPickerMetrics.loupeCell, 30),
-      closeTo(178, 20),
-    );
+    expect(at(-1.5 * ColorPickerMetrics.loupeCell, 30), closeTo(178, 20));
   });
 
   testWidgets('the ring turns grey between greys 212 and 233', (t) async {

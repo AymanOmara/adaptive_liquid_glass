@@ -311,7 +311,7 @@ struct GlassHostView: View {
 @available(iOS 26.0, *)
 final class SwiftUIGlass {
   private let model = GlassModel()
-  private let host: UIHostingController<GlassHostView>
+  private var host: UIHostingController<GlassHostView>
   private weak var root: GlassRootView?
   /// False until the creation payload has been applied.
   private var configured = false
@@ -325,6 +325,7 @@ final class SwiftUIGlass {
     _ model: GlassModel, in root: UIView
   ) -> UIHostingController<GlassHostView> {
     let host = UIHostingController(rootView: GlassHostView(model: model))
+    host.overrideUserInterfaceStyle = model.dark ? .dark : .light
     host.sizingOptions = []
     host.safeAreaRegions = []
     host.view.backgroundColor = .clear
@@ -354,14 +355,26 @@ final class SwiftUIGlass {
       if model.dark != dark { model.dark = dark }
       if model.shapes != shapes { model.shapes = shapes }
       if rethemed {
-        // Glass already drawn keeps its old look: hide it, rebuild the
-        // container and draw again once the re-themed Flutter content
-        // beneath has been on screen for the settle frames.
+        // Glass already drawn keeps its old look: hide it, replace its
+        // hosting controller below, and draw once the re-themed Flutter
+        // content beneath has been on screen for the settle frames.
         model.generation += 1
         model.visible = false
       }
     }
-    if rethemed { root?.rearm() }
+    if rethemed, let root {
+      // Replacing only the SwiftUI container leaves UIKit's material
+      // compositor state alive. Recreate its hosting controller too, with
+      // the final appearance already present before the view is attached.
+      if host.parent != nil {
+        host.willMove(toParent: nil)
+        host.removeFromParent()
+      }
+      host.view.removeFromSuperview()
+      host = Self.makeHost(model, in: root)
+      windowChanged()
+      root.rearm()
+    }
   }
 
   /// Flutter can release the platform view while it is still in a window;

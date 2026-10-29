@@ -6,6 +6,7 @@ import '../core/liquid_glass_theme.dart';
 import '../core/render_mode_resolver.dart';
 import '../platform/glass_platform.dart';
 import 'full_screen_cover_drag_dismiss.dart';
+import 'glass_full_screen_cover_drag_configuration.dart';
 import 'glass_full_screen_cover_handle.dart';
 import 'glass_full_screen_cover_route.dart';
 
@@ -35,9 +36,9 @@ import 'glass_full_screen_cover_route.dart';
 ///
 /// SwiftUI's cover has neither of these; both are off by default:
 /// - [dragToDismiss] lets the cover be dragged down and released to close,
-///   like iOS 26's sheet (a quarter of its height, or a fast fling;
-///   otherwise it springs back). Vertical scrollables inside keep their
-///   own drags. Assistive tech gets a dismiss action instead.
+///   using [dragConfiguration] (by default a quarter of its height or a
+///   fast downward fling; otherwise it springs back). Vertical scrollables
+///   inside keep their own drags. Assistive tech gets a dismiss action instead.
 /// - [showsCloseButton] adds a close button in the top-trailing corner:
 ///   a glass xmark circle like iOS 26's `Button(role: .close)`, or a
 ///   Material close icon at the top-start corner on the Material path.
@@ -51,6 +52,8 @@ GlassFullScreenCoverHandle<T> showGlassFullScreenCover<T>({
   bool useRootNavigator = true,
   String? semanticLabel,
   bool dragToDismiss = false,
+  GlassFullScreenCoverDragConfiguration dragConfiguration =
+      const GlassFullScreenCoverDragConfiguration(),
   bool showsCloseButton = false,
   String? closeButtonSemanticLabel,
   GlassRenderMode? mode,
@@ -71,6 +74,7 @@ GlassFullScreenCoverHandle<T> showGlassFullScreenCover<T>({
           fullscreenDialog: true,
           builder: (c) => FullScreenCoverDragDismiss(
             enabled: dragToDismiss,
+            configuration: dragConfiguration,
             child: Dialog.fullscreen(
               backgroundColor: backgroundColor,
               child: showsCloseButton
@@ -109,6 +113,7 @@ GlassFullScreenCoverHandle<T> showGlassFullScreenCover<T>({
           backgroundColor: backgroundColor,
           semanticLabel: semanticLabel,
           dragToDismiss: dragToDismiss,
+          dragConfiguration: dragConfiguration,
           showsCloseButton: showsCloseButton,
           closeButtonSemanticLabel: closeButtonSemanticLabel,
           capturedThemes: InheritedTheme.capture(

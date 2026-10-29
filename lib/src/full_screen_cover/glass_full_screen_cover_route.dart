@@ -9,6 +9,7 @@ import '../core/glass_colors.dart';
 import '../core/ios_page_text.dart';
 import 'full_screen_cover_drag_dismiss.dart';
 import 'full_screen_cover_metrics.dart';
+import 'glass_full_screen_cover_drag_configuration.dart';
 
 /// The route [showGlassFullScreenCover] pushes on the glass path: an
 /// opaque page sliding up over the whole screen, like SwiftUI's
@@ -21,13 +22,17 @@ class GlassFullScreenCoverRoute<T> extends PageRoute<T> {
     this.semanticLabel,
     this.capturedThemes,
     this.dragToDismiss = false,
+    this.dragConfiguration = const GlassFullScreenCoverDragConfiguration(),
     this.showsCloseButton = false,
     this.closeButtonSemanticLabel,
     super.settings,
   });
 
-  /// Whether dragging the cover down dismisses it, like a sheet.
+  /// Whether the optional app-defined downward dismissal gesture is enabled.
   final bool dragToDismiss;
+
+  /// Policy for the optional app-defined drag gesture.
+  final GlassFullScreenCoverDragConfiguration dragConfiguration;
 
   /// Whether a glass close button (an xmark circle) sits top-trailing.
   final bool showsCloseButton;
@@ -126,6 +131,7 @@ class GlassFullScreenCoverRoute<T> extends PageRoute<T> {
     );
     final draggable = FullScreenCoverDragDismiss(
       enabled: dragToDismiss,
+      configuration: dragConfiguration,
       child: page,
     );
     return capturedThemes?.wrap(draggable) ?? draggable;

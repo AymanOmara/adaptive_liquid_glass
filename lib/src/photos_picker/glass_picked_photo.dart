@@ -56,11 +56,11 @@ class GlassPickedPhoto {
   final Duration? duration;
 
   /// Whether `compatibleFormat` asked for this item to be converted (an
-  /// HEVC video to H.264) and the conversion failed, so the item arrives
-  /// in its original format.
+  /// HEVC video to H.264, or HEIC/HEIF photo to JPEG) and the conversion
+  /// failed, so the item arrives in its original format.
   ///
-  /// False when no conversion was needed or it succeeded. Only videos set
-  /// it: a photo that cannot be re-encoded is not reported.
+  /// False when no compatible-format conversion was needed or it succeeded.
+  /// Failed image resizing or quality changes do not set this flag.
   final bool conversionFailed;
 
   @override

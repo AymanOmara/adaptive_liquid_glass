@@ -134,6 +134,10 @@ class RenderGlassBackdrop extends RenderProxyBox {
       // route. Moved without a registry change (an ancestor re-laid us
       // out): refresh the layer one frame late, as RenderGlassMember does.
       _clip.layer = null;
+      // A group returning from a route snapshot must release its old
+      // per-group filter as soon as the shared layer takes over again.
+      _backdrop.layer = null;
+      _shader.clear();
       assert(child == null || child!.isRepaintBoundary);
       final t = getTransformTo(null);
       if (sharedTransform != null && sharedTransform != t) {
@@ -148,6 +152,8 @@ class RenderGlassBackdrop extends RenderProxyBox {
         program == null ||
         !ui.ImageFilter.isShaderFilterSupported) {
       _clip.layer = null;
+      _backdrop.layer = null;
+      _shader.clear();
       super.paint(context, offset);
       return;
     }

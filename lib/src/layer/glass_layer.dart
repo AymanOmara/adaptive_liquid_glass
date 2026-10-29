@@ -46,7 +46,7 @@ class GlassLayerOptOut extends InheritedWidget {
   bool updateShouldNotify(GlassLayerOptOut oldWidget) => false;
 }
 
-/// The shared glass of one route: the groups that draw through it and the
+/// The shared glass of one route or local scope: its groups and the
 /// slots (one per group's `OverlayPortal`) of which the first paints it.
 class GlassLayer {
   GlassLayer._();

@@ -7,6 +7,7 @@ import '../button/glass_button_style.dart';
 import '../button/glass_control_size.dart';
 import '../core/glass_render_mode.dart';
 import 'glass_photos_picker_filter.dart';
+import 'glass_picked_photo.dart';
 import 'glass_picked_photos.dart';
 import 'photos_picker_metrics.dart';
 import 'pick_glass_photos.dart';
@@ -27,7 +28,9 @@ import 'pick_glass_photos.dart';
 /// downscaled or converted ([maxWidth], [maxHeight], [imageQuality],
 /// [compatibleFormat]). Delete them with [clearGlassPickedPhotos]. Cancelling
 /// does not call [onPicked]. A null [onPicked] disables the trigger, and
-/// taps are ignored while the picker is open.
+/// the trigger shows a loading indicator until local files are ready.
+/// [onItemReady] can preview or upload each completed file while later items
+/// are still importing; [onPicked] continues to receive the complete batch.
 ///
 /// The trigger is [child] in a [GlassButton] when given, like SwiftUI's
 /// `PhotosPicker(selection:) { Label(...) }`; otherwise a
@@ -49,6 +52,7 @@ class GlassPhotosPicker extends StatefulWidget {
     this.imageQuality,
     this.compatibleFormat = false,
     this.onError,
+    this.onItemReady,
     this.style = GlassButtonStyle.glass,
     this.size,
     this.shape = GlassButtonShape.automatic,
@@ -68,6 +72,11 @@ class GlassPhotosPicker extends StatefulWidget {
   /// null disables the trigger.
   final ValueChanged<GlassPickedPhotos>? onPicked;
 
+  /// Receives each ready file before the batch finishes. The final [onPicked]
+  /// still receives every item. Files already delivered remain available even
+  /// if a later item fails; see [pickGlassPhotos].
+  final ValueChanged<GlassPickedPhoto>? onItemReady;
+
   /// The trigger's content; replaces [icon] and [label].
   final Widget? child;
 
@@ -79,7 +88,8 @@ class GlassPhotosPicker extends StatefulWidget {
   final IconData icon;
 
   /// The most items the user can choose (SwiftUI's `maxSelectionCount`);
-  /// 1 picks a single item, 0 is unlimited.
+  /// 1 picks a single item, 0 removes the app's cap. Android's system Photo
+  /// Picker still applies its platform selection maximum.
   final int maxSelection;
 
   /// What the picker offers (SwiftUI's `matching:`).
@@ -95,7 +105,7 @@ class GlassPhotosPicker extends StatefulWidget {
   /// [pickGlassPhotos].
   final int? imageQuality;
 
-  /// Delivers HEIC photos as JPEG and, on iOS, HEVC videos as H.264; see
+  /// Delivers HEIC photos as JPEG and HEVC videos as H.264; see
   /// [pickGlassPhotos].
   final bool compatibleFormat;
 
@@ -133,7 +143,7 @@ class _GlassPhotosPickerState extends State<GlassPhotosPicker> {
 
   Future<void> _pick() async {
     if (_open) return;
-    _open = true;
+    setState(() => _open = true);
     try {
       final photos = await pickGlassPhotos(
         maxSelection: widget.maxSelection,
@@ -142,6 +152,11 @@ class _GlassPhotosPickerState extends State<GlassPhotosPicker> {
         maxHeight: widget.maxHeight,
         imageQuality: widget.imageQuality,
         compatibleFormat: widget.compatibleFormat,
+        onItemReady: widget.onItemReady == null
+            ? null
+            : (photo) {
+                if (mounted) widget.onItemReady?.call(photo);
+              },
       );
       if (!mounted || photos.isEmpty) return;
       widget.onPicked?.call(photos);
@@ -151,6 +166,7 @@ class _GlassPhotosPickerState extends State<GlassPhotosPicker> {
           e is! UnsupportedError) {
         rethrow;
       }
+      if (!mounted) return;
       final onError = widget.onError;
       if (onError != null) {
         onError(e);
@@ -165,7 +181,7 @@ class _GlassPhotosPickerState extends State<GlassPhotosPicker> {
         );
       }
     } finally {
-      _open = false;
+      if (mounted) setState(() => _open = false);
     }
   }
 
@@ -176,6 +192,7 @@ class _GlassPhotosPickerState extends State<GlassPhotosPicker> {
     if (child != null) {
       return GlassButton(
         onPressed: onPressed,
+        loading: _open,
         style: widget.style,
         size: widget.size,
         shape: widget.shape,
@@ -189,6 +206,7 @@ class _GlassPhotosPickerState extends State<GlassPhotosPicker> {
     final label = widget.label;
     return GlassButton.icon(
       onPressed: onPressed,
+      loading: _open,
       icon: widget.icon,
       label: label == null ? null : Text(label),
       style: widget.style,

@@ -6,6 +6,7 @@ import 'glass_picked_photo.dart';
 import 'glass_picked_photos.dart';
 
 const MethodChannel _channel = MethodChannel('adaptive_liquid_glass');
+int _nextImport = 0;
 
 /// Presents the system photo picker and returns what was chosen: the
 /// function behind `GlassPhotosPicker`, SwiftUI's `PhotosPicker` with a
@@ -17,7 +18,8 @@ const MethodChannel _channel = MethodChannel('adaptive_liquid_glass');
 /// ```
 ///
 /// [maxSelection] caps the choice (SwiftUI's `maxSelectionCount`); 1 picks
-/// a single item and 0 is unlimited. [filter] is SwiftUI's `matching:`.
+/// a single item and 0 removes the app's cap. Android's system Photo Picker
+/// still applies its platform selection maximum. [filter] is SwiftUI's `matching:`.
 /// Cancelling returns an empty list.
 ///
 /// Items arrive as the library holds them unless asked otherwise:
@@ -26,7 +28,7 @@ const MethodChannel _channel = MethodChannel('adaptive_liquid_glass');
 /// - [imageQuality] (0-100) re-encodes JPEG and HEIC photos at that
 ///   quality.
 /// - [compatibleFormat] turns HEIC/HEIF photos into JPEG and HEVC videos
-///   into H.264 (`.mp4`). A video that fails to convert arrives as it is,
+///   into H.264 (`.mp4`). An item that fails to convert arrives as it is,
 ///   with [GlassPickedPhoto.conversionFailed] set.
 ///
 /// A re-encoded photo keeps its format where the platform can write it
@@ -45,6 +47,13 @@ const MethodChannel _channel = MethodChannel('adaptive_liquid_glass');
 /// [clearGlassPickedPhotos]. Throws an [UnsupportedError] on other
 /// platforms and a [PlatformException] when the platform fails (another
 /// picker already open, no window to present from).
+///
+/// [onItemReady] optionally receives each local file as soon as that item has
+/// finished copying and conversion, before later items finish. The final result
+/// still contains the full selection. Already delivered files remain valid if
+/// a later item fails; this future may still throw. Callback errors are reported
+/// through [FlutterError.reportError] without interrupting the import. With an
+/// older native plugin, callbacks are delivered with the final result instead.
 Future<GlassPickedPhotos> pickGlassPhotos({
   int maxSelection = 1,
   GlassPhotosPickerFilter filter = GlassPhotosPickerFilter.images,
@@ -52,6 +61,7 @@ Future<GlassPickedPhotos> pickGlassPhotos({
   int? maxHeight,
   int? imageQuality,
   bool compatibleFormat = false,
+  ValueChanged<GlassPickedPhoto>? onItemReady,
 }) async {
   assert(maxSelection >= 0, 'maxSelection is 0 (unlimited) or more');
   assert(maxWidth == null || maxWidth > 0, 'maxWidth is positive');
@@ -63,27 +73,67 @@ Future<GlassPickedPhotos> pickGlassPhotos({
   if (!_supported) {
     throw UnsupportedError('pickGlassPhotos supports iOS and Android only');
   }
-  // A list of items, or {items, dropped}.
-  final reply = await _channel.invokeMethod<Object?>('pickPhotos', {
-    'maxSelection': maxSelection,
-    'filter': filter.name,
-    'maxWidth': ?maxWidth,
-    'maxHeight': ?maxHeight,
-    'imageQuality': ?imageQuality,
-    if (compatibleFormat) 'compatibleFormat': true,
+  final delivered = <String>{};
+  void deliver(GlassPickedPhoto photo) {
+    if (onItemReady == null || !delivered.add(photo.path)) return;
+    try {
+      onItemReady(photo);
+    } on Object catch (error, stack) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stack,
+          library: 'adaptive_liquid_glass',
+          context: ErrorDescription('while notifying an imported photo'),
+        ),
+      );
+    }
+  }
+
+  final imports = onItemReady == null
+      ? null
+      : MethodChannel(
+          'adaptive_liquid_glass/photo_import/${DateTime.now().microsecondsSinceEpoch}_${_nextImport++}',
+        );
+  imports?.setMethodCallHandler((call) async {
+    if (call.method == 'itemReady') {
+      deliver(
+        GlassPickedPhoto.fromMap(call.arguments as Map<Object?, Object?>),
+      );
+    }
   });
-  final (items, dropped) = switch (reply) {
-    final Map<Object?, Object?> map => (
-      map['items'] as List<Object?>?,
-      (map['dropped'] as num?)?.toInt() ?? 0,
-    ),
-    final List<Object?> list => (list, 0),
-    _ => (null, 0),
-  };
-  return GlassPickedPhotos([
-    for (final item in items ?? const <Object?>[])
-      GlassPickedPhoto.fromMap(item! as Map<Object?, Object?>),
-  ], droppedCount: dropped);
+  try {
+    // A list of items, or {items, dropped}.
+    final reply = await _channel.invokeMethod<Object?>('pickPhotos', {
+      'maxSelection': maxSelection,
+      'filter': filter.name,
+      'maxWidth': ?maxWidth,
+      'maxHeight': ?maxHeight,
+      'imageQuality': ?imageQuality,
+      if (compatibleFormat) 'compatibleFormat': true,
+      if (imports != null) 'importChannel': imports.name,
+    });
+    final (items, dropped) = switch (reply) {
+      final Map<Object?, Object?> map => (
+        map['items'] as List<Object?>?,
+        (map['dropped'] as num?)?.toInt() ?? 0,
+      ),
+      final List<Object?> list => (list, 0),
+      _ => (null, 0),
+    };
+    final photos = GlassPickedPhotos([
+      for (final item in items ?? const <Object?>[])
+        GlassPickedPhoto.fromMap(item! as Map<Object?, Object?>),
+    ], droppedCount: dropped);
+    // Reconcile events with the final result. This also supports older plugins
+    // and prevents a late final event from losing or duplicating a callback.
+    for (final photo in photos) {
+      deliver(photo);
+    }
+    return photos;
+  } finally {
+    imports?.setMethodCallHandler(null);
+  }
 }
 
 /// Deletes every copy [pickGlassPhotos] has made: the
@@ -94,7 +144,10 @@ Future<GlassPickedPhotos> pickGlassPhotos({
 /// Paths from earlier picks stop working, so move anything to keep out of
 /// that folder first. Call it once the files are no longer needed, for
 /// example after uploading them or on the next launch. Does nothing on
-/// other platforms.
+/// other platforms. Throws a [PlatformException] with code `already_active`
+/// while a picker or import is active, so cleanup cannot delete incoming files.
+/// A filesystem deletion failure throws `cleanup_failed`; already missing
+/// copies count as successfully cleared. Cleanup can be retried after failure.
 Future<void> clearGlassPickedPhotos() async {
   if (!_supported) return;
   await _channel.invokeMethod<void>('clearPickedPhotos');
