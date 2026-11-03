@@ -19,6 +19,7 @@ import 'glass_button_style.dart';
 import 'glass_control_size.dart';
 import 'glass_control_size_scope.dart';
 import 'material_glass_button.dart';
+import 'system_button_metrics.dart';
 import 'system_style_button.dart';
 
 /// A SwiftUI button: `.buttonStyle(.glass)` or `.glassProminent`, or one of
@@ -89,6 +90,8 @@ class GlassButton extends StatelessWidget {
   final GlassButtonRole role;
 
   /// Defaults to the enclosing [GlassControlSizeScope], else regular.
+  /// On the Cupertino path, [GlassButtonStyle.plain] keeps the regular body
+  /// font at every size, as SwiftUI does.
   final GlassControlSize? size;
 
   /// The outline.
@@ -160,7 +163,10 @@ class GlassButton extends StatelessWidget {
             button: this,
             metrics:
                 GlassButtonMetricsScope.maybeOf(context) ??
-                glassButtonMetrics(resolvedSize(context)),
+                SystemButtonMetrics.forSize(
+                  resolvedSize(context),
+                  style: style,
+                ),
           ),
   );
 

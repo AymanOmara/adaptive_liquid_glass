@@ -62,9 +62,11 @@ for take in $TAKES; do
   python3 - "$DUMP_DIR" "$dst" <<'PY'
 import json, math, shutil, sys
 src, dst = sys.argv[1:3]
-t = json.load(open(f"{src}/meta.json"))["times"]
+meta = json.load(open(f"{src}/meta.json"))
+t = meta["times"]
 n = int(math.floor((t[-1] - t[0]) * 60 + 0.25)) + 1
 i, prev, held = 0, -1, []
+frame_times = []
 for k in range(n):
     g = t[0] + k / 60
     while i + 1 < len(t) and t[i + 1] <= g + 0.004:
@@ -72,8 +74,10 @@ for k in range(n):
     if i == prev:
         held.append(k)
     prev = i
+    frame_times.append(t[i])
     shutil.copyfile(f"{src}/{i + 1:04d}.png", f"{dst}/{k + 1:04d}.png")
-json.dump({"times": t, "grid": n, "held": held}, open(f"{dst}/times.json", "w"))
+json.dump({"times": t, "grid": n, "held": held, "frameTimes": frame_times,
+           "touches": meta.get("touches", [])}, open(f"{dst}/times.json", "w"))
 shutil.rmtree(src)
 PY
   echo "$NAME $take: $(ls "$dst" | grep -c png) frames"

@@ -1,12 +1,12 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
-import 'package:adaptive_liquid_glass/src/button/glass_button_metrics.dart';
 import 'package:adaptive_liquid_glass/src/button/system_button_metrics.dart';
 import 'package:adaptive_liquid_glass/src/button/system_style_button.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_colors.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/gestures.dart' show kPressTimeout;
+import 'package:flutter/gestures.dart'
+    show PointerDeviceKind, kPressTimeout, kSecondaryButton;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -149,7 +149,7 @@ void main() {
     );
   }, variant: ios);
 
-  testWidgets('bordered: height and padding follow the glass metrics', (
+  testWidgets('bordered: height and padding follow the system metrics', (
     t,
   ) async {
     shaderEnv();
@@ -162,7 +162,10 @@ void main() {
         ),
       ),
     );
-    final m = glassButtonMetrics(GlassControlSize.regular);
+    final m = SystemButtonMetrics.forSize(
+      GlassControlSize.regular,
+      style: GlassButtonStyle.bordered,
+    );
     final button = t.getSize(find.byType(GlassButton));
     final text = t.getSize(find.text('Button'));
     expect(button.height, moreOrLessEquals(m.height, epsilon: 0.01));
@@ -250,13 +253,12 @@ void main() {
         )
         .map((d) => (d.decoration as ShapeDecoration).color)
         .toList();
-    expect(fills, [
-      _red.withValues(alpha: SystemButtonMetrics.tintedFillOpacityLight),
-      _red,
-    ]);
+    expect(fills, [GlassColors.borderedButtonFill.color, _red]);
   }, variant: ios);
 
-  testWidgets('press dims the button, release restores it', (t) async {
+  testWidgets('borderless press fades only the label and release restores it', (
+    t,
+  ) async {
     shaderEnv();
     await t.pumpWidget(
       plainHost(
@@ -267,16 +269,151 @@ void main() {
         ),
       ),
     );
-    double opacity() =>
-        t.widget<AnimatedOpacity>(find.byType(AnimatedOpacity)).opacity;
+    double opacity() => t
+        .widget<Opacity>(
+          find.descendant(
+            of: find.byType(SystemStyleButton),
+            matching: find.byType(Opacity),
+          ),
+        )
+        .opacity;
     expect(opacity(), 1);
     final g = await t.startGesture(t.getCenter(find.text('Go')));
-    // Tap down lands once the press timeout passes.
-    await t.pump(kPressTimeout);
-    expect(opacity(), SystemButtonMetrics.pressedOpacity);
+    // Highlight in the first frame, without waiting for tap recognition.
+    await t.pump();
+    expect(opacity(), closeTo(0.2, 1e-12));
     await g.up();
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 100));
+    expect(opacity(), greaterThan(0.2));
+    expect(opacity(), lessThan(1));
     await t.pumpAndSettle();
     expect(opacity(), 1);
+  }, variant: ios);
+
+  testWidgets('cancel restores the fill and disabling clears a held press', (
+    t,
+  ) async {
+    shaderEnv();
+    Widget button(bool enabled) => plainHost(
+      GlassButton(
+        onPressed: enabled ? () {} : null,
+        style: GlassButtonStyle.bordered,
+        tint: const Color(0xFF0080FF),
+        child: const Text('Go'),
+      ),
+    );
+    await t.pumpWidget(button(true));
+    final idle = fillOf(t);
+    final g = await t.startGesture(t.getCenter(find.text('Go')));
+    await t.pump(kPressTimeout);
+    await t.pump();
+    expect(fillOf(t), const Color(0xFF0080FF).withValues(alpha: 0.12));
+    await g.cancel();
+    await t.pumpAndSettle();
+    expect(fillOf(t), idle);
+    final held = await t.startGesture(t.getCenter(find.text('Go')));
+    await t.pump(kPressTimeout);
+    await t.pump();
+    await t.pumpWidget(button(false));
+    await held.up();
+    await t.pumpAndSettle();
+    expect(fillOf(t), GlassColors.borderedButtonFill.color);
+    await t.pumpWidget(button(true));
+    await t.pumpAndSettle();
+    expect(fillOf(t), idle);
+  }, variant: ios);
+
+  testWidgets('secondary mouse buttons do not highlight or activate', (
+    t,
+  ) async {
+    shaderEnv();
+    var taps = 0;
+    await t.pumpWidget(
+      plainHost(
+        GlassButton(
+          onPressed: () => taps++,
+          style: GlassButtonStyle.bordered,
+          tint: const Color(0xFF0080FF),
+          child: const Text('Go'),
+        ),
+      ),
+    );
+    final idle = fillOf(t);
+    final g = await t.startGesture(
+      t.getCenter(find.text('Go')),
+      kind: PointerDeviceKind.mouse,
+      buttons: kSecondaryButton,
+    );
+    await t.pump();
+    expect(fillOf(t), idle);
+    await g.up();
+    await t.pumpAndSettle();
+    expect(taps, 0);
+  }, variant: ios);
+
+  testWidgets('another pointer ending does not release the primary press', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(
+      plainHost(
+        GlassButton(
+          onPressed: () {},
+          style: GlassButtonStyle.bordered,
+          tint: const Color(0xFF0080FF),
+          child: const Text('Go'),
+        ),
+      ),
+    );
+    final idle = fillOf(t);
+    final point = t.getCenter(find.text('Go'));
+    final first = await t.startGesture(point, pointer: 1);
+    final second = await t.startGesture(point, pointer: 2);
+    await second.up();
+    await t.pump();
+    expect(fillOf(t), const Color(0xFF0080FF).withValues(alpha: 0.12));
+    await first.cancel();
+    await t.pumpAndSettle();
+    expect(fillOf(t), idle);
+  }, variant: ios);
+
+  testWidgets('scrolling cancels a pointer highlight without activation', (
+    t,
+  ) async {
+    shaderEnv();
+    var taps = 0;
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await t.pumpWidget(
+      plainHost(
+        ListView(
+          controller: controller,
+          padding: const EdgeInsets.only(top: 100),
+          children: [
+            GlassButton(
+              onPressed: () => taps++,
+              style: GlassButtonStyle.bordered,
+              tint: const Color(0xFF0080FF),
+              child: const Text('Go'),
+            ),
+            const SizedBox(height: 2000),
+          ],
+        ),
+      ),
+    );
+    final idle = fillOf(t);
+    final g = await t.startGesture(t.getCenter(find.text('Go')));
+    await t.pump();
+    expect(fillOf(t), isNot(idle));
+    await g.moveBy(const Offset(0, -100));
+    await t.pump();
+    await g.moveBy(const Offset(0, -20));
+    await g.up();
+    await t.pumpAndSettle();
+    expect(controller.offset, greaterThan(0));
+    expect(fillOf(t), idle);
+    expect(taps, 0);
   }, variant: ios);
 
   testWidgets('loading: indicator, taps ignored', (t) async {

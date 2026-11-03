@@ -1,3 +1,38 @@
+## Unreleased
+
+- System button responsiveness: highlights now start on primary pointer down
+  instead of waiting for tap recognition. In three warmed iOS 26.4 simulator
+  takes the median rendered delay fell from 149 ms to 49 ms. Tap activation
+  and scroll arbitration remain unchanged; secondary mouse buttons are ignored
+  and an unrelated pointer ending cannot release the active highlight.
+
+- System button layout: measured all five control sizes against SwiftUI.
+  Bordered and prominent horizontal padding is now 10/12/20 points for
+  small/regular/large groups. Plain buttons keep a 17-point body label at
+  every control size, as SwiftUI does. Glass styles and explicit metrics
+  scopes retain their existing sizing.
+
+- System button presses: replace the uniform fade with measured, independent
+  fill and label highlights for bordered, prominent, borderless and plain
+  styles in both appearances. Dark bordered buttons brighten; borderless
+  labels use their stronger native fade. Highlight changes are immediate once
+  recognized and release follows a measured 420 ms curve. Disabling a held
+  button clears its press state so it cannot reappear after re-enabling.
+
+- System button styles: match SwiftUI's measured light/dark bordered fills
+  and disabled labels. Untinted destructive bordered buttons now retain a
+  neutral fill with red text; explicitly tinted fills use 18% in light mode
+  and 25% in dark mode. Added two-background reference regression checks.
+
+- Native checks: add a reusable iOS simulator test runner and a macOS CI job
+  covering lifecycle/retheming/disposal, batching, system tab bars and Swift
+  photo-cache filesystem behavior.
+
+- Colour picker eyedropper: Android 16+ now captures full-size Flutter surfaces
+  offset through untransformed native containers, including ancestor clipping
+  and native overlay composition. Loupe sampling includes the nested offset.
+  Resized or transformed surfaces keep the Flutter fallback.
+
 ## 0.3.0 (2026-10-29)
 
 Behaviour changes:

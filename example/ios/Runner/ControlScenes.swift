@@ -10,6 +10,10 @@ enum ControlScenes {
     let root: AnyView
     switch which {
     case "buttons": root = AnyView(ButtonsReference())
+    case "systembuttongeometry", "systemprominentgeometry", "systemborderlessgeometry", "systemplaingeometry":
+      root = AnyView(SystemButtonGeometryReference(style: which))
+    case "systembuttons": root = AnyView(SystemButtonsReference(dark: false))
+    case "systembuttonsdark": root = AnyView(SystemButtonsReference(dark: true))
     case "navbar":
       let y = Double(LaunchArgs.arg("scrollY") ?? "0") ?? 0
       root = AnyView(NavBarReference(scrollY: y))
@@ -933,4 +937,107 @@ struct SidebarReference: View {
   }
 
   var page: some View { Color.white.ignoresSafeArea() }
+}
+
+/// Static non-glass styles: default bordered, tinted bordered, destructive
+/// bordered, tinted prominent and destructive prominent. Enabled at x=100,
+/// disabled at x=300; rows y=100...500, with a white/black backdrop.
+@available(iOS 26.0, *)
+struct SystemButtonsReference: View {
+  let dark: Bool
+  var body: some View {
+    ZStack(alignment: .topLeading) {
+      (LaunchArgs.arg("buttonBackground") == "gray" ? Color(white: 0.5) : (dark ? Color.black : Color.white))
+      ForEach(0..<2) { column in
+        let x = column == 0 ? 100.0 : 300.0
+        Group {
+          Button("Button") {}.buttonStyle(.bordered)
+            .position(x: x, y: 100)
+          Button("Button") {}.buttonStyle(.bordered)
+            .tint(Color(red: 0, green: 0.5, blue: 1))
+            .position(x: x, y: 200)
+          Button("Button", role: .destructive) {}.buttonStyle(.bordered)
+            .position(x: x, y: 300)
+          Button("Button") {}.buttonStyle(.borderedProminent)
+            .tint(Color(red: 0, green: 0.5, blue: 1))
+            .position(x: x, y: 400)
+          Button("Button", role: .destructive) {}.buttonStyle(.borderedProminent)
+            .position(x: x, y: 500)
+          Button("Button") {}.buttonStyle(.borderless)
+            .tint(Color(red: 0, green: 0.5, blue: 1))
+            .position(x: x, y: 600)
+          Button("Button") {}.buttonStyle(.plain)
+            .position(x: x, y: 700)
+          Button("Button", role: .destructive) {}.buttonStyle(.borderless)
+            .position(x: x, y: 800)
+        }
+        .disabled(column == 1)
+      }
+    }
+    .frame(width: 402, height: 874)
+    .ignoresSafeArea()
+    .environment(\.colorScheme, dark ? .dark : .light)
+    .statusBarHidden(true)
+  }
+}
+
+/// Measures layout before positioning, without adding padding or constraints.
+@available(iOS 26.0, *)
+struct SystemButtonGeometryReference: View {
+  let style: String
+  let sizes: [ControlSize] = [.mini, .small, .regular, .large, .extraLarge]
+  let names = ["mini", "small", "regular", "large", "extraLarge"]
+
+  func measured<V: View>(_ view: V, _ key: String) -> some View {
+    view.background(GeometryReader { proxy in
+      Color.clear.onAppear {
+        SystemButtonGeometryLog.save(style + "/" + key, proxy.size)
+      }
+    })
+  }
+
+  @ViewBuilder func control(_ i: Int, icon: Bool) -> some View {
+    let key = names[i] + (icon ? "/icon" : "/text")
+    let button = Button {} label: {
+      if icon {
+        measured(Image(systemName: "plus"), key + "/label")
+      } else {
+        measured(Text("Button"), key + "/label")
+      }
+    }
+    .controlSize(sizes[i])
+    switch style {
+    case "systemprominentgeometry": measured(button.buttonStyle(.borderedProminent).fixedSize(), key + "/button")
+    case "systemborderlessgeometry": measured(button.buttonStyle(.borderless).fixedSize(), key + "/button")
+    case "systemplaingeometry": measured(button.buttonStyle(.plain).fixedSize(), key + "/button")
+    default: measured(button.buttonStyle(.bordered).fixedSize(), key + "/button")
+    }
+  }
+
+  var body: some View {
+    ZStack(alignment: .topLeading) {
+      Color.white
+      ForEach(sizes.indices, id: \.self) { i in
+        control(i, icon: false).position(x: 100, y: 80 + Double(i) * 140)
+        control(i, icon: true).position(x: 300, y: 80 + Double(i) * 140)
+      }
+    }
+    .frame(width: 402, height: 874)
+    .ignoresSafeArea()
+    .environment(\.colorScheme, .light)
+    .statusBarHidden(true)
+  }
+}
+
+@MainActor
+private enum SystemButtonGeometryLog {
+  static var values: [String: [Double]] = [:]
+  static func save(_ key: String, _ size: CGSize) {
+    values[key] = [size.width, size.height]
+    let url = URL(fileURLWithPath: NSTemporaryDirectory())
+      .appendingPathComponent("system-button-geometry.json")
+    if let data = try? JSONSerialization.data(withJSONObject: values, options: [.sortedKeys, .prettyPrinted]) {
+      try? data.write(to: url, options: .atomic)
+    }
+  }
 }

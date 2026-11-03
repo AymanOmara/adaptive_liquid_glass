@@ -65,7 +65,11 @@ Future<Color?> pickColorFromApp(BuildContext context) async {
   if (native != null) {
     image = native.image;
     ratio = native.ratio;
-    fromGlobal = Matrix4.translationValues(native.offset.dx, native.offset.dy, 0);
+    fromGlobal = Matrix4.translationValues(
+      native.offset.dx,
+      native.offset.dy,
+      0,
+    );
   } else {
     if (!context.mounted || target == null || !target.attached) return null;
     if (target.debugNeedsPaint) await SchedulerBinding.instance.endOfFrame;

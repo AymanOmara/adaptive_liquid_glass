@@ -216,8 +216,41 @@ void main() {
           const Offset(20, 250): const Color(0xFF0000FF),
         });
         await pickAt(const Offset(80, 350), -40);
+        // The same surface inside a plain native container. The container
+        // contributes its own offset and clips at x=12, not FlutterView's x=0.
+        await hook.invokeMethod<void>('surfaceGeometry', {
+          'left': -40,
+          'resize': false,
+          'nested': true,
+        });
+        await t.pump();
+        await settle();
+        await verifyPoints({
+          const Offset(5, 450): const Color(0xFFFF00FF),
+          const Offset(20, 450): const Color(0xFFFF0000),
+          const Offset(80, 350): const Color(0xFF7F8000),
+          const Offset(20, 250): const Color(0xFF0000FF),
+        });
+        await pickAt(const Offset(80, 350), -40);
+        await hook.invokeMethod<void>('surfaceOnTop', true);
+        await settle();
+        await verifyPoints({
+          const Offset(5, 450): const Color(0xFFFF00FF),
+          const Offset(20, 450): const Color(0xFFFF0000),
+          const Offset(80, 350): const Color(0xFFFF0000),
+          const Offset(20, 250): const Color(0xFF0000FF),
+        });
+        await hook.invokeMethod<void>('surfaceOnTop', false);
       } else {
         expect(await t.runAsync(() => captureAppView(t.view)), isNull);
+      }
+      if (sdk >= 36) {
+        // Scaling is outside the native capture contract; never return
+        // incorrectly mapped pixels for an unsupported ancestor transform.
+        await hook.invokeMethod<void>('containerTransform', true);
+        await settle();
+        expect(await t.runAsync(() => captureAppView(t.view)), isNull);
+        await hook.invokeMethod<void>('containerTransform', false);
       }
       await hook.invokeMethod<void>('surfaceGeometry');
       await t.pump();

@@ -18,6 +18,7 @@ class MainActivity : FlutterActivity() {
         if ((applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) == 0) return
         var overlay: View? = null
         var originalSurfaceLayout: FrameLayout.LayoutParams? = null
+        var surfaceContainer: FrameLayout? = null
         var originalBackground: android.graphics.drawable.Drawable? = null
         MethodChannel(engine.dartExecutor.binaryMessenger, "example/capture_test")
             .setMethodCallHandler { call, result ->
@@ -31,10 +32,11 @@ class MainActivity : FlutterActivity() {
                 when (call.method) {
                     "geometry" -> {
                         val flutter = flutterView(window.decorView)
-                        val surface = flutter?.let { parent ->
-                            (0 until parent.childCount).map { parent.getChildAt(it) }
-                                .filterIsInstance<FlutterSurfaceView>().singleOrNull()
-                        }
+                        fun surfaces(view: View): List<FlutterSurfaceView> =
+                            if (view is FlutterSurfaceView) listOf(view)
+                            else if (view is ViewGroup) (0 until view.childCount).flatMap { surfaces(view.getChildAt(it)) }
+                            else emptyList()
+                        val surface = flutter?.let { surfaces(it).singleOrNull() }
                         result.success(mapOf(
                             "view" to "${flutter?.width}x${flutter?.height}",
                             "surface" to "${surface?.width}x${surface?.height}",
@@ -45,16 +47,23 @@ class MainActivity : FlutterActivity() {
                     }
                     "surfaceGeometry" -> {
                         val flutter = flutterView(window.decorView)
-                        val surface = flutter?.let { parent ->
-                            (0 until parent.childCount).map { parent.getChildAt(it) }
-                                .filterIsInstance<FlutterSurfaceView>().singleOrNull()
-                        }
+                        fun surfaces(view: View): List<FlutterSurfaceView> =
+                            if (view is FlutterSurfaceView) listOf(view)
+                            else if (view is ViewGroup) (0 until view.childCount).flatMap { surfaces(view.getChildAt(it)) }
+                            else emptyList()
+                        val surface = flutter?.let { surfaces(it).singleOrNull() }
                         if (surface == null || flutter == null) {
-                            result.error("no_surface", "Expected a direct Flutter surface", null)
+                            result.error("no_surface", "Expected a single Flutter surface", null)
                             return@setMethodCallHandler
                         }
                         if (call.arguments == null) {
                             originalSurfaceLayout?.let {
+                                surfaceContainer?.let { container ->
+                                    container.removeView(surface)
+                                    flutter.removeView(container)
+                                    flutter.addView(surface, 0, it)
+                                }
+                                surfaceContainer = null
                                 surface.layoutParams = it
                                 flutter.background = originalBackground
                             }
@@ -68,14 +77,29 @@ class MainActivity : FlutterActivity() {
                             val left = call.argument<Int>("left") ?: 40
                             val resize = call.argument<Boolean>("resize") ?: false
                             flutter.setBackgroundColor(0xFFFF00FF.toInt())
+                            val nested = call.argument<Boolean>("nested") ?: false
+                            if (nested && surfaceContainer == null) {
+                                flutter.removeView(surface)
+                                surfaceContainer = FrameLayout(this).also { container ->
+                                    flutter.addView(container, 0, FrameLayout.LayoutParams(flutter.width, flutter.height).apply {
+                                        leftMargin = (12 * density).toInt()
+                                        topMargin = (20 * density).toInt()
+                                    })
+                                    container.addView(surface)
+                                }
+                            }
                             surface.layoutParams = FrameLayout.LayoutParams(
                                 if (resize) (250 * density).toInt() else flutter.width,
                                 if (resize) (500 * density).toInt() else flutter.height,
                             ).apply {
-                                leftMargin = (left * density).toInt()
-                                topMargin = (80 * density).toInt()
+                                leftMargin = ((left - if (nested) 12 else 0) * density).toInt()
+                                topMargin = ((80 - if (nested) 20 else 0) * density).toInt()
                             }
                         }
+                        result.success(null)
+                    }
+                    "containerTransform" -> {
+                        surfaceContainer?.scaleX = if (call.arguments == true) 0.9f else 1f
                         result.success(null)
                     }
                     "sdk" -> result.success(android.os.Build.VERSION.SDK_INT)

@@ -1512,6 +1512,10 @@ testWidgets('pays', (tester) async {
 
 ## Known limitations
 
+Implementation work and measurement criteria for these limits are tracked in
+[TODO.md](TODO.md). Platform restrictions remain documented here even when
+there is no package-side workaround.
+
 - **Generic native interactive glass:** Flutter keeps the touches, so SwiftUI's
   own press never runs on native glass. The package draws its growth,
   stretch and light instead, measured from SwiftUI's (on at the touch,
@@ -1590,10 +1594,11 @@ testWidgets('pays', (tester) async {
   Android API 26+ also captures ordinary native window views with Flutter's
   image/texture composition or its usual opaque SurfaceView. Android 16+
   (API 36+) also captures above-window Flutter surfaces in their real order
-  and lower surfaces fully covered by native views. Full-size surfaces directly
-  inside a `FlutterView` can also have layout offsets; capture and loupe sampling
-  account for their position and clipping. Custom sizes, native view transforms
-  and offsets through nested native containers retain Flutter's own drawing.
+  and lower surfaces fully covered by native views. Full-size surfaces
+  inside a `FlutterView`, including through untransformed native containers,
+  can also have layout offsets; capture and loupe sampling account for their
+  position and ancestor clipping. Custom sizes and native view transforms
+  retain Flutter's own drawing.
   Older Android versions also fall back for offset or above-window surfaces;
   other hosts retain that fallback too. Other apps, the status bar and
   separate system/protected surfaces remain outside the capture. Saved colours persist

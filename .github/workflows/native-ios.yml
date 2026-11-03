@@ -1,0 +1,26 @@
+name: Native iOS checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  native:
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Ensure an iOS simulator runtime is installed
+        shell: bash
+        run: |
+          if ! xcrun simctl list runtimes available --json | python3 -c 'import json,sys; sys.exit(not any(r.get("isAvailable") and r["name"].startswith("iOS ") and int(r["version"].split(".")[0]) >= 26 for r in json.load(sys.stdin)["runtimes"]))'; then
+            xcodebuild -downloadPlatform iOS
+          fi
+      - name: Swift cache and native integration checks
+        run: tool/native/run_ios_tests.sh

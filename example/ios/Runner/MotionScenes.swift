@@ -200,6 +200,29 @@ final class FrameDump: NSObject {
   private var armed = false
   // Main thread only.
   private var pending: [() -> Void] = []
+  private let touchLock = NSLock()
+  private var touches: [[String: Double]] = []
+
+  /// Timestamp actual UIKit delivery without recognizing or delaying a gesture.
+  func observeTouches(in window: UIWindow?) {
+    #if targetEnvironment(simulator)
+    guard let window else { return }
+    let observer = FrameDumpTouchObserver { [weak self, weak window] touch in
+      guard let self, let window else { return }
+      let point = touch.location(in: window)
+      let entry: [String: Double] = [
+        "timestamp": touch.timestamp, "received": CACurrentMediaTime(),
+        "x": Double(point.x), "y": Double(point.y)]
+      self.touchLock.lock()
+      self.touches.append(entry)
+      self.touchLock.unlock()
+    }
+    observer.cancelsTouchesInView = false
+    observer.delaysTouchesBegan = false
+    observer.delaysTouchesEnded = false
+    window.addGestureRecognizer(observer)
+    #endif
+  }
 
   init(spec: String) {
     let v = spec.split(separator: ",").compactMap { Double($0) }
@@ -296,7 +319,11 @@ final class FrameDump: NSObject {
       let url = dir.appendingPathComponent(String(format: "%04d.png", i + 1))
       try? UIImage(cgImage: img).pngData()?.write(to: url)
     }
+    touchLock.lock()
+    let deliveredTouches = touches
+    touchLock.unlock()
     let meta: [String: Any] = [
+      "touches": deliveredTouches,
       "renderer": LaunchArgs.arg("renderer") ?? "flutter", "times": times, "costs": costs,
     ]
     if let d = try? JSONSerialization.data(withJSONObject: meta) {
@@ -306,3 +333,18 @@ final class FrameDump: NSObject {
       atPath: dir.appendingPathComponent("done").path, contents: nil)
   }
 }
+
+#if targetEnvironment(simulator)
+/// Fails immediately after observing down, so it never wins a gesture arena.
+private final class FrameDumpTouchObserver: UIGestureRecognizer {
+  private let onDown: (UITouch) -> Void
+  init(onDown: @escaping (UITouch) -> Void) {
+    self.onDown = onDown
+    super.init(target: nil, action: nil)
+  }
+  override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+    touches.forEach(onDown)
+    state = .failed
+  }
+}
+#endif

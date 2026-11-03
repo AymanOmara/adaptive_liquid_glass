@@ -1,0 +1,105 @@
+{
+  "device": "iPhone 17 Pro",
+  "ios": "26.4",
+  "build": "debug",
+  "fps": 60,
+  "measurement": "UIKit touch delivery to first stable borderless-button colour change",
+  "before": [
+    {
+      "take": "take-1.ref",
+      "received": 135146.55225070837,
+      "frame": 38,
+      "highlightTime": 135146.56717412503,
+      "delayMs": 14.923416660167277
+    },
+    {
+      "take": "take-1.twin",
+      "received": 135157.0181766667,
+      "frame": 44,
+      "highlightTime": 135157.1671656667,
+      "delayMs": 148.9890000084415
+    },
+    {
+      "take": "take-2.ref",
+      "received": 135173.2348102917,
+      "frame": 37,
+      "highlightTime": 135173.25049908337,
+      "delayMs": 15.688791667344049
+    },
+    {
+      "take": "take-2.twin",
+      "received": 135183.66756195837,
+      "frame": 43,
+      "highlightTime": 135183.81717550004,
+      "delayMs": 149.61354166734964
+    },
+    {
+      "take": "take-3.ref",
+      "received": 135199.8853045417,
+      "frame": 37,
+      "highlightTime": 135199.9004711667,
+      "delayMs": 15.166625002166256
+    },
+    {
+      "take": "take-3.twin",
+      "received": 135210.36830358335,
+      "frame": 45,
+      "highlightTime": 135210.51716770837,
+      "delayMs": 148.86412501800805
+    }
+  ],
+  "after": [
+    {
+      "take": "take-1.ref",
+      "received": 135331.55288000003,
+      "frame": 36,
+      "highlightTime": 135331.56715600003,
+      "delayMs": 14.276000001700595
+    },
+    {
+      "take": "take-1.twin",
+      "received": 135342.1865267917,
+      "frame": 39,
+      "highlightTime": 135342.23382808335,
+      "delayMs": 47.301291662734
+    },
+    {
+      "take": "take-2.ref",
+      "received": 135358.50223437502,
+      "frame": 42,
+      "highlightTime": 135358.51716383337,
+      "delayMs": 14.92945835343562
+    },
+    {
+      "take": "take-2.twin",
+      "received": 135368.88496933336,
+      "frame": 39,
+      "highlightTime": 135368.93393658337,
+      "delayMs": 48.967250011628494
+    },
+    {
+      "take": "take-3.ref",
+      "received": 135385.08514729168,
+      "frame": 38,
+      "highlightTime": 135385.10062983335,
+      "delayMs": 15.482541668461636
+    },
+    {
+      "take": "take-3.twin",
+      "received": 135395.56850912503,
+      "frame": 39,
+      "highlightTime": 135395.61719112503,
+      "delayMs": 48.681999993277714
+    }
+  ],
+  "medianMs": {
+    "before": {
+      "ref": 15.166625002166256,
+      "twin": 148.9890000084415
+    },
+    "after": {
+      "ref": 14.92945835343562,
+      "twin": 48.681999993277714
+    }
+  }
+}

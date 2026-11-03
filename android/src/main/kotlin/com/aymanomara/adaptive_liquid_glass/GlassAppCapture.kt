@@ -67,9 +67,10 @@ internal object GlassAppCapture {
                 surfaceLocation[0] - location[0] + surface.width,
                 surfaceLocation[1] - location[1] + surface.height)
             val custom = bounds != Rect(0, 0, flutter.width, flutter.height)
-            // Public ordering plus direct containment makes clipping/mapping
-            // unambiguous. Older hosts retain the original full-size path.
-            if (custom && (Build.VERSION.SDK_INT < 36 || surface.parent !== flutter)) {
+            // Plain ancestor matrices and getLocalVisibleRect provide the
+            // mapping and clipping even through nested native containers.
+            // Older hosts retain the original full-size path.
+            if (custom && Build.VERSION.SDK_INT < 36) {
                 result.success(null)
                 return
             }

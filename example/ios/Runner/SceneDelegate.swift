@@ -14,5 +14,6 @@ class SceneDelegate: FlutterSceneDelegate {
     if !ControlScenes.install(in: window) && !MotionScenes.install(in: window) {
       LaunchArgs.installReferenceScene(in: window)
     }
+    FrameDump.shared?.observeTouches(in: window)
   }
 }

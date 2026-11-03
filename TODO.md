@@ -1,5 +1,53 @@
-Open items, highest priority first. Done items are dropped; history is in git
-and CHANGELOG.md.
+Open items and measurement history, highest priority first. Release history
+is in CHANGELOG.md.
+
+Audit 2026-10-30 (against README Known limitations and 0.3.0):
+- Hardware checks remain open: native menu latency, local Android shared-layer
+  GPU memory, and implicit batching opacity/frame times. Simulator results do
+  not close these items.
+- Optical limitations remain open: generic native press, custom tab-bar
+  vibrancy/refraction, shader photo/text fidelity and navigation-bar matching.
+- Photos import now supports early per-item delivery and a stalled Android
+  codec watchdog (0.3.0). Copy/conversion latency and blocking codec calls
+  remain limitations; the system picker selection cap is platform-owned.
+- Colour capture now supports offset, full-size surfaces through plain native
+  containers on Android 16+ (pixel, clipping, composition-order and loupe tests
+  passed on API 37; existing capture/fallback checks also pass on API 35,
+  2026-10-30). Resized/transformed surfaces and some older
+  Android composition orders still fall back (README details).
+- Item 6's component measurements are complete; only the final search-hide
+  frame alignment noted there remains open.
+- Item 12's completed enhancements shipped by 0.3.0; its only remaining
+  decision is whether implicit batching should default on.
+
+Remaining README limitations: implementation checks and closure criteria
+(2026-10-30; details and historical measurements below):
+- [ ] Generic native press: improve light/geometry only with held and released
+  recordings in both appearances; re-score regular and clear independently.
+  Flutter retains touch ownership, so native SwiftUI press cannot be assumed.
+- [ ] Custom tab bars: native glyph-mask composition and lens/bar integration
+  are separate from the stock native bar. Preserve custom widget layout and
+  font overflow; require photo/text pixel checks and real-touch tests.
+- [ ] Photos import: copy and conversion still require completing real I/O.
+  Keep per-item delivery and codec-stall fallback. Android's selection cap
+  and non-interruptible platform codec calls are platform constraints.
+- [ ] Android shader memory: measure local layers through routes, menus and
+  overlapping strata on hardware; keep explicit GlassOverlayContent and
+  GlassLayerScope until ordering can be preserved without opt-in.
+- [ ] Resized/transformed capture: native PixelCopy plus offset is insufficient.
+  Rechecked API 37 with surface 750x1500 inside view 1344x2992: Flutter still
+  reports the full view; experimental axis scaling returned a capture but lost
+  the blue foreground probe. Experiment reverted. Require foreground pixels,
+  native overlay alpha, clipping and loupe sampling before enabling this path.
+- [ ] Saved palette: desktop/web and missing-plugin hosts retain memory only;
+  persistence there requires a cross-platform storage implementation. Explicit
+  savedColors/onSavedColorsChanged already lets apps supply their own store.
+- [ ] Native CI: runner and workflow now added; confirm the first hosted run.
+  Local lifecycle, batching and tab-bar suites are run by the same script.
+
+Support boundaries (not fixable by changing a widget): no shader lens without
+shader-filter support; system/protected surfaces and other apps are outside
+capture; Android fonts, haptics, back gestures and physics stay platform-native.
 
 1- native menu open latency: not reproduced (re-measured 2026-10-12, iOS
   26.4 simulator, debug, components demo Period picker, 4 opens per run).
@@ -28,7 +76,6 @@ and CHANGELOG.md.
     lists (selected -> value, GlassMenuItem.onPressed, showGlassToast's
     context, hiding search/refresh pieces, date range defaults) are in
     docs/superpowers/notes/usability-audit.md
-  - item 6 "measure later" components measured vs SwiftUI
   - fidelity items 4 and 5 at a plateau (59/75 today)
   - API unchanged for a release or two
 
@@ -51,7 +98,7 @@ and CHANGELOG.md.
     clear capsule/rect16/rect28 text light+dark (SSIM 0.958-0.964, the
     edge band over sharp text; SSIM on text lines is a phase match)
 
-6- still unmeasured vs SwiftUI (label, links, wheels, searchable, cover
+6- component measurement history (label, links, wheels, searchable, cover
   close button and colour row measured 2026-10-13; colour sheet, refresh
   threshold/spinner/rubber band/dark spinner and search close-button
   reveal and hide 2026-10-14):
@@ -138,6 +185,11 @@ and CHANGELOG.md.
 10- refactor backlog (docs/superpowers/notes/refactor-backlog.md):
   constants split done 2026-10-14. The remaining P3-5 is Swift lifecycle
   integration-test coverage, not an outstanding constants refactor.
+  2026-10-30: repeated rethemes, disposal during settling and fresh-host
+  recreation now covered; all four native SwiftUI tests pass on iOS 26.4.
+  Native CI workflow and reusable runner added 2026-10-30. First hosted run
+  remains to be verified; no standalone Swift UI unit target is required to
+  exercise these paths in the simulator integration suite.
 
 11- new SwiftUI components (2026-10-13), merged to main
   (bordered/borderedProminent/borderless/plain buttons, vertical GlassSlider,
@@ -145,19 +197,45 @@ and CHANGELOG.md.
   - real picker presentation verified 2026-10-18 on iOS 26.4 and Android
     API 35; copying/conversion still takes time, with loading feedback
   - SwiftPM iOS plugin build verified 2026-10-18 in an isolated smoke app
-  - measure the bordered fill, press dim and disabled colours vs SwiftUI
+  - bordered fill and disabled colours measured 2026-10-30, iOS 26.4,
+    white/black and grey backdrops (tool/reference/system_buttons.json).
+    Fixed neutral destructive bordered fill, tint opacity (.18 light/.25
+    dark), neutral fill and disabled label alpha; reference regression added.
+  - held states and visual release measured/implemented 2026-10-30:
+    neutral/tinted/destructive bordered, prominent, borderless and plain;
+    16 light/dark takes in build/motion/system-buttons-v2. Independent
+    fill/label endpoints match within 1 RGB; release is 420 ms with a fitted
+    curve (plain-label RMS 0.6/255). Fixtures and extraction tool are in
+    tool/reference/system_button_press*. Flutter twin pixel checks added.
+  - default non-glass layout measured 2026-10-30 with SwiftUI GeometryReader
+    (all five control sizes, four styles, text and icon-only controls).
+    Corrected bordered horizontal padding to 10/12/20 pt and plain's fixed
+    body font at mini/small. Heights and icon-only capsule sizes already
+    matched. Data: tool/reference/system_button_geometry.json; 20 widget
+    reference cases. Glass metrics and explicit metric scopes are preserved.
+  - touch-to-highlight measured/improved 2026-10-30. A simulator-only passive
+    touch observer timestamps UIKit delivery alongside rendered frames.
+    Three warmed takes per renderer: Flutter median 149 ms -> 49 ms after
+    starting highlights on primary pointer down; SwiftUI stays about 15 ms.
+    Activation/scroll cancellation remain with tap recognizers; mouse buttons,
+    extra pointers, cancellation and disabling are tested. Remaining visual
+    onset gap is about two 60 Hz frames in debug, not attributed to a stage
+    without profiling. Data: tool/reference/system_button_onset.json.
+    Non-default Dynamic Type and custom glyph outlines remain outside the
+    default layout fixture; hardware latency is still unmeasured.
+
 
 12- CashRoot required enhancements (from CashRoot's
   adaptive_liquid_glass_enhancments.md, re-checked against 0.2.1 on
   2026-10-15; none are in CashRoot or any branch here).
-  - done, unreleased (2026-10-15): sheets and dialogs (W5 sheet
+  - done, shipped by 0.3.0 (implemented 2026-10-15): sheets and dialogs (W5 sheet
     isScrollControlled + maxHeightFactor, W6 enableDrag, W19 whole-sheet
     maxHeight, W9 alert content/icon/barrierDismissible/action order,
     W10 GlassDialogAction subtitle) and small parameters (W14 menu item
     colour, W20 button label colour, W22 button corner radius, W25 chip
     subtitle/trailing, W30 LiquidGlass minSize, W12 list section colours,
     W32 tab bar labelMaxTextScale)
-  - done, unreleased (2026-10-15): W4 `GlassAdaptive.pathOf`/`usesGlass`,
+  - done, shipped by 0.3.0 (implemented 2026-10-15): W4 `GlassAdaptive.pathOf`/`usesGlass`,
     W7 `GlassNavigationBar.materialBuilder` (AppBarTheme was already
     honoured; now tested), W11 swipe `groupTag`/`closeGroup`, W13
     `showGlassDatePicker` + `firstDayOfWeek`, W28 empty-state font, W33

@@ -136,6 +136,63 @@ void main() {
     expect(s['visible'], true);
   });
 
+  testWidgets('repeated rethemes keep the same native view and latest style', (
+    tester,
+  ) async {
+    await tester.pumpWidget(scene(120));
+    await settle(tester);
+    final id = tester.allRenderObjects
+        .whereType<RenderUiKitView>()
+        .single
+        .viewController
+        .id;
+    final channel = MethodChannel('adaptive_liquid_glass/native_glass_$id');
+
+    // Replace hosts without waiting for each display-link settle interval.
+    for (var i = 0; i < 7; i++) {
+      await tester.pumpWidget(scene(120 + i.toDouble(), dark: i.isEven));
+      await tester.pump();
+    }
+    await settle(tester);
+    final s = await state(channel);
+    expect(s['generation'], 7);
+    expect(s['dark'], true);
+    expect(s['style'], 'dark');
+    expect(s['visible'], true);
+    expect(s['contained'], true);
+
+    // Dispose after rearming, while settle work may still be pending.
+    await tester.pumpWidget(scene(140));
+    await tester.pumpWidget(const SizedBox());
+    Object? error;
+    for (var i = 0; i < 10 && error == null; i++) {
+      await settle(tester);
+      try {
+        await state(channel);
+      } on MissingPluginException catch (e) {
+        error = e;
+      }
+    }
+    expect(error, isA<MissingPluginException>());
+
+    await tester.pumpWidget(scene(160, dark: true));
+    await settle(tester);
+    final newId = tester.allRenderObjects
+        .whereType<RenderUiKitView>()
+        .single
+        .viewController
+        .id;
+    expect(newId, isNot(id));
+    final fresh = await state(
+      MethodChannel('adaptive_liquid_glass/native_glass_$newId'),
+    );
+    expect(fresh['generation'], 0);
+    expect(fresh['settled'], 1);
+    expect(fresh['visible'], true);
+    expect(fresh['contained'], true);
+    expect(fresh['style'], 'dark');
+  });
+
   testWidgets('native glass hosts SwiftUI, follows setShapes, disposes', (
     tester,
   ) async {

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'borrowed_twins.dart';
 import 'new_component_twins.dart';
+import 'system_buttons_twin.dart';
 
 /// `flutter run -t lib/reference_twin.dart --dart-define=SCENE=<name>`, or
 /// the example app launched with `-twin <name>`:
@@ -54,6 +55,8 @@ class ReferenceTwin extends StatelessWidget {
           ? (context, child) => _dark(context, child!)
           : null,
       home: switch (scene) {
+        'systembuttons' => const SystemButtonsTwin(dark: false),
+        'systembuttonsdark' => const SystemButtonsTwin(dark: true),
         'toolbar' => const _Toolbar(),
         'accessory' => const _Accessory(),
         'sheet' => const _Sheet(large: false),

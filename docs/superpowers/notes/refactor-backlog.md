@@ -9,6 +9,13 @@ below are recorded, not scheduled — do them opportunistically.
   native_swiftui_test.dart` on a simulator — never in `flutter test`.
   Inherent (no Swift unit target), but these are the least-protected paths
   of the N1 merge; touch them only with that test running.
+  Coverage extended 2026-10-30: seven consecutive appearance flips without
+  per-flip settling, disposal immediately after rearming, and recreation with
+  a fresh generation/settle count. All four native SwiftUI integration tests
+  passed on the iPhone 17 Pro / iOS 26.4 simulator. A standalone Swift unit
+  target remains absent. `tool/native/run_ios_tests.sh` and
+  `.github/workflows/native-ios.yml` now run lifecycle, batching, tab-bar and
+  Swift photo-cache checks together. The first hosted CI run remains unverified.
 
 Done 2026-10-08: P3-2b (already split), P3-3 (`GlassProgram.memberProgram`),
 P3-4 (kept `.then`: cancel must not snap; documented in press_controller).

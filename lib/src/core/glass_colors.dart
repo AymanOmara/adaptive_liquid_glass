@@ -151,13 +151,31 @@ abstract final class GlassColors {
   static const Color buttonLabelOnLight = black;
 
   /// A `.bordered` button's fill without a tint, and the fill of a
-  /// disabled bordered button (estimated: iOS's tertiarySystemFill).
-  static const CupertinoDynamicColor borderedButtonFill =
-      CupertinoColors.tertiarySystemFill;
+  /// disabled bordered button (measured on iOS 26.4 over two backgrounds).
+  static const CupertinoDynamicColor borderedButtonFill = CupertinoDynamicColor(
+    color: Color.fromARGB(41, 120, 120, 128),
+    darkColor: Color.fromARGB(82, 120, 120, 128),
+    highContrastColor: Color.fromARGB(61, 120, 120, 128),
+    darkHighContrastColor: Color.fromARGB(102, 120, 120, 128),
+    elevatedColor: Color.fromARGB(41, 120, 120, 128),
+    darkElevatedColor: Color.fromARGB(82, 120, 120, 128),
+    highContrastElevatedColor: Color.fromARGB(61, 120, 120, 128),
+    darkHighContrastElevatedColor: Color.fromARGB(102, 120, 120, 128),
+  );
 
-  /// A disabled button's label without glass (iOS's tertiaryLabel).
+  /// A disabled button's label without glass (measured, iOS 26.4).
+  /// High-contrast variants retain Flutter's accessible tertiary label.
   static const CupertinoDynamicColor buttonDisabledLabel =
-      CupertinoColors.tertiaryLabel;
+      CupertinoDynamicColor(
+        color: Color.fromARGB(57, 60, 60, 67),
+        darkColor: Color.fromARGB(57, 235, 235, 245),
+        highContrastColor: Color.fromARGB(96, 60, 60, 67),
+        darkHighContrastColor: Color.fromARGB(96, 235, 235, 245),
+        elevatedColor: Color.fromARGB(57, 60, 60, 67),
+        darkElevatedColor: Color.fromARGB(57, 235, 235, 245),
+        highContrastElevatedColor: Color.fromARGB(96, 60, 60, 67),
+        darkHighContrastElevatedColor: Color.fromARGB(96, 235, 235, 245),
+      );
 
   /// A `.plain` button's label (iOS's primary label).
   static const CupertinoDynamicColor plainButtonLabel = CupertinoColors.label;

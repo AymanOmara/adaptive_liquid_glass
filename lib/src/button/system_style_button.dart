@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart' show kPrimaryButton;
 
 import '../core/glass_brightness.dart';
 import '../core/glass_colors.dart';
@@ -12,14 +13,15 @@ import 'glass_button_role.dart';
 import 'glass_button_shape.dart';
 import 'glass_button_style.dart';
 import 'system_button_metrics.dart';
+import 'system_button_press.dart';
 
 /// A [GlassButton] in one of SwiftUI's styles without glass: `.bordered`,
 /// `.borderedProminent`, `.borderless` or `.plain`, on the Cupertino path.
 ///
-/// Bordered styles take the glass button's height and padding for the
-/// control size; borderless and plain hug their label, as SwiftUI's do.
-/// Every style dims while pressed and draws a disabled button in iOS's
-/// tertiary label colour. Internal: `GlassButton` builds it.
+/// Bordered styles share glass button heights but have their own measured
+/// horizontal padding. Borderless and plain hug their label.
+/// Pressed fill and label follow their own measured highlight in each
+/// appearance. Internal: `GlassButton` builds it.
 class SystemStyleButton extends StatefulWidget {
   /// Creates the button.
   const SystemStyleButton({
@@ -40,13 +42,46 @@ class SystemStyleButton extends StatefulWidget {
 
 class _SystemStyleButtonState extends State<SystemStyleButton> {
   bool _pressed = false;
+  int? _pressPointer;
 
   void _setPressed(bool value) {
     if (_pressed != value) setState(() => _pressed = value);
   }
 
+  void _endPress(int pointer) {
+    if (pointer != _pressPointer) return;
+    _pressPointer = null;
+    _setPressed(false);
+  }
+
+  void _cancelPress() {
+    _pressPointer = null;
+    _setPressed(false);
+  }
+
+  @override
+  void didUpdateWidget(SystemStyleButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.button.active) {
+      _pressPointer = null;
+      _pressed = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final pressed = _pressed && widget.button.active;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: pressed ? 1 : 0),
+      duration: pressed
+          ? SystemButtonMetrics.pressIn
+          : SystemButtonMetrics.pressOut,
+      curve: pressed ? Curves.linear : SystemButtonMetrics.releaseCurve,
+      builder: (context, progress, _) => _buildButton(context, progress),
+    );
+  }
+
+  Widget _buildButton(BuildContext context, double progress) {
     final b = widget.button;
     final m = widget.metrics;
     Color resolve(Color c) =>
@@ -74,15 +109,15 @@ class _SystemStyleButtonState extends State<SystemStyleButton> {
             ),
             _ => accent,
           };
-    final Color? fill = !bordered
+    final Color? idleFill = !bordered
         ? null
         : !enabled
         ? resolve(GlassColors.borderedButtonFill)
         : prominent
         ? accent
-        // SwiftUI's untinted `.bordered` is grey; a tint or a destructive
-        // role colours the fill too.
-        : b.tint == null && !destructive
+        // An untinted destructive bordered button also keeps the neutral
+        // fill; only its label is red (measured on iOS 26.4).
+        : b.tint == null
         ? resolve(GlassColors.borderedButtonFill)
         : accent.withValues(
             alpha: dark
@@ -90,14 +125,24 @@ class _SystemStyleButtonState extends State<SystemStyleButton> {
                 : SystemButtonMetrics.tintedFillOpacityLight,
           );
 
+    final fill = Color.lerp(
+      idleFill,
+      SystemButtonPress.fill(
+        idleFill,
+        b.style,
+        dark: dark,
+        tinted: b.tint != null,
+      ),
+      progress,
+    );
+
     final scale =
         MediaQuery.textScalerOf(context).scale(m.fontSize) / m.fontSize;
     final iconOnly = b.icon != null && b.label == null;
     final GlassShape outline = !bordered
         ? GlassShape.rect(m.cornerRadius)
         : switch (b.shape) {
-            // iOS 26 draws bordered buttons as capsules by default
-            // (estimated, as glass buttons).
+            // iOS 26 draws bordered buttons as capsules by default.
             GlassButtonShape.automatic ||
             GlassButtonShape.capsule => const GlassShape.capsule(),
             GlassButtonShape.circle => const GlassShape.circle(),
@@ -140,6 +185,22 @@ class _SystemStyleButtonState extends State<SystemStyleButton> {
       ),
     );
 
+    content = Opacity(
+      opacity:
+          1 +
+          (SystemButtonPress.labelOpacity(b.style, dark: dark) - 1) * progress,
+      child: ColorFiltered(
+        colorFilter: ColorFilter.mode(
+          GlassColors.white.withValues(
+            alpha:
+                SystemButtonPress.labelWhiteMix(b.style, dark: dark) * progress,
+          ),
+          BlendMode.srcATop,
+        ),
+        child: content,
+      ),
+    );
+
     if (bordered) {
       final height = (iconOnly ? m.iconOnlyHeight : m.height) * scale;
       final BoxConstraints box = iconOnly
@@ -165,21 +226,29 @@ class _SystemStyleButtonState extends State<SystemStyleButton> {
       );
     }
 
-    Widget button = AnimatedOpacity(
-      opacity: _pressed && active ? SystemButtonMetrics.pressedOpacity : 1,
-      duration: _pressed
-          ? SystemButtonMetrics.pressIn
-          : SystemButtonMetrics.pressOut,
-      child: content,
-    );
-    button = GestureDetector(
-      onTapDown: active ? (_) => _setPressed(true) : null,
-      onTapUp: active ? (_) => _setPressed(false) : null,
-      onTapCancel: active ? () => _setPressed(false) : null,
-      child: GlassPressable(
-        onPressed: active ? b.onPressed : null,
-        shape: outline,
-        child: button,
+    final button = Listener(
+      // The tap recognizer waits kPressTimeout before onTapDown. Native
+      // buttons highlight at touch delivery, so start visuals directly while
+      // leaving activation and scroll arbitration to the existing recognizers.
+      onPointerDown: active
+          ? (event) {
+              if (_pressPointer != null ||
+                  (event.buttons & kPrimaryButton) == 0) {
+                return;
+              }
+              _pressPointer = event.pointer;
+              _setPressed(true);
+            }
+          : null,
+      onPointerUp: (event) => _endPress(event.pointer),
+      onPointerCancel: (event) => _endPress(event.pointer),
+      child: GestureDetector(
+        onTapCancel: active ? _cancelPress : null,
+        child: GlassPressable(
+          onPressed: active ? b.onPressed : null,
+          shape: outline,
+          child: content,
+        ),
       ),
     );
     // One node; a disabled or loading button is still a (disabled) button.

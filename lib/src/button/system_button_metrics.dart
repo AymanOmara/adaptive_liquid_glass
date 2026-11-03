@@ -1,22 +1,58 @@
-/// Press and fill values for the button styles without glass
-/// (`.bordered`, `.borderedProminent`, `.borderless`, `.plain`). Their
-/// geometry comes from `GlassButtonMetrics`: iOS 26 gives bordered and
-/// glass buttons the same heights and padding per control size. The values
-/// here, and that shared geometry, are ESTIMATED from SwiftUI on iOS 26,
-/// not measured.
+import 'package:flutter/animation.dart';
+
+import 'glass_button_metrics.dart';
+import 'glass_button_style.dart';
+import 'glass_control_size.dart';
+
+/// Layout, press and fill values for the styles without glass.
+/// GeometryReader measurements in system_button_geometry.json distinguish
+/// actual layout padding from the ink-edge padding of the glass reference.
+/// Fill and press measurements are in system_buttons.json and
+/// system_button_press.json (all SwiftUI, iOS 26.4).
 abstract final class SystemButtonMetrics {
-  /// Opacity of the whole button while pressed (as `CupertinoButton`).
-  static const double pressedOpacity = 0.4;
+  /// Default metrics for a non-glass style at [size]. Explicit metrics scopes
+  /// still override these. SwiftUI's plain style ignores control size.
+  static GlassButtonMetrics forSize(
+    GlassControlSize size, {
+    required GlassButtonStyle style,
+  }) {
+    final base = glassButtonMetrics(
+      style == GlassButtonStyle.plain ? GlassControlSize.regular : size,
+    );
+    final bordered =
+        style == GlassButtonStyle.bordered ||
+        style == GlassButtonStyle.borderedProminent;
+    final padding = !bordered
+        ? 0.0
+        : switch (size) {
+            GlassControlSize.mini || GlassControlSize.small => 10.0,
+            GlassControlSize.regular => 12.0,
+            GlassControlSize.large || GlassControlSize.extraLarge => 20.0,
+          };
+    return GlassButtonMetrics(
+      height: base.height,
+      padding: padding,
+      fontSize: base.fontSize,
+      iconSize: base.iconSize,
+      iconGap: base.iconGap,
+      iconOnlyHeight: base.iconOnlyHeight,
+      iconOnlyExtraWidth: base.iconOnlyExtraWidth,
+      cornerRadius: base.cornerRadius,
+    );
+  }
 
-  /// Fade into the pressed opacity.
-  static const Duration pressIn = Duration(milliseconds: 120);
+  /// SwiftUI reaches its held appearance in one display frame.
+  static const Duration pressIn = Duration.zero;
 
-  /// Fade back out of it on release.
-  static const Duration pressOut = Duration(milliseconds: 180);
+  /// Release duration fitted to lossless 60 Hz SwiftUI recordings.
+  static const Duration pressOut = Duration(milliseconds: 420);
 
-  /// Alpha of a tinted or destructive `.bordered` fill in light mode.
-  static const double tintedFillOpacityLight = 0.15;
+  /// Release fit: plain-label RMS error 0.6/255 on the reference take.
+  static const Curve releaseCurve = Cubic(0.328, 0.425, 0.324, 0.937);
 
-  /// Alpha of a tinted or destructive `.bordered` fill in dark mode.
-  static const double tintedFillOpacityDark = 0.2;
+  /// Alpha of an explicitly tinted `.bordered` fill in light mode.
+  static const double tintedFillOpacityLight = 0.18;
+
+  /// Alpha of an explicitly tinted `.bordered` fill in dark mode.
+  static const double tintedFillOpacityDark = 0.25;
 }
