@@ -2,6 +2,10 @@
 
 Run on a booted 402x874 iOS 26.4 simulator:
   tool/fidelity/.venv/bin/python tool/native/check_tab_touches.py UDID
+      [--bitmap | --custom]
+
+--bitmap runs GlassTabBar over a photo (the stock native bar); --custom the
+same bar kept on the Flutter renderer in native mode.
 
 Uses a normal app fixture so a test binding does not mediate device input.
 Requires idb and its companion, as do the fidelity motion recordings.
@@ -18,7 +22,11 @@ def main():
     root = pathlib.Path(__file__).resolve().parents[2]
     udid = sys.argv[1]
     bitmap = "--bitmap" in sys.argv[2:]
-    prefix = "system-tabs-bitmap" if bitmap else "system-tabs"
+    # The custom Flutter bar in native mode: no UIKit host, Flutter's own
+    # gestures, native glyphs and lens.
+    custom = "--custom" in sys.argv[2:]
+    prefix = ("system-tabs-custom" if custom
+              else "system-tabs-bitmap" if bitmap else "system-tabs")
     idb = root / "tool/fidelity/.venv/bin/idb"
     subprocess.run([str(idb), "connect", udid], check=True, timeout=60)
     log = root / f"build/native-limitations/{prefix}-real-touch.log"
@@ -27,7 +35,8 @@ def main():
         process = subprocess.Popen(
             ["flutter", "run", "--debug", "--no-pub", "-d", udid,
              "--target", "integration_test/native_tab_touch_app.dart",
-             f"--dart-define=NATIVE_TAB_BITMAP={str(bitmap).lower()}"],
+             f"--dart-define=NATIVE_TAB_BITMAP={str(bitmap).lower()}",
+             f"--dart-define=NATIVE_TAB_CUSTOM={str(custom).lower()}"],
             cwd=root / "example", stdin=subprocess.PIPE, stdout=output,
             stderr=subprocess.STDOUT, text=True,
         )
@@ -38,7 +47,8 @@ def main():
                     raise AssertionError("Fixture did not start")
                 time.sleep(0.1)
             time.sleep(3)
-            assert "NATIVE_TAB_HOSTS:1" in log.read_text(), log.read_text()
+            hosts = "NATIVE_TAB_HOSTS:0" if custom else "NATIVE_TAB_HOSTS:1"
+            assert hosts in log.read_text(), log.read_text()
 
             def tap(x, y):
                 subprocess.run([str(idb), "ui", "tap", "--udid", udid, str(x), str(y)], check=True, timeout=10)
@@ -64,7 +74,7 @@ def main():
             tap(80, 125)
             tap(201, 822)
             assert picks() == [1, 0, 1], log.read_text()
-            if bitmap:
+            if bitmap or custom:
                 press = subprocess.Popen([str(idb), "ui", "tap", "--udid", udid,
                                           "--duration", "2", "201", "822"])
                 time.sleep(0.9)

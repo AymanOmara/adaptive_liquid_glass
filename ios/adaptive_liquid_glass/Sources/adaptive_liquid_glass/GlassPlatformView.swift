@@ -108,6 +108,9 @@ struct GlassSpec: Identifiable, Equatable {
   /// System fills drawn as the glass's own content (vibrant, as iOS 26's
   /// tab bar pill), in points relative to the shape.
   let fills: [GlassFill]
+  /// Glyph masks drawn as the glass's own content (`GlassContentGlyphs`),
+  /// in points relative to the shape.
+  let glyphs: [GlassGlyph]
   /// The press's light (`glow`: x, y in points relative to the shape, the
   /// Gaussian's peak and σ, the lift over the whole shape); nil at rest.
   let glow: GlassGlow?
@@ -116,7 +119,8 @@ struct GlassSpec: Identifiable, Equatable {
   let opacity: Double
 
   /// [fallbackId] (the payload index) is used only when Dart sends no `id`.
-  init(fallbackId: Int, _ s: [String: Any]) {
+  /// [masks] holds the glyph masks received so far, by key.
+  init(fallbackId: Int, _ s: [String: Any], masks: [Int: UIImage] = [:]) {
     id = s["id"] as? Int ?? fallbackId
     frame = CGRect(
       x: s["x"] as? Double ?? 0, y: s["y"] as? Double ?? 0,
@@ -140,6 +144,15 @@ struct GlassSpec: Identifiable, Equatable {
         id: i,
         frame: CGRect(x: f[k], y: f[k + 1], width: f[k + 2], height: f[k + 3]),
         opacity: f[k + 4], style: Int(f[k + 5]))
+    }
+    let g = s["glyphs"] as? [Double] ?? []
+    glyphs = stride(from: 0, to: g.count - 7, by: 8).compactMap { k in
+      let key = Int(g[k + 4])
+      guard let image = masks[key] else { return nil }
+      return GlassGlyph(
+        frame: CGRect(x: g[k], y: g[k + 1], width: g[k + 2], height: g[k + 3]),
+        key: key, color: Int(g[k + 5]), gain: g[k + 6], reference: g[k + 7],
+        image: image)
     }
   }
 }
@@ -206,6 +219,88 @@ struct GlassFill: Identifiable, Equatable {
   }
 }
 
+/// Glyphs inside a glass shape (`GlassContentGlyphs`): a coverage mask
+/// filled with [color] moved towards the glass beneath,
+/// `color + gain × (glass − reference)` per channel, as iOS 26's tab bar
+/// draws its selected tab.
+@available(iOS 26.0, *)
+struct GlassGlyph: Identifiable, Equatable {
+  var id: Int { key }
+  let frame: CGRect
+  /// The mask's key: a new mask has a new key.
+  let key: Int
+  /// ARGB.
+  let color: Int
+  let gain: Double
+  let reference: Double
+  let image: UIImage
+
+  static func == (a: GlassGlyph, b: GlassGlyph) -> Bool {
+    a.frame == b.frame && a.key == b.key && a.color == b.color
+      && a.gain == b.gain && a.reference == b.reference
+  }
+
+  /// The layers that make the formula from the glass beneath, in order:
+  /// [color] over it at `1 − gain` leaves `gain × glass` plus a constant
+  /// of at most `1 − gain`; plus-lighter adds what is above that, plus-
+  /// darker takes away what is below zero.
+  var layers: [(color: Color, opacity: Double, blend: BlendMode)] {
+    let c = [16, 8, 0].map { Double((color >> $0) & 0xFF) / 255 }
+    let o = c.map { $0 - gain * reference }
+    let keep = 1 - gain
+    var out: [(color: Color, opacity: Double, blend: BlendMode)] = []
+    if keep > 0 {
+      let a = o.map { min(max($0 / keep, 0), 1) }
+      out.append((Color(red: a[0], green: a[1], blue: a[2]), keep, .normal))
+    }
+    let up = o.map { max($0 - keep, 0) }
+    if up.contains(where: { $0 > 0 }) {
+      out.append((Color(red: up[0], green: up[1], blue: up[2]), 1, .plusLighter))
+    }
+    let down = o.map { 1 + min($0, 0) }
+    if down.contains(where: { $0 < 1 }) {
+      out.append(
+        (Color(red: down[0], green: down[1], blue: down[2]), 1, .plusDarker))
+    }
+    return out
+  }
+
+  /// A template image of one byte of coverage per pixel ([bytes], row by
+  /// row) at the screen's [scale].
+  static func mask(
+    _ bytes: Data, width: Int, height: Int, scale: CGFloat
+  ) -> UIImage? {
+    guard width > 0, height > 0, bytes.count >= width * height else {
+      return nil
+    }
+    // Premultiplied white of the mask's coverage: a template image reads
+    // only its alpha.
+    var rgba = Data(count: width * height * 4)
+    rgba.withUnsafeMutableBytes { (out: UnsafeMutableRawBufferPointer) in
+      bytes.withUnsafeBytes { (a: UnsafeRawBufferPointer) in
+        for i in 0..<(width * height) {
+          let v = a[i]
+          out[i * 4] = v
+          out[i * 4 + 1] = v
+          out[i * 4 + 2] = v
+          out[i * 4 + 3] = v
+        }
+      }
+    }
+    guard let provider = CGDataProvider(data: rgba as CFData),
+      let cg = CGImage(
+        width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 32,
+        bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGBitmapInfo(
+          rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
+        provider: provider, decode: nil, shouldInterpolate: true,
+        intent: .defaultIntent)
+    else { return nil }
+    return UIImage(cgImage: cg, scale: scale, orientation: .up)
+      .withRenderingMode(.alwaysTemplate)
+  }
+}
+
 @available(iOS 26.0, *)
 final class GlassModel: ObservableObject {
   @Published var spacing: Double = 0
@@ -249,6 +344,24 @@ struct GlassHostView: View {
           .blendMode(f.blendMode)
           .frame(width: f.frame.width, height: f.frame.height)
           .offset(x: f.frame.minX, y: f.frame.minY)
+      }
+      ForEach(s.glyphs) { g in
+        ZStack(alignment: .topLeading) {
+          ForEach(Array(g.layers.enumerated()), id: \.offset) { _, l in
+            Image(uiImage: g.image)
+              .renderingMode(.template)
+              .resizable()
+              .foregroundStyle(l.color)
+              .opacity(l.opacity)
+              .blendMode(l.blend)
+          }
+        }
+        .frame(width: g.frame.width, height: g.frame.height)
+        .offset(x: g.frame.minX, y: g.frame.minY)
+        // The padded mask may outgrow the shape: a zero-size frame keeps
+        // it from growing (and recentring) the stack.
+        .frame(width: 0, height: 0, alignment: .topLeading)
+        .allowsHitTesting(false)
       }
       if let g = s.glow {
         Color.white.opacity(g.lift)
@@ -311,6 +424,8 @@ struct GlassHostView: View {
 @available(iOS 26.0, *)
 final class SwiftUIGlass {
   private let model = GlassModel()
+  /// Glyph masks by key (`GlassContentGlyphs`): Dart sends each once.
+  private var masks: [Int: UIImage] = [:]
   private var host: UIHostingController<GlassHostView>
   private weak var root: GlassRootView?
   /// False until the creation payload has been applied.
@@ -337,9 +452,21 @@ final class SwiftUIGlass {
   }
 
   func apply(_ args: [String: Any]) {
-    let shapes = (args["shapes"] as? [[String: Any]] ?? []).enumerated().map {
-      GlassSpec(fallbackId: $0.offset, $0.element)
+    let m = args["masks"] as? [Any] ?? []
+    let scale = root?.window?.screen.scale ?? UIScreen.main.scale
+    for k in stride(from: 0, to: m.count - 3, by: 4) {
+      guard let key = m[k] as? Int, let w = m[k + 1] as? Int,
+        let h = m[k + 2] as? Int, let d = m[k + 3] as? FlutterStandardTypedData,
+        let image = GlassGlyph.mask(d.data, width: w, height: h, scale: scale)
+      else { continue }
+      masks[key] = image
     }
+    let shapes = (args["shapes"] as? [[String: Any]] ?? []).enumerated().map {
+      GlassSpec(fallbackId: $0.offset, $0.element, masks: masks)
+    }
+    // Dart drops a mask once nothing draws it.
+    let used = Set(shapes.flatMap { $0.glyphs.map(\.key) })
+    masks = masks.filter { used.contains($0.key) }
     let spacing = args["spacing"] as? Double ?? 0
     let dark = args["dark"] as? Bool ?? false
     let rethemed = configured && model.dark != dark

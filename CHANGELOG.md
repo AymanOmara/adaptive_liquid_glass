@@ -1,5 +1,15 @@
 ## Unreleased
 
+- Custom tab bars on native glass: the selected tab's icon and label are now
+  drawn by SwiftUI from the glass beneath them (new `GlassContentGlyphs`,
+  sent to native glass as coverage masks), as iOS 26 tints its own bar. Over
+  photos the selected tint's difference from the stock bar fell from 17.3
+  to 1.7 (dark 16.3 → 0.8, greys 24.6 → 2.6). A held press no longer
+  cancels about 30 ms in: the native lens kept its UIKit view only until the
+  lens shadow shifted it, and recreating the view cancelled the touch.
+  Added a custom-bar mode to the reference twin and `--custom` to the
+  real-touch check.
+
 - System button responsiveness: highlights now start on primary pointer down
   instead of waiting for tap recognition. In three warmed iOS 26.4 simulator
   takes the median rendered delay fell from 149 ms to 49 ms. Tap activation

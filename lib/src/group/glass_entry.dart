@@ -5,6 +5,7 @@ import '../core/glass.dart';
 import '../core/glass_shape.dart';
 import 'glass_press_geometry.dart';
 import 'render_glass_content_fill.dart';
+import 'render_glass_content_glyphs.dart';
 
 /// One `LiquidGlass` registered with a group.
 class GlassEntry {
@@ -46,6 +47,10 @@ class GlassEntry {
   /// System fills inside this glass that native glass draws as its own
   /// content (see GlassContentFill).
   final Set<RenderGlassContentFill> fills = <RenderGlassContentFill>{};
+
+  /// Glyph masks inside this glass that native glass fills as its own
+  /// content (see GlassContentGlyphs).
+  final Set<RenderGlassContentGlyphs> glyphs = <RenderGlassContentGlyphs>{};
 
   /// Content opacity during morphs.
   final ValueNotifier<double> contentOpacity = ValueNotifier(1);

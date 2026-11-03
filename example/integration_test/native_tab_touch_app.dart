@@ -7,6 +7,10 @@ import 'package:flutter/services.dart';
 
 const bitmap = bool.fromEnvironment('NATIVE_TAB_BITMAP');
 
+/// The custom Flutter bar in native mode (a `labelMaxTextScale` leaves the
+/// stock native bar), over the same photo.
+const custom = bool.fromEnvironment('NATIVE_TAB_CUSTOM');
+
 void main() => runApp(
   const MaterialApp(debugShowCheckedModeBanner: false, home: _TouchFixture()),
 );
@@ -41,11 +45,12 @@ class _TouchFixtureState extends State<_TouchFixture> {
   }
 
   @override
-  Widget build(BuildContext context) => ColoredBox(
+  // Material gives the custom bar's Flutter labels a text style.
+  Widget build(BuildContext context) => Material(
     color: const Color(0xFFFF0000),
     child: Stack(
       children: [
-        if (bitmap)
+        if (bitmap || custom)
           Positioned.fill(
             child: Image.asset(
               'assets/backgrounds/photo.png',
@@ -58,7 +63,7 @@ class _TouchFixtureState extends State<_TouchFixture> {
           top: 790,
           width: 274,
           height: 62,
-          child: bitmap
+          child: bitmap || custom
               ? MediaQuery(
                   data: MediaQuery.of(context).copyWith(
                     platformBrightness: dark
@@ -82,6 +87,7 @@ class _TouchFixtureState extends State<_TouchFixture> {
                     selectedIndex: selected,
                     onSelected: pick,
                     mode: GlassRenderMode.native,
+                    labelMaxTextScale: custom ? 1 : null,
                   ),
                 )
               : NativeSystemTabBar(

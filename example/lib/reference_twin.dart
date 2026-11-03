@@ -37,11 +37,16 @@ class ReferenceTwin extends StatelessWidget {
   final String? mode;
 
   @override
-  Widget build(BuildContext context) => LiquidGlassTheme(
+  Widget build(BuildContext context) {
+    twinCustomBar = mode == 'custom';
+    return _build(context);
+  }
+
+  Widget _build(BuildContext context) => LiquidGlassTheme(
     data: LiquidGlassThemeData(
       defaultMode: switch (mode) {
         'shader' => GlassRenderMode.shader,
-        'native' => GlassRenderMode.native,
+        'native' || 'custom' => GlassRenderMode.native,
         _ => GlassRenderMode.auto,
       },
     ),
@@ -265,6 +270,7 @@ class _AccessoryState extends State<_Accessory> {
       selectedIndex: _tab,
       onSelected: (i) => setState(() => _tab = i),
       mode: twinBarMode(context),
+      labelMaxTextScale: twinLabelMaxTextScale,
     ),
     bottomAccessory: const GlassBottomAccessory(
       child: Row(
@@ -678,6 +684,7 @@ class _SearchTabState extends State<_SearchTab> {
       selectedIndex: _tab,
       onSelected: (i) => setState(() => _tab = i),
       mode: twinBarMode(context),
+      labelMaxTextScale: twinLabelMaxTextScale,
       onSearch: () {},
     ),
     body: const SizedBox.expand(),
