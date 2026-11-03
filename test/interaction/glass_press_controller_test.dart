@@ -132,6 +132,16 @@ void main() {
     expect(pressScaleFor(m, Size.zero), 1.36);
   });
 
+  test('press scale grows the long side by L / sqrt(short side)', () {
+    final m = motion.motion;
+    expect(m.pressGrowthLength, 107.6);
+    // SwiftUI (native-mode recordings, 2026-11-03): 1.070 and 1.132.
+    expect(pressScaleFor(m, const Size(200, 56)), closeTo(1.0719, 0.001));
+    expect(pressScaleFor(m, const Size(44, 120)), closeTo(1.1352, 0.001));
+    expect(pressScaleFor(m, const Size(120, 120)), closeTo(1.0819, 0.001));
+    expect(pressScaleFor(m, const Size(20, 20)), 1.36);
+  });
+
   testWidgets('release follows the release spring', (t) async {
     final slow = GlassMotionConstants.fromJson({
       'pressResponse': 0.1,

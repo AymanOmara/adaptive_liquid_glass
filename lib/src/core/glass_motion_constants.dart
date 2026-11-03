@@ -18,6 +18,7 @@ class GlassMotionConstants {
     required this.morphDamping,
     this.dragStretch = 0.08,
     this.dragStretchDistance = 60,
+    this.pressGrowthLength = 0,
   });
 
   /// Reads keys present in [j]; missing keys come from [base].
@@ -31,6 +32,11 @@ class GlassMotionConstants {
       base.pressGrowthArea,
     ),
     pressScaleMax: GlassJson.number(j, 'pressScaleMax', base.pressScaleMax),
+    pressGrowthLength: GlassJson.number(
+      j,
+      'pressGrowthLength',
+      base.pressGrowthLength,
+    ),
     pressStretch: GlassJson.number(j, 'pressStretch', base.pressStretch),
     glowRadius: GlassJson.number(j, 'glowRadius', base.glowRadius),
     pressResponse: GlassJson.number(j, 'pressResponse', base.pressResponse),
@@ -55,6 +61,12 @@ class GlassMotionConstants {
   /// `sqrt(1 + pressGrowthArea / (w·h))`, capped at [pressScaleMax], so
   /// small shapes grow more than large ones.
   final double pressGrowthArea;
+
+  /// When positive, replaces [pressGrowthArea]: a pressed shape's long side
+  /// grows by `pressGrowthLength / sqrt(short side)` points (uniform scale
+  /// `1 + pressGrowthLength / (long · sqrt(short))`), capped at
+  /// [pressScaleMax]. Fits SwiftUI's capsules better than a fixed area.
+  final double pressGrowthLength;
 
   /// Largest uniform press scale.
   final double pressScaleMax;
@@ -98,6 +110,7 @@ class GlassMotionConstants {
   Map<String, double> toJson() => {
     'pressGrowthArea': pressGrowthArea,
     'pressScaleMax': pressScaleMax,
+    'pressGrowthLength': pressGrowthLength,
     'pressStretch': pressStretch,
     'glowRadius': glowRadius,
     'pressResponse': pressResponse,

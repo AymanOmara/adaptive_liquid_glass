@@ -7,14 +7,24 @@ import '../core/glass_motion_constants.dart';
 import '../core/swiftui_spring.dart';
 import '../group/glass_press_geometry.dart';
 
-/// Uniform scale of a box of [size] at full press: SwiftUI adds about the
-/// same area to every pressed shape (Task 16b, measured on circles 44–120 pt
-/// and capsules 120–300 pt), so small shapes grow more.
+/// Uniform scale of a box of [size] at full press: SwiftUI's long side
+/// grows by about the same amount on shapes of one thickness, less on
+/// thicker ones ([GlassMotionConstants.pressGrowthLength]; or, when that is
+/// 0, a fixed added area), so small shapes grow more. Measured on circles
+/// 44–120 pt and capsules 120–300 pt.
 ///
 /// Internal: not exported from the package; public for tests only.
 double pressScaleFor(GlassMotionConstants motion, Size size) {
   final area = size.width * size.height;
   if (area <= 0) return motion.pressScaleMax;
+  if (motion.pressGrowthLength > 0) {
+    final long = math.max(size.width, size.height);
+    final short = math.min(size.width, size.height);
+    return math.min(
+      motion.pressScaleMax,
+      1 + motion.pressGrowthLength / (long * math.sqrt(short)),
+    );
+  }
   return math.min(
     motion.pressScaleMax,
     math.sqrt(1 + motion.pressGrowthArea / area),

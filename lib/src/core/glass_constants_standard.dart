@@ -190,7 +190,13 @@ const GlassConstants _standard = GlassConstants(
     // squares on the long-side growth (pt) of sqrt(1 + G/(w·h)), capped:
     // G 1796, cap 1.356, RMS 2.4 pt (worst: 72 pt circle, 11.5 vs
     // 16.5 pt). Below 44 pt the cap is unmeasured.
+    // Native-mode re-recording (2026-11-03, tool/native/score_press.py,
+    // centre presses, scale 1.348/1.218/1.068 and 1.132/1.070/1.043): the
+    // long side grows by about 108/sqrt(short side) pt. Least squares on
+    // the long-side growth: L 107.6, RMS 1.4 pt, from 2.3 for the area law
+    // (worst: 72 pt circle, 12.7 vs 15.7 pt).
     pressGrowthArea: 1800,
+    pressGrowthLength: 107.6,
     pressScaleMax: 1.36,
     // SwiftUI (sx − sy)/0.79 = 0.0055 on the 200×56 capsule; Flutter
     // measured 0.0103 at 0.011.
