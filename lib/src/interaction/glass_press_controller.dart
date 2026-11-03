@@ -52,6 +52,17 @@ const Duration kPressLightHoldSmall = Duration(milliseconds: 660);
 /// to 11 of 255 light, 17 to 12 dark).
 const double kPressLightHoldFade = 0.2;
 
+/// How sharply the small-shape frost follows the press spring on the way
+/// in: `1 - (1 - amount)^n`. SwiftUI's frost is ~70% on one frame after
+/// the touch and full by the fourth, while the spring takes eight
+/// (`press-frost-circle44x44-dark-*`, `press-frost-clear-circle44x44-*`).
+const double kPressFrostAttack = 6;
+
+/// Share of [kPressLightHoldSmall] over which the frost eases off after
+/// the release (~14 frames, measured on the same scenes). It does not
+/// follow the release spring's rebound, which SwiftUI's frost never shows.
+const double kPressFrostRelease = 0.35;
+
 /// Drives `.interactive()`: a spring from 0 (rest) to 1 (pressed).
 class GlassPressController extends ChangeNotifier {
   /// Creates a controller.
@@ -85,6 +96,9 @@ class GlassPressController extends ChangeNotifier {
   Offset? _touch;
   Size _size = Size.zero;
 
+  /// [frost] when the finger lifted.
+  double _frostAtRelease = 0;
+
   /// Press amount; may overshoot outside 0..1.
   double get amount => _controller.value;
 
@@ -110,6 +124,7 @@ class GlassPressController extends ChangeNotifier {
   void up() {
     final small = _small;
     if (_down) {
+      _frostAtRelease = frost;
       _down = false;
       _lightHold
         ..duration = small ? kPressLightHoldSmall : kPressLightHold
@@ -142,6 +157,19 @@ class GlassPressController extends ChangeNotifier {
   double get released =>
       _down || !_lightHold.isAnimating ? 0 : _lightHold.value;
 
+  /// The small-shape press frost, 0..1: a sharpened [amount] while the
+  /// finger is down ([kPressFrostAttack]), then eased from its value at
+  /// the release to 0 over [kPressFrostRelease] of the light's hold.
+  double get frost {
+    if (_down) {
+      return 1 -
+          math.pow(1 - amount.clamp(0.0, 1.0), kPressFrostAttack).toDouble();
+    }
+    if (!_lightHold.isAnimating) return 0;
+    final t = (_lightHold.value / kPressFrostRelease).clamp(0.0, 1.0);
+    return _frostAtRelease * (1 - t * t * (3 - 2 * t));
+  }
+
   void _animateTo(double target, double response, double damping) {
     // The unbounded controller leaves the spring's residual (within its
     // tolerance) as its value; snap to the target once the spring is done so
@@ -169,7 +197,13 @@ class GlassPressController extends ChangeNotifier {
     }
     final glow = a.clamp(0.0, 1.0);
     if (reduceMotion || _size.isEmpty) {
-      return GlassPressGeometry(glow: glow, light: light, touch: _touch);
+      return GlassPressGeometry(
+        glow: glow,
+        light: light,
+        released: released,
+        frost: frost,
+        touch: _touch,
+      );
     }
     final centre = _size.center(Offset.zero);
     final touch = _touch ?? centre;
@@ -191,6 +225,7 @@ class GlassPressController extends ChangeNotifier {
       glow: glow,
       light: light,
       released: released,
+      frost: frost,
       touch: touch,
     );
   }

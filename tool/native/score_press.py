@@ -11,6 +11,11 @@ windows, so regular and clear numbers are comparable:
   first recorded frame), each clip aligned at its own first change. The
   lead covers the light, which comes on a frame before the growth passes
   the onset threshold. Out of 255.
+- `press_mae_aligned`: the same, but the release frames are aligned at each
+  clip's own release (its glass first shrinking a point below the held
+  width) instead of the onset. idb's touch-up lands 0-5 frames apart
+  between the two clips of a scene, varying from run to run, which
+  `press_mae` scores as renderer error.
 - `held_mae`: interior mean |SwiftUI - native| over the held frames
   onset+18...37 (fit_press_light.py's training and validation windows).
 - `light`: fit_press_light.py's lift/glow fit of the held residual (pixel
@@ -90,6 +95,16 @@ def score_scene(run, m, scale, crop):
     diffs = [np.subtract(a, b) / scale for a, b in zip(boxes["swiftui"], boxes["flutter"])
              if a and b]
     rel = int(round(m["hold_ms"] / 1000 * cm.FPS)) + LEAD
+    release = {r: _release(boxes[r], onset[r], rel - LEAD) for r in boxes}
+    held_len = min(release[r] - onset[r] for r in release)
+
+    def aligned(r):
+        frames = raw[r] + [raw[r][-1]] * (WINDOW + LEAD)
+        s = frames[max(0, onset[r] - LEAD):onset[r] + held_len]
+        return s + frames[release[r]:release[r] + WINDOW - held_len]
+
+    per_aligned = [float(np.abs((s - f)[mask] - rest).mean() * 255)
+                   for s, f in zip(aligned("swiftui"), aligned("flutter"))]
     plateau = {r: [float(v) / scale for v in np.median(
         [b for b in boxes[r][rel - 6:rel] if b], axis=0)] for r in boxes}
     geometry = {
@@ -101,12 +116,27 @@ def score_scene(run, m, scale, crop):
         "id": m["id"], "variant": m["shape"]["variant"], "brightness": m["brightness"],
         "crop": crop, "onset": onset,
         "press_mae": float(np.mean(per)),
+        "press_mae_aligned": float(np.mean(per_aligned)),
+        "release": release,
         "press_mae_held": float(np.mean(per[:rel])),
         "press_mae_release": float(np.mean(per[rel:])),
         "held_mae": float(np.mean([np.abs(r[mask]).mean() for r in residual])),
         "light": light,
         "geometry": geometry,
     }
+
+
+def _release(boxes, onset, hold):
+    """Frame (in the full clip) where the glass first shrinks a point below
+    its held width, searched from 10 frames before the nominal release;
+    the nominal release when it never does."""
+    def width(b):
+        return b[2] - b[0] if b else 0
+    held = np.median([width(b) for b in boxes[LEAD + hold - 16:LEAD + hold - 10]])
+    for k in range(LEAD + hold - 10, len(boxes)):
+        if boxes[k] and width(boxes[k]) < held - 3:
+            return onset + k - LEAD
+    return onset + hold
 
 
 def main():
@@ -128,7 +158,7 @@ def main():
         args.out.write_text(output)
     for r in report:
         g = r["geometry"]
-        print(f"{r['id']}: press {r['press_mae']:.2f} (held {r['press_mae_held']:.2f}, "
+        print(f"{r['id']}: press {r['press_mae']:.2f} (aligned {r['press_mae_aligned']:.2f}, held {r['press_mae_held']:.2f}, "
               f"release {r['press_mae_release']:.2f}), held-frame {r['held_mae']:.2f}, "
               f"light short {r['light']['lift_px']:+.2f} + {r['light']['peak_px']:+.2f}"
               f"·G({r['light']['sigma_pt']:.0f}), bbox rms {g['bbox_rms_pt']:.2f} pt, "

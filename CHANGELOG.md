@@ -13,8 +13,10 @@
   toward a grey, hold the light 0.66 s past the release while the finger
   glow fades out, and release on a springier spring (response 0.40,
   damping 0.35). A 72 pt circle's press error fell from 7.69 to 1.36;
-  light-mode shapes from 44 to 104 pt score 1.4 to 1.8, and the 44 pt dark
-  and clear circles 3.2 and 3.7.
+  light-mode shapes from 44 to 104 pt score 0.9 to 1.6, and the 44 pt dark
+  and clear circles 1.9 and 2.3 (from 5.6 and 4.9). The frost has its own
+  envelope: on within a frame or two of the touch and eased off over about
+  14 frames after the release, without the spring's rebound.
 
 - System button responsiveness: highlights now start on primary pointer down
   instead of waiting for tap recognition. In three warmed iOS 26.4 simulator

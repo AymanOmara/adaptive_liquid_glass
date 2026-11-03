@@ -84,6 +84,8 @@ void main() {
       expect(entry.value, closeTo(v(entry.key), 1e-9), reason: entry.key);
     }
     expect(kPressLightHoldSmall.inMilliseconds, v('hold_ms'));
+    expect(kPressFrostAttack, v('frost_attack'));
+    expect(kPressFrostRelease, v('frost_release'));
     // The frost and the growth switch at the same bound.
     expect(NativePressLight.frostLength, motion.pressSmallLength);
   });
@@ -93,12 +95,10 @@ void main() {
   for (final entry in small.entries) {
     test('${entry.key}: small press within bounds', () {
       final after = entry.value as Map<String, dynamic>;
-      // Light regular shapes within ~2/255; the 44 pt dark and clear
-      // circles about 3.5 (README limitation).
-      final bound = entry.key.contains('dark') || entry.key.contains('clear')
-          ? 4.5
-          : 2.5;
-      expect(after['press_mae'] as num, lessThan(bound));
+      // Every small shape within ~2.5/255 once the releases are aligned
+      // (idb's touch-up lands 0-5 frames apart).
+      expect(after['press_mae'] as num, lessThan(2.5));
+      expect(after['press_mae_aligned'] as num, lessThan(2.5));
       expect(after['held_mae'] as num, lessThan(2.0));
       expect(after['bbox_rms_pt'] as num, lessThan(1.0));
     });

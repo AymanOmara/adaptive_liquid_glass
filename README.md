@@ -1516,19 +1516,15 @@ Implementation work and measurement criteria for these limits are tracked in
 [TODO.md](TODO.md). Platform restrictions remain documented here even when
 there is no package-side workaround.
 
-- **Generic native interactive glass:** Flutter keeps the touches, so SwiftUI's
-  own press never runs on native glass. The package draws its growth,
-  stretch, light and saturation instead, measured from SwiftUI's (on at the
-  touch, held 0.33 s past the release). Scored on one crop and window for
-  both materials (`tool/native/score_press.py`, iOS 26.4), the in-shape
-  error over a press is 1.3 light / 1.7 dark on regular glass (from 2.4 /
-  3.7) and 2.1 / 2.3 on clear (from 4.7 / 4.8), out of 255; growth and
-  stretch are within a point of SwiftUI's. The clear residual is refraction
-  the overlay cannot reproduce. Shapes under 112 pt follow SwiftUI's
-  small-control press (fixed-length growth, a grey frost, a longer light
-  hold whose finger glow fades out, and a springier release): a 72 pt
-  circle scores 1.4 (from 7.7) and light shapes from 44 to 104 pt 1.4 to
-  1.8. 44 pt dark and clear circles remain 3.2 / 3.7 off.
+- **Native press is drawn, not SwiftUI's (platform):** Flutter keeps the
+  touches, so SwiftUI's own press never runs on native glass. The package
+  draws a measured match instead: growth, stretch, light, saturation and,
+  under 112 pt, SwiftUI's small-control frost, light hold and release
+  spring. On iOS 26.4 (`tool/native/score_press.py`) every recorded scene,
+  regular and clear, light and dark, 44 to 300 pt, is within about 2.3/255
+  of SwiftUI over the press (from up to 7.7), with growth and stretch
+  within a point. What remains is clear glass's refraction, which an
+  overlay cannot reproduce, and press styles iOS adds later.
 - **Custom-rendered tab bars:** configurations outside the stock native
   icon path above retain the Flutter renderer. Over photos its shader
   draws untinted labels vibrant, but the selected tint follows the glass

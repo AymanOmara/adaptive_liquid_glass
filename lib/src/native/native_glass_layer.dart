@@ -527,9 +527,9 @@ class _NativeGlassViewState extends State<NativeGlassView> {
           : (_dark
                 ? NativePressLight.darkSaturation
                 : NativePressLight.lightSaturation),
-      // The frost rides the press spring, not the light: it comes on over
-      // a few frames and is gone ~15 frames after the release.
-      frost * press.glow,
+      // The frost has its own envelope: on within a frame or two, eased
+      // off ~14 frames after the release, without the spring's rebound.
+      frost * press.frost,
       frostWhite,
     ];
   }

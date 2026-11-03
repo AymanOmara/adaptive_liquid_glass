@@ -102,6 +102,8 @@
     "length": 112,
     "growth": 15.7,
     "hold_ms": 660,
+    "frost_attack": 6,
+    "frost_release": 0.35,
     "release_response": 0.4,
     "release_damping": 0.35,
     "lightFrost": 0.355,
@@ -118,41 +120,48 @@
     "holdGlowFadeLength": 96
   },
   "small_scores": {
-    "note": "After only (no pre-fit recording of these scenes); run-to-run noise ~0.4",
+    "note": "frost8b run (2026-11-04) except the 44 pt light circle and 72x44 capsule (frost8; frost8b's 72x44 Flutter take held 9 frames longer). press_mae_aligned aligns each clip at its own release (idb's touch-up lands 0-5 frames apart). Run-to-run noise ~0.4",
     "press-size-circle44x44-photo-light": {
-      "press_mae": 1.76,
-      "held_mae": 0.68,
-      "bbox_rms_pt": 0.4
+      "press_mae": 1.55,
+      "press_mae_aligned": 1.19,
+      "held_mae": 0.71,
+      "bbox_rms_pt": 0.48
     },
     "press-frost-circle88x88-photo-light": {
-      "press_mae": 1.38,
-      "held_mae": 0.53,
-      "bbox_rms_pt": 0.54
+      "press_mae": 1.0,
+      "press_mae_aligned": 0.88,
+      "held_mae": 0.54,
+      "bbox_rms_pt": 0.38
     },
     "press-frost-circle104x104-photo-light": {
-      "press_mae": 1.8,
+      "press_mae": 1.44,
+      "press_mae_aligned": 1.06,
       "held_mae": 0.45,
       "bbox_rms_pt": 0.7
     },
     "press-frost-capsule72x44-photo-light": {
-      "press_mae": 1.5,
-      "held_mae": 0.97,
-      "bbox_rms_pt": 0.29
+      "press_mae": 2.1,
+      "press_mae_aligned": 1.49,
+      "held_mae": 0.99,
+      "bbox_rms_pt": 0.66
     },
     "press-frost-rect72x72-photo-light": {
-      "press_mae": 1.78,
+      "press_mae": 0.92,
+      "press_mae_aligned": 0.92,
       "held_mae": 0.51,
-      "bbox_rms_pt": 0.7
+      "bbox_rms_pt": 0.27
     },
     "press-frost-circle44x44-dark-photo-dark": {
-      "press_mae": 3.22,
-      "held_mae": 0.64,
-      "bbox_rms_pt": 0.5
+      "press_mae": 1.87,
+      "press_mae_aligned": 1.69,
+      "held_mae": 0.85,
+      "bbox_rms_pt": 0.69
     },
     "press-frost-clear-circle44x44-photo-light": {
-      "press_mae": 3.73,
-      "held_mae": 0.97,
-      "bbox_rms_pt": 0.65
+      "press_mae": 2.33,
+      "press_mae_aligned": 2.33,
+      "held_mae": 0.96,
+      "bbox_rms_pt": 0.5
     }
   }
 }

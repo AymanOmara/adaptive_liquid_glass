@@ -5,7 +5,7 @@ Audit 2026-10-30 (against README Known limitations and 0.3.0):
 - Hardware checks remain open: native menu latency, local Android shared-layer
   GPU memory, and implicit batching opacity/frame times. Simulator results do
   not close these items.
-- Optical limitations remain open: generic native press, custom tab-bar
+- Optical limitations remain open: custom tab-bar
   vibrancy/refraction, shader photo/text fidelity and navigation-bar matching.
 - Photos import now supports early per-item delivery and a stalled Android
   codec watchdog (0.3.0). Copy/conversion latency and blocking codec calls
@@ -22,13 +22,13 @@ Audit 2026-10-30 (against README Known limitations and 0.3.0):
 
 Remaining README limitations: implementation checks and closure criteria
 (2026-10-30; details and historical measurements below):
-- [ ] Generic native press: capsules re-recorded and re-scored 2026-11-03
-  (`tool/native/score_press.py`, `tool/reference/native_press.json`):
-  regular 1.34 / 1.69, clear 2.12 / 2.26 press error after adding SwiftUI's
-  press saturation. Small shapes (< 112 pt) fitted 2026-11-04: 72 pt circle
-  7.69 -> 1.36, light 44-104 pt shapes 1.4-1.8 (noise ~0.4). Open: 44 pt
-  dark / clear (3.22 / 3.73, from 5.64 / 4.87 before the hold's glow fade) and clear's refraction residual.
-  Flutter retains touch ownership, so native SwiftUI press cannot be assumed.
+- [x] Generic native press (closed 2026-11-04; README keeps a platform
+  note): capsules 1.30 / 1.52 regular, 2.24 / 2.05 clear; small shapes
+  0.9-2.3 incl. 44 pt dark / clear 1.87 / 2.33 (from 5.64 / 4.87) after
+  giving the frost its own envelope (on in 1-2 frames, eased off over ~14
+  frames after release, no spring rebound). `score_press.py` now also
+  reports `press_mae_aligned` (releases aligned; idb's touch-up jitters
+  0-5 frames). Residual: clear refraction. Flutter keeps touch ownership.
 - [ ] Custom tab bars: native glyph-mask composition and lens/bar integration
   are separate from the stock native bar. Preserve custom widget layout and
   font overflow; require photo/text pixel checks and real-touch tests.

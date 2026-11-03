@@ -253,7 +253,10 @@ view saturates the `GlassEffectContainer` while all its shapes are pressed.
 Shapes under 112 pt follow a separate small regime (`press-frost-*` and
 `press-size-*` scenes): fixed-length growth, a grey frost, a 0.66 s light
 hold whose finger glow fades out (fully up to 72 pt, none from 96 pt) and a
-springier release.
+springier release; its frost has its own envelope (on in a frame or two,
+eased off over ~14 frames after the release). `press_mae_aligned` scores
+the release frames from each clip's own release (the glass first shrinking
+1 pt below its held width), since idb's touch-up lands 0-5 frames apart.
 Current numbers: `tool/reference/native_press.json`.
 
 **Noise floor.** `--noise-ref DIR` scores each renderer's clips of one run

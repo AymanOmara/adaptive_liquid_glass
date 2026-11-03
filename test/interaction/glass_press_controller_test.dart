@@ -121,11 +121,35 @@ void main() {
     addTearDown(c.dispose);
     c.down(const Offset(22, 22), const Size(44, 44));
     await t.pump();
-    await t.pump(const Duration(milliseconds: 500));
+    // The frost leads the spring: most of it two frames in.
+    await t.pump(const Duration(milliseconds: 33));
+    expect(c.frost, greaterThan(0.6));
+    expect(c.frost, greaterThan(c.amount));
+    await t.pump(const Duration(milliseconds: 467));
     expect(c.geometry().released, 0);
+    expect(c.geometry().frost, closeTo(1, 1e-3));
     c.up();
     await t.pump();
-    await t.pump(kPressLightHold + const Duration(milliseconds: 20));
+    // It eases off without following the release spring's rebound.
+    var last = c.frost;
+    final frostEnd = kPressLightHoldSmall * kPressFrostRelease;
+    for (
+      var e = Duration.zero;
+      e < frostEnd;
+      e += const Duration(milliseconds: 16)
+    ) {
+      await t.pump(const Duration(milliseconds: 16));
+      expect(c.frost, lessThanOrEqualTo(last));
+      last = c.frost;
+    }
+    await t.pump(const Duration(milliseconds: 20));
+    expect(c.frost, 0);
+    await t.pump(
+      kPressLightHold +
+          const Duration(milliseconds: 20) -
+          frostEnd -
+          const Duration(milliseconds: 36),
+    );
     // The hold's progress, for the native glow fade.
     expect(
       c.geometry().released,
