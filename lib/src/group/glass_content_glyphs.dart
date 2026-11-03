@@ -23,6 +23,7 @@ class GlassContentGlyphs extends SingleChildRenderObjectWidget {
     required this.color,
     this.gain = 0,
     this.reference = 0,
+    this.vibrant = false,
     super.child,
   });
 
@@ -39,6 +40,11 @@ class GlassContentGlyphs extends SingleChildRenderObjectWidget {
   /// The glass level (0–1, every channel) at which the glyphs are [color].
   final double reference;
 
+  /// Whether the glyphs are vibrant instead, as iOS 26 draws untinted tab
+  /// labels: [color]'s level with [gain] of the glass's chroma, taken at
+  /// luminosity [reference] (a low one loses chroma).
+  final bool vibrant;
+
   @override
   RenderGlassContentGlyphs createRenderObject(BuildContext context) =>
       RenderGlassContentGlyphs(
@@ -48,6 +54,7 @@ class GlassContentGlyphs extends SingleChildRenderObjectWidget {
         color: color,
         gain: gain,
         reference: reference,
+        vibrant: vibrant,
         devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
       );
 
@@ -63,6 +70,7 @@ class GlassContentGlyphs extends SingleChildRenderObjectWidget {
       ..color = color
       ..gain = gain
       ..reference = reference
+      ..vibrant = vibrant
       ..devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
   }
 }

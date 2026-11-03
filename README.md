@@ -1528,10 +1528,13 @@ there is no package-side workaround.
 - **Custom-rendered tab bars:** configurations outside the stock native
   icon path above retain the Flutter renderer. Native glass now draws its
   selected tab from the glass beneath (selected-tint |Δ| against the stock
-  bar over photos 17.3 → 1.7, greys 24.6 → 2.6), but its unselected labels
-  keep flat colours (bar |Δ| 0.73 over photos, 3.26 over low greys). Its
-  separate native lens stays inside the bar and lacks the stock lens's
-  taller, dispersive rim (held-frame bar |Δ| 9.0). Stock native bars use
+  bar over photos 17.3 → 1.7, greys 24.6 → 2.6) and its unselected labels
+  vibrant, taking the glass's chroma (label |Δ| over photos 9.8 → 3.1, dark
+  5.9 → 1.9). Its separate native lens still lacks the stock lens's
+  dispersive rim, which shows the page refracted past the bar (rim rows
+  |Δ| ≈ 21 top / 17 bottom vs ≈ 6 inside): iOS draws it with the private
+  `_UILiquidLensView` (`CASDFLayer` glass plus a `CAPortalLayer` of the
+  page), which public SwiftUI `Glass` cannot reproduce. Stock native bars use
   the complete system control, including native label vibrancy, real-touch
   edge refraction and dot badges. Bundled glyph templates refresh after font
   loads; arbitrary widgets and custom icon fonts still retain Flutter rendering, including

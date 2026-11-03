@@ -8,7 +8,10 @@
   cancels about 30 ms in: the native lens kept its UIKit view only until the
   lens shadow shifted it, and recreating the view cancelled the touch.
   Added a custom-bar mode to the reference twin and `--custom` to the
-  real-touch check.
+  real-touch check. Unselected labels are now vibrant on native glass
+  (`GlassContentGlyphs.vibrant`), taking the glass's chroma as iOS draws
+  them: label difference from the stock bar over photos 9.8 → 3.1 (dark
+  5.9 → 1.9).
 
 - System button responsiveness: highlights now start on primary pointer down
   instead of waiting for tap recognition. In three warmed iOS 26.4 simulator

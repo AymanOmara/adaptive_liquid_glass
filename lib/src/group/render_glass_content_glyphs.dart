@@ -18,12 +18,14 @@ class RenderGlassContentGlyphs extends RenderProxyBox {
     required Color color,
     required double gain,
     required double reference,
+    required bool vibrant,
     required double devicePixelRatio,
   }) : _entry = entry,
        _enabled = enabled,
        _color = color,
        _gain = gain,
        _reference = reference,
+       _vibrant = vibrant,
        _devicePixelRatio = devicePixelRatio;
 
   /// The registry to refresh when the glyphs change.
@@ -80,6 +82,16 @@ class RenderGlassContentGlyphs extends RenderProxyBox {
   set reference(double value) {
     if (value == _reference) return;
     _reference = value;
+    _changed();
+  }
+
+  bool _vibrant;
+
+  /// See [GlassContentGlyphs.vibrant].
+  bool get vibrant => _vibrant;
+  set vibrant(bool value) {
+    if (value == _vibrant) return;
+    _vibrant = value;
     _changed();
   }
 

@@ -25,11 +25,14 @@ Remaining README limitations: implementation checks and closure criteria
 - [ ] Generic native press: improve light/geometry only with held and released
   recordings in both appearances; re-score regular and clear independently.
   Flutter retains touch ownership, so native SwiftUI press cannot be assumed.
-- [ ] Custom tab bars: the selected tint follows native glass (glyph masks);
-  unselected native-mode labels are still flat, and the native lens lacks
-  the stock lens's overhang and dispersive rim (held bar |Δ| 9.0). Preserve
-  custom widget layout and font overflow; check with the twin's custom mode
-  and `check_tab_touches.py --custom`.
+- [ ] Custom tab bars: the selected tint follows native glass and labels
+  are vibrant (glyph masks). Left: the held lens's dispersive rim (rim rows
+  |Δ| ≈ 21/17 vs ≈ 6 inside, held bar |Δ| 9.0). The stock lens is the
+  private `_UILiquidLensView` (lldb view dump: `CASDFLayer`/`CASDFElementLayer`
+  glass, a `CAPortalLayer` of the page, a dest-out punch-out); public SwiftUI
+  `Glass` (regular/clear/tint/interactive) has no portal or dispersion, so
+  this waits on a public API. Preserve custom widget layout and font
+  overflow; check with the twin's custom mode and `check_tab_touches.py --custom`.
 - [ ] Photos import: copy and conversion still require completing real I/O.
   Keep per-item delivery and codec-stall fallback. Android's selection cap
   and non-interruptible platform codec calls are platform constraints.

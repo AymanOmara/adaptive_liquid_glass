@@ -1732,9 +1732,9 @@ class _GlassTabBarState extends State<GlassTabBar>
                         // The selected tint follows the glass too, less
                         // (only in the plain row: lens copies are filtered).
                         // Over native glass, which Flutter cannot see,
-                        // native glass draws the selected tint as its own
-                        // content, following it as the shader does; a badge
-                        // keeps its colours.
+                        // native glass draws them as its own content: the
+                        // tint following it as the shader does, the labels
+                        // vibrant. A badge keeps its colours.
                         final dark =
                             GlassGroupScope.brightnessOf(context) ==
                             Brightness.dark;
@@ -1742,11 +1742,17 @@ class _GlassTabBarState extends State<GlassTabBar>
                           enabled:
                               _nativeBar &&
                               nativeGlyphs &&
-                              tint != null &&
                               widget.items[i].badge == null,
-                          color: tint ?? const Color(0x00000000),
-                          gain: TabBarMetrics.tintVibrancyGain,
-                          reference: dark
+                          color: c,
+                          vibrant: tint == null,
+                          gain: tint == null
+                              ? 1
+                              : TabBarMetrics.tintVibrancyGain,
+                          reference: tint == null
+                              ? (dark
+                                    ? TabBarMetrics.nativeLabelVibrancyLevelDark
+                                    : TabBarMetrics.nativeLabelVibrancyLevel)
+                              : dark
                               ? TabBarMetrics.tintVibrancyReferenceDark
                               : TabBarMetrics.tintVibrancyReference,
                           child: VibrantBlend(

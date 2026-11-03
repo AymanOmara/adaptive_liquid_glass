@@ -454,9 +454,10 @@ class _NativeGlassViewState extends State<NativeGlassView> {
   ];
 
   /// [entry]'s glyph masks, flattened as x, y, w, h (points, relative to
-  /// the drawn glass [drawn], global), the mask's key, colour (ARGB), gain
-  /// and reference per mask. Masks the platform view lacks are added to [masks]
-  /// as key, width, height and bytes; every key drawn goes in [used].
+  /// the drawn glass [drawn], global), the mask's key, colour (ARGB), gain,
+  /// reference and vibrancy (1 or 0) per mask. Masks the platform view
+  /// lacks are added to [masks] as key, width, height and bytes; every key
+  /// drawn goes in [used].
   List<double> _glyphs(
     GlassEntry entry,
     Rect drawn,
@@ -484,6 +485,7 @@ class _NativeGlassViewState extends State<NativeGlassView> {
             g.color.toARGB32().toDouble(),
             g.gain,
             g.reference,
+            g.vibrant ? 1.0 : 0.0,
           ];
         }(),
   ];

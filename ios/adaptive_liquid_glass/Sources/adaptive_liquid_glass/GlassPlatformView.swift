@@ -146,13 +146,13 @@ struct GlassSpec: Identifiable, Equatable {
         opacity: f[k + 4], style: Int(f[k + 5]))
     }
     let g = s["glyphs"] as? [Double] ?? []
-    glyphs = stride(from: 0, to: g.count - 7, by: 8).compactMap { k in
+    glyphs = stride(from: 0, to: g.count - 8, by: 9).compactMap { k in
       let key = Int(g[k + 4])
       guard let image = masks[key] else { return nil }
       return GlassGlyph(
         frame: CGRect(x: g[k], y: g[k + 1], width: g[k + 2], height: g[k + 3]),
         key: key, color: Int(g[k + 5]), gain: g[k + 6], reference: g[k + 7],
-        image: image)
+        vibrant: g[k + 8] != 0, image: image)
     }
   }
 }
@@ -233,22 +233,33 @@ struct GlassGlyph: Identifiable, Equatable {
   let color: Int
   let gain: Double
   let reference: Double
+  /// Whether the glyphs take the glass's chroma at [color]'s level, as iOS
+  /// 26 draws untinted tab labels (see [layers]).
+  let vibrant: Bool
   let image: UIImage
 
   static func == (a: GlassGlyph, b: GlassGlyph) -> Bool {
     a.frame == b.frame && a.key == b.key && a.color == b.color
       && a.gain == b.gain && a.reference == b.reference
+      && a.vibrant == b.vibrant
   }
 
   /// The layers that make the formula from the glass beneath, in order:
   /// [color] over it at `1 − gain` leaves `gain × glass` plus a constant
   /// of at most `1 − gain`; plus-lighter adds what is above that, plus-
-  /// darker takes away what is below zero.
+  /// darker takes away what is below zero. Vibrant, the glass is first set
+  /// to luminosity [reference] and scaled by [gain], then offset the same
+  /// way.
   var layers: [(color: Color, opacity: Double, blend: BlendMode)] {
     let c = [16, 8, 0].map { Double((color >> $0) & 0xFF) / 255 }
     let o = c.map { $0 - gain * reference }
-    let keep = 1 - gain
     var out: [(color: Color, opacity: Double, blend: BlendMode)] = []
+    if vibrant {
+      // A dark luminosity would clip the glass's chroma (in linear light).
+      out.append((Color(white: reference), 1, .luminosity))
+      if gain < 1 { out.append((Color(white: gain), 1, .multiply)) }
+    }
+    let keep = vibrant ? 0 : 1 - gain
     if keep > 0 {
       let a = o.map { min(max($0 / keep, 0), 1) }
       out.append((Color(red: a[0], green: a[1], blue: a[2]), keep, .normal))
