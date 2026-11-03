@@ -13,6 +13,7 @@ class GlassPressGeometry {
     this.translation = Offset.zero,
     this.glow = 0,
     this.light = 0,
+    this.released = 0,
     this.touch,
   });
 
@@ -34,6 +35,10 @@ class GlassPressGeometry {
   /// SwiftUI's press light, 0..1: on at the touch, off a moment after the
   /// release (see `GlassPressController.light`). Native mode draws it.
   final double light;
+
+  /// Progress through the light's hold after the release, 0..1; 0 while
+  /// the finger is down.
+  final double released;
 
   /// Touch point in the member's local coordinates.
   final Offset? touch;

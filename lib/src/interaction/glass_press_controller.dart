@@ -137,6 +137,11 @@ class GlassPressController extends ChangeNotifier {
     return 1 - kPressLightHoldFade * _lightHold.value;
   }
 
+  /// Progress through the light's hold after the release, 0..1; 0 while
+  /// the finger is down.
+  double get released =>
+      _down || !_lightHold.isAnimating ? 0 : _lightHold.value;
+
   void _animateTo(double target, double response, double damping) {
     // The unbounded controller leaves the spring's residual (within its
     // tolerance) as its value; snap to the target once the spring is done so
@@ -185,6 +190,7 @@ class GlassPressController extends ChangeNotifier {
       ),
       glow: glow,
       light: light,
+      released: released,
       touch: touch,
     );
   }

@@ -1526,10 +1526,9 @@ there is no package-side workaround.
   stretch are within a point of SwiftUI's. The clear residual is refraction
   the overlay cannot reproduce. Shapes under 112 pt follow SwiftUI's
   small-control press (fixed-length growth, a grey frost, a longer light
-  hold and a springier release): a 72 pt circle scores 1.6 (from 7.7) and
-  light shapes from 44 to 104 pt 1.2 to 2.5. 44 pt dark and clear circles
-  remain 5.6 / 4.9 off: their light stays brighter than SwiftUI's late in
-  the release.
+  hold whose finger glow fades out, and a springier release): a 72 pt
+  circle scores 1.4 (from 7.7) and light shapes from 44 to 104 pt 1.4 to
+  1.8. 44 pt dark and clear circles remain 3.2 / 3.7 off.
 - **Custom-rendered tab bars:** configurations outside the stock native
   icon path above retain the Flutter renderer. Over photos its shader
   draws untinted labels vibrant, but the selected tint follows the glass

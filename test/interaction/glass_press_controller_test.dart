@@ -113,9 +113,7 @@ void main() {
     await t.pumpAndSettle();
   });
 
-  testWidgets('small shapes stay lit longer and release springier', (
-    t,
-  ) async {
+  testWidgets('small shapes stay lit longer and release springier', (t) async {
     final c = GlassPressController(
       vsync: const TestVSync(),
       motion: motion.motion,
@@ -124,9 +122,19 @@ void main() {
     c.down(const Offset(22, 22), const Size(44, 44));
     await t.pump();
     await t.pump(const Duration(milliseconds: 500));
+    expect(c.geometry().released, 0);
     c.up();
     await t.pump();
     await t.pump(kPressLightHold + const Duration(milliseconds: 20));
+    // The hold's progress, for the native glow fade.
+    expect(
+      c.geometry().released,
+      closeTo(
+        (kPressLightHold.inMilliseconds + 20) /
+            kPressLightHoldSmall.inMilliseconds,
+        0.05,
+      ),
+    );
     // Past the capsule hold, still lit.
     expect(c.light, greaterThan(1 - kPressLightHoldFade));
     await t.pump(kPressLightHoldSmall - kPressLightHold);

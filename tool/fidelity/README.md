@@ -252,7 +252,8 @@ shape's own `.saturation` has no effect on container glass, so the native
 view saturates the `GlassEffectContainer` while all its shapes are pressed.
 Shapes under 112 pt follow a separate small regime (`press-frost-*` and
 `press-size-*` scenes): fixed-length growth, a grey frost, a 0.66 s light
-hold and a springier release.
+hold whose finger glow fades out (fully up to 72 pt, none from 96 pt) and a
+springier release.
 Current numbers: `tool/reference/native_press.json`.
 
 **Noise floor.** `--noise-ref DIR` scores each renderer's clips of one run

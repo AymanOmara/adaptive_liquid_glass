@@ -130,6 +130,32 @@ abstract final class NativePressLight {
 
   /// Grey a pressed small light-mode clear shape is mixed toward.
   static const double clearFrostWhite = 0.932;
+
+  /// Share of a small shape's release hold over which its finger glow fades
+  /// out, start and end: late in the hold SwiftUI keeps only the uniform
+  /// lift (~13/255 on 44 pt circles, light, dark and clear alike), while the
+  /// glow held there left native 9 to 18/255 brighter (`press-frost-*`).
+  static const double holdGlowFadeStart = 0.3;
+
+  /// End of the fade; see [holdGlowFadeStart].
+  static const double holdGlowFadeEnd = 0.8;
+
+  /// Dark mode's start of the fade: SwiftUI's dark 44 pt circle dims
+  /// sooner after the release.
+  static const double darkHoldGlowFadeStart = 0.15;
+
+  /// Dark mode's end of the fade.
+  static const double darkHoldGlowFadeEnd = 0.6;
+
+  /// Long side (pt) up to which the glow fades fully and the lift holds
+  /// unfaded to the end of the hold (SwiftUI's ~13/255; the large shapes'
+  /// fading lift left 44 pt circles 2 to 3/255 short); both taper up to
+  /// [holdGlowFadeLength], where SwiftUI's late hold keeps the glow (an
+  /// 88 pt circle matched without the fade and fell 2/255 short with it).
+  static const double holdGlowFullLength = 72;
+
+  /// Long side (pt) from which the glow no longer fades.
+  static const double holdGlowFadeLength = 96;
 }
 
 /// Hosts SwiftUI's own Liquid Glass (a `GlassEffectContainer` with one
@@ -470,12 +496,32 @@ class _NativeGlassViewState extends State<NativeGlassView> {
               ? NativePressLight.clearDarkLift
               : NativePressLight.clearLightLift)
         : (_dark ? NativePressLight.darkLift : NativePressLight.lightLift);
+    final fadeShare =
+        1 -
+        _smoothstep(
+          NativePressLight.holdGlowFullLength,
+          NativePressLight.holdGlowFadeLength,
+          box.size.longestSide,
+        );
+    final glowLeft =
+        1 -
+        fadeShare *
+            _smoothstep(
+              _dark
+                  ? NativePressLight.darkHoldGlowFadeStart
+                  : NativePressLight.holdGlowFadeStart,
+              _dark
+                  ? NativePressLight.darkHoldGlowFadeEnd
+                  : NativePressLight.holdGlowFadeEnd,
+              press.released,
+            );
+    final liftLight = press.light + fadeShare * (1 - press.light);
     return [
       p.dx - drawn.left,
       p.dy - drawn.top,
-      peak * press.light,
+      peak * press.light * glowLeft,
       NativePressLight.sigma,
-      lift * press.light,
+      lift * liftLight,
       clear
           ? NativePressLight.clearSaturation
           : (_dark
@@ -486,6 +532,11 @@ class _NativeGlassViewState extends State<NativeGlassView> {
       frost * press.glow,
       frostWhite,
     ];
+  }
+
+  static double _smoothstep(double a, double b, double x) {
+    final t = ((x - a) / (b - a)).clamp(0.0, 1.0);
+    return t * t * (3 - 2 * t);
   }
 
   /// [entry]'s content fills, flattened as x, y, w, h (points, relative to

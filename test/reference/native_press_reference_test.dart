@@ -73,6 +73,12 @@ void main() {
       'darkFrostWhite': NativePressLight.darkFrostWhite,
       'clearFrost': NativePressLight.clearFrost,
       'clearFrostWhite': NativePressLight.clearFrostWhite,
+      'holdGlowFadeStart': NativePressLight.holdGlowFadeStart,
+      'holdGlowFadeEnd': NativePressLight.holdGlowFadeEnd,
+      'darkHoldGlowFadeStart': NativePressLight.darkHoldGlowFadeStart,
+      'darkHoldGlowFadeEnd': NativePressLight.darkHoldGlowFadeEnd,
+      'holdGlowFullLength': NativePressLight.holdGlowFullLength,
+      'holdGlowFadeLength': NativePressLight.holdGlowFadeLength,
     };
     for (final entry in actual.entries) {
       expect(entry.value, closeTo(v(entry.key), 1e-9), reason: entry.key);
@@ -87,11 +93,11 @@ void main() {
   for (final entry in small.entries) {
     test('${entry.key}: small press within bounds', () {
       final after = entry.value as Map<String, dynamic>;
-      // Light regular shapes within ~2.5/255; the 44 pt dark and clear
-      // circles keep a brighter release hold (README limitation).
+      // Light regular shapes within ~2/255; the 44 pt dark and clear
+      // circles about 3.5 (README limitation).
       final bound = entry.key.contains('dark') || entry.key.contains('clear')
-          ? 6.0
-          : 3.0;
+          ? 4.5
+          : 2.5;
       expect(after['press_mae'] as num, lessThan(bound));
       expect(after['held_mae'] as num, lessThan(2.0));
       expect(after['bbox_rms_pt'] as num, lessThan(1.0));

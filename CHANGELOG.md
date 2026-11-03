@@ -10,10 +10,11 @@
 
 - Native press, small shapes: shapes whose long side is under 112 pt now
   press like SwiftUI's small controls. They grow by a fixed 15.7 pt, frost
-  toward a grey, hold the light 0.66 s past the release and release on a
-  springier spring (response 0.40, damping 0.35). A 72 pt circle's press
-  error fell from 7.69 to 1.58, and light-mode shapes from 44 to 104 pt
-  score 1.2 to 2.5. The 44 pt dark and clear circles remain 5.6 and 4.9.
+  toward a grey, hold the light 0.66 s past the release while the finger
+  glow fades out, and release on a springier spring (response 0.40,
+  damping 0.35). A 72 pt circle's press error fell from 7.69 to 1.36;
+  light-mode shapes from 44 to 104 pt score 1.4 to 1.8, and the 44 pt dark
+  and clear circles 3.2 and 3.7.
 
 - System button responsiveness: highlights now start on primary pointer down
   instead of waiting for tap recognition. In three warmed iOS 26.4 simulator
