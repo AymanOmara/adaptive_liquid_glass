@@ -8,6 +8,13 @@
   dark), out of 255; growth and stretch stay within a point. Added
   `tool/native/score_press.py` and a reference test locking the fit.
 
+- Native press, small shapes: shapes whose long side is under 112 pt now
+  press like SwiftUI's small controls. They grow by a fixed 15.7 pt, frost
+  toward a grey, hold the light 0.66 s past the release and release on a
+  springier spring (response 0.40, damping 0.35). A 72 pt circle's press
+  error fell from 7.69 to 1.58, and light-mode shapes from 44 to 104 pt
+  score 1.2 to 2.5. The 44 pt dark and clear circles remain 5.6 and 4.9.
+
 - System button responsiveness: highlights now start on primary pointer down
   instead of waiting for tap recognition. In three warmed iOS 26.4 simulator
   takes the median rendered delay fell from 149 ms to 49 ms. Tap activation

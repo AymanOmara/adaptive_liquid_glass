@@ -1,37 +1,152 @@
 {
-  "source": "iOS 26.4 simulator (ALG Press), tool/fidelity/record_motion.sh MODE=native press-c / press-capsule, scored by tool/native/score_press.py",
+  "source": "iOS 26.4 simulator (ALG Press), tool/fidelity/record_motion.sh MODE=native press-, scored by tool/native/score_press.py",
   "date": "2026-11-03",
   "chroma_gain": {
     "note": "Pressed chroma over the rest frame, held frames; native_before is white light alone",
-    "regular_light": {"swiftui": 1.11, "native_before": 0.98},
-    "regular_dark": {"swiftui": 1.16, "native_before": 0.99},
-    "clear_light": {"swiftui": 1.05, "native_before": 0.92},
-    "clear_dark": {"swiftui": 1.05, "native_before": 0.92}
+    "regular_light": {
+      "swiftui": 1.11,
+      "native_before": 0.98
+    },
+    "regular_dark": {
+      "swiftui": 1.16,
+      "native_before": 0.99
+    },
+    "clear_light": {
+      "swiftui": 1.05,
+      "native_before": 0.92
+    },
+    "clear_dark": {
+      "swiftui": 1.05,
+      "native_before": 0.92
+    }
   },
   "coefficients": {
-    "lightLift": 0.048, "lightGlow": 0.020, "darkLift": 0.053, "darkGlow": 0.070,
-    "clearLightLift": 0.0495, "clearLightGlow": 0.047,
-    "clearDarkLift": 0.050, "clearDarkGlow": 0.047,
+    "lightLift": 0.048,
+    "lightGlow": 0.02,
+    "darkLift": 0.053,
+    "darkGlow": 0.07,
+    "clearLightLift": 0.0495,
+    "clearLightGlow": 0.047,
+    "clearDarkLift": 0.05,
+    "clearDarkGlow": 0.047,
     "sigma": 41,
-    "lightSaturation": 1.15, "darkSaturation": 1.17, "clearSaturation": 1.17
+    "lightSaturation": 1.15,
+    "darkSaturation": 1.17,
+    "clearSaturation": 1.17
   },
   "scores": {
     "note": "press_mae: in-shape |SwiftUI - native| over the press, minus the rest residual, /255; held_mae: interior, held frames; bbox_rms_pt: growth/stretch box difference",
     "press-capsule-photo-light": {
-      "before": {"press_mae": 2.39, "held_mae": 2.66, "bbox_rms_pt": 0.79},
-      "after": {"press_mae": 1.34, "held_mae": 1.19, "bbox_rms_pt": 0.92}
+      "before": {
+        "press_mae": 2.39,
+        "held_mae": 2.66,
+        "bbox_rms_pt": 0.79
+      },
+      "after": {
+        "press_mae": 1.34,
+        "held_mae": 1.19,
+        "bbox_rms_pt": 0.92
+      }
     },
     "press-capsule-photo-dark": {
-      "before": {"press_mae": 3.74, "held_mae": 3.40, "bbox_rms_pt": 1.43},
-      "after": {"press_mae": 1.69, "held_mae": 1.34, "bbox_rms_pt": 0.74}
+      "before": {
+        "press_mae": 3.74,
+        "held_mae": 3.4,
+        "bbox_rms_pt": 1.43
+      },
+      "after": {
+        "press_mae": 1.69,
+        "held_mae": 1.34,
+        "bbox_rms_pt": 0.74
+      }
     },
     "press-clear-capsule-photo-light": {
-      "before": {"press_mae": 4.71, "held_mae": 6.26, "bbox_rms_pt": 0.40},
-      "after": {"press_mae": 2.12, "held_mae": 2.66, "bbox_rms_pt": 0.44}
+      "before": {
+        "press_mae": 4.71,
+        "held_mae": 6.26,
+        "bbox_rms_pt": 0.4
+      },
+      "after": {
+        "press_mae": 2.12,
+        "held_mae": 2.66,
+        "bbox_rms_pt": 0.44
+      }
     },
     "press-clear-capsule-photo-dark": {
-      "before": {"press_mae": 4.83, "held_mae": 6.39, "bbox_rms_pt": 0.48},
-      "after": {"press_mae": 2.26, "held_mae": 2.66, "bbox_rms_pt": 0.43}
+      "before": {
+        "press_mae": 4.83,
+        "held_mae": 6.39,
+        "bbox_rms_pt": 0.48
+      },
+      "after": {
+        "press_mae": 2.26,
+        "held_mae": 2.66,
+        "bbox_rms_pt": 0.43
+      }
+    },
+    "press-circle-photo-light": {
+      "before": {
+        "press_mae": 7.69,
+        "held_mae": 9.72,
+        "bbox_rms_pt": 2.0
+      },
+      "after": {
+        "press_mae": 1.58,
+        "held_mae": 0.47,
+        "bbox_rms_pt": 0.37
+      }
+    }
+  },
+  "small": {
+    "note": "Shapes whose long side is under length (pt): uniform growth 1 + growth/long, a grey frost riding the press spring, the light held longer and a springier release. SwiftUI release spring over 7 small clips (0.414, 0.364) vs (0.39, 0.57) on the rest; light lit 39-42 frames past the release vs 19-21",
+    "length": 112,
+    "growth": 15.7,
+    "hold_ms": 660,
+    "release_response": 0.4,
+    "release_damping": 0.35,
+    "lightFrost": 0.355,
+    "lightFrostWhite": 0.984,
+    "darkFrost": 0.375,
+    "darkFrostWhite": 0.887,
+    "clearFrost": 0.373,
+    "clearFrostWhite": 0.932
+  },
+  "small_scores": {
+    "note": "After only (no pre-fit recording of these scenes). The 44 pt dark and clear circles stay brighter than SwiftUI late in the release hold",
+    "press-size-circle44x44-photo-light": {
+      "press_mae": 2.54,
+      "held_mae": 1.72,
+      "bbox_rms_pt": 0.24
+    },
+    "press-frost-circle88x88-photo-light": {
+      "press_mae": 1.21,
+      "held_mae": 0.53,
+      "bbox_rms_pt": 0.22
+    },
+    "press-frost-circle104x104-photo-light": {
+      "press_mae": 1.21,
+      "held_mae": 0.45,
+      "bbox_rms_pt": 0.25
+    },
+    "press-frost-capsule72x44-photo-light": {
+      "press_mae": 2.04,
+      "held_mae": 0.97,
+      "bbox_rms_pt": 0.34
+    },
+    "press-frost-rect72x72-photo-light": {
+      "press_mae": 1.64,
+      "held_mae": 0.51,
+      "bbox_rms_pt": 0.39
+    },
+    "press-frost-circle44x44-dark-photo-dark": {
+      "press_mae": 5.64,
+      "held_mae": 1.45,
+      "bbox_rms_pt": 0.51
+    },
+    "press-frost-clear-circle44x44-photo-light": {
+      "press_mae": 4.87,
+      "held_mae": 0.97,
+      "bbox_rms_pt": 0.76
     }
   }
 }

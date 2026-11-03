@@ -102,6 +102,34 @@ abstract final class NativePressLight {
   /// Saturation of a pressed clear shape, light and dark (SwiftUI 1.05,
   /// native 0.92: the grown clear lens alone dilutes the colours).
   static const double clearSaturation = 1.17;
+
+  /// Long side (pt) below which a pressed shape frosts: SwiftUI mixes
+  /// circles 44–104 pt, a 72×44 capsule and a 72 pt rounded square about
+  /// 36% toward a light grey, pixel for pixel (residual 15 → 0.4 of 255 on
+  /// the 44 pt circle), but not a 120 pt circle or a 120×44 capsule
+  /// (`press-frost-*`). The same bound as
+  /// [GlassMotionConstants.pressSmallLength].
+  static const double frostLength = 112;
+
+  /// Share of a pressed small light-mode regular shape mixed toward
+  /// [lightFrostWhite].
+  static const double lightFrost = 0.355;
+
+  /// Grey a pressed small light-mode regular shape is mixed toward.
+  static const double lightFrostWhite = 0.984;
+
+  /// Share of a pressed small dark-mode shape mixed toward [darkFrostWhite].
+  static const double darkFrost = 0.375;
+
+  /// Grey a pressed small dark-mode shape is mixed toward.
+  static const double darkFrostWhite = 0.887;
+
+  /// Share of a pressed small light-mode clear shape mixed toward
+  /// [clearFrostWhite]. Clear dark is unmeasured and takes the dark values.
+  static const double clearFrost = 0.373;
+
+  /// Grey a pressed small light-mode clear shape is mixed toward.
+  static const double clearFrostWhite = 0.932;
 }
 
 /// Hosts SwiftUI's own Liquid Glass (a `GlassEffectContainer` with one
@@ -408,8 +436,9 @@ class _NativeGlassViewState extends State<NativeGlassView> {
   }
 
   /// [entry]'s press light as x, y (points, relative to the drawn glass
-  /// [drawn], global), the Gaussian's peak and σ, and the lift over the
-  /// whole shape; null when not pressed.
+  /// [drawn], global), the Gaussian's peak and σ, the lift over the whole
+  /// shape, the saturation, and the frost and its grey; null when not
+  /// pressed.
   ///
   /// SwiftUI's `.interactive()` glass lights up only under its own touches,
   /// which Flutter keeps, so the press's light is drawn here, scaled by
@@ -423,6 +452,14 @@ class _NativeGlassViewState extends State<NativeGlassView> {
     }
     final p = MatrixUtils.transformPoint(box.getTransformTo(null), touch);
     final clear = entry.glass.variant == GlassVariant.clear;
+    final small = box.size.longestSide < NativePressLight.frostLength;
+    final (frost, frostWhite) = !small
+        ? (0.0, 1.0)
+        : _dark
+        ? (NativePressLight.darkFrost, NativePressLight.darkFrostWhite)
+        : clear
+        ? (NativePressLight.clearFrost, NativePressLight.clearFrostWhite)
+        : (NativePressLight.lightFrost, NativePressLight.lightFrostWhite);
     final peak = clear
         ? (_dark
               ? NativePressLight.clearDarkGlow
@@ -444,6 +481,10 @@ class _NativeGlassViewState extends State<NativeGlassView> {
           : (_dark
                 ? NativePressLight.darkSaturation
                 : NativePressLight.lightSaturation),
+      // The frost rides the press spring, not the light: it comes on over
+      // a few frames and is gone ~15 frames after the release.
+      frost * press.glow,
+      frostWhite,
     ];
   }
 

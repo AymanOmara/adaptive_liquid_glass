@@ -1524,8 +1524,12 @@ there is no package-side workaround.
   error over a press is 1.3 light / 1.7 dark on regular glass (from 2.4 /
   3.7) and 2.1 / 2.3 on clear (from 4.7 / 4.8), out of 255; growth and
   stretch are within a point of SwiftUI's. The clear residual is refraction
-  the overlay cannot reproduce. Small shapes (a 72 pt circle) grow less
-  than SwiftUI's (scale 0.14 vs 0.22) and remain about 7/255 off.
+  the overlay cannot reproduce. Shapes under 112 pt follow SwiftUI's
+  small-control press (fixed-length growth, a grey frost, a longer light
+  hold and a springier release): a 72 pt circle scores 1.6 (from 7.7) and
+  light shapes from 44 to 104 pt 1.2 to 2.5. 44 pt dark and clear circles
+  remain 5.6 / 4.9 off: their light stays brighter than SwiftUI's late in
+  the release.
 - **Custom-rendered tab bars:** configurations outside the stock native
   icon path above retain the Flutter renderer. Over photos its shader
   draws untinted labels vibrant, but the selected tint follows the glass

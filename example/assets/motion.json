@@ -216,6 +216,132 @@
       "hold_ms": 700
     },
     {
+      "id": "press-frost-circle88x88-photo-light",
+      "kind": "press",
+      "background": "photo",
+      "brightness": "light",
+      "shape": {
+        "w": 88,
+        "h": 88,
+        "shape": "circle",
+        "radius": 0,
+        "x": 157.0,
+        "y": 560,
+        "variant": "regular",
+        "tint": null
+      },
+      "touch": {
+        "x": 201,
+        "y": 604
+      },
+      "hold_ms": 700
+    },
+    {
+      "id": "press-frost-circle104x104-photo-light",
+      "kind": "press",
+      "background": "photo",
+      "brightness": "light",
+      "shape": {
+        "w": 104,
+        "h": 104,
+        "shape": "circle",
+        "radius": 0,
+        "x": 149.0,
+        "y": 560,
+        "variant": "regular",
+        "tint": null
+      },
+      "touch": {
+        "x": 201,
+        "y": 612
+      },
+      "hold_ms": 700
+    },
+    {
+      "id": "press-frost-capsule72x44-photo-light",
+      "kind": "press",
+      "background": "photo",
+      "brightness": "light",
+      "shape": {
+        "w": 72,
+        "h": 44,
+        "shape": "capsule",
+        "radius": 0,
+        "x": 165.0,
+        "y": 560,
+        "variant": "regular",
+        "tint": null
+      },
+      "touch": {
+        "x": 201,
+        "y": 582
+      },
+      "hold_ms": 700
+    },
+    {
+      "id": "press-frost-rect72x72-photo-light",
+      "kind": "press",
+      "background": "photo",
+      "brightness": "light",
+      "shape": {
+        "w": 72,
+        "h": 72,
+        "shape": "rect",
+        "radius": 16,
+        "x": 165.0,
+        "y": 560,
+        "variant": "regular",
+        "tint": null
+      },
+      "touch": {
+        "x": 201,
+        "y": 596
+      },
+      "hold_ms": 700
+    },
+    {
+      "id": "press-frost-circle44x44-dark-photo-dark",
+      "kind": "press",
+      "background": "photo",
+      "brightness": "dark",
+      "shape": {
+        "w": 44,
+        "h": 44,
+        "shape": "circle",
+        "radius": 0,
+        "x": 179.0,
+        "y": 560,
+        "variant": "regular",
+        "tint": null
+      },
+      "touch": {
+        "x": 201,
+        "y": 582
+      },
+      "hold_ms": 700
+    },
+    {
+      "id": "press-frost-clear-circle44x44-photo-light",
+      "kind": "press",
+      "background": "photo",
+      "brightness": "light",
+      "shape": {
+        "w": 44,
+        "h": 44,
+        "shape": "circle",
+        "radius": 0,
+        "x": 179.0,
+        "y": 560,
+        "variant": "clear",
+        "tint": null
+      },
+      "touch": {
+        "x": 201,
+        "y": 582
+      },
+      "hold_ms": 700
+    },
+    {
       "id": "morph-expand-photo-light",
       "kind": "morph",
       "background": "photo",

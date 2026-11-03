@@ -10,15 +10,20 @@ import '../group/glass_press_geometry.dart';
 /// Uniform scale of a box of [size] at full press: SwiftUI's long side
 /// grows by about the same amount on shapes of one thickness, less on
 /// thicker ones ([GlassMotionConstants.pressGrowthLength]; or, when that is
-/// 0, a fixed added area), so small shapes grow more. Measured on circles
-/// 44–120 pt and capsules 120–300 pt.
+/// 0, a fixed added area), so small shapes grow more. Shapes whose long
+/// side is under [GlassMotionConstants.pressSmallLength] grow by a fixed
+/// [GlassMotionConstants.pressSmallGrowth] points instead. Measured on
+/// circles 44–120 pt, capsules 72–300 pt and a 72 pt rounded square.
 ///
 /// Internal: not exported from the package; public for tests only.
 double pressScaleFor(GlassMotionConstants motion, Size size) {
   final area = size.width * size.height;
   if (area <= 0) return motion.pressScaleMax;
+  final long = math.max(size.width, size.height);
+  if (motion.pressSmallGrowth > 0 && long < motion.pressSmallLength) {
+    return math.min(motion.pressScaleMax, 1 + motion.pressSmallGrowth / long);
+  }
   if (motion.pressGrowthLength > 0) {
-    final long = math.max(size.width, size.height);
     final short = math.min(size.width, size.height);
     return math.min(
       motion.pressScaleMax,
@@ -36,6 +41,12 @@ double pressScaleFor(GlassMotionConstants motion, Size size) {
 /// (`record_motion.sh MODE=native`, `press-capsule-photo-*`): 20 frames
 /// after the release starts, light and dark.
 const Duration kPressLightHold = Duration(milliseconds: 330);
+
+/// [kPressLightHold] for shapes whose long side is under
+/// [GlassMotionConstants.pressSmallLength]: SwiftUI keeps them lit about
+/// 20 frames longer (`press-frost-*`, `press-size-circle44x44-*`: lit 39–42
+/// frames after the release against 19–21 on capsules, 2026-11-03).
+const Duration kPressLightHoldSmall = Duration(milliseconds: 660);
 
 /// The share of the press light lost over [kPressLightHold] (measured: 13
 /// to 11 of 255 light, 17 to 12 dark).
@@ -58,7 +69,8 @@ class GlassPressController extends ChangeNotifier {
 
   final AnimationController _controller;
 
-  /// Runs over [kPressLightHold] after the finger lifts.
+  /// Runs over [kPressLightHold] ([kPressLightHoldSmall] on small shapes)
+  /// after the finger lifts.
   final AnimationController _lightHold;
 
   /// Whether a finger is down.
@@ -91,17 +103,32 @@ class GlassPressController extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool get _small =>
+      _size.longestSide > 0 && _size.longestSide < motion.pressSmallLength;
+
   /// Pointer released or cancelled.
   void up() {
+    final small = _small;
     if (_down) {
       _down = false;
-      _lightHold.forward(from: 0);
+      _lightHold
+        ..duration = small ? kPressLightHoldSmall : kPressLightHold
+        ..forward(from: 0);
     }
-    _animateTo(0, motion.releaseResponse, motion.releaseDamping);
+    _animateTo(
+      0,
+      small && motion.smallReleaseResponse > 0
+          ? motion.smallReleaseResponse
+          : motion.releaseResponse,
+      small && motion.smallReleaseDamping > 0
+          ? motion.smallReleaseDamping
+          : motion.releaseDamping,
+    );
   }
 
   /// The light of SwiftUI's pressed glass, 0..1: full from the touch,
-  /// held [kPressLightHold] past the release (fading by
+  /// held [kPressLightHold] ([kPressLightHoldSmall] on small shapes) past
+  /// the release (fading by
   /// [kPressLightHoldFade]), then off. Unlike [amount] it has no spring:
   /// SwiftUI's light switches on in the frame of the touch.
   double get light {

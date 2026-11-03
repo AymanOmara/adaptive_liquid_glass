@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:adaptive_liquid_glass/src/group/glass_press_geometry.dart';
 import 'package:adaptive_liquid_glass/src/interaction/glass_press_controller.dart';
 import 'package:adaptive_liquid_glass/testing.dart';
@@ -45,7 +47,7 @@ void main() {
       motion: motion.motion,
     );
     addTearDown(c.dispose);
-    c.down(const Offset(50, 20), const Size(100, 40));
+    c.down(const Offset(100, 28), const Size(200, 56));
     await t.pump(); // ticker starts on the first frame
     await t.pump(const Duration(seconds: 1));
     c.up();
@@ -84,7 +86,7 @@ void main() {
     );
     addTearDown(c.dispose);
     expect(c.light, 0);
-    c.down(const Offset(50, 20), const Size(100, 40));
+    c.down(const Offset(100, 28), const Size(200, 56));
     // Full in the frame of the touch, before the press spring has moved.
     expect(c.light, 1);
     expect(c.geometry().light, 1);
@@ -104,10 +106,49 @@ void main() {
     expect(c.amount.abs(), greaterThan(1e-3));
 
     // A new press mid-hold lights it fully again.
-    c.down(const Offset(50, 20), const Size(100, 40));
+    c.down(const Offset(100, 28), const Size(200, 56));
     c.up();
-    c.down(const Offset(50, 20), const Size(100, 40));
+    c.down(const Offset(100, 28), const Size(200, 56));
     expect(c.light, 1);
+    await t.pumpAndSettle();
+  });
+
+  testWidgets('small shapes stay lit longer and release springier', (
+    t,
+  ) async {
+    final c = GlassPressController(
+      vsync: const TestVSync(),
+      motion: motion.motion,
+    );
+    addTearDown(c.dispose);
+    c.down(const Offset(22, 22), const Size(44, 44));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 500));
+    c.up();
+    await t.pump();
+    await t.pump(kPressLightHold + const Duration(milliseconds: 20));
+    // Past the capsule hold, still lit.
+    expect(c.light, greaterThan(1 - kPressLightHoldFade));
+    await t.pump(kPressLightHoldSmall - kPressLightHold);
+    expect(c.light, 0);
+
+    // The release overshoots rest further than a large shape's.
+    Future<double> undershoot(Size size) async {
+      c.down(size.center(Offset.zero), size);
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 500));
+      c.up();
+      var least = 1.0;
+      for (var i = 0; i < 60; i++) {
+        await t.pump(const Duration(milliseconds: 16));
+        least = math.min(least, c.amount);
+      }
+      return -least;
+    }
+
+    final small = await undershoot(const Size(44, 44));
+    final large = await undershoot(const Size(200, 56));
+    expect(small, greaterThan(large * 2));
     await t.pumpAndSettle();
   });
 
@@ -142,6 +183,18 @@ void main() {
     expect(pressScaleFor(m, const Size(20, 20)), 1.36);
   });
 
+  test('small shapes grow by a fixed length', () {
+    final m = motion.motion;
+    expect(m.pressSmallLength, 112);
+    // SwiftUI: 72 pt circle 1.222, 72×44 capsule 1.218, 104 pt circle 1.150.
+    expect(pressScaleFor(m, const Size(72, 72)), closeTo(1.218, 0.001));
+    expect(pressScaleFor(m, const Size(72, 44)), closeTo(1.218, 0.001));
+    expect(pressScaleFor(m, const Size(104, 104)), closeTo(1.151, 0.001));
+    expect(pressScaleFor(m, const Size(44, 44)), closeTo(1.357, 0.001));
+    final off = GlassMotionConstants.fromJson({'pressSmallGrowth': 0}, m);
+    expect(pressScaleFor(off, const Size(72, 72)), closeTo(1.1761, 0.001));
+  });
+
   testWidgets('release follows the release spring', (t) async {
     final slow = GlassMotionConstants.fromJson({
       'pressResponse': 0.1,
@@ -150,7 +203,7 @@ void main() {
     }, motion.motion);
     final c = GlassPressController(vsync: const TestVSync(), motion: slow);
     addTearDown(c.dispose);
-    c.down(const Offset(50, 20), const Size(100, 40));
+    c.down(const Offset(100, 28), const Size(200, 56));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400)); // fast press-in
     expect(c.amount, closeTo(1, 0.02));
@@ -170,7 +223,7 @@ void main() {
       motion: motion.motion,
     );
     addTearDown(c.dispose);
-    c.down(const Offset(50, 20), const Size(100, 40));
+    c.down(const Offset(100, 28), const Size(200, 56));
     await t.pump();
     await t.pump(const Duration(seconds: 1));
     c.up();
@@ -178,7 +231,7 @@ void main() {
     await t.pump(const Duration(milliseconds: 100));
     final mid = c.amount;
     expect(mid, inExclusiveRange(0.05, 0.95));
-    c.down(const Offset(50, 20), const Size(100, 40));
+    c.down(const Offset(100, 28), const Size(200, 56));
     await t.pump();
     // Continuous: no jump at the interruption.
     expect(c.amount, closeTo(mid, 0.05));
@@ -192,7 +245,7 @@ void main() {
       motion: motion.motion,
     );
     addTearDown(c.dispose);
-    c.down(const Offset(50, 20), const Size(100, 40));
+    c.down(const Offset(100, 28), const Size(200, 56));
     await t.pump();
     await t.pump(const Duration(milliseconds: 60));
     final mid = c.amount;
