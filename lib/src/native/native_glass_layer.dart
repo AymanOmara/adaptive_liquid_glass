@@ -42,23 +42,27 @@ List<EntryGeometry>? nativeGroupGeometry(
 }
 
 /// The light SwiftUI's pressed `.interactive()` glass takes on, in native
-/// mode: white added over the whole shape plus a Gaussian under the finger.
+/// mode: white added over the whole shape plus a Gaussian under the finger,
+/// and the glass's colours made more saturated.
 ///
 /// Measured on iOS 26.4 (`tool/fidelity/record_motion.sh`, `MODE=native`,
-/// `press-capsule-photo-*`: a 200x56 regular capsule over the photo, held
-/// 0.7 s off centre): SwiftUI's pressed frame minus this package's native
-/// pressed frame (same Apple glass, same growth; the rest frames match
-/// exactly), fitted inside the shape with the finger fixed. Light: lift
-/// 10.2/255 + 5.0/255 Gaussian of σ 39 pt (rms 12.6 -> 4.0); dark: 12.6 +
-/// 17.8, σ 43 pt (rms 20.5 -> 4.9). The lifts are asked about 10% above
-/// those: SwiftUI adds 89% (light) and 93% (dark) of a `.plusLighter` white
-/// inside the glass (measured). Clear glass has a separate fit (2026-10-18,
-/// `tool/native/fit_press_light.py`): held validation interior MAE fell from
-/// 6.86 to 6.25 light and 7.25 to 6.38 dark, out of 255. Its remaining
-/// geometry/refraction residual cannot be corrected by white light alone.
+/// `press-capsule-photo-*` and `press-clear-capsule-photo-*`: a 200x56
+/// capsule over the photo, held 0.7 s off centre, light and dark) and
+/// scored by `tool/native/score_press.py`: SwiftUI's frames minus this
+/// package's native frames (same Apple glass, same growth; the rest frames
+/// match exactly), inside the shape, over the held press and its release.
+/// SwiftUI's press also scales the glass's chroma (1.11 light, 1.16 dark,
+/// 1.05 clear, over the rest frame) from the touch until the light goes
+/// out; white alone left it at 0.98 / 0.99 / 0.92. With the saturation and
+/// the refitted lifts the in-shape error over a press fell from 2.39 to
+/// 1.34 (regular light), 3.74 to 1.69 (regular dark), 4.71 to 2.12 (clear
+/// light) and 4.83 to 2.26 (clear dark), out of 255
+/// (`tool/reference/native_press.json`). The lifts are asked about 10%
+/// above the fits: SwiftUI adds 89% (light) and 93% (dark) of a
+/// `.plusLighter` white inside the glass (measured).
 abstract final class NativePressLight {
   /// White added over a pressed light-mode shape.
-  static const double lightLift = 0.045;
+  static const double lightLift = 0.048;
 
   /// Peak of the light-mode Gaussian under the finger.
   static const double lightGlow = 0.020;
@@ -70,20 +74,34 @@ abstract final class NativePressLight {
   static const double darkGlow = 0.070;
 
   /// Clear glass's fitted light-mode uniform lift.
-  static const double clearLightLift = 0.0475;
+  static const double clearLightLift = 0.0495;
 
   /// Clear glass's fitted light-mode finger glow.
-  static const double clearLightGlow = 0.042;
+  static const double clearLightGlow = 0.047;
 
   /// Clear glass's fitted dark-mode uniform lift.
-  static const double clearDarkLift = 0.044;
+  static const double clearDarkLift = 0.050;
 
   /// Clear glass's fitted dark-mode finger glow.
-  static const double clearDarkGlow = 0.042;
+  static const double clearDarkGlow = 0.047;
 
   /// The Gaussian's σ, points (fits: 39 light, 43 dark; the shader path's
   /// measured glow is 42).
   static const double sigma = 41;
+
+  /// Saturation of a pressed light-mode regular shape. SwiftUI's press
+  /// scales the glass's chroma from the touch until the light goes out
+  /// (chroma gain over the rest frame: SwiftUI 1.11, native white alone
+  /// 0.98). Asked above the gain: the white lift dilutes it again.
+  static const double lightSaturation = 1.15;
+
+  /// Saturation of a pressed dark-mode regular shape (SwiftUI 1.16,
+  /// native 0.99).
+  static const double darkSaturation = 1.17;
+
+  /// Saturation of a pressed clear shape, light and dark (SwiftUI 1.05,
+  /// native 0.92: the grown clear lens alone dilutes the colours).
+  static const double clearSaturation = 1.17;
 }
 
 /// Hosts SwiftUI's own Liquid Glass (a `GlassEffectContainer` with one
@@ -421,6 +439,11 @@ class _NativeGlassViewState extends State<NativeGlassView> {
       peak * press.light,
       NativePressLight.sigma,
       lift * press.light,
+      clear
+          ? NativePressLight.clearSaturation
+          : (_dark
+                ? NativePressLight.darkSaturation
+                : NativePressLight.lightSaturation),
     ];
   }
 

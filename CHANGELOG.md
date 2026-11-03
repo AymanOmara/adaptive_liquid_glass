@@ -1,5 +1,13 @@
 ## Unreleased
 
+- Native press: pressed native glass now takes on SwiftUI's press
+  saturation (measured chroma gain 1.11 light, 1.16 dark, 1.05 clear) and
+  refitted light. Re-recorded on iOS 26.4 with one crop for both materials,
+  the in-shape press error fell from 2.39 to 1.34 (regular light), 3.74 to
+  1.69 (regular dark), 4.71 to 2.12 (clear light) and 4.83 to 2.26 (clear
+  dark), out of 255; growth and stretch stay within a point. Added
+  `tool/native/score_press.py` and a reference test locking the fit.
+
 - System button responsiveness: highlights now start on primary pointer down
   instead of waiting for tap recognition. In three warmed iOS 26.4 simulator
   takes the median rendered delay fell from 149 ms to 49 ms. Tap activation

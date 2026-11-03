@@ -22,8 +22,11 @@ Audit 2026-10-30 (against README Known limitations and 0.3.0):
 
 Remaining README limitations: implementation checks and closure criteria
 (2026-10-30; details and historical measurements below):
-- [ ] Generic native press: improve light/geometry only with held and released
-  recordings in both appearances; re-score regular and clear independently.
+- [ ] Generic native press: capsules re-recorded and re-scored 2026-11-03
+  (`tool/native/score_press.py`, `tool/reference/native_press.json`):
+  regular 1.34 / 1.69, clear 2.12 / 2.26 press error after adding SwiftUI's
+  press saturation. Open: small shapes' growth (72 pt circle scale 0.14 vs
+  SwiftUI 0.22, press error ~7) and clear's refraction residual.
   Flutter retains touch ownership, so native SwiftUI press cannot be assumed.
 - [ ] Custom tab bars: native glyph-mask composition and lens/bar integration
   are separate from the stock native bar. Preserve custom widget layout and

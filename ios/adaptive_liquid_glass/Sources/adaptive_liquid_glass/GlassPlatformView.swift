@@ -109,7 +109,8 @@ struct GlassSpec: Identifiable, Equatable {
   /// tab bar pill), in points relative to the shape.
   let fills: [GlassFill]
   /// The press's light (`glow`: x, y in points relative to the shape, the
-  /// Gaussian's peak and σ, the lift over the whole shape); nil at rest.
+  /// Gaussian's peak and σ, the lift over the whole shape, and optionally
+  /// the saturation the pressed glass takes on); nil at rest.
   let glow: GlassGlow?
   /// Opacity of the Flutter ancestors between the shape and a batch's view
   /// (`GlassBatch`); 1 when Dart sends none.
@@ -128,9 +129,10 @@ struct GlassSpec: Identifiable, Equatable {
     interactive = s["interactive"] as? Bool ?? false
     union = s["union"] as? Int
     opacity = s["opacity"] as? Double ?? 1
-    if let g = s["glow"] as? [Double], g.count == 5, g[3] > 0 {
+    if let g = s["glow"] as? [Double], g.count >= 5, g[3] > 0 {
       glow = GlassGlow(
-        center: CGPoint(x: g[0], y: g[1]), peak: g[2], sigma: g[3], lift: g[4])
+        center: CGPoint(x: g[0], y: g[1]), peak: g[2], sigma: g[3], lift: g[4],
+        saturation: g.count > 5 ? g[5] : 1)
     } else {
       glow = nil
     }
@@ -146,13 +148,15 @@ struct GlassSpec: Identifiable, Equatable {
 
 /// The light of a pressed `.interactive()` shape, which SwiftUI draws only
 /// under its own touches: white added over the whole shape ([lift]) and
-/// under the finger, fading as a Gaussian of [sigma] points ([peak]).
+/// under the finger, fading as a Gaussian of [sigma] points ([peak]), and
+/// the glass's colours made more saturated ([saturation], 1 for none).
 @available(iOS 26.0, *)
 struct GlassGlow: Equatable {
   let center: CGPoint
   let peak: Double
   let sigma: Double
   let lift: Double
+  let saturation: Double
 
   /// Out to 3σ, where the Gaussian is 1% of its peak.
   var reach: Double { sigma * 3 }
@@ -233,11 +237,20 @@ struct GlassHostView: View {
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
+    // The press's saturation. The container draws its glass itself, so a
+    // shape's own `.saturation` does nothing; here it would reach every
+    // shape, so it applies only while all of them are pressed.
+    .saturation(pressSaturation)
     .id(model.generation)
     .ignoresSafeArea()
     // The Flutter side's platform brightness, like the shader path; UIKit
     // traits would follow the system instead of the app.
     .environment(\.colorScheme, model.dark ? .dark : .light)
+  }
+
+  private var pressSaturation: Double {
+    let pressed = model.shapes.compactMap { $0.glow?.saturation }
+    return pressed.count == model.shapes.count ? pressed.max() ?? 1 : 1
   }
 
   @ViewBuilder private func shapeView(_ s: GlassSpec) -> some View {
