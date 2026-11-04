@@ -1,3 +1,7 @@
+## 0.5.2 (2026-11-04)
+
+- Docs: README and API docs cover the progress ring that cancels on tap, swiping the iOS picker away, Android's scaled-down H.264 conversion, and the lost re-tap right after the iOS picker's Cancel (a system limit).
+
 ## 0.5.1 (2026-11-04)
 
 - Photos (Android): `compatibleFormat` scales a video down (keeping its aspect ratio, 2560/1920/1280 long edge) when the H.264 encoder refuses its size, so 4K HEVC converts instead of arriving with `conversionFailed`.

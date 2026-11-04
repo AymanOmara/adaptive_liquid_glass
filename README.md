@@ -80,7 +80,7 @@ documented there), then score with
 
 ```yaml
 dependencies:
-  adaptive_liquid_glass: ^0.5.1
+  adaptive_liquid_glass: ^0.5.2
 ```
 
 ```dart
@@ -1319,8 +1319,8 @@ and `icon`); tapping presents the system picker. On iOS that is
 (`MediaStore.ACTION_PICK_IMAGES`, Android 13+ and 11-12 with the SDK
 extension) or the document picker on older versions. Neither needs a
 photo library or storage permission, and the package adds no
-dependencies. Cancelling returns an empty list (`onPicked` is not
-called).
+dependencies. Cancelling, or swiping the picker away on iOS, returns an
+empty list (`onPicked` is not called).
 
 The result is a `GlassPickedPhotos`: an ordinary `List<GlassPickedPhoto>`
 that also has `droppedCount`, the items chosen beyond `maxSelection` and
@@ -1575,7 +1575,8 @@ there is no package-side workaround.
   or cache directory and any requested conversion before it is usable. Optional
   `onItemReady` delivers completed files early; `onPicked` and the final result
   still wait for the full batch. Very large videos can therefore take time to
-  arrive. The trigger shows loading until the batch finishes; iOS imports
+  arrive. The trigger shows a progress ring until the batch finishes (tap
+  it to cancel); iOS imports
   selections in parallel (3 loads, 1 video export, 2 photo re-encodes).
   Successful copies stay until `clearGlassPickedPhotos()` or the OS deletes
   them. On Android the
@@ -1583,11 +1584,17 @@ there is no package-side workaround.
   `compatibleFormat`) runs on the device's codecs, slower than real time
   on low-end phones and emulators. A codec polling loop that makes no progress
   for 30 seconds now abandons conversion and returns the original video with
-  `conversionFailed`; progressing conversions have no total time limit.
+  `conversionFailed`; progressing conversions have no total time limit. When
+  the device's H.264 encoder refuses the source size (many stop at 1080p),
+  the video is converted at a smaller size (long edge 2560, 1920 or 1280)
+  rather than left as HEVC.
   Android uses a killable codec with quarantine: an abandoned codec thread
   may hold a hardware codec until the process exits, and later items skip
   conversion. iOS cannot know a video's codec before the copy, so progress for
   a "compatible" video may jump from 50% to done.
+  On iOS a tap on the trigger within about 0.7 s of the system picker's
+  Cancel is lost: the out-of-process picker still owns touches while it
+  closes, so the tap never reaches the app. Tap again once it has gone.
   Android's system Photo Picker also caps
   selections at its platform maximum, including when `maxSelection` is 0;
   0 removes the app's cap. The Android

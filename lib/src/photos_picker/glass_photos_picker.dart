@@ -29,8 +29,9 @@ import 'pick_glass_photos.dart';
 /// with a choice, [onPicked] receives the items as local files, optionally
 /// downscaled or converted ([maxWidth], [maxHeight], [imageQuality],
 /// [compatibleFormat]). Delete them with [clearGlassPickedPhotos]. Cancelling
-/// does not call [onPicked]. A null [onPicked] disables the trigger, and
-/// the trigger shows a loading indicator until local files are ready.
+/// (or swiping the picker away) does not call [onPicked]. A null [onPicked]
+/// disables the trigger. While local files are being prepared the trigger
+/// shows a progress ring, and tapping it cancels the import.
 /// [onItemReady] can preview or upload each completed file while later items
 /// are still importing; [onPicked] continues to receive the complete batch.
 ///

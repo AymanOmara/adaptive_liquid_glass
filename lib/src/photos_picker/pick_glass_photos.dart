@@ -31,8 +31,10 @@ int _nextImport = 0;
 /// - [imageQuality] (0-100) re-encodes JPEG and HEIC photos at that
 ///   quality.
 /// - [compatibleFormat] turns HEIC/HEIF photos into JPEG and HEVC videos
-///   into H.264 (`.mp4`). An item that fails to convert arrives as it is,
-///   with [GlassPickedPhoto.conversionFailed] set.
+///   into H.264 (`.mp4`); on Android a video the encoder refuses at full
+///   size (often 4K) is scaled down, keeping its aspect ratio. An item that
+///   fails to convert arrives as it is, with
+///   [GlassPickedPhoto.conversionFailed] set.
 ///
 /// A re-encoded photo keeps its format where the platform can write it
 /// (iOS: HEIC, JPEG, PNG; Android: JPEG, PNG), else becomes JPEG. GIFs are
