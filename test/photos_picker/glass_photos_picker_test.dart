@@ -415,7 +415,14 @@ void main() {
       expect(find.byIcon(CupertinoIcons.photo_on_rectangle), findsOneWidget);
       await t.tap(find.text('Select Photos'));
       await t.pump();
-      expect(calls.single.arguments, {'maxSelection': 3, 'filter': 'videos'});
+      expect(
+        calls.single.arguments as Map,
+        allOf(
+          containsPair('maxSelection', 3),
+          containsPair('filter', 'videos'),
+          containsPair('importChannel', isA<String>()),
+        ),
+      );
       expect(picked, hasLength(1));
       expect(picked!.single.path, '/tmp/a.heic');
     }, variant: _both);
@@ -459,13 +466,17 @@ void main() {
       );
       await t.tap(find.text('Pick'));
       await t.pump();
-      expect(calls.single.arguments, {
-        'maxSelection': 1,
-        'filter': 'images',
-        'maxWidth': 2048,
-        'imageQuality': 70,
-        'compatibleFormat': true,
-      });
+      expect(
+        calls.single.arguments as Map,
+        allOf(
+          containsPair('maxSelection', 1),
+          containsPair('filter', 'images'),
+          containsPair('maxWidth', 2048),
+          containsPair('imageQuality', 70),
+          containsPair('compatibleFormat', true),
+          containsPair('importChannel', isA<String>()),
+        ),
+      );
     }, variant: ios);
 
     testWidgets('cancel does not call onPicked', (t) async {
@@ -496,10 +507,18 @@ void main() {
       expect(calls, hasLength(1));
     }, variant: ios);
 
-    testWidgets('taps while the picker is open are ignored', (t) async {
+    testWidgets('a tap while the picker is open cancels, never re-opens', (
+      t,
+    ) async {
       shaderEnv();
       final reply = Completer<Object?>();
-      final calls = _mock((_) => reply.future);
+      final calls = _mock((call) async {
+        if (call.method == 'cancelPhotoImport') {
+          reply.complete(const <Object?>[]);
+          return null;
+        }
+        return reply.future;
+      });
       await t.pumpWidget(
         plainHost(GlassPhotosPicker(label: 'Pick', onPicked: (_) {})),
       );
@@ -507,12 +526,12 @@ void main() {
       await t.pump();
       await t.tap(find.text('Pick'));
       await t.pump();
-      expect(calls, hasLength(1));
-      reply.complete(const <Object?>[]);
-      await t.pump();
+      expect(calls.where((c) => c.method == 'pickPhotos'), hasLength(1));
+      expect(calls.where((c) => c.method == 'cancelPhotoImport'), hasLength(1));
+      await t.pumpAndSettle();
       await t.tap(find.text('Pick'));
       await t.pump();
-      expect(calls, hasLength(2));
+      expect(calls.where((c) => c.method == 'pickPhotos'), hasLength(2));
     }, variant: ios);
 
     testWidgets(
@@ -781,6 +800,164 @@ void main() {
       final photos = await future;
       expect(got.map((p) => p.index), [1, 0]);
       expect(photos.map((p) => p.index), [0, 1]);
+    }, variant: _both);
+  });
+
+  group('widget progress', () {
+    Widget picker({
+      GlassPhotoImportController? controller,
+      ValueChanged<GlassPickedPhotos>? onPicked,
+    }) => plainHost(
+      GlassPhotosPicker(
+        maxSelection: 0,
+        controller: controller,
+        onPicked: onPicked ?? (_) {},
+        label: 'Photos',
+      ),
+    );
+
+    testWidgets('shows the ring value from progress', (tester) async {
+      shaderEnv();
+      final reply = Completer<Object?>();
+      final calls = _mock((_) => reply.future);
+      await tester.pumpWidget(picker());
+      await tester.tap(find.byType(GlassPhotosPicker));
+      await tester.pump();
+      final name = (calls.single.arguments as Map)['importChannel'] as String;
+      await push(name, 'progress', {
+        'index': 0,
+        'total': 2,
+        'completed': 1,
+        'itemFraction': 1.0,
+      });
+      await tester.pump();
+      expect(
+        tester.widget<GlassButton>(find.byType(GlassButton)).loadingValue,
+        closeTo(0.5, 1e-9),
+      );
+      reply.complete(const <Object?>[]);
+      await tester.pumpAndSettle();
+    }, variant: _both);
+
+    testWidgets('tapping the busy trigger cancels, then the next pick works', (
+      tester,
+    ) async {
+      shaderEnv();
+      var cancelling = true;
+      final reply = Completer<Object?>();
+      final calls = _mock((call) async {
+        if (call.method == 'cancelPhotoImport') {
+          reply.complete({
+            'items': [_image],
+            'cancelled': true,
+          });
+          return null;
+        }
+        if (!cancelling) return [_image];
+        return reply.future;
+      });
+      final got = <GlassPickedPhotos>[];
+      await tester.pumpWidget(picker(onPicked: got.add));
+      await tester.tap(find.byType(GlassPhotosPicker));
+      await tester.pump();
+      expect(
+        tester.widget<GlassButton>(find.byType(GlassButton)).loadingLabel,
+        'Cancel import',
+      );
+      await tester.tap(find.byType(GlassPhotosPicker));
+      await tester.pumpAndSettle();
+      expect(calls.where((c) => c.method == 'cancelPhotoImport'), hasLength(1));
+      expect(got.single.cancelled, isTrue); // finished items still arrive
+      expect(got.single, hasLength(1));
+      cancelling = false;
+      await tester.tap(find.byType(GlassPhotosPicker));
+      await tester.pumpAndSettle();
+      expect(got, hasLength(2));
+      expect(got.last.cancelled, isFalse);
+      expect(calls.where((c) => c.method == 'cancelPhotoImport'), hasLength(1));
+    }, variant: _both);
+
+    testWidgets('cancel during selection', (tester) async {
+      shaderEnv();
+      final reply = Completer<Object?>();
+      _mock((call) async {
+        if (call.method == 'cancelPhotoImport') {
+          reply.complete({
+            'items': <Object?>[],
+            'dropped': 0,
+            'cancelled': true,
+          });
+          return null;
+        }
+        return reply.future;
+      });
+      final controller = GlassPhotoImportController();
+      addTearDown(controller.dispose);
+      var picked = 0;
+      await tester.pumpWidget(
+        picker(controller: controller, onPicked: (_) => picked++),
+      );
+      await tester.tap(find.byType(GlassPhotosPicker));
+      await tester.pump();
+      controller.cancel();
+      await tester.pumpAndSettle();
+      expect(picked, 0);
+      expect(controller.isActive.value, isFalse);
+      _mock((_) async => [_image]);
+      await tester.tap(find.byType(GlassPhotosPicker));
+      await tester.pumpAndSettle();
+      expect(picked, 1);
+    }, variant: _both);
+
+    testWidgets('dispose during import is quiet', (tester) async {
+      shaderEnv();
+      final reply = Completer<Object?>();
+      final calls = _mock((_) => reply.future);
+      await tester.pumpWidget(picker());
+      await tester.tap(find.byType(GlassPhotosPicker));
+      await tester.pump();
+      final name = (calls.single.arguments as Map)['importChannel'] as String;
+      await tester.pumpWidget(plainHost(const SizedBox()));
+      await push(name, 'progress', {
+        'index': 0,
+        'total': 1,
+        'completed': 0,
+        'itemFraction': 0.5,
+      });
+      reply.complete([_image]);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    }, variant: _both);
+
+    testWidgets('showProgress false keeps the spinner', (tester) async {
+      shaderEnv();
+      final reply = Completer<Object?>();
+      final calls = _mock((_) => reply.future);
+      await tester.pumpWidget(
+        plainHost(
+          GlassPhotosPicker(
+            onPicked: (_) {},
+            label: 'Photos',
+            showProgress: false,
+          ),
+        ),
+      );
+      await tester.tap(find.byType(GlassPhotosPicker));
+      await tester.pump();
+      final name = (calls.single.arguments as Map)['importChannel'] as String;
+      await push(name, 'progress', {
+        'index': 0,
+        'total': 1,
+        'completed': 0,
+        'itemFraction': 0.5,
+      });
+      await tester.pump();
+      expect(
+        tester.widget<GlassButton>(find.byType(GlassButton)).loadingValue,
+        isNull,
+      );
+      reply.complete(const <Object?>[]);
+      await tester.pumpAndSettle();
     }, variant: _both);
   });
 }

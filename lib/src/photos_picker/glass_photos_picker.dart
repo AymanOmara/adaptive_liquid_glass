@@ -6,6 +6,8 @@ import '../button/glass_button_shape.dart';
 import '../button/glass_button_style.dart';
 import '../button/glass_control_size.dart';
 import '../core/glass_render_mode.dart';
+import 'glass_photo_import_controller.dart';
+import 'glass_photo_import_progress.dart';
 import 'glass_photos_picker_filter.dart';
 import 'glass_picked_photo.dart';
 import 'glass_picked_photos.dart';
@@ -53,6 +55,10 @@ class GlassPhotosPicker extends StatefulWidget {
     this.compatibleFormat = false,
     this.onError,
     this.onItemReady,
+    this.onProgress,
+    this.controller,
+    this.showProgress = true,
+    this.cancelLabel = 'Cancel import',
     this.style = GlassButtonStyle.glass,
     this.size,
     this.shape = GlassButtonShape.automatic,
@@ -76,6 +82,21 @@ class GlassPhotosPicker extends StatefulWidget {
   /// still receives every item. Files already delivered remain available even
   /// if a later item fails; see [pickGlassPhotos].
   final ValueChanged<GlassPickedPhoto>? onItemReady;
+
+  /// Receives throttled progress snapshots while the import runs; see
+  /// [pickGlassPhotos].
+  final ValueChanged<GlassPhotoImportProgress>? onProgress;
+
+  /// Watches or stops the import; the trigger itself cancels on tap while
+  /// busy. When null the picker uses its own controller.
+  final GlassPhotoImportController? controller;
+
+  /// Whether the busy trigger shows the import's progress as a ring. When
+  /// false it shows the indeterminate spinner.
+  final bool showProgress;
+
+  /// What assistive tech reads on the busy trigger, which cancels on tap.
+  final String cancelLabel;
 
   /// The trigger's content; replaces [icon] and [label].
   final Widget? child;
@@ -140,6 +161,15 @@ class GlassPhotosPicker extends StatefulWidget {
 
 class _GlassPhotosPickerState extends State<GlassPhotosPicker> {
   bool _open = false;
+  GlassPhotoImportController? _own;
+  GlassPhotoImportController get _controller =>
+      widget.controller ?? (_own ??= GlassPhotoImportController());
+
+  @override
+  void dispose() {
+    _own?.dispose();
+    super.dispose();
+  }
 
   Future<void> _pick() async {
     if (_open) return;
@@ -156,6 +186,12 @@ class _GlassPhotosPickerState extends State<GlassPhotosPicker> {
             ? null
             : (photo) {
                 if (mounted) widget.onItemReady?.call(photo);
+              },
+        controller: _controller,
+        onProgress: widget.onProgress == null
+            ? null
+            : (p) {
+                if (mounted) widget.onProgress?.call(p);
               },
       );
       if (!mounted || photos.isEmpty) return;
@@ -189,35 +225,52 @@ class _GlassPhotosPickerState extends State<GlassPhotosPicker> {
   Widget build(BuildContext context) {
     final onPressed = widget.onPicked == null ? null : _pick;
     final child = widget.child;
-    if (child != null) {
-      return GlassButton(
-        onPressed: onPressed,
-        loading: _open,
-        style: widget.style,
-        size: widget.size,
-        shape: widget.shape,
-        tint: widget.tint,
-        mode: widget.mode,
-        glassId: widget.glassId,
-        semanticLabel: widget.semanticLabel,
-        child: child,
-      );
-    }
     final label = widget.label;
-    return GlassButton.icon(
-      onPressed: onPressed,
-      loading: _open,
-      icon: widget.icon,
-      label: label == null ? null : Text(label),
-      style: widget.style,
-      size: widget.size,
-      shape: widget.shape,
-      tint: widget.tint,
-      mode: widget.mode,
-      glassId: widget.glassId,
-      semanticLabel:
-          widget.semanticLabel ??
-          (label == null ? PhotosPickerMetrics.semanticLabel : null),
+    return ValueListenableBuilder<GlassPhotoImportProgress?>(
+      valueListenable: _controller.progress,
+      builder: (context, p, _) {
+        final loadingValue =
+            !widget.showProgress ||
+                p == null ||
+                p.phase != GlassPhotoImportPhase.importing
+            ? null
+            : p.fraction;
+        if (child != null) {
+          return GlassButton(
+            onPressed: onPressed,
+            loading: _open,
+            loadingValue: loadingValue,
+            onLoadingPressed: _controller.cancel,
+            loadingLabel: widget.cancelLabel,
+            style: widget.style,
+            size: widget.size,
+            shape: widget.shape,
+            tint: widget.tint,
+            mode: widget.mode,
+            glassId: widget.glassId,
+            semanticLabel: widget.semanticLabel,
+            child: child,
+          );
+        }
+        return GlassButton.icon(
+          onPressed: onPressed,
+          loading: _open,
+          loadingValue: loadingValue,
+          onLoadingPressed: _controller.cancel,
+          loadingLabel: widget.cancelLabel,
+          icon: widget.icon,
+          label: label == null ? null : Text(label),
+          style: widget.style,
+          size: widget.size,
+          shape: widget.shape,
+          tint: widget.tint,
+          mode: widget.mode,
+          glassId: widget.glassId,
+          semanticLabel:
+              widget.semanticLabel ??
+              (label == null ? PhotosPickerMetrics.semanticLabel : null),
+        );
+      },
     );
   }
 }
