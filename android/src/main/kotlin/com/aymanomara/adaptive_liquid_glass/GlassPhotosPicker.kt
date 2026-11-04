@@ -83,11 +83,11 @@ internal class GlassPhotosPicker(private val context: Context) :
         }
         val intent = if (hasPhotoPicker()) photoPickerIntent(maxSelection, filter)
         else documentIntent(maxSelection, filter)
-        // Registered before the picker opens so a cancel during selection counts.
         job = null
         pending = result
         pendingMax = maxSelection
         pendingOptions = options
+        // Registered before the picker opens so a cancel during selection counts.
         pendingName = importChannel
         pendingOnEvent = onEvent
         pendingCancelled = false
@@ -158,6 +158,7 @@ internal class GlassPhotosPicker(private val context: Context) :
         }
         val options = pendingOptions
         val events = pendingOnEvent
+        val delivered = java.util.Collections.synchronizedList(mutableListOf<Map<String, Any?>>())
         val current = PhotoImportJob(pendingName, uris.size, emit = { e -> main.post { events?.invoke("progress", e) } })
         job = current
         pendingName = null
@@ -165,7 +166,7 @@ internal class GlassPhotosPicker(private val context: Context) :
         io.execute {
             try {
                 val imported = GlassPhotoCache.importItems(
-                    dir, uris, { index, uri, session -> copy(index, uri, options, session, current) },
+                    dir, uris, { index, uri, session -> copy(index, uri, options, session, current).also { delivered += it } },
                     events?.let { notify ->
                         { item ->
                             main.post { notify("itemReady", item) }
@@ -190,7 +191,9 @@ internal class GlassPhotosPicker(private val context: Context) :
                     pending = null
                     job = null
                     if (current.cancel.cancelled) {
-                        result.success(mapOf("items" to emptyList<Any>(), "dropped" to dropped, "cancelled" to true))
+                        // Only incremental imports keep finished items after a failure.
+                        val kept = if (events != null) delivered.toList() else emptyList()
+                        result.success(mapOf("items" to kept, "dropped" to dropped, "cancelled" to true))
                     } else {
                         result.error("load_failed", e.message, null)
                     }
@@ -210,8 +213,11 @@ internal class GlassPhotosPicker(private val context: Context) :
         try {
             return copyItem(index, uri, options, directory, job)
         } catch (e: Exception) {
-            // The final event still counts this item, so `completed` reaches `total`.
-            job.progress.finish(index)
+            // The final event still counts a failed item, so `completed` reaches
+            // `total`; a cancelled item is not counted.
+            if (e !is java.util.concurrent.CancellationException && !job.cancel.cancelled) {
+                job.progress.finish(index)
+            }
             throw e
         }
     }
@@ -228,11 +234,10 @@ internal class GlassPhotosPicker(private val context: Context) :
         val ext = mime?.let { MimeTypeMap.getSingleton().getExtensionFromMimeType(it) }
         var dest = File(directory, UUID.randomUUID().toString() + (ext?.let { ".$it" } ?: ""))
         val isVideo = mime?.startsWith("video/") == true
-        // Copy is the whole item unless a conversion may follow.
-        val converts = if (isVideo) options.compatible
-        else options.maxWidth != null || options.maxHeight != null || options.quality != null ||
-            options.compatible
-        val copyShare = if (converts) 0.5 else 1.0
+        // Copy is the whole item unless a conversion will actually follow.
+        val hevc = isVideo && options.compatible && !job.quarantined &&
+            H264Transcoder.isHevc(context, uri)
+        val copyShare = copyShareFor(isVideo, mime, hevc, options, job.quarantined)
         val size = size(uri)
         val copying = TranscodeProgress(cancel = job.cancel)
         job.io(copying) {
@@ -463,7 +468,24 @@ internal class GlassPhotosPicker(private val context: Context) :
         else -> false
     }
 
-    private companion object {
+    internal companion object {
+        /** Share of an item's progress taken by the copy: 0.5 only when a conversion will run. */
+        fun copyShareFor(
+            isVideo: Boolean,
+            mime: String?,
+            hevc: Boolean,
+            options: Options,
+            quarantined: Boolean,
+        ): Double {
+            val converts = if (isVideo) {
+                options.compatible && hevc && !quarantined
+            } else {
+                options.maxWidth != null || options.maxHeight != null || options.quality != null ||
+                    (options.compatible && (mime == "image/heic" || mime == "image/heif"))
+            }
+            return if (converts) 0.5 else 1.0
+        }
+
         /** Arbitrary, below 0xFFFF as `startActivityForResult` requires. */
         const val REQUEST_CODE = 0x4C47
 

@@ -23,6 +23,22 @@ internal object H264Transcoder {
     private const val AVC = MediaFormat.MIMETYPE_VIDEO_AVC
     private const val TIMEOUT_US = 10_000L
 
+    /** Whether the first video track of [uri] is HEVC; false when it cannot be probed. */
+    fun isHevc(context: android.content.Context, uri: android.net.Uri): Boolean {
+        val extractor = MediaExtractor()
+        return try {
+            context.contentResolver.openFileDescriptor(uri, "r")?.use { fd ->
+                extractor.setDataSource(fd.fileDescriptor)
+                val index = track(extractor, "video/")
+                index >= 0 && extractor.getTrackFormat(index).getString(MediaFormat.KEY_MIME) == HEVC
+            } ?: false
+        } catch (e: Exception) {
+            false
+        } finally {
+            extractor.release()
+        }
+    }
+
     /** Whether the first video track of [file] is HEVC. */
     fun isHevc(file: File): Boolean {
         val extractor = MediaExtractor()
