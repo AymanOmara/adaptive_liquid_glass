@@ -217,12 +217,14 @@ void main() {
     expect(glow[2], closeTo(NativePressLight.lightGlow, 0.003));
     expect(glow[3], NativePressLight.sigma);
     expect(glow[4], closeTo(NativePressLight.lightLift, 0.005));
+    expect(glow[5], NativePressLight.lightSaturation);
 
     await t.pumpWidget(app(Brightness.dark));
     await t.pump(const Duration(milliseconds: 16));
     glow = (shape()['glow']! as List).cast<double>();
     expect(glow[2], closeTo(NativePressLight.darkGlow, 0.008));
     expect(glow[4], closeTo(NativePressLight.darkLift, 0.006));
+    expect(glow[5], NativePressLight.darkSaturation);
 
     // SwiftUI keeps the light a moment past the release.
     await gesture.up();
@@ -269,6 +271,7 @@ void main() {
         glow[4],
         dark ? NativePressLight.clearDarkLift : NativePressLight.clearLightLift,
       );
+      expect(glow[5], NativePressLight.clearSaturation);
       await gesture.up();
       await t.pumpAndSettle();
     }

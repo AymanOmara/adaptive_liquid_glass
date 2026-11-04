@@ -1,0 +1,167 @@
+{
+  "source": "iOS 26.4 simulator (ALG Press), tool/fidelity/record_motion.sh MODE=native press-, scored by tool/native/score_press.py",
+  "date": "2026-11-04",
+  "chroma_gain": {
+    "note": "Pressed chroma over the rest frame, held frames; native_before is white light alone",
+    "regular_light": {
+      "swiftui": 1.11,
+      "native_before": 0.98
+    },
+    "regular_dark": {
+      "swiftui": 1.16,
+      "native_before": 0.99
+    },
+    "clear_light": {
+      "swiftui": 1.05,
+      "native_before": 0.92
+    },
+    "clear_dark": {
+      "swiftui": 1.05,
+      "native_before": 0.92
+    }
+  },
+  "coefficients": {
+    "lightLift": 0.048,
+    "lightGlow": 0.02,
+    "darkLift": 0.053,
+    "darkGlow": 0.07,
+    "clearLightLift": 0.0495,
+    "clearLightGlow": 0.047,
+    "clearDarkLift": 0.05,
+    "clearDarkGlow": 0.047,
+    "sigma": 41,
+    "lightSaturation": 1.15,
+    "darkSaturation": 1.17,
+    "clearSaturation": 1.17
+  },
+  "scores": {
+    "note": "press_mae: in-shape |SwiftUI - native| over the press, minus the rest residual, /255; held_mae: interior, held frames; bbox_rms_pt: growth/stretch box difference",
+    "press-capsule-photo-light": {
+      "before": {
+        "press_mae": 2.39,
+        "held_mae": 2.66,
+        "bbox_rms_pt": 0.79
+      },
+      "after": {
+        "press_mae": 1.51,
+        "held_mae": 1.22,
+        "bbox_rms_pt": 0.44
+      }
+    },
+    "press-capsule-photo-dark": {
+      "before": {
+        "press_mae": 3.74,
+        "held_mae": 3.4,
+        "bbox_rms_pt": 1.43
+      },
+      "after": {
+        "press_mae": 1.72,
+        "held_mae": 1.25,
+        "bbox_rms_pt": 0.66
+      }
+    },
+    "press-clear-capsule-photo-light": {
+      "before": {
+        "press_mae": 4.71,
+        "held_mae": 6.26,
+        "bbox_rms_pt": 0.4
+      },
+      "after": {
+        "press_mae": 2.06,
+        "held_mae": 2.56,
+        "bbox_rms_pt": 0.45
+      }
+    },
+    "press-clear-capsule-photo-dark": {
+      "before": {
+        "press_mae": 4.83,
+        "held_mae": 6.39,
+        "bbox_rms_pt": 0.48
+      },
+      "after": {
+        "press_mae": 2.15,
+        "held_mae": 2.56,
+        "bbox_rms_pt": 0.31
+      }
+    },
+    "press-circle-photo-light": {
+      "before": {
+        "press_mae": 7.69,
+        "held_mae": 9.72,
+        "bbox_rms_pt": 2.0
+      },
+      "after": {
+        "press_mae": 1.36,
+        "held_mae": 0.47,
+        "bbox_rms_pt": 0.39
+      }
+    }
+  },
+  "small": {
+    "note": "Shapes whose long side is under length (pt): uniform growth 1 + growth/long, a grey frost riding the press spring, the light held longer and a springier release. SwiftUI release spring over 7 small clips (0.414, 0.364) vs (0.39, 0.57) on the rest; light lit 39-42 frames past the release vs 19-21. Late in the release hold SwiftUI keeps only the unfaded lift (~13/255 on 44 pt): the glow fades out over the hold (fully to 72 pt, none from 96 pt)",
+    "length": 112,
+    "growth": 15.7,
+    "hold_ms": 660,
+    "frost_attack": 6,
+    "frost_release": 0.35,
+    "release_response": 0.4,
+    "release_damping": 0.35,
+    "lightFrost": 0.355,
+    "lightFrostWhite": 0.984,
+    "darkFrost": 0.375,
+    "darkFrostWhite": 0.887,
+    "clearFrost": 0.373,
+    "clearFrostWhite": 0.932,
+    "holdGlowFadeStart": 0.3,
+    "holdGlowFadeEnd": 0.8,
+    "darkHoldGlowFadeStart": 0.15,
+    "darkHoldGlowFadeEnd": 0.6,
+    "holdGlowFullLength": 72,
+    "holdGlowFadeLength": 96
+  },
+  "small_scores": {
+    "note": "frost8b run (2026-11-04) except the 44 pt light circle and 72x44 capsule (frost8; frost8b's 72x44 Flutter take held 9 frames longer). press_mae_aligned aligns each clip at its own release (idb's touch-up lands 0-5 frames apart). Run-to-run noise ~0.4",
+    "press-size-circle44x44-photo-light": {
+      "press_mae": 1.55,
+      "press_mae_aligned": 1.19,
+      "held_mae": 0.71,
+      "bbox_rms_pt": 0.48
+    },
+    "press-frost-circle88x88-photo-light": {
+      "press_mae": 1.0,
+      "press_mae_aligned": 0.88,
+      "held_mae": 0.54,
+      "bbox_rms_pt": 0.38
+    },
+    "press-frost-circle104x104-photo-light": {
+      "press_mae": 1.44,
+      "press_mae_aligned": 1.06,
+      "held_mae": 0.45,
+      "bbox_rms_pt": 0.7
+    },
+    "press-frost-capsule72x44-photo-light": {
+      "press_mae": 2.1,
+      "press_mae_aligned": 1.49,
+      "held_mae": 0.99,
+      "bbox_rms_pt": 0.66
+    },
+    "press-frost-rect72x72-photo-light": {
+      "press_mae": 0.92,
+      "press_mae_aligned": 0.92,
+      "held_mae": 0.51,
+      "bbox_rms_pt": 0.27
+    },
+    "press-frost-circle44x44-dark-photo-dark": {
+      "press_mae": 1.87,
+      "press_mae_aligned": 1.69,
+      "held_mae": 0.85,
+      "bbox_rms_pt": 0.69
+    },
+    "press-frost-clear-circle44x44-photo-light": {
+      "press_mae": 2.33,
+      "press_mae_aligned": 2.33,
+      "held_mae": 0.96,
+      "bbox_rms_pt": 0.5
+    }
+  }
+}

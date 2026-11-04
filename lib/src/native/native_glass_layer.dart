@@ -42,23 +42,27 @@ List<EntryGeometry>? nativeGroupGeometry(
 }
 
 /// The light SwiftUI's pressed `.interactive()` glass takes on, in native
-/// mode: white added over the whole shape plus a Gaussian under the finger.
+/// mode: white added over the whole shape plus a Gaussian under the finger,
+/// and the glass's colours made more saturated.
 ///
 /// Measured on iOS 26.4 (`tool/fidelity/record_motion.sh`, `MODE=native`,
-/// `press-capsule-photo-*`: a 200x56 regular capsule over the photo, held
-/// 0.7 s off centre): SwiftUI's pressed frame minus this package's native
-/// pressed frame (same Apple glass, same growth; the rest frames match
-/// exactly), fitted inside the shape with the finger fixed. Light: lift
-/// 10.2/255 + 5.0/255 Gaussian of σ 39 pt (rms 12.6 -> 4.0); dark: 12.6 +
-/// 17.8, σ 43 pt (rms 20.5 -> 4.9). The lifts are asked about 10% above
-/// those: SwiftUI adds 89% (light) and 93% (dark) of a `.plusLighter` white
-/// inside the glass (measured). Clear glass has a separate fit (2026-10-18,
-/// `tool/native/fit_press_light.py`): held validation interior MAE fell from
-/// 6.86 to 6.25 light and 7.25 to 6.38 dark, out of 255. Its remaining
-/// geometry/refraction residual cannot be corrected by white light alone.
+/// `press-capsule-photo-*` and `press-clear-capsule-photo-*`: a 200x56
+/// capsule over the photo, held 0.7 s off centre, light and dark) and
+/// scored by `tool/native/score_press.py`: SwiftUI's frames minus this
+/// package's native frames (same Apple glass, same growth; the rest frames
+/// match exactly), inside the shape, over the held press and its release.
+/// SwiftUI's press also scales the glass's chroma (1.11 light, 1.16 dark,
+/// 1.05 clear, over the rest frame) from the touch until the light goes
+/// out; white alone left it at 0.98 / 0.99 / 0.92. With the saturation and
+/// the refitted lifts the in-shape error over a press fell from 2.39 to
+/// 1.34 (regular light), 3.74 to 1.69 (regular dark), 4.71 to 2.12 (clear
+/// light) and 4.83 to 2.26 (clear dark), out of 255
+/// (`tool/reference/native_press.json`). The lifts are asked about 10%
+/// above the fits: SwiftUI adds 89% (light) and 93% (dark) of a
+/// `.plusLighter` white inside the glass (measured).
 abstract final class NativePressLight {
   /// White added over a pressed light-mode shape.
-  static const double lightLift = 0.045;
+  static const double lightLift = 0.048;
 
   /// Peak of the light-mode Gaussian under the finger.
   static const double lightGlow = 0.020;
@@ -70,20 +74,88 @@ abstract final class NativePressLight {
   static const double darkGlow = 0.070;
 
   /// Clear glass's fitted light-mode uniform lift.
-  static const double clearLightLift = 0.0475;
+  static const double clearLightLift = 0.0495;
 
   /// Clear glass's fitted light-mode finger glow.
-  static const double clearLightGlow = 0.042;
+  static const double clearLightGlow = 0.047;
 
   /// Clear glass's fitted dark-mode uniform lift.
-  static const double clearDarkLift = 0.044;
+  static const double clearDarkLift = 0.050;
 
   /// Clear glass's fitted dark-mode finger glow.
-  static const double clearDarkGlow = 0.042;
+  static const double clearDarkGlow = 0.047;
 
   /// The Gaussian's σ, points (fits: 39 light, 43 dark; the shader path's
   /// measured glow is 42).
   static const double sigma = 41;
+
+  /// Saturation of a pressed light-mode regular shape. SwiftUI's press
+  /// scales the glass's chroma from the touch until the light goes out
+  /// (chroma gain over the rest frame: SwiftUI 1.11, native white alone
+  /// 0.98). Asked above the gain: the white lift dilutes it again.
+  static const double lightSaturation = 1.15;
+
+  /// Saturation of a pressed dark-mode regular shape (SwiftUI 1.16,
+  /// native 0.99).
+  static const double darkSaturation = 1.17;
+
+  /// Saturation of a pressed clear shape, light and dark (SwiftUI 1.05,
+  /// native 0.92: the grown clear lens alone dilutes the colours).
+  static const double clearSaturation = 1.17;
+
+  /// Long side (pt) below which a pressed shape frosts: SwiftUI mixes
+  /// circles 44–104 pt, a 72×44 capsule and a 72 pt rounded square about
+  /// 36% toward a light grey, pixel for pixel (residual 15 → 0.4 of 255 on
+  /// the 44 pt circle), but not a 120 pt circle or a 120×44 capsule
+  /// (`press-frost-*`). The same bound as
+  /// [GlassMotionConstants.pressSmallLength].
+  static const double frostLength = 112;
+
+  /// Share of a pressed small light-mode regular shape mixed toward
+  /// [lightFrostWhite].
+  static const double lightFrost = 0.355;
+
+  /// Grey a pressed small light-mode regular shape is mixed toward.
+  static const double lightFrostWhite = 0.984;
+
+  /// Share of a pressed small dark-mode shape mixed toward [darkFrostWhite].
+  static const double darkFrost = 0.375;
+
+  /// Grey a pressed small dark-mode shape is mixed toward.
+  static const double darkFrostWhite = 0.887;
+
+  /// Share of a pressed small light-mode clear shape mixed toward
+  /// [clearFrostWhite]. Clear dark is unmeasured and takes the dark values.
+  static const double clearFrost = 0.373;
+
+  /// Grey a pressed small light-mode clear shape is mixed toward.
+  static const double clearFrostWhite = 0.932;
+
+  /// Share of a small shape's release hold over which its finger glow fades
+  /// out, start and end: late in the hold SwiftUI keeps only the uniform
+  /// lift (~13/255 on 44 pt circles, light, dark and clear alike), while the
+  /// glow held there left native 9 to 18/255 brighter (`press-frost-*`).
+  static const double holdGlowFadeStart = 0.3;
+
+  /// End of the fade; see [holdGlowFadeStart].
+  static const double holdGlowFadeEnd = 0.8;
+
+  /// Dark mode's start of the fade: SwiftUI's dark 44 pt circle dims
+  /// sooner after the release.
+  static const double darkHoldGlowFadeStart = 0.15;
+
+  /// Dark mode's end of the fade.
+  static const double darkHoldGlowFadeEnd = 0.6;
+
+  /// Long side (pt) up to which the glow fades fully and the lift holds
+  /// unfaded to the end of the hold (SwiftUI's ~13/255; the large shapes'
+  /// fading lift left 44 pt circles 2 to 3/255 short); both taper up to
+  /// [holdGlowFadeLength], where SwiftUI's late hold keeps the glow (an
+  /// 88 pt circle matched without the fade and fell 2/255 short with it).
+  static const double holdGlowFullLength = 72;
+
+  /// Long side (pt) from which the glow no longer fades.
+  static const double holdGlowFadeLength = 96;
 }
 
 /// Hosts SwiftUI's own Liquid Glass (a `GlassEffectContainer` with one
@@ -398,8 +470,9 @@ class _NativeGlassViewState extends State<NativeGlassView> {
   }
 
   /// [entry]'s press light as x, y (points, relative to the drawn glass
-  /// [drawn], global), the Gaussian's peak and σ, and the lift over the
-  /// whole shape; null when not pressed.
+  /// [drawn], global), the Gaussian's peak and σ, the lift over the whole
+  /// shape, the saturation, and the frost and its grey; null when not
+  /// pressed.
   ///
   /// SwiftUI's `.interactive()` glass lights up only under its own touches,
   /// which Flutter keeps, so the press's light is drawn here, scaled by
@@ -413,6 +486,14 @@ class _NativeGlassViewState extends State<NativeGlassView> {
     }
     final p = MatrixUtils.transformPoint(box.getTransformTo(null), touch);
     final clear = entry.glass.variant == GlassVariant.clear;
+    final small = box.size.longestSide < NativePressLight.frostLength;
+    final (frost, frostWhite) = !small
+        ? (0.0, 1.0)
+        : _dark
+        ? (NativePressLight.darkFrost, NativePressLight.darkFrostWhite)
+        : clear
+        ? (NativePressLight.clearFrost, NativePressLight.clearFrostWhite)
+        : (NativePressLight.lightFrost, NativePressLight.lightFrostWhite);
     final peak = clear
         ? (_dark
               ? NativePressLight.clearDarkGlow
@@ -423,13 +504,47 @@ class _NativeGlassViewState extends State<NativeGlassView> {
               ? NativePressLight.clearDarkLift
               : NativePressLight.clearLightLift)
         : (_dark ? NativePressLight.darkLift : NativePressLight.lightLift);
+    final fadeShare =
+        1 -
+        _smoothstep(
+          NativePressLight.holdGlowFullLength,
+          NativePressLight.holdGlowFadeLength,
+          box.size.longestSide,
+        );
+    final glowLeft =
+        1 -
+        fadeShare *
+            _smoothstep(
+              _dark
+                  ? NativePressLight.darkHoldGlowFadeStart
+                  : NativePressLight.holdGlowFadeStart,
+              _dark
+                  ? NativePressLight.darkHoldGlowFadeEnd
+                  : NativePressLight.holdGlowFadeEnd,
+              press.released,
+            );
+    final liftLight = press.light + fadeShare * (1 - press.light);
     return [
       p.dx - drawn.left,
       p.dy - drawn.top,
-      peak * press.light,
+      peak * press.light * glowLeft,
       NativePressLight.sigma,
-      lift * press.light,
+      lift * liftLight,
+      clear
+          ? NativePressLight.clearSaturation
+          : (_dark
+                ? NativePressLight.darkSaturation
+                : NativePressLight.lightSaturation),
+      // The frost has its own envelope: on within a frame or two, eased
+      // off ~14 frames after the release, without the spring's rebound.
+      frost * press.frost,
+      frostWhite,
     ];
+  }
+
+  static double _smoothstep(double a, double b, double x) {
+    final t = ((x - a) / (b - a)).clamp(0.0, 1.0);
+    return t * t * (3 - 2 * t);
   }
 
   /// [entry]'s content fills, flattened as x, y, w, h (points, relative to

@@ -190,7 +190,19 @@ const GlassConstants _standard = GlassConstants(
     // squares on the long-side growth (pt) of sqrt(1 + G/(w·h)), capped:
     // G 1796, cap 1.356, RMS 2.4 pt (worst: 72 pt circle, 11.5 vs
     // 16.5 pt). Below 44 pt the cap is unmeasured.
+    // Native-mode re-recording (2026-11-03, tool/native/score_press.py,
+    // centre presses, scale 1.348/1.218/1.068 and 1.132/1.070/1.043): the
+    // long side grows by about 108/sqrt(short side) pt. Least squares on
+    // the long-side growth: L 107.6, RMS 1.4 pt, from 2.3 for the area law
+    // (worst: 72 pt circle, 12.7 vs 15.7 pt).
+    // Small shapes are a regime of their own: circles 44/72/88/104, a
+    // 72×44 capsule and a 72 pt rounded square all grow by scale
+    // 1 + 15.7/long (15.4–16.0 pt), and a 120 pt circle or 120×44 capsule
+    // falls back to the law above (press-frost-*, 2026-11-03).
     pressGrowthArea: 1800,
+    pressGrowthLength: 107.6,
+    pressSmallGrowth: 15.7,
+    pressSmallLength: 112,
     pressScaleMax: 1.36,
     // SwiftUI (sx − sy)/0.79 = 0.0055 on the 200×56 capsule; Flutter
     // measured 0.0103 at 0.011.
@@ -207,6 +219,11 @@ const GlassConstants _standard = GlassConstants(
     pressDamping: 0.63,
     releaseResponse: 0.38,
     releaseDamping: 0.55,
+    // Shapes under pressSmallLength release springier: SwiftUI (0.414,
+    // 0.364) over 7 small clips against (0.39, 0.57) for the rest; Flutter
+    // measures about 0.01 slower and 0.02 more damped than it is asked.
+    smallReleaseResponse: 0.40,
+    smallReleaseDamping: 0.35,
     // `withAnimation(.bouncy)` morphs measure (0.50, 0.72): `.bouncy`
     // (response 0.5, bounce 0.3); Flutter at these values measures
     // (0.50, 0.69).

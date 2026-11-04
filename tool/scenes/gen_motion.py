@@ -55,6 +55,19 @@ for shape in ({"w": 44, "h": 44, "shape": "circle", "radius": 0},
     motion.append(press(f"press-size-{shape['shape']}{shape['w']}x{shape['h']}-photo-light",
                         "light", shape, centre_touch(shape)))
 
+# The press frost: SwiftUI mixes a pressed 44 or 72 pt circle 36 % toward
+# white but a 120 pt one only 6 %. These bracket where the frost ends and
+# whether it follows the long side, the corner, the brightness or the variant.
+for name, brightness, shape, variant in (
+        ("circle88x88", "light", {"w": 88, "h": 88, "shape": "circle", "radius": 0}, "regular"),
+        ("circle104x104", "light", {"w": 104, "h": 104, "shape": "circle", "radius": 0}, "regular"),
+        ("capsule72x44", "light", {"w": 72, "h": 44, "shape": "capsule", "radius": 0}, "regular"),
+        ("rect72x72", "light", {"w": 72, "h": 72, "shape": "rect", "radius": 16}, "regular"),
+        ("circle44x44-dark", "dark", {"w": 44, "h": 44, "shape": "circle", "radius": 0}, "regular"),
+        ("clear-circle44x44", "light", {"w": 44, "h": 44, "shape": "circle", "radius": 0}, "clear")):
+    motion.append(press(f"press-frost-{name}-photo-{brightness}", brightness, shape,
+                        centre_touch(shape), variant))
+
 # One 60 pt circle g0; expanding adds g1 70 pt to its right (a 10 pt gap,
 # inside the 20 pt spacing, so the two merge). Contract is the reverse.
 g0 = {"x": W / 2 - 65, "y": 600, "w": 60, "h": 60, "shape": "circle", "radius": 0,

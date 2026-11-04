@@ -7,14 +7,29 @@ import '../core/glass_motion_constants.dart';
 import '../core/swiftui_spring.dart';
 import '../group/glass_press_geometry.dart';
 
-/// Uniform scale of a box of [size] at full press: SwiftUI adds about the
-/// same area to every pressed shape (Task 16b, measured on circles 44–120 pt
-/// and capsules 120–300 pt), so small shapes grow more.
+/// Uniform scale of a box of [size] at full press: SwiftUI's long side
+/// grows by about the same amount on shapes of one thickness, less on
+/// thicker ones ([GlassMotionConstants.pressGrowthLength]; or, when that is
+/// 0, a fixed added area), so small shapes grow more. Shapes whose long
+/// side is under [GlassMotionConstants.pressSmallLength] grow by a fixed
+/// [GlassMotionConstants.pressSmallGrowth] points instead. Measured on
+/// circles 44–120 pt, capsules 72–300 pt and a 72 pt rounded square.
 ///
 /// Internal: not exported from the package; public for tests only.
 double pressScaleFor(GlassMotionConstants motion, Size size) {
   final area = size.width * size.height;
   if (area <= 0) return motion.pressScaleMax;
+  final long = math.max(size.width, size.height);
+  if (motion.pressSmallGrowth > 0 && long < motion.pressSmallLength) {
+    return math.min(motion.pressScaleMax, 1 + motion.pressSmallGrowth / long);
+  }
+  if (motion.pressGrowthLength > 0) {
+    final short = math.min(size.width, size.height);
+    return math.min(
+      motion.pressScaleMax,
+      1 + motion.pressGrowthLength / (long * math.sqrt(short)),
+    );
+  }
   return math.min(
     motion.pressScaleMax,
     math.sqrt(1 + motion.pressGrowthArea / area),
@@ -27,9 +42,26 @@ double pressScaleFor(GlassMotionConstants motion, Size size) {
 /// after the release starts, light and dark.
 const Duration kPressLightHold = Duration(milliseconds: 330);
 
+/// [kPressLightHold] for shapes whose long side is under
+/// [GlassMotionConstants.pressSmallLength]: SwiftUI keeps them lit about
+/// 20 frames longer (`press-frost-*`, `press-size-circle44x44-*`: lit 39–42
+/// frames after the release against 19–21 on capsules, 2026-11-03).
+const Duration kPressLightHoldSmall = Duration(milliseconds: 660);
+
 /// The share of the press light lost over [kPressLightHold] (measured: 13
 /// to 11 of 255 light, 17 to 12 dark).
 const double kPressLightHoldFade = 0.2;
+
+/// How sharply the small-shape frost follows the press spring on the way
+/// in: `1 - (1 - amount)^n`. SwiftUI's frost is ~70% on one frame after
+/// the touch and full by the fourth, while the spring takes eight
+/// (`press-frost-circle44x44-dark-*`, `press-frost-clear-circle44x44-*`).
+const double kPressFrostAttack = 6;
+
+/// Share of [kPressLightHoldSmall] over which the frost eases off after
+/// the release (~14 frames, measured on the same scenes). It does not
+/// follow the release spring's rebound, which SwiftUI's frost never shows.
+const double kPressFrostRelease = 0.35;
 
 /// Drives `.interactive()`: a spring from 0 (rest) to 1 (pressed).
 class GlassPressController extends ChangeNotifier {
@@ -48,7 +80,8 @@ class GlassPressController extends ChangeNotifier {
 
   final AnimationController _controller;
 
-  /// Runs over [kPressLightHold] after the finger lifts.
+  /// Runs over [kPressLightHold] ([kPressLightHoldSmall] on small shapes)
+  /// after the finger lifts.
   final AnimationController _lightHold;
 
   /// Whether a finger is down.
@@ -62,6 +95,9 @@ class GlassPressController extends ChangeNotifier {
 
   Offset? _touch;
   Size _size = Size.zero;
+
+  /// [frost] when the finger lifted.
+  double _frostAtRelease = 0;
 
   /// Press amount; may overshoot outside 0..1.
   double get amount => _controller.value;
@@ -81,23 +117,57 @@ class GlassPressController extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool get _small =>
+      _size.longestSide > 0 && _size.longestSide < motion.pressSmallLength;
+
   /// Pointer released or cancelled.
   void up() {
+    final small = _small;
     if (_down) {
+      _frostAtRelease = frost;
       _down = false;
-      _lightHold.forward(from: 0);
+      _lightHold
+        ..duration = small ? kPressLightHoldSmall : kPressLightHold
+        ..forward(from: 0);
     }
-    _animateTo(0, motion.releaseResponse, motion.releaseDamping);
+    _animateTo(
+      0,
+      small && motion.smallReleaseResponse > 0
+          ? motion.smallReleaseResponse
+          : motion.releaseResponse,
+      small && motion.smallReleaseDamping > 0
+          ? motion.smallReleaseDamping
+          : motion.releaseDamping,
+    );
   }
 
   /// The light of SwiftUI's pressed glass, 0..1: full from the touch,
-  /// held [kPressLightHold] past the release (fading by
+  /// held [kPressLightHold] ([kPressLightHoldSmall] on small shapes) past
+  /// the release (fading by
   /// [kPressLightHoldFade]), then off. Unlike [amount] it has no spring:
   /// SwiftUI's light switches on in the frame of the touch.
   double get light {
     if (_down) return 1;
     if (!_lightHold.isAnimating) return 0;
     return 1 - kPressLightHoldFade * _lightHold.value;
+  }
+
+  /// Progress through the light's hold after the release, 0..1; 0 while
+  /// the finger is down.
+  double get released =>
+      _down || !_lightHold.isAnimating ? 0 : _lightHold.value;
+
+  /// The small-shape press frost, 0..1: a sharpened [amount] while the
+  /// finger is down ([kPressFrostAttack]), then eased from its value at
+  /// the release to 0 over [kPressFrostRelease] of the light's hold.
+  double get frost {
+    if (_down) {
+      return 1 -
+          math.pow(1 - amount.clamp(0.0, 1.0), kPressFrostAttack).toDouble();
+    }
+    if (!_lightHold.isAnimating) return 0;
+    final t = (_lightHold.value / kPressFrostRelease).clamp(0.0, 1.0);
+    return _frostAtRelease * (1 - t * t * (3 - 2 * t));
   }
 
   void _animateTo(double target, double response, double damping) {
@@ -127,7 +197,13 @@ class GlassPressController extends ChangeNotifier {
     }
     final glow = a.clamp(0.0, 1.0);
     if (reduceMotion || _size.isEmpty) {
-      return GlassPressGeometry(glow: glow, light: light, touch: _touch);
+      return GlassPressGeometry(
+        glow: glow,
+        light: light,
+        released: released,
+        frost: frost,
+        touch: _touch,
+      );
     }
     final centre = _size.center(Offset.zero);
     final touch = _touch ?? centre;
@@ -148,6 +224,8 @@ class GlassPressController extends ChangeNotifier {
       ),
       glow: glow,
       light: light,
+      released: released,
+      frost: frost,
       touch: touch,
     );
   }

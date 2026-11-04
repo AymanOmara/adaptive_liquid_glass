@@ -243,6 +243,22 @@ aligned at its own first change. Fitted at the hold (lift + peak·G(σ), in
 fading more than 20% over the 0.33 s hold (residual −3.9 there). Static
 scenes are unchanged: the lift and glow are zero unless a shape is pressed.
 
+**Native press score.** `tool/native/score_press.py RUN` scores every
+recorded press scene (regular and clear) on its own crop and the same
+window: in-shape press error over the held press and release, held-frame
+error, the light fit still missing, and the bbox geometry. SwiftUI's press
+also scales the glass's chroma (1.11 light, 1.16 dark, 1.05 clear); a
+shape's own `.saturation` has no effect on container glass, so the native
+view saturates the `GlassEffectContainer` while all its shapes are pressed.
+Shapes under 112 pt follow a separate small regime (`press-frost-*` and
+`press-size-*` scenes): fixed-length growth, a grey frost, a 0.66 s light
+hold whose finger glow fades out (fully up to 72 pt, none from 96 pt) and a
+springier release; its frost has its own envelope (on in a frame or two,
+eased off over ~14 frames after the release). `press_mae_aligned` scores
+the release frames from each clip's own release (the glass first shrinking
+1 pt below its held width), since idb's touch-up lands 0-5 frames apart.
+Current numbers: `tool/reference/native_press.json`.
+
 **Noise floor.** `--noise-ref DIR` scores each renderer's clips of one run
 against the same renderer's clips of another (`noise_report.json`). Measured
 (Task 16b, SwiftUI against SwiftUI): runs B and C pass the static bars on

@@ -14,6 +14,24 @@
   5.9 → 1.9). The reference twin's text page now sits where SwiftUI lays
   it (its rows were 1 pt low): text-scene difference 6.91 → 3.36.
 
+- Native press: pressed native glass now takes on SwiftUI's press
+  saturation (measured chroma gain 1.11 light, 1.16 dark, 1.05 clear) and
+  refitted light. Re-recorded on iOS 26.4 with one crop for both materials,
+  the in-shape press error fell from 2.39 to 1.34 (regular light), 3.74 to
+  1.69 (regular dark), 4.71 to 2.12 (clear light) and 4.83 to 2.26 (clear
+  dark), out of 255; growth and stretch stay within a point. Added
+  `tool/native/score_press.py` and a reference test locking the fit.
+
+- Native press, small shapes: shapes whose long side is under 112 pt now
+  press like SwiftUI's small controls. They grow by a fixed 15.7 pt, frost
+  toward a grey, hold the light 0.66 s past the release while the finger
+  glow fades out, and release on a springier spring (response 0.40,
+  damping 0.35). A 72 pt circle's press error fell from 7.69 to 1.36;
+  light-mode shapes from 44 to 104 pt score 0.9 to 1.6, and the 44 pt dark
+  and clear circles 1.9 and 2.3 (from 5.6 and 4.9). The frost has its own
+  envelope: on within a frame or two of the touch and eased off over about
+  14 frames after the release, without the spring's rebound.
+
 - System button responsiveness: highlights now start on primary pointer down
   instead of waiting for tap recognition. In three warmed iOS 26.4 simulator
   takes the median rendered delay fell from 149 ms to 49 ms. Tap activation

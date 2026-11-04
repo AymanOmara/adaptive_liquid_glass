@@ -18,6 +18,11 @@ class GlassMotionConstants {
     required this.morphDamping,
     this.dragStretch = 0.08,
     this.dragStretchDistance = 60,
+    this.pressGrowthLength = 0,
+    this.pressSmallGrowth = 0,
+    this.pressSmallLength = 0,
+    this.smallReleaseResponse = 0,
+    this.smallReleaseDamping = 0,
   });
 
   /// Reads keys present in [j]; missing keys come from [base].
@@ -31,6 +36,31 @@ class GlassMotionConstants {
       base.pressGrowthArea,
     ),
     pressScaleMax: GlassJson.number(j, 'pressScaleMax', base.pressScaleMax),
+    pressGrowthLength: GlassJson.number(
+      j,
+      'pressGrowthLength',
+      base.pressGrowthLength,
+    ),
+    pressSmallGrowth: GlassJson.number(
+      j,
+      'pressSmallGrowth',
+      base.pressSmallGrowth,
+    ),
+    pressSmallLength: GlassJson.number(
+      j,
+      'pressSmallLength',
+      base.pressSmallLength,
+    ),
+    smallReleaseResponse: GlassJson.number(
+      j,
+      'smallReleaseResponse',
+      base.smallReleaseResponse,
+    ),
+    smallReleaseDamping: GlassJson.number(
+      j,
+      'smallReleaseDamping',
+      base.smallReleaseDamping,
+    ),
     pressStretch: GlassJson.number(j, 'pressStretch', base.pressStretch),
     glowRadius: GlassJson.number(j, 'glowRadius', base.glowRadius),
     pressResponse: GlassJson.number(j, 'pressResponse', base.pressResponse),
@@ -56,6 +86,21 @@ class GlassMotionConstants {
   /// small shapes grow more than large ones.
   final double pressGrowthArea;
 
+  /// When positive, replaces [pressGrowthArea]: a pressed shape's long side
+  /// grows by `pressGrowthLength / sqrt(short side)` points (uniform scale
+  /// `1 + pressGrowthLength / (long · sqrt(short))`), capped at
+  /// [pressScaleMax]. Fits SwiftUI's capsules better than a fixed area.
+  final double pressGrowthLength;
+
+  /// Points a pressed small shape's long side grows by (uniform scale
+  /// `1 + pressSmallGrowth / long`, capped at [pressScaleMax]) when that
+  /// side is under [pressSmallLength]: SwiftUI presses small controls in a
+  /// regime of their own, a fixed growth and a frost. 0 turns it off.
+  final double pressSmallGrowth;
+
+  /// Long side (pt) below which [pressSmallGrowth] applies.
+  final double pressSmallLength;
+
   /// Largest uniform press scale.
   final double pressScaleMax;
 
@@ -76,6 +121,15 @@ class GlassMotionConstants {
 
   /// SwiftUI damping fraction for the release.
   final double releaseDamping;
+
+  /// When positive, the release response of a shape whose long side is
+  /// under [pressSmallLength]: SwiftUI releases small controls with a
+  /// springier spring than large ones.
+  final double smallReleaseResponse;
+
+  /// When positive, the release damping fraction of a shape whose long side
+  /// is under [pressSmallLength].
+  final double smallReleaseDamping;
 
   /// SwiftUI spring response for morphs.
   final double morphResponse;
@@ -98,6 +152,11 @@ class GlassMotionConstants {
   Map<String, double> toJson() => {
     'pressGrowthArea': pressGrowthArea,
     'pressScaleMax': pressScaleMax,
+    'pressGrowthLength': pressGrowthLength,
+    'pressSmallGrowth': pressSmallGrowth,
+    'pressSmallLength': pressSmallLength,
+    'smallReleaseResponse': smallReleaseResponse,
+    'smallReleaseDamping': smallReleaseDamping,
     'pressStretch': pressStretch,
     'glowRadius': glowRadius,
     'pressResponse': pressResponse,
