@@ -13,17 +13,17 @@ class H264TranscoderTest {
             val destination = File(root, "converted.mp4")
             var time = 0L
             val activity = TranscodeProgress(timeoutNanos = 10, now = { time })
-            val converted = H264Transcoder.transcode(source, destination) { _, output ->
+            val converted = H264Transcoder.transcode(source, destination, activity) { _, output, progress ->
                 output.writeText("partial")
                 time = 10
-                activity.checkActive()
+                progress.checkActive()
             }
             assertFalse(converted)
             assertFalse(destination.exists())
             assertEquals("original", source.readText())
 
             // The same import can retry after a failed codec session.
-            assertTrue(H264Transcoder.transcode(source, destination) { _, output ->
+            assertTrue(H264Transcoder.transcode(source, destination) { _, output, _ ->
                 output.writeText("complete")
             })
             assertEquals("complete", destination.readText())

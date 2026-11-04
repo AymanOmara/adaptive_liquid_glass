@@ -44,13 +44,33 @@ internal object H264Transcoder {
     fun transcode(
         src: File,
         dest: File,
-        encode: (File, File) -> Unit = ::run,
+        activity: TranscodeProgress = TranscodeProgress(),
+        encode: (File, File, TranscodeProgress) -> Unit = ::run,
     ): Boolean = try {
-        encode(src, dest)
+        encode(src, dest, activity)
         true
     } catch (e: Exception) {
         dest.delete()
+        if (e is java.util.concurrent.CancellationException) throw e
         false
+    }
+
+    /** The duration of [file] in microseconds; 0 when unknown. */
+    fun durationUs(file: File): Long {
+        val retriever = MediaMetadataRetriever()
+        return try {
+            retriever.setDataSource(file.absolutePath)
+            (retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                ?.toLongOrNull() ?: 0L) * 1000
+        } catch (e: Exception) {
+            0L
+        } finally {
+            try {
+                retriever.release()
+            } catch (e: Exception) {
+                // Already released.
+            }
+        }
     }
 
     private fun track(extractor: MediaExtractor, prefix: String): Int {
@@ -81,7 +101,7 @@ internal object H264Transcoder {
         }
     }
 
-    private fun run(src: File, dest: File) {
+    private fun run(src: File, dest: File, activity: TranscodeProgress) {
         val video = MediaExtractor().apply { setDataSource(src.absolutePath) }
         val audio = MediaExtractor().apply { setDataSource(src.absolutePath) }
         var decoder: MediaCodec? = null
@@ -143,7 +163,6 @@ internal object H264Transcoder {
             var inputDone = false
             var decoderDone = false
             var encoderDone = false
-            val activity = TranscodeProgress()
             while (!encoderDone) {
                 activity.checkActive()
                 if (!inputDone) {
@@ -195,7 +214,7 @@ internal object H264Transcoder {
                         val render = info.size > 0
                         decoder.releaseOutputBuffer(d, render)
                         if (render) gl.draw(info.presentationTimeUs * 1000)
-                        activity.advanced()
+                        activity.advanced(info.presentationTimeUs)
                         if (info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) {
                             encoder.signalEndOfInputStream()
                             decoderDone = true

@@ -44,6 +44,10 @@ android {
     defaultConfig {
         minSdk = 24
     }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 kotlin {

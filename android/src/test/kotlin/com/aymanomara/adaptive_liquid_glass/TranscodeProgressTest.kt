@@ -58,4 +58,21 @@ class TranscodeProgressTest {
             }
         }
     }
+
+    @Test fun cancelledProgressThrowsCancellation() {
+        val cancel = ImportCancel().apply { cancelled = true }
+        try {
+            TranscodeProgress(cancel = cancel).checkActive()
+            fail()
+        } catch (e: java.util.concurrent.CancellationException) {
+        }
+    }
+
+    @Test fun advancedReportsPresentationTime() {
+        val seen = mutableListOf<Long>()
+        val p = TranscodeProgress(onAdvance = { seen += it })
+        p.advanced()
+        p.advanced(5_000)
+        assertEquals(listOf(5_000L), seen)
+    }
 }
