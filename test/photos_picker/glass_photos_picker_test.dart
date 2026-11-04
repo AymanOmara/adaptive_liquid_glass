@@ -956,8 +956,54 @@ void main() {
         tester.widget<GlassButton>(find.byType(GlassButton)).loadingValue,
         isNull,
       );
+      final cancels = calls.where((c) => c.method == 'cancelPhotoImport');
+      await tester.tap(find.byType(GlassPhotosPicker));
+      await tester.pump();
+      expect(cancels, hasLength(1));
       reply.complete(const <Object?>[]);
       await tester.pumpAndSettle();
+    }, variant: _both);
+    testWidgets('a swapped controller mid-import still cancels the import', (
+      tester,
+    ) async {
+      shaderEnv();
+      final reply = Completer<Object?>();
+      final calls = _mock((call) async {
+        if (call.method == 'cancelPhotoImport') {
+          reply.complete(const <Object?>[]);
+          return null;
+        }
+        return reply.future;
+      });
+      final first = GlassPhotoImportController();
+      final second = GlassPhotoImportController();
+      addTearDown(first.dispose);
+      addTearDown(second.dispose);
+      await tester.pumpWidget(picker(controller: first));
+      await tester.tap(find.byType(GlassPhotosPicker));
+      await tester.pump();
+      final name = (calls.first.arguments as Map)['importChannel'];
+      await tester.pumpWidget(picker(controller: second));
+      await tester.tap(find.byType(GlassPhotosPicker));
+      await tester.pumpAndSettle();
+      final cancels = calls.where((c) => c.method == 'cancelPhotoImport');
+      expect(cancels, hasLength(1));
+      expect((cancels.single.arguments as Map)['importChannel'], name);
+      expect(first.isActive.value, isFalse);
+    }, variant: _both);
+
+    testWidgets('disposing mid-import cancels it once', (tester) async {
+      shaderEnv();
+      final reply = Completer<Object?>();
+      final calls = _mock((_) => reply.future);
+      await tester.pumpWidget(picker());
+      await tester.tap(find.byType(GlassPhotosPicker));
+      await tester.pump();
+      await tester.pumpWidget(plainHost(const SizedBox()));
+      expect(calls.where((c) => c.method == 'cancelPhotoImport'), hasLength(1));
+      reply.complete(const <Object?>[]);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
     }, variant: _both);
   });
 }

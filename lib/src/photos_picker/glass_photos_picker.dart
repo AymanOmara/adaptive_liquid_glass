@@ -165,14 +165,22 @@ class _GlassPhotosPickerState extends State<GlassPhotosPicker> {
   GlassPhotoImportController get _controller =>
       widget.controller ?? (_own ??= GlassPhotoImportController());
 
+  /// The controller driving this widget's running import, kept so a swapped
+  /// [GlassPhotosPicker.controller] cannot orphan it.
+  GlassPhotoImportController? _running;
+
   @override
   void dispose() {
+    _running?.cancel(); // stop native work this widget started
+    _running = null;
     _own?.dispose();
     super.dispose();
   }
 
   Future<void> _pick() async {
     if (_open) return;
+    final controller = _controller;
+    _running = controller;
     setState(() => _open = true);
     try {
       final photos = await pickGlassPhotos(
@@ -187,7 +195,7 @@ class _GlassPhotosPickerState extends State<GlassPhotosPicker> {
             : (photo) {
                 if (mounted) widget.onItemReady?.call(photo);
               },
-        controller: _controller,
+        controller: controller,
         onProgress: widget.onProgress == null
             ? null
             : (p) {
@@ -217,6 +225,7 @@ class _GlassPhotosPickerState extends State<GlassPhotosPicker> {
         );
       }
     } finally {
+      _running = null;
       if (mounted) setState(() => _open = false);
     }
   }
@@ -227,7 +236,7 @@ class _GlassPhotosPickerState extends State<GlassPhotosPicker> {
     final child = widget.child;
     final label = widget.label;
     return ValueListenableBuilder<GlassPhotoImportProgress?>(
-      valueListenable: _controller.progress,
+      valueListenable: (_running ?? _controller).progress,
       builder: (context, p, _) {
         final loadingValue =
             !widget.showProgress ||
@@ -240,7 +249,7 @@ class _GlassPhotosPickerState extends State<GlassPhotosPicker> {
             onPressed: onPressed,
             loading: _open,
             loadingValue: loadingValue,
-            onLoadingPressed: _controller.cancel,
+            onLoadingPressed: () => _running?.cancel(),
             loadingLabel: widget.cancelLabel,
             style: widget.style,
             size: widget.size,
@@ -256,7 +265,7 @@ class _GlassPhotosPickerState extends State<GlassPhotosPicker> {
           onPressed: onPressed,
           loading: _open,
           loadingValue: loadingValue,
-          onLoadingPressed: _controller.cancel,
+          onLoadingPressed: () => _running?.cancel(),
           loadingLabel: widget.cancelLabel,
           icon: widget.icon,
           label: label == null ? null : Text(label),
