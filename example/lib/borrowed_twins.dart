@@ -480,34 +480,38 @@ class _AccessoryTextState extends State<_AccessoryText> {
                 ],
               ),
             ),
-      // SwiftUI lays the page 7.3 pt lower under the accessory (measured).
-      body: Padding(
-        padding: EdgeInsetsDirectional.only(
-          start: 20,
-          top: widget.accessory ? 7.3 : 0,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (var i = 0; i < 25; i++)
-              const SizedBox(
-                height: 34,
-                child: Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  // SF Pro Display, spaced to the SwiftUI page's
-                  // `.system(size: 22)` (its 22 pt optical size is wider).
-                  child: Text(
-                    'Day Week Month Day Week',
-                    style: TextStyle(
-                      fontFamily: 'CupertinoSystemDisplay',
-                      fontSize: 22,
-                      letterSpacing: 0.3,
-                      color: Colors.white,
+      // SwiftUI lays the page 7.3 pt lower under the accessory, and its rows
+      // 0.83 pt higher without one (measured).
+      body: Transform.translate(
+        offset: Offset(0, widget.accessory ? 0 : -0.83),
+        child: Padding(
+          padding: EdgeInsetsDirectional.only(
+            start: 20,
+            top: widget.accessory ? 7.3 : 0,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var i = 0; i < 25; i++)
+                const SizedBox(
+                  height: 34,
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    // SF Pro Display, spaced to the SwiftUI page's
+                    // `.system(size: 22)` (its 22 pt optical size is wider).
+                    child: Text(
+                      'Day Week Month Day Week',
+                      style: TextStyle(
+                        fontFamily: 'CupertinoSystemDisplay',
+                        fontSize: 22,
+                        letterSpacing: 0.33,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     ),

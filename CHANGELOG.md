@@ -11,7 +11,8 @@
   real-touch check. Unselected labels are now vibrant on native glass
   (`GlassContentGlyphs.vibrant`), taking the glass's chroma as iOS draws
   them: label difference from the stock bar over photos 9.8 → 3.1 (dark
-  5.9 → 1.9).
+  5.9 → 1.9). The reference twin's text page now sits where SwiftUI lays
+  it (its rows were 1 pt low): text-scene difference 6.91 → 3.36.
 
 - System button responsiveness: highlights now start on primary pointer down
   instead of waiting for tap recognition. In three warmed iOS 26.4 simulator
