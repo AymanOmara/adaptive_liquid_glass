@@ -21,6 +21,10 @@ internal class TranscodeProgress(
     @Volatile
     private var lastProgress = now()
 
+    /** Set by the supervisor when it gives up on this call. */
+    @Volatile
+    var abandoned = false
+
     /** [presentationTimeUs] of the frame just handled, or -1. */
     fun advanced(presentationTimeUs: Long = -1) {
         lastProgress = now()
@@ -30,6 +34,7 @@ internal class TranscodeProgress(
     fun stalled(): Boolean = now() - lastProgress >= timeoutNanos
 
     fun checkActive() {
+        if (abandoned) throw java.util.concurrent.CancellationException("Codec call abandoned.")
         cancel?.check()
         if (stalled()) throw TimeoutException("Video codec stopped making progress.")
     }

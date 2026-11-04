@@ -47,13 +47,21 @@ internal class CodecSupervisor(
             } catch (e: TimeoutException) {
                 val stopped = cancel.cancelled
                 if (!stopped && !activity.stalled()) continue
-                future.cancel(true)
+                if (!future.cancel(true)) {
+                    // Finished between the timeout and now: keep its outcome.
+                    try {
+                        return future.get()
+                    } catch (x: ExecutionException) {
+                        throw (x.cause as? Exception) ?: x
+                    }
+                }
+                activity.abandoned = true
                 // An interruptible call unwinds within the grace period and
                 // releases its own codec; anything still running is abandoned.
                 if (!finished.await(graceMillis, TimeUnit.MILLISECONDS)) {
-                    onAbandon()
+                    runCatching { onAbandon() }
                     runCatching {
-                        if (Log.isLoggable(TAG, Log.DEBUG)) Log.w(TAG, "Abandoned a codec call (cancel=$stopped).")
+                        if (Log.isLoggable(TAG, Log.WARN)) Log.w(TAG, "Abandoned a codec call (cancel=$stopped).")
                     }
                 }
                 if (stopped) throw CancellationException("Photo import cancelled.")

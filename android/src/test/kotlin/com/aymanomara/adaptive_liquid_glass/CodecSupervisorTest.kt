@@ -96,4 +96,31 @@ class CodecSupervisorTest {
             assertEquals("hevc", src.readText())
         }
     }
+
+    @Test
+    fun abandonedWorkThatReturnsNormallyIsDiscarded() {
+        var time = 0L
+        val activity = TranscodeProgress(timeoutNanos = 10, now = { time })
+        val src = tmp.newFile("in2.mov").apply { writeText("hevc") }
+        val out = File(tmp.root, "in2.out.mp4")
+        val release = CountDownLatch(1)
+        val done = CountDownLatch(1)
+        var result: Boolean? = null
+        try {
+            CodecSupervisor(graceMillis = 20).run(ImportCancel(), activity) {
+                result = H264Transcoder.transcode(src, out, activity) { _, dest, _ ->
+                    time = 100 // stall
+                    stuck(release)()
+                    dest.writeText("late")
+                }
+                done.countDown()
+            }
+            fail("expected CodecAbandonedException")
+        } catch (e: CodecAbandonedException) {
+            release.countDown()
+            assertTrue(done.await(2, TimeUnit.SECONDS))
+            assertEquals(false, result)
+            assertFalse(out.exists())
+        }
+    }
 }

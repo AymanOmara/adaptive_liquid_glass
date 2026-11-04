@@ -48,7 +48,12 @@ internal object H264Transcoder {
         encode: (File, File, TranscodeProgress) -> Unit = ::run,
     ): Boolean = try {
         encode(src, dest, activity)
-        true
+        if (activity.abandoned) {
+            dest.delete()
+            false
+        } else {
+            true
+        }
     } catch (e: Exception) {
         dest.delete()
         if (e is java.util.concurrent.CancellationException) throw e
