@@ -16,6 +16,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.ext.SdkExtensions
 import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.PluginRegistry
@@ -53,7 +54,12 @@ internal class GlassPhotosPicker(private val context: Context) :
     private var pending: MethodChannel.Result? = null
     private var pendingMax = 1
     private var pendingOptions = Options()
-    private var pendingOnItemReady: ((Map<String, Any?>) -> Unit)? = null
+    private var pendingName: String? = null
+    private var pendingOnEvent: ((String, Map<String, Any?>) -> Unit)? = null
+    private var pendingCancelled = false
+
+    @Volatile
+    private var job: PhotoImportJob? = null
     private val io = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
     private val dir get() = File(context.cacheDir, "adaptive_liquid_glass_picker")
@@ -63,7 +69,8 @@ internal class GlassPhotosPicker(private val context: Context) :
         filter: String,
         options: Options,
         result: MethodChannel.Result,
-        onItemReady: ((Map<String, Any?>) -> Unit)? = null,
+        importChannel: String? = null,
+        onEvent: ((String, Map<String, Any?>) -> Unit)? = null,
     ) {
         val host = activity
         if (host == null) {
@@ -76,23 +83,40 @@ internal class GlassPhotosPicker(private val context: Context) :
         }
         val intent = if (hasPhotoPicker()) photoPickerIntent(maxSelection, filter)
         else documentIntent(maxSelection, filter)
+        // Registered before the picker opens so a cancel during selection counts.
+        job = null
         pending = result
         pendingMax = maxSelection
         pendingOptions = options
-        pendingOnItemReady = onItemReady
+        pendingName = importChannel
+        pendingOnEvent = onEvent
+        pendingCancelled = false
         try {
             host.startActivityForResult(intent, REQUEST_CODE)
         } catch (e: ActivityNotFoundException) {
             pending = null
-            pendingOnItemReady = null
+            pendingName = null
+            pendingOnEvent = null
             result.error("no_picker", e.message, null)
+        }
+    }
+
+    /** Stops the import named [importChannel]; a stale name does nothing. */
+    fun cancel(importChannel: String) {
+        job?.takeIf { it.name == importChannel }?.let {
+            it.cancel.cancelled = true
+            return
+        }
+        if (pending != null && pendingName == importChannel) {
+            pendingCancelled = true
+            activity?.finishActivity(REQUEST_CODE)
         }
     }
 
     /** Deletes every copy made so far, off the main thread. */
     fun clearCopies(result: MethodChannel.Result) {
         if (pending != null) {
-            result.error("already_active", "Wait for the photo import before clearing picked files.", null)
+            result.error("already_active", "Wait for the photo import, or call controller.cancel(), before clearing picked files.", null)
             return
         }
         io.execute {
@@ -108,10 +132,13 @@ internal class GlassPhotosPicker(private val context: Context) :
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
         if (requestCode != REQUEST_CODE) return false
         val result = pending ?: return true
-        if (resultCode != Activity.RESULT_OK || data == null) {
+        if (resultCode != Activity.RESULT_OK || data == null || pendingCancelled) {
+            val cancelled = pendingCancelled
             pending = null
-            pendingOnItemReady = null
-            result.success(emptyList<Any>())
+            pendingName = null
+            pendingOnEvent = null
+            pendingCancelled = false
+            result.success(mapOf("items" to emptyList<Any>(), "dropped" to 0, "cancelled" to cancelled))
             return true
         }
         var uris = buildList {
@@ -130,52 +157,118 @@ internal class GlassPhotosPicker(private val context: Context) :
             uris = uris.take(pendingMax)
         }
         val options = pendingOptions
-        val ready = pendingOnItemReady
-        pendingOnItemReady = null
+        val events = pendingOnEvent
+        val current = PhotoImportJob(pendingName, uris.size, emit = { e -> main.post { events?.invoke("progress", e) } })
+        job = current
+        pendingName = null
+        pendingOnEvent = null
         io.execute {
             try {
-                val items = GlassPhotoCache.importItems(
-                    dir, uris, { uri, session -> copy(uri, options, session) },
-                    ready?.let { notify ->
+                val imported = GlassPhotoCache.importItems(
+                    dir, uris, { index, uri, session -> copy(index, uri, options, session, current) },
+                    events?.let { notify ->
                         { item ->
-                            main.post { notify(item) }
+                            main.post { notify("itemReady", item) }
                             Unit
                         }
                     },
+                    cancelled = { current.cancel.cancelled },
                 )
                 main.post {
                     pending = null
-                    result.success(mapOf("items" to items, "dropped" to dropped))
+                    job = null
+                    result.success(
+                        mapOf(
+                            "items" to imported.items,
+                            "dropped" to dropped,
+                            "cancelled" to imported.cancelled,
+                        ),
+                    )
                 }
             } catch (e: Exception) {
                 main.post {
                     pending = null
-                    result.error("load_failed", e.message, null)
+                    job = null
+                    if (current.cancel.cancelled) {
+                        result.success(mapOf("items" to emptyList<Any>(), "dropped" to dropped, "cancelled" to true))
+                    } else {
+                        result.error("load_failed", e.message, null)
+                    }
                 }
             }
         }
         return true
     }
 
-    private fun copy(uri: Uri, options: Options, directory: File): Map<String, Any?> {
+    private fun copy(
+        index: Int,
+        uri: Uri,
+        options: Options,
+        directory: File,
+        job: PhotoImportJob,
+    ): Map<String, Any?> {
+        try {
+            return copyItem(index, uri, options, directory, job)
+        } catch (e: Exception) {
+            // The final event still counts this item, so `completed` reaches `total`.
+            job.progress.finish(index)
+            throw e
+        }
+    }
+
+    private fun copyItem(
+        index: Int,
+        uri: Uri,
+        options: Options,
+        directory: File,
+        job: PhotoImportJob,
+    ): Map<String, Any?> {
         val resolver = context.contentResolver
         var mime = resolver.getType(uri)
         val ext = mime?.let { MimeTypeMap.getSingleton().getExtensionFromMimeType(it) }
         var dest = File(directory, UUID.randomUUID().toString() + (ext?.let { ".$it" } ?: ""))
-        val input = resolver.openInputStream(uri)
-            ?: throw IllegalStateException("Cannot open $uri")
-        input.use { src -> dest.outputStream().use { src.copyTo(it) } }
         val isVideo = mime?.startsWith("video/") == true
-        val item = mutableMapOf<String, Any?>("isVideo" to isVideo)
+        // Copy is the whole item unless a conversion may follow.
+        val converts = if (isVideo) options.compatible
+        else options.maxWidth != null || options.maxHeight != null || options.quality != null ||
+            options.compatible
+        val copyShare = if (converts) 0.5 else 1.0
+        val size = size(uri)
+        val copying = TranscodeProgress(cancel = job.cancel)
+        job.io(copying) {
+            val input = resolver.openInputStream(uri) ?: throw IllegalStateException("Cannot open $uri")
+            input.use { src ->
+                dest.outputStream().use { out ->
+                    ChunkedCopy.copy(
+                        src, out, size, job.cancel,
+                        { f -> job.progress.update(index, f?.let { it * copyShare }) },
+                        { copying.advanced() },
+                    )
+                }
+            }
+        }
+        val item = mutableMapOf<String, Any?>("isVideo" to isVideo, "index" to index)
         if (isVideo) {
             if (options.compatible && H264Transcoder.isHevc(dest)) {
                 val out = File(directory, dest.nameWithoutExtension + ".out.mp4")
-                if (H264Transcoder.transcode(dest, out)) {
+                val durationUs = H264Transcoder.durationUs(dest)
+                // Created just before the codec call so copy time is not counted as a stall.
+                val activity = TranscodeProgress(cancel = job.cancel, onAdvance = { us ->
+                    if (durationUs > 0) {
+                        job.progress.update(
+                            index,
+                            copyShare + (1 - copyShare) * minOf(1.0, us.toDouble() / durationUs),
+                        )
+                    }
+                })
+                if (job.convert(activity) { H264Transcoder.transcode(dest, out, activity) } == true) {
                     dest.delete()
                     dest = out
                     mime = "video/mp4"
                 } else {
                     // Delivered as HEVC; `GlassPickedPhoto.conversionFailed`.
+                    // An abandoned call can leave a complete or partial output behind.
+                    out.delete()
                     item["conversionFailed"] = true
                 }
             }
@@ -195,7 +288,17 @@ internal class GlassPhotosPicker(private val context: Context) :
         }
         item["path"] = dest.absolutePath
         item["mimeType"] = mime
+        job.progress.finish(index)
         return item
+    }
+
+    /** The provider's byte size, or null when it does not say. */
+    private fun size(uri: Uri): Long? = try {
+        context.contentResolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)?.use { c ->
+            if (c.moveToFirst() && !c.isNull(0)) c.getLong(0).takeIf { it > 0 } else null
+        }
+    } catch (e: Exception) {
+        null
     }
 
     /**

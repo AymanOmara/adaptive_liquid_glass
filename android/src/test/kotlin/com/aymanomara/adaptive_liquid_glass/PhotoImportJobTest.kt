@@ -66,4 +66,29 @@ class PhotoImportJobTest {
             assertEquals(ChunkedCopy.CHUNK, out.size())
         }
     }
+
+    @Test
+    fun quarantineSkipsLaterConversions() {
+        var time = 0L
+        val job = PhotoImportJob("c", 2, {}, CodecSupervisor(graceMillis = 20))
+        val release = java.util.concurrent.CountDownLatch(1)
+        val first = job.convert(TranscodeProgress(timeoutNanos = 10, now = { time })) {
+            time = 100
+            while (!release.await(10, java.util.concurrent.TimeUnit.SECONDS)) Unit
+            true
+        }
+        release.countDown()
+        assertEquals(null, first)
+        assertTrue(job.quarantined)
+        var ran = false
+        assertEquals(null, job.convert(TranscodeProgress()) { ran = true; true })
+        assertTrue(!ran)
+    }
+
+    @Test
+    fun convertPassesThroughWhenHealthy() {
+        val job = PhotoImportJob(null, 1, {})
+        assertEquals(true, job.convert(TranscodeProgress()) { true })
+        assertTrue(!job.quarantined)
+    }
 }

@@ -93,10 +93,15 @@ class AdaptiveLiquidGlassPlugin : FlutterPlugin, ActivityAware, MethodChannel.Me
                         compatible = call.argument<Boolean>("compatibleFormat") ?: false,
                     ),
                     result = result,
-                    onItemReady = imports?.let { events ->
-                        { item -> events.invokeMethod("itemReady", item) }
+                    importChannel = call.argument<String>("importChannel"),
+                    onEvent = imports?.let { events ->
+                        { method, args -> events.invokeMethod(method, args) }
                     },
                 )
+            }
+            "cancelPhotoImport" -> {
+                call.argument<String>("importChannel")?.let { photosPicker?.cancel(it) }
+                result.success(null)
             }
             "clearPickedPhotos" -> {
                 val picker = photosPicker

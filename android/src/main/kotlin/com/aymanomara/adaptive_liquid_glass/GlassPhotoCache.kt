@@ -6,17 +6,46 @@ import java.util.UUID
 
 /** Each import owns a directory so a failed batch cannot strand earlier items. */
 internal object GlassPhotoCache {
+    data class Imported<T>(val items: List<T>, val cancelled: Boolean)
+
+    /**
+     * Imports each item into its own session. Without [onItemReady] a
+     * failure rolls back every finished item (one result or none); a
+     * cancel keeps them, because the user chose to stop.
+     */
     fun <I, T> importItems(
         root: File,
         items: List<I>,
-        load: (I, File) -> T,
+        load: (Int, I, File) -> T,
         onItemReady: ((T) -> Unit)? = null,
-    ): List<T> = if (onItemReady == null) {
-        importing(root) { session -> items.map { load(it, session) } }
-    } else items.map { input ->
-        val item = importing(root) { session -> load(input, session) }
-        onItemReady(item)
-        item
+        cancelled: () -> Boolean = { false },
+    ): Imported<T> {
+        val done = mutableListOf<T>()
+        val sessions = mutableListOf<File>()
+        for ((index, input) in items.withIndex()) {
+            if (cancelled()) return Imported(done, true)
+            val item = try {
+                importing(root) { session ->
+                    sessions += session
+                    load(index, input, session)
+                }
+            } catch (error: Exception) {
+                if (cancelled()) return Imported(done, true)
+                if (onItemReady == null) {
+                    for (session in sessions) {
+                        try {
+                            clear(session)
+                        } catch (cleanup: Exception) {
+                            error.addSuppressed(cleanup)
+                        }
+                    }
+                }
+                throw error
+            }
+            done += item
+            onItemReady?.invoke(item)
+        }
+        return Imported(done, false)
     }
 
     fun clear(directory: File) {

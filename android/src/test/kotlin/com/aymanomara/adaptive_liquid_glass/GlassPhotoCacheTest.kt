@@ -12,7 +12,7 @@ class GlassPhotoCacheTest {
         val delivered = mutableListOf<File>()
         try {
             try {
-                GlassPhotoCache.importItems(root, listOf(1, 2), { index, session ->
+                GlassPhotoCache.importItems(root, listOf(1, 2), { _, index, session ->
                     if (index == 2) {
                         assertEquals(1, delivered.size)
                         assertEquals("ready", delivered.single().readText())
@@ -35,7 +35,7 @@ class GlassPhotoCacheTest {
         val root = Files.createTempDirectory("glass-photos").toFile()
         try {
             try {
-                GlassPhotoCache.importItems(root, listOf(1, 2), { index, session ->
+                GlassPhotoCache.importItems(root, listOf(1, 2), { _, index, session ->
                     File(session, "$index.jpg").writeText("copy")
                     if (index == 2) throw IOException("second item unavailable")
                 })
@@ -107,6 +107,52 @@ class GlassPhotoCacheTest {
             }
         } finally {
             root.delete()
+        }
+    }
+
+    @Test fun cancelBeforeFirstItemReturnsEmptyCancelled() {
+        val root = Files.createTempDirectory("glass-photos").toFile()
+        try {
+            val result = GlassPhotoCache.importItems(root, listOf(1, 2), { _, _, _ -> error("not called") }, cancelled = { true })
+            assertEquals(emptyList<Int>(), result.items)
+            assertTrue(result.cancelled)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test fun cancelMidBatchKeepsFinishedAndDropsPartial() {
+        val root = Files.createTempDirectory("glass-photos").toFile()
+        try {
+            var stop = false
+            val result = GlassPhotoCache.importItems(root, listOf("a", "b", "c"), { i, name, session ->
+                val f = File(session, name).apply { writeText(name) }
+                if (i == 1) { stop = true; throw java.util.concurrent.CancellationException() }
+                f
+            }, cancelled = { stop })
+            assertEquals(listOf("a"), result.items.map { it.name })
+            assertTrue(result.cancelled)
+            assertTrue(result.items.single().exists())
+            assertEquals(1, root.listFiles()!!.size) // b's session removed
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test fun batchFailureStillRollsBackEverything() {
+        val root = Files.createTempDirectory("glass-photos").toFile()
+        try {
+            try {
+                GlassPhotoCache.importItems(root, listOf("a", "b"), { i, name, session ->
+                    if (i == 1) throw IOException("boom")
+                    File(session, name).apply { writeText(name) }
+                })
+                fail()
+            } catch (e: IOException) {
+                assertEquals(0, root.listFiles()!!.size)
+            }
+        } finally {
+            root.deleteRecursively()
         }
     }
 }

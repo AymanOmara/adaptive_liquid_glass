@@ -77,3 +77,33 @@ internal object ChunkedCopy {
         if (copied == 0L) onFraction(if (size != null && size > 0) 1.0 else null)
     }
 }
+
+/** One `pickPhotos` import: its cancel flag, progress and codec quarantine. */
+internal class PhotoImportJob(
+    val name: String?,
+    total: Int,
+    emit: (Map<String, Any?>) -> Unit,
+    private val supervisor: CodecSupervisor = CodecSupervisor.shared,
+) {
+    val cancel = ImportCancel()
+    val progress = ProgressThrottle(total, emit = emit)
+
+    /** After a codec was abandoned, the rest of this import skips conversion. */
+    @Volatile
+    var quarantined = false
+        private set
+
+    /** Null when conversion is skipped (quarantined) or the codec was abandoned. */
+    fun <T> convert(activity: TranscodeProgress, work: () -> T): T? {
+        if (quarantined) return null
+        return try {
+            supervisor.run(cancel, activity, { quarantined = true }, work)
+        } catch (e: CodecAbandonedException) {
+            quarantined = true
+            null
+        }
+    }
+
+    /** Supervised I/O: throws on abandon and does not quarantine. */
+    fun <T> io(activity: TranscodeProgress, work: () -> T): T = supervisor.run(cancel, activity, work = work)
+}
