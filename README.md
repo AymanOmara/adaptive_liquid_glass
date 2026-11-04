@@ -1333,6 +1333,36 @@ twice. Callback errors are reported through Flutter without stopping import.
 An older native plugin delivers these callbacks with the final result; rebuild
 the app to enable early delivery.
 
+#### Progress and cancel
+
+```dart
+final controller = GlassPhotoImportController();
+
+final photos = await pickGlassPhotos(
+  maxSelection: 0,
+  controller: controller,
+  onProgress: (p) => setState(() => _p = p.fraction), // 0-1, throttled
+  onItemReady: (photo) => _grid[photo.index!] = photo,
+);
+if (photos.cancelled) { /* finished items only */ }
+
+controller.cancel(); // from anywhere, e.g. a "Stop" button
+```
+
+`GlassPhotoImportProgress` carries `total`, `completed`, `currentIndex`,
+`itemFraction` (null when the size is unknown), `fraction` and `phase`.
+`index` is the item's selection order: iOS imports in parallel, so
+`onItemReady` can arrive out of order and a UI should place items by `index`
+(null with an older native plugin). Cancel is not an error: `onError` is not
+called, finished items are kept, partial files are deleted and `cancelled` is
+set. On `GlassPhotosPicker`, the trigger shows a progress ring while
+importing and tapping it cancels; `showProgress` turns the ring off and
+`cancelLabel` sets the accessibility label (default "Cancel import").
+
+Use one controller per picker widget. A cancel or progress ring is bound to
+the controller of the running pick, and a picker disposed mid-import cancels
+its own import.
+
 Each `GlassPickedPhoto` is a copy in the `adaptive_liquid_glass_picker`
 folder of the app's temporary (iOS) or cache (Android) directory, with
 `path`, `isVideo`, `mimeType`, the upright `width` and `height` (photos
@@ -1545,7 +1575,7 @@ there is no package-side workaround.
   `onItemReady` delivers completed files early; `onPicked` and the final result
   still wait for the full batch. Very large videos can therefore take time to
   arrive. The trigger shows loading until the batch finishes; iOS imports
-  selections sequentially to bound concurrent decoding and conversion.
+  selections in parallel (3 loads, 1 video export, 2 photo re-encodes).
   Successful copies stay until `clearGlassPickedPhotos()` or the OS deletes
   them. On Android the
   H.264 conversion (HEVC videos with
@@ -1553,7 +1583,10 @@ there is no package-side workaround.
   on low-end phones and emulators. A codec polling loop that makes no progress
   for 30 seconds now abandons conversion and returns the original video with
   `conversionFailed`; progressing conversions have no total time limit.
-  This does not interrupt a blocking call inside the platform codec itself.
+  Android uses a killable codec with quarantine: an abandoned codec thread
+  may hold a hardware codec until the process exits, and later items skip
+  conversion. iOS cannot know a video's codec before the copy, so progress for
+  a "compatible" video may jump from 50% to done.
   Android's system Photo Picker also caps
   selections at its platform maximum, including when `maxSelection` is 0;
   0 removes the app's cap. The Android

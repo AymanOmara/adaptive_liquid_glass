@@ -1,3 +1,11 @@
+## 0.5.0 (unreleased)
+
+- Photos: `GlassPhotoImportController` and `onProgress` give determinate progress and cancel for `pickGlassPhotos` and `GlassPhotosPicker`; tapping a busy picker cancels. `GlassPickedPhoto.index`, `GlassPickedPhotos.cancelled`.
+- Photos: `pickGlassPhotos` sends `importChannel` in the `pickPhotos` args whenever `onItemReady`, `onProgress` or `controller` is set.
+- Photos (Android): a codec call that stops responding is abandoned after 30 s and the original is delivered with `conversionFailed`; later items skip conversion.
+- Photos (iOS): items import in parallel (3 loads, 1 video export, 2 photo re-encodes); `onItemReady` may arrive out of selection order.
+- Buttons: `GlassButton.loadingValue` and `onLoadingPressed`.
+
 ## 0.4.0 (2026-11-04)
 
 Behaviour changes:

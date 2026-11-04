@@ -71,6 +71,8 @@ controller.cancel(); // from anywhere, e.g. a "Stop" button
     is allowed.
 - **`GlassPickedPhoto.index`** (new, `int`): selection order. iOS delivers
   `itemReady` in completion order (§4), so a UI places items by `index`.
+  Amendment: `index` stays `int?` in Dart. Older native plugins cannot supply
+  it, and a default of 0 would put the item in the wrong slot.
 - **`GlassPickedPhotos.cancelled`** (new, `bool`, default false).
 - **`GlassPhotosPicker` widget**: new `controller`, `onProgress` and
   `showProgress` (default true).

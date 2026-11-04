@@ -36,7 +36,7 @@
 1. **Cancel racing the final reply.** `controller.cancel()` called after native has already replied (stale channel name) is a no-op. The result is not marked `cancelled`, and no exception escapes. Test: Task 2, step 1 (`cancel after completion is a no-op`).
 2. **Widget disposed mid-import** (route popped while importing). There is no `setState` after dispose and no listener leak. Late `progress`/`itemReady` events are ignored. Test: Task 4, step 1 (`dispose during import is quiet`).
 3. **Unknown sizes and bursts.** Events with `itemFraction: null`, duplicates, and an item's final event before its earlier ones leave `fraction` monotonic non-decreasing and within 0–1. Test: Task 1, step 1 (`fraction never decreases`).
-4. **Cancel while the system picker is still showing.** The result is empty with `cancelled: true`, `onPicked` is not called, and the next pick works (the controller is not stuck active). Test: Task 4, step 1 (`cancel during selection`). The Android `pending` reset is covered by Task 8's `GlassPhotoCache` cancel-before-first test.
+4. **Cancel while the system picker is still showing.** The result is empty with `cancelled: true`, `onPicked` is not called, and the next pick works (the controller is not stuck active). Test: Task 4, step 1 (`cancel during selection`). The Android `pending` reset is covered by Task 8's manual device step (Step 5, cancel while the system picker is still showing, on an emulator), not by an automated test.
 5. **An abandoned codec thread that returns later** must not leave its output on disk or touch the delivered original. Test: Task 7, step 1 (`late return of abandoned work deletes its output`).
 
 ---
