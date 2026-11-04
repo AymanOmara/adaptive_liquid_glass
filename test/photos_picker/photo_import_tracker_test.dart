@@ -51,6 +51,42 @@ void main() {
     expect(seen.every((f) => f >= 0 && f <= 1), isTrue);
   });
 
+  test(
+    'guard holds fraction when a final event lands before completed is bumped',
+    () {
+      final t = PhotoImportTracker();
+      expect(t.onEvent(_e(0, 2, 0, 0.9)).fraction, closeTo(0.45, 1e-9));
+      // Final event before completed is bumped: raw sum dips to 0 without the guard.
+      expect(t.onEvent(_e(0, 2, 0, 1.0)).fraction, closeTo(0.45, 1e-9));
+      expect(t.onEvent(_e(0, 2, 1, 1.0)).fraction, closeTo(0.5, 1e-9));
+    },
+  );
+
+  test('duplicate events do not double count', () {
+    final t = PhotoImportTracker();
+    final a = t.onEvent(_e(0, 2, 0, 0.5));
+    final b = t.onEvent(_e(0, 2, 0, 0.5));
+    expect(b.fraction, a.fraction);
+    expect(b.fraction, closeTo(0.25, 1e-9));
+    final c = t.onEvent(_e(0, 2, 1, 1.0));
+    final d = t.onEvent(_e(0, 2, 1, 1.0));
+    expect(d.completed, 1);
+    expect(d.fraction, c.fraction);
+    expect(d.fraction, closeTo(0.5, 1e-9));
+  });
+
+  test('out-of-order final events across items keep fraction monotonic', () {
+    final t = PhotoImportTracker();
+    expect(t.onEvent(_e(0, 3, 0, 0.8)).fraction, closeTo(0.8 / 3, 1e-9));
+    expect(t.onEvent(_e(2, 3, 0, 0.6)).fraction, closeTo(1.4 / 3, 1e-9));
+    expect(t.onEvent(_e(1, 3, 0, 0.7)).fraction, closeTo(2.1 / 3, 1e-9));
+    // Item 2 finishes first while completed still reads 0.
+    expect(t.onEvent(_e(2, 3, 0, 1.0)).fraction, closeTo(2.1 / 3, 1e-9));
+    // Item 0 finishes; completed catches up to 2.
+    expect(t.onEvent(_e(0, 3, 2, 1.0)).fraction, closeTo(2.7 / 3, 1e-9));
+    expect(t.onEvent(_e(1, 3, 3, 1.0)).fraction, closeTo(1.0, 1e-9));
+  });
+
   test('done reports phase done and fraction 1', () {
     final t = PhotoImportTracker();
     t.onEvent(_e(0, 2, 1, 1.0));
