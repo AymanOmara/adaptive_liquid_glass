@@ -40,19 +40,27 @@ class PhotoImportTracker {
       total: total,
       completed: completed,
       currentIndex: index ?? _current.currentIndex,
-      itemFraction: item ?? (index == null ? null : _inFlight[index]),
+      // The item's best value so far, so it never goes backwards either.
+      itemFraction: index == null
+          ? _current.itemFraction
+          : (_finished.contains(index) ? 1.0 : _inFlight[index]),
       fraction: math.max(raw, _current.fraction),
       phase: GlassPhotoImportPhase.importing,
     );
   }
 
   /// Marks the import finished and returns the final snapshot.
-  GlassPhotoImportProgress done() => _current = GlassPhotoImportProgress(
-    total: _current.total,
-    completed: _current.total,
-    currentIndex: _current.currentIndex,
-    itemFraction: _current.itemFraction,
-    fraction: 1,
-    phase: GlassPhotoImportPhase.done,
-  );
+  ///
+  /// A finished import reports every item completed and fraction 1; a
+  /// [cancelled] (or interrupted) one keeps the [GlassPhotoImportProgress.completed]
+  /// count and fraction it reached.
+  GlassPhotoImportProgress done({bool cancelled = false}) =>
+      _current = GlassPhotoImportProgress(
+        total: _current.total,
+        completed: cancelled ? _current.completed : _current.total,
+        currentIndex: _current.currentIndex,
+        itemFraction: _current.itemFraction,
+        fraction: cancelled ? _current.fraction : 1,
+        phase: GlassPhotoImportPhase.done,
+      );
 }

@@ -84,3 +84,19 @@ struct ProgressThrottle {
     return true
   }
 }
+
+/// Passes a load's fraction only when it has risen by at least `step`, or
+/// reaches 1 for the first time, so the reported value only rises and KVO
+/// bursts do not flood the main actor.
+struct RisingFraction {
+  let step: Double
+  private var lastSent = 0.0
+
+  init(step: Double = 0.01) { self.step = step }
+
+  mutating func allow(_ fraction: Double) -> Bool {
+    guard fraction > lastSent, fraction >= lastSent + step || fraction >= 1 else { return false }
+    lastSent = fraction
+    return true
+  }
+}

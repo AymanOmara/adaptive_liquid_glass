@@ -95,6 +95,26 @@ void main() {
     expect(p.fraction, 1);
   });
 
+  test('done(cancelled: true) keeps completed and the fraction', () {
+    final t = PhotoImportTracker();
+    t.onEvent(_e(0, 3, 1, 1.0));
+    final before = t.onEvent(_e(1, 3, 1, 0.5));
+    final p = t.done(cancelled: true);
+    expect(p.phase, GlassPhotoImportPhase.done);
+    expect(p.total, 3);
+    expect(p.completed, 1);
+    expect(p.fraction, before.fraction);
+  });
+
+  test('itemFraction never goes backwards for an item', () {
+    final t = PhotoImportTracker();
+    expect(t.onEvent(_e(0, 2, 0, 0.6)).itemFraction, 0.6);
+    expect(t.onEvent(_e(0, 2, 0, 0.3)).itemFraction, 0.6); // stale
+    expect(t.onEvent(_e(0, 2, 0)).itemFraction, 0.6); // unknown size
+    expect(t.onEvent(_e(0, 2, 1, 1.0)).itemFraction, 1.0);
+    expect(t.onEvent(_e(0, 2, 1, 0.2)).itemFraction, 1.0); // after final
+  });
+
   test('total 0 keeps fraction 0', () {
     expect(PhotoImportTracker().onEvent(_e(0, 0, 0)).fraction, 0);
   });

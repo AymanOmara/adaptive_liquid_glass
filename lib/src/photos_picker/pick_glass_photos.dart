@@ -197,10 +197,15 @@ Future<GlassPickedPhotos> pickGlassPhotos({
     for (final photo in photos) {
       deliver(photo);
     }
-    report(tracker.done());
+    report(tracker.done(cancelled: photos.cancelled));
     return photos;
   } finally {
     imports?.setMethodCallHandler(null);
+    // An error or a cancel that ended in an error still ends the progress,
+    // so UIs waiting for phase done can hide.
+    if (tracker.current.phase != GlassPhotoImportPhase.done) {
+      report(tracker.done(cancelled: cancelled));
+    }
     binding?.detach();
   }
 }

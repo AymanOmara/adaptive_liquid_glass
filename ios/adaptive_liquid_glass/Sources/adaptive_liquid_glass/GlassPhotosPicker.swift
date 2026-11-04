@@ -102,8 +102,44 @@ final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate {
     let picker = PHPickerViewController(configuration: config)
     picker.delegate = session
     session.pickerController = picker
-    presenter.present(picker, animated: true)
+    presentWhenSettled(picker, from: presenter) { session.finished }
     return session
+  }
+
+  /// Presents [controller] from [presenter], after any transition the
+  /// presenter is in (UIKit can silently drop a presentation from a controller
+  /// that is still being dismissed). Skipped when [skip] says so by then.
+  static func presentWhenSettled(
+    _ controller: UIViewController, from presenter: UIViewController,
+    unless skip: @escaping () -> Bool
+  ) {
+    guard let coordinator = presenter.transitionCoordinator else {
+      if !skip() { presenter.present(controller, animated: true) }
+      return
+    }
+    coordinator.animate(alongsideTransition: nil) { _ in
+      // Next turn: the transition is fully torn down by then.
+      DispatchQueue.main.async {
+        presentWhenSettled(controller, from: presenter, unless: skip)
+      }
+    }
+  }
+
+  /// Dismisses [controller] and runs [reply] once it is off screen, so the
+  /// next pick can present. Waits out a running presentation or dismissal;
+  /// runs [reply] at once when [controller] is not presented.
+  static func dismissThen(_ controller: UIViewController?, _ reply: @escaping () -> Void) {
+    guard let controller = controller, controller.presentingViewController != nil else {
+      reply()
+      return
+    }
+    if let coordinator = controller.transitionCoordinator {
+      coordinator.animate(alongsideTransition: nil) { _ in
+        DispatchQueue.main.async { dismissThen(controller, reply) }
+      }
+      return
+    }
+    controller.dismiss(animated: true, completion: reply)
   }
 
   /// Stops the import (main thread). While the picker shows, dismisses it
@@ -111,9 +147,10 @@ final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate {
   /// which answers with the items already delivered.
   func cancel() {
     if !finished {
+      // Set now, so the delegate cannot answer too; the reply waits for the
+      // dismissal so an immediate re-pick can present.
       finished = true
-      pickerController?.dismiss(animated: true)
-      send([], cancelled: true)
+      Self.dismissThen(pickerController) { self.send([], cancelled: true) }
       return
     }
     importTask?.cancel()
@@ -138,13 +175,14 @@ final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate {
   }
 
   func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
-    picker.dismiss(animated: true)
+    // After a cancel, its own dismissal is already under way.
     if finished { return }
     finished = true
     if results.isEmpty {
-      send([])
+      Self.dismissThen(picker) { self.send([]) }
       return
     }
+    picker.dismiss(animated: true)
     total = results.count
     let options = options
     let limits = Limits()
@@ -210,6 +248,7 @@ final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate {
   }
 
   private func send(_ items: [[String: Any]], cancelled: Bool = false) {
+    if replied { return }
     replied = true
     result(["items": items, "dropped": 0, "cancelled": cancelled])
     onFinish()
@@ -272,7 +311,15 @@ final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate {
       private let lock = NSLock()
       private var progress: Progress?
       private var cancelled = false
+      private var gate = RisingFraction()
       var observation: NSKeyValueObservation?
+
+      /// Whether [fraction] is worth a report (KVO fires from any thread).
+      func shouldReport(_ fraction: Double) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return gate.allow(fraction)
+      }
 
       func set(_ progress: Progress) {
         lock.lock()
@@ -311,6 +358,7 @@ final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate {
         }
         box.observation = progress.observe(\.fractionCompleted) { p, _ in
           let f = p.fractionCompleted
+          guard box.shouldReport(f) else { return }
           Task { await report(f) }
         }
         box.set(progress)

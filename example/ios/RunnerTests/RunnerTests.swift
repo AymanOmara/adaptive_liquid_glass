@@ -113,3 +113,125 @@ final class PhotosCopyShareTests: XCTestCase {
     XCTAssertEqual(share(["compatibleFormat": true], video: true, .movie), 0.5)
   }
 }
+
+final class RisingFractionTests: XCTestCase {
+  func testReportsRisesOfAtLeastOnePercentAndNeverFalls() {
+    var gate = RisingFraction()
+    XCTAssertFalse(gate.allow(0))
+    XCTAssertFalse(gate.allow(0.005))
+    XCTAssertTrue(gate.allow(0.01))
+    XCTAssertFalse(gate.allow(0.015))
+    XCTAssertTrue(gate.allow(0.5))
+    XCTAssertFalse(gate.allow(0.3)) // out of order: never backwards
+    XCTAssertFalse(gate.allow(0.505))
+    XCTAssertTrue(gate.allow(0.999))
+    XCTAssertTrue(gate.allow(1)) // completion always passes once
+    XCTAssertFalse(gate.allow(1))
+  }
+}
+
+/// Presentation timing for the picker: the reply waits for the dismissal,
+/// and a new presentation waits for a running transition.
+/// Records whether each presentation started while a transition was running.
+final class RecordingController: UIViewController {
+  private(set) var presentedMidTransition: [Bool] = []
+
+  override func present(
+    _ controller: UIViewController, animated: Bool, completion: (() -> Void)? = nil
+  ) {
+    presentedMidTransition.append(transitionCoordinator != nil)
+    super.present(controller, animated: animated, completion: completion)
+  }
+}
+
+@MainActor
+final class PickerPresentationTests: XCTestCase {
+  private var window: UIWindow!
+  private var root: RecordingController!
+
+  override func setUp() async throws {
+    let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+    window = UIWindow(windowScene: try XCTUnwrap(scene))
+    root = RecordingController()
+    window.rootViewController = root
+    window.makeKeyAndVisible()
+  }
+
+  override func tearDown() async throws {
+    window.isHidden = true
+    window = nil
+    root = nil
+  }
+
+  private func presented(_ controller: UIViewController) async {
+    await withCheckedContinuation { done in
+      root.present(controller, animated: true) { done.resume() }
+    }
+  }
+
+  private func waitUntil(_ condition: @escaping () -> Bool) async {
+    let deadline = Date().addingTimeInterval(5)
+    while !condition() && Date() < deadline {
+      try? await Task.sleep(nanoseconds: 20_000_000)
+    }
+  }
+
+  func testReplyWaitsForTheDismissalToEnd() async {
+    let child = UIViewController()
+    await presented(child)
+    var replied = false
+    var settled = false
+    GlassPhotosPicker.dismissThen(child) {
+      replied = true
+      settled = child.presentingViewController == nil && self.root.presentedViewController == nil
+    }
+    XCTAssertFalse(replied)
+    await waitUntil { replied }
+    XCTAssertTrue(replied)
+    XCTAssertTrue(settled)
+  }
+
+  func testAnUnpresentedControllerRepliesAtOnce() {
+    var count = 0
+    GlassPhotosPicker.dismissThen(nil) { count += 1 }
+    GlassPhotosPicker.dismissThen(UIViewController()) { count += 1 }
+    XCTAssertEqual(count, 2)
+  }
+
+  func testDismissDuringThePresentationStillReplies() async {
+    let child = UIViewController()
+    root.present(child, animated: true)
+    var replied = false
+    GlassPhotosPicker.dismissThen(child) { replied = true }
+    await waitUntil { replied }
+    XCTAssertTrue(replied)
+    XCTAssertNil(root.presentedViewController)
+  }
+
+  func testPresentWaitsForARunningDismissal() async {
+    let first = UIViewController()
+    await presented(first)
+    root.dismiss(animated: true)
+    let second = UIViewController()
+    XCTAssertNotNil(root.transitionCoordinator)
+    GlassPhotosPicker.presentWhenSettled(second, from: root) { false }
+    XCTAssertFalse(root.presentedViewController === second)
+    await waitUntil { self.root.presentedViewController === second }
+    XCTAssertTrue(root.presentedViewController === second)
+    // [first] then [second]; [second] only once the dismissal had ended.
+    XCTAssertEqual(root.presentedMidTransition, [false, false])
+  }
+
+  func testPresentIsSkippedWhenFinishedMeanwhile() async {
+    let first = UIViewController()
+    await presented(first)
+    var dismissed = false
+    root.dismiss(animated: true) { dismissed = true }
+    var finished = false
+    GlassPhotosPicker.presentWhenSettled(UIViewController(), from: root) { finished }
+    finished = true // e.g. a cancel while waiting
+    await waitUntil { dismissed }
+    try? await Task.sleep(nanoseconds: 300_000_000)
+    XCTAssertNil(root.presentedViewController)
+  }
+}

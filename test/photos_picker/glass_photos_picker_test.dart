@@ -803,6 +803,92 @@ void main() {
     }, variant: _both);
   });
 
+  group('final progress event', () {
+    testWidgets('a platform error still ends progress at done', (tester) async {
+      _mock((_) async => throw PlatformException(code: 'already_active'));
+      final controller = GlassPhotoImportController();
+      final seen = <GlassPhotoImportProgress>[];
+      await expectLater(
+        pickGlassPhotos(controller: controller, onProgress: seen.add),
+        throwsA(isA<PlatformException>()),
+      );
+      expect(seen.last.phase, GlassPhotoImportPhase.done);
+      expect(controller.progress.value?.phase, GlassPhotoImportPhase.done);
+      expect(controller.isActive.value, isFalse);
+    }, variant: _both);
+
+    testWidgets('cancel then a platform error ends at done, completed kept', (
+      tester,
+    ) async {
+      final reply = Completer<Object?>();
+      final calls = _mock((call) async {
+        if (call.method == 'cancelPhotoImport') {
+          reply.completeError(PlatformException(code: 'load_failed'));
+          return null;
+        }
+        return reply.future;
+      });
+      final controller = GlassPhotoImportController();
+      final future = pickGlassPhotos(maxSelection: 0, controller: controller);
+      await tester.pump();
+      final name = (calls.first.arguments as Map)['importChannel'] as String;
+      await push(name, 'progress', {
+        'index': 0,
+        'total': 3,
+        'completed': 1,
+        'itemFraction': 1.0,
+      });
+      controller.cancel();
+      final photos = await future;
+      expect(photos.cancelled, isTrue);
+      final last = controller.progress.value!;
+      expect(last.phase, GlassPhotoImportPhase.done);
+      expect(last.total, 3);
+      expect(last.completed, 1);
+    }, variant: _both);
+
+    testWidgets('a cancelled reply ends at done with completed kept', (
+      tester,
+    ) async {
+      final reply = Completer<Object?>();
+      final calls = _mock((call) async {
+        if (call.method == 'cancelPhotoImport') {
+          reply.complete({
+            'items': [_image],
+            'dropped': 0,
+            'cancelled': true,
+          });
+          return null;
+        }
+        return reply.future;
+      });
+      final controller = GlassPhotoImportController();
+      final seen = <GlassPhotoImportProgress>[];
+      final future = pickGlassPhotos(
+        maxSelection: 0,
+        controller: controller,
+        onProgress: seen.add,
+      );
+      await tester.pump();
+      final name = (calls.first.arguments as Map)['importChannel'] as String;
+      await push(name, 'progress', {
+        'index': 0,
+        'total': 3,
+        'completed': 1,
+        'itemFraction': 1.0,
+      });
+      controller.cancel();
+      final photos = await future;
+      expect(photos.cancelled, isTrue);
+      expect(seen.last.phase, GlassPhotoImportPhase.done);
+      expect(seen.last.completed, 1);
+      expect(
+        seen.where((p) => p.phase == GlassPhotoImportPhase.done),
+        hasLength(1),
+      );
+    }, variant: _both);
+  });
+
   group('widget progress', () {
     Widget picker({
       GlassPhotoImportController? controller,
