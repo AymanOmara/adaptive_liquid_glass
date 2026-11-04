@@ -80,7 +80,7 @@ documented there), then score with
 
 ```yaml
 dependencies:
-  adaptive_liquid_glass: ^0.5.0
+  adaptive_liquid_glass: ^0.5.1
 ```
 
 ```dart

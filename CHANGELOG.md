@@ -1,4 +1,4 @@
-## 0.5.1 (unreleased)
+## 0.5.1 (2026-11-04)
 
 - Photos (Android): `compatibleFormat` scales a video down (keeping its aspect ratio, 2560/1920/1280 long edge) when the H.264 encoder refuses its size, so 4K HEVC converts instead of arriving with `conversionFailed`.
 
