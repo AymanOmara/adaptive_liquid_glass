@@ -606,4 +606,176 @@ void main() {
       s.dispose();
     }, variant: ios);
   });
+
+  Future<void> push(String channel, String method, Object? args) {
+    final done = Completer<void>();
+    ui.channelBuffers.push(
+      channel,
+      const StandardMethodCodec().encodeMethodCall(MethodCall(method, args)),
+      (_) => done.complete(),
+    );
+    return done.future;
+  }
+
+  group('progress and cancel', () {
+    testWidgets('onProgress alone opens an import channel', (tester) async {
+      final reply = Completer<Object?>();
+      final calls = _mock((_) => reply.future);
+      final seen = <GlassPhotoImportProgress>[];
+      final future = pickGlassPhotos(maxSelection: 0, onProgress: seen.add);
+      await tester.pump();
+      final name = (calls.single.arguments as Map)['importChannel'] as String;
+      await push(name, 'progress', {
+        'index': 0,
+        'total': 2,
+        'completed': 0,
+        'itemFraction': 0.5,
+      });
+      reply.complete({
+        'items': [_image],
+        'dropped': 0,
+      });
+      await future;
+      expect(seen.first.fraction, closeTo(0.25, 1e-9));
+      expect(seen.last.phase, GlassPhotoImportPhase.done);
+    }, variant: _both);
+
+    testWidgets('controller.cancel sends cancelPhotoImport with the channel', (
+      tester,
+    ) async {
+      final reply = Completer<Object?>();
+      final calls = _mock((call) async {
+        if (call.method == 'cancelPhotoImport') {
+          reply.complete({
+            'items': [_image],
+            'dropped': 0,
+            'cancelled': true,
+          });
+          return null;
+        }
+        return reply.future;
+      });
+      final controller = GlassPhotoImportController();
+      final future = pickGlassPhotos(maxSelection: 0, controller: controller);
+      await tester.pump();
+      expect(controller.isActive.value, isTrue);
+      controller.cancel();
+      controller.cancel(); // idempotent
+      final photos = await future;
+      final name = (calls.first.arguments as Map)['importChannel'];
+      final cancels = calls
+          .where((c) => c.method == 'cancelPhotoImport')
+          .toList();
+      expect(cancels, hasLength(1));
+      expect((cancels.single.arguments as Map)['importChannel'], name);
+      expect(photos.cancelled, isTrue);
+      expect(photos, hasLength(1));
+      expect(controller.isActive.value, isFalse);
+    }, variant: _both);
+
+    testWidgets('a platform error after cancel is swallowed', (tester) async {
+      final reply = Completer<Object?>();
+      _mock((call) async {
+        if (call.method == 'cancelPhotoImport') {
+          reply.completeError(PlatformException(code: 'load_failed'));
+          return null;
+        }
+        return reply.future;
+      });
+      final controller = GlassPhotoImportController();
+      final delivered = <GlassPickedPhoto>[];
+      final future = pickGlassPhotos(
+        maxSelection: 0,
+        controller: controller,
+        onItemReady: delivered.add,
+      );
+      await tester.pump();
+      controller.cancel();
+      final photos = await future;
+      expect(photos.cancelled, isTrue);
+      expect(photos, isEmpty);
+    }, variant: _both);
+
+    testWidgets('cancel after completion is a no-op', (tester) async {
+      final calls = _mock(
+        (_) async => {
+          'items': [_image],
+          'dropped': 0,
+        },
+      );
+      final controller = GlassPhotoImportController();
+      final photos = await pickGlassPhotos(controller: controller);
+      controller.cancel();
+      await tester.pump();
+      expect(photos.cancelled, isFalse);
+      expect(calls.where((c) => c.method == 'cancelPhotoImport'), isEmpty);
+    }, variant: _both);
+
+    testWidgets('cancel before any import does nothing', (tester) async {
+      final calls = _mock((_) async => const <Object?>[]);
+      GlassPhotoImportController().cancel();
+      await tester.pump();
+      expect(calls, isEmpty);
+    }, variant: _both);
+
+    testWidgets('a controller drives one import at a time, then is reusable', (
+      tester,
+    ) async {
+      final reply = Completer<Object?>();
+      _mock((_) => reply.future);
+      final controller = GlassPhotoImportController();
+      final first = pickGlassPhotos(controller: controller);
+      await tester.pump();
+      await expectLater(
+        pickGlassPhotos(controller: controller),
+        throwsStateError,
+      );
+      reply.complete(const <Object?>[]);
+      await first;
+      _mock((_) async => [_image]);
+      expect(await pickGlassPhotos(controller: controller), hasLength(1));
+    }, variant: _both);
+
+    testWidgets('a disposed controller: cancel is a no-op, attach throws', (
+      tester,
+    ) async {
+      final calls = _mock((_) async => const <Object?>[]);
+      final controller = GlassPhotoImportController()..dispose();
+      controller.cancel();
+      await expectLater(
+        pickGlassPhotos(controller: controller),
+        throwsStateError,
+      );
+      expect(calls, isEmpty);
+    }, variant: _both);
+
+    testWidgets('a bare list reply still parses, cancelled false', (
+      tester,
+    ) async {
+      _mock((_) async => [_image, _video]);
+      final photos = await pickGlassPhotos(maxSelection: 0);
+      expect(photos, hasLength(2));
+      expect(photos.cancelled, isFalse);
+    }, variant: _both);
+
+    testWidgets('itemReady carries index', (tester) async {
+      final reply = Completer<Object?>();
+      final calls = _mock((_) => reply.future);
+      final got = <GlassPickedPhoto>[];
+      final future = pickGlassPhotos(maxSelection: 0, onItemReady: got.add);
+      await tester.pump();
+      final name = (calls.single.arguments as Map)['importChannel'] as String;
+      await _ready(name, {..._video, 'index': 1});
+      await _ready(name, {..._image, 'index': 0});
+      reply.complete({
+        'items': [
+          {..._image, 'index': 0},
+          {..._video, 'index': 1},
+        ],
+      });
+      final photos = await future;
+      expect(got.map((p) => p.index), [1, 0]);
+      expect(photos.map((p) => p.index), [0, 1]);
+    }, variant: _both);
+  });
 }

@@ -87,6 +87,8 @@ export 'src/navigation/glass_scroll_edge_style.dart';
 export 'src/navigation/sliver_glass_navigation_bar.dart'
     show SliverGlassNavigationBar;
 export 'src/page_control/glass_page_control.dart';
+export 'src/photos_picker/glass_photo_import_controller.dart'
+    show GlassPhotoImportController;
 export 'src/photos_picker/glass_photo_import_progress.dart';
 export 'src/photos_picker/glass_photos_picker.dart';
 export 'src/photos_picker/glass_photos_picker_filter.dart';

@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import 'glass_photo_import_controller.dart';
+import 'glass_photo_import_progress.dart';
 import 'glass_photos_picker_filter.dart';
 import 'glass_picked_photo.dart';
 import 'glass_picked_photos.dart';
+import 'photo_import_tracker.dart';
 
 const MethodChannel _channel = MethodChannel('adaptive_liquid_glass');
 int _nextImport = 0;
@@ -54,6 +57,16 @@ int _nextImport = 0;
 /// a later item fails; this future may still throw. Callback errors are reported
 /// through [FlutterError.reportError] without interrupting the import. With an
 /// older native plugin, callbacks are delivered with the final result instead.
+/// On iOS, [onItemReady] order may differ from selection order; use
+/// [GlassPickedPhoto.index] to place an item.
+///
+/// [onProgress] receives throttled [GlassPhotoImportProgress] snapshots;
+/// use its `fraction` to drive one progress bar.
+///
+/// [controller] watches the import and can stop it: call
+/// [GlassPhotoImportController.cancel] and the future completes with the
+/// items already finished and [GlassPickedPhotos.cancelled] true. Cancel is
+/// not an error. One controller drives one import at a time.
 Future<GlassPickedPhotos> pickGlassPhotos({
   int maxSelection = 1,
   GlassPhotosPickerFilter filter = GlassPhotosPickerFilter.images,
@@ -62,6 +75,8 @@ Future<GlassPickedPhotos> pickGlassPhotos({
   int? imageQuality,
   bool compatibleFormat = false,
   ValueChanged<GlassPickedPhoto>? onItemReady,
+  ValueChanged<GlassPhotoImportProgress>? onProgress,
+  GlassPhotoImportController? controller,
 }) async {
   assert(maxSelection >= 0, 'maxSelection is 0 (unlimited) or more');
   assert(maxWidth == null || maxWidth > 0, 'maxWidth is positive');
@@ -90,49 +105,97 @@ Future<GlassPickedPhotos> pickGlassPhotos({
     }
   }
 
-  final imports = onItemReady == null
+  final tracker = PhotoImportTracker();
+  var cancelled = false;
+  late final GlassPhotoImportBinding? binding;
+  void report(GlassPhotoImportProgress p) {
+    binding?.update(p);
+    if (onProgress == null) return;
+    try {
+      onProgress(p);
+    } on Object catch (error, stack) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stack,
+          library: 'adaptive_liquid_glass',
+          context: ErrorDescription('while reporting photo import progress'),
+        ),
+      );
+    }
+  }
+
+  final imports =
+      onItemReady == null && onProgress == null && controller == null
       ? null
       : MethodChannel(
           'adaptive_liquid_glass/photo_import/${DateTime.now().microsecondsSinceEpoch}_${_nextImport++}',
         );
+  binding = controller == null
+      ? null
+      : attachImport(controller, () {
+          cancelled = true;
+          _channel
+              .invokeMethod<void>('cancelPhotoImport', {
+                'importChannel': imports!.name,
+              })
+              .catchError((Object _) {}); // older plugin or stale name: no-op
+        });
   imports?.setMethodCallHandler((call) async {
-    if (call.method == 'itemReady') {
-      deliver(
-        GlassPickedPhoto.fromMap(call.arguments as Map<Object?, Object?>),
-      );
+    switch (call.method) {
+      case 'itemReady':
+        deliver(
+          GlassPickedPhoto.fromMap(call.arguments as Map<Object?, Object?>),
+        );
+      case 'progress':
+        report(tracker.onEvent(call.arguments as Map<Object?, Object?>));
     }
   });
   try {
-    // A list of items, or {items, dropped}.
-    final reply = await _channel.invokeMethod<Object?>('pickPhotos', {
-      'maxSelection': maxSelection,
-      'filter': filter.name,
-      'maxWidth': ?maxWidth,
-      'maxHeight': ?maxHeight,
-      'imageQuality': ?imageQuality,
-      if (compatibleFormat) 'compatibleFormat': true,
-      if (imports != null) 'importChannel': imports.name,
-    });
-    final (items, dropped) = switch (reply) {
+    // A list of items, or {items, dropped, cancelled}.
+    final Object? reply;
+    try {
+      reply = await _channel.invokeMethod<Object?>('pickPhotos', {
+        'maxSelection': maxSelection,
+        'filter': filter.name,
+        'maxWidth': ?maxWidth,
+        'maxHeight': ?maxHeight,
+        'imageQuality': ?imageQuality,
+        if (compatibleFormat) 'compatibleFormat': true,
+        if (imports != null) 'importChannel': imports.name,
+      });
+    } on PlatformException {
+      // Cancel is not an error: keep what was delivered.
+      if (!cancelled) rethrow;
+      return GlassPickedPhotos(const [], cancelled: true);
+    }
+    final (items, dropped, nativeCancelled) = switch (reply) {
       final Map<Object?, Object?> map => (
         map['items'] as List<Object?>?,
         (map['dropped'] as num?)?.toInt() ?? 0,
+        map['cancelled'] == true,
       ),
-      final List<Object?> list => (list, 0),
-      _ => (null, 0),
+      final List<Object?> list => (list, 0, false),
+      _ => (null, 0, false),
     };
-    final photos = GlassPickedPhotos([
-      for (final item in items ?? const <Object?>[])
-        GlassPickedPhoto.fromMap(item! as Map<Object?, Object?>),
-    ], droppedCount: dropped);
+    final photos = GlassPickedPhotos(
+      [
+        for (final item in items ?? const <Object?>[])
+          GlassPickedPhoto.fromMap(item! as Map<Object?, Object?>),
+      ],
+      droppedCount: dropped,
+      cancelled: nativeCancelled || (cancelled && reply == null),
+    );
     // Reconcile events with the final result. This also supports older plugins
     // and prevents a late final event from losing or duplicating a callback.
     for (final photo in photos) {
       deliver(photo);
     }
+    report(tracker.done());
     return photos;
   } finally {
     imports?.setMethodCallHandler(null);
+    binding?.detach();
   }
 }
 

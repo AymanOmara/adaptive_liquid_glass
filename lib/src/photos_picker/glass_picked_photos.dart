@@ -9,8 +9,11 @@ import 'glass_picked_photo.dart';
 /// list keeps working.
 class GlassPickedPhotos extends ListBase<GlassPickedPhoto> {
   /// Wraps [items]; [droppedCount] chosen items were not returned.
-  GlassPickedPhotos(Iterable<GlassPickedPhoto> items, {this.droppedCount = 0})
-    : _items = List.of(items);
+  GlassPickedPhotos(
+    Iterable<GlassPickedPhoto> items, {
+    this.droppedCount = 0,
+    this.cancelled = false,
+  }) : _items = List.of(items);
 
   final List<GlassPickedPhoto> _items;
 
@@ -23,6 +26,10 @@ class GlassPickedPhotos extends ListBase<GlassPickedPhoto> {
   /// counted here. Always 0 on iOS and with the Android Photo Picker,
   /// which enforce the limit in their UI.
   final int droppedCount;
+
+  /// Whether the import was stopped with
+  /// `GlassPhotoImportController.cancel`; only finished items are included.
+  final bool cancelled;
 
   @override
   int get length => _items.length;

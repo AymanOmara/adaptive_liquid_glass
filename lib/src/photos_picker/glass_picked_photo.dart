@@ -18,6 +18,7 @@ class GlassPickedPhoto {
     this.height,
     this.duration,
     this.conversionFailed = false,
+    this.index,
   });
 
   /// Reads the map the platform side sends.
@@ -33,6 +34,7 @@ class GlassPickedPhoto {
           _ => null,
         },
         conversionFailed: map['conversionFailed'] as bool? ?? false,
+        index: (map['index'] as num?)?.toInt(),
       );
 
   /// The absolute path of the local copy.
@@ -63,6 +65,9 @@ class GlassPickedPhoto {
   /// Failed image resizing or quality changes do not set this flag.
   final bool conversionFailed;
 
+  /// Selection order (0-based); null only with an older native plugin.
+  final int? index;
+
   @override
   bool operator ==(Object other) =>
       other is GlassPickedPhoto &&
@@ -72,7 +77,8 @@ class GlassPickedPhoto {
       other.width == width &&
       other.height == height &&
       other.duration == duration &&
-      other.conversionFailed == conversionFailed;
+      other.conversionFailed == conversionFailed &&
+      other.index == index;
 
   @override
   int get hashCode => Object.hash(
@@ -83,6 +89,7 @@ class GlassPickedPhoto {
     height,
     duration,
     conversionFailed,
+    index,
   );
 
   @override
@@ -90,5 +97,6 @@ class GlassPickedPhoto {
       'GlassPickedPhoto($path, ${isVideo ? 'video' : 'image'}, $mimeType'
       '${width == null ? '' : ', ${width}x$height'}'
       '${duration == null ? '' : ', $duration'}'
-      '${conversionFailed ? ', conversion failed' : ''})';
+      '${conversionFailed ? ', conversion failed' : ''}'
+      '${index == null ? '' : ', #$index'})';
 }
