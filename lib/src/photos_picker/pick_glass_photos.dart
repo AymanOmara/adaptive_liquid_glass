@@ -89,8 +89,11 @@ Future<GlassPickedPhotos> pickGlassPhotos({
     throw UnsupportedError('pickGlassPhotos supports iOS and Android only');
   }
   final delivered = <String>{};
+  final deliveredPhotos = <GlassPickedPhoto>[];
   void deliver(GlassPickedPhoto photo) {
-    if (onItemReady == null || !delivered.add(photo.path)) return;
+    if (!delivered.add(photo.path)) return;
+    deliveredPhotos.add(photo);
+    if (onItemReady == null) return;
     try {
       onItemReady(photo);
     } on Object catch (error, stack) {
@@ -165,9 +168,12 @@ Future<GlassPickedPhotos> pickGlassPhotos({
         if (imports != null) 'importChannel': imports.name,
       });
     } on PlatformException {
-      // Cancel is not an error: keep what was delivered.
+      // Cancel is not an error: keep what was delivered, in selection order.
       if (!cancelled) rethrow;
-      return GlassPickedPhotos(const [], cancelled: true);
+      final kept = [
+        for (final (i, p) in deliveredPhotos.indexed) (p.index ?? i, p),
+      ]..sort((a, b) => a.$1.compareTo(b.$1));
+      return GlassPickedPhotos([for (final e in kept) e.$2], cancelled: true);
     }
     final (items, dropped, nativeCancelled) = switch (reply) {
       final Map<Object?, Object?> map => (

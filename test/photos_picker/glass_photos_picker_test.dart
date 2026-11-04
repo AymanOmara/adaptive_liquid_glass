@@ -675,7 +675,7 @@ void main() {
 
     testWidgets('a platform error after cancel is swallowed', (tester) async {
       final reply = Completer<Object?>();
-      _mock((call) async {
+      final calls = _mock((call) async {
         if (call.method == 'cancelPhotoImport') {
           reply.completeError(PlatformException(code: 'load_failed'));
           return null;
@@ -690,10 +690,15 @@ void main() {
         onItemReady: delivered.add,
       );
       await tester.pump();
+      final name = (calls.first.arguments as Map)['importChannel'] as String;
+      await _ready(name, {..._video, 'index': 1});
+      await _ready(name, {..._image, 'index': 0});
       controller.cancel();
       final photos = await future;
       expect(photos.cancelled, isTrue);
-      expect(photos, isEmpty);
+      expect(delivered, hasLength(2));
+      expect(photos.map((p) => p.path), [_image['path'], _video['path']]);
+      expect(photos.map((p) => p.index), [0, 1]);
     }, variant: _both);
 
     testWidgets('cancel after completion is a no-op', (tester) async {
