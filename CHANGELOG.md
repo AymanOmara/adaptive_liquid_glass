@@ -1,4 +1,14 @@
-## Unreleased
+## 0.4.0 (2026-11-04)
+
+Behaviour changes:
+
+- System buttons highlight on primary pointer down instead of on tap
+  recognition. Bordered and prominent buttons use 10/12/20 pt horizontal
+  padding for small/regular/large groups; plain buttons keep a 17 pt label
+  at every size.
+- Custom (non-stock) `GlassTabBar`s on native glass draw their selected tab
+  and unselected labels natively (`GlassContentGlyphs`), so their colours now
+  follow the glass beneath.
 
 - Custom tab bars on native glass: the selected tab's icon and label are now
   drawn by SwiftUI from the glass beneath them (new `GlassContentGlyphs`,
