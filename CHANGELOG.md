@@ -1,3 +1,7 @@
+## 0.5.1 (unreleased)
+
+- Photos (Android): `compatibleFormat` scales a video down (keeping its aspect ratio, 2560/1920/1280 long edge) when the H.264 encoder refuses its size, so 4K HEVC converts instead of arriving with `conversionFailed`.
+
 ## 0.5.0 (2026-11-04)
 
 - Photos: `GlassPhotoImportController` and `onProgress` give determinate progress and cancel for `pickGlassPhotos` and `GlassPhotosPicker`; tapping a busy picker cancels. `GlassPickedPhoto.index`, `GlassPickedPhotos.cancelled`.

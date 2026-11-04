@@ -1374,8 +1374,9 @@ format unless asked otherwise (both on `GlassPhotosPicker` and
 - `imageQuality` (0-100) re-encodes JPEG and HEIC photos at that quality.
 - `compatibleFormat: true` turns HEIC/HEIF photos into JPEG and HEVC
   videos into H.264 `.mp4` (iOS: `AVAssetExportSession`; Android:
-  `MediaCodec`, audio copied as is, rotation kept). A video that fails to
-  convert (no H.264 encoder for its size, an unsupported audio track)
+  `MediaCodec`, audio copied as is, rotation kept; scaled down, keeping
+  the aspect ratio, when the encoder refuses the size). A video that fails to
+  convert (no H.264 encoder at any size, an unsupported audio track)
   arrives as HEVC with `conversionFailed: true`. A HEIC/HEIF photo that
   cannot be converted to JPEG also keeps its format with that flag set.
   On Android, codec polling with no progress for 30 seconds also falls back

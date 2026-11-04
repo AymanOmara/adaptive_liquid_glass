@@ -23,6 +23,75 @@ internal object H264Transcoder {
     private const val AVC = MediaFormat.MIMETYPE_VIDEO_AVC
     private const val TIMEOUT_US = 10_000L
 
+    /** Long edges tried, largest first, when the encoder refuses the source size. */
+    private val LONG_EDGES = intArrayOf(2560, 1920, 1280)
+
+    /**
+     * Output sizes to try for a [width] x [height] source, largest first: the
+     * source size, then the long edge stepped down through [LONG_EDGES]
+     * (never upscaled), keeping the aspect ratio and orientation, each side
+     * rounded down to the encoder's alignment (at least even). Only sizes
+     * [supports] accepts are listed; empty when it accepts none.
+     */
+    fun encoderSizes(
+        width: Int,
+        height: Int,
+        widthAlignment: Int,
+        heightAlignment: Int,
+        supports: (Int, Int) -> Boolean,
+    ): List<Pair<Int, Int>> {
+        if (width <= 0 || height <= 0) return emptyList()
+        val wa = alignmentOf(widthAlignment)
+        val ha = alignmentOf(heightAlignment)
+        val long = maxOf(width, height)
+        val candidates = mutableListOf(width to height)
+        for (edge in LONG_EDGES) {
+            if (edge >= long) continue
+            val short = Math.round(minOf(width, height).toDouble() * edge / long).toInt()
+            candidates += if (width >= height) edge to short else short to edge
+        }
+        return candidates
+            .map { (w, h) -> (w / wa * wa) to (h / ha * ha) }
+            .filter { (w, h) -> w > 0 && h > 0 }
+            .distinct()
+            .filter { (w, h) -> supports(w, h) }
+    }
+
+    /** [bitRate] scaled down with the pixel count, within 1–40 Mbit/s. */
+    fun scaledBitRate(bitRate: Int, sourcePixels: Int, outputPixels: Int): Int {
+        val scaled = if (sourcePixels > 0 && outputPixels < sourcePixels) {
+            bitRate.toLong() * outputPixels / sourcePixels
+        } else {
+            bitRate.toLong()
+        }
+        return scaled.coerceIn(1_000_000L, 40_000_000L).toInt()
+    }
+
+    /** [encoderSizes] from the device's AVC encoder capabilities. */
+    private fun encoderCandidates(width: Int, height: Int): List<Pair<Int, Int>> {
+        val sizes = try {
+            val probe = MediaCodec.createEncoderByType(AVC)
+            try {
+                val caps = probe.codecInfo.getCapabilitiesForType(AVC).videoCapabilities
+                encoderSizes(width, height, caps.widthAlignment, caps.heightAlignment) { w, h ->
+                    caps.isSizeSupported(w, h)
+                }
+            } finally {
+                probe.release()
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+        // Capabilities can under-report: still try the even source size.
+        return sizes.ifEmpty { listOf((width and 1.inv()) to (height and 1.inv())) }
+    }
+
+    private fun alignmentOf(alignment: Int): Int {
+        val a = maxOf(2, alignment)
+        // MediaCodec alignments are powers of two; keep even sizes otherwise.
+        return if (a and (a - 1) == 0) a else 2
+    }
+
     /** Whether the first video track of [uri] is HEVC; false when it cannot be probed. */
     fun isHevc(context: android.content.Context, uri: android.net.Uri): Boolean {
         val extractor = MediaExtractor()
@@ -135,31 +204,59 @@ internal object H264Transcoder {
             require(videoIndex >= 0) { "No video track" }
             video.selectTrack(videoIndex)
             val inFormat = video.getTrackFormat(videoIndex)
-            // Encoders want even sizes.
-            val width = inFormat.getInteger(MediaFormat.KEY_WIDTH) and 1.inv()
-            val height = inFormat.getInteger(MediaFormat.KEY_HEIGHT) and 1.inv()
+            val sourceWidth = inFormat.getInteger(MediaFormat.KEY_WIDTH)
+            val sourceHeight = inFormat.getInteger(MediaFormat.KEY_HEIGHT)
             val fps = frameRate(inFormat)
             // H.264 needs about half again HEVC's bit rate for the same look.
-            val bitRate = if (inFormat.containsKey(MediaFormat.KEY_BIT_RATE)) {
-                inFormat.getInteger(MediaFormat.KEY_BIT_RATE) * 3 / 2
+            val sourceBitRate = if (inFormat.containsKey(MediaFormat.KEY_BIT_RATE)) {
+                inFormat.getInteger(MediaFormat.KEY_BIT_RATE).toLong() * 3 / 2
             } else {
-                (width.toLong() * height * fps.coerceIn(1, 60) / 7).toInt()
-            }.coerceIn(1_000_000, 40_000_000)
+                sourceWidth.toLong() * sourceHeight * fps.coerceIn(1, 60) / 7
+            }.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
 
-            val outFormat = MediaFormat.createVideoFormat(AVC, width, height).apply {
-                setInteger(
-                    MediaFormat.KEY_COLOR_FORMAT,
-                    MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface,
-                )
-                setInteger(MediaFormat.KEY_BIT_RATE, bitRate)
-                setInteger(MediaFormat.KEY_FRAME_RATE, fps.coerceIn(1, 60))
-                setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
+            // Many AVC encoders stop at 1080p: step the size down (keeping the
+            // aspect ratio) until one configures, rather than failing a 4K clip.
+            val sizes = encoderCandidates(sourceWidth, sourceHeight)
+            var lastError: Exception? = null
+            for ((width, height) in sizes) {
+                activity.checkActive()
+                val outFormat = MediaFormat.createVideoFormat(AVC, width, height).apply {
+                    setInteger(
+                        MediaFormat.KEY_COLOR_FORMAT,
+                        MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface,
+                    )
+                    setInteger(
+                        MediaFormat.KEY_BIT_RATE,
+                        scaledBitRate(sourceBitRate, sourceWidth * sourceHeight, width * height),
+                    )
+                    setInteger(MediaFormat.KEY_FRAME_RATE, fps.coerceIn(1, 60))
+                    setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
+                }
+                val candidate = MediaCodec.createEncoderByType(AVC)
+                var bridge: GlBridge? = null
+                try {
+                    candidate.configure(outFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
+                    bridge = GlBridge(candidate.createInputSurface())
+                    candidate.start()
+                    encoder = candidate
+                    gl = bridge
+                    break
+                } catch (e: Exception) {
+                    lastError = e
+                    try {
+                        bridge?.release()
+                    } catch (_: Exception) {
+                    }
+                    try {
+                        candidate.release()
+                    } catch (_: Exception) {
+                    }
+                }
             }
-            encoder = MediaCodec.createEncoderByType(AVC).apply {
-                configure(outFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
+            if (encoder == null || gl == null) {
+                // transcode() turns this into `conversionFailed`.
+                throw lastError ?: IllegalStateException("No H.264 encoder size")
             }
-            gl = GlBridge(encoder.createInputSurface())
-            encoder.start()
             val rotation = (rotation(src, inFormat) % 360 + 360) % 360
             // A decoder rendering to a surface turns the frames itself; keep
             // them as stored and let the muxer carry the rotation instead.
