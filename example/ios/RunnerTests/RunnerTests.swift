@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import UniformTypeIdentifiers
 import XCTest
 
 
@@ -82,5 +83,33 @@ final class ImportSchedulingTests: XCTestCase {
     XCTAssertTrue(throttle.allow(now: 0.06, final: true))
     XCTAssertFalse(throttle.allow(now: 0.1, final: false))
     XCTAssertTrue(throttle.allow(now: 0.16, final: false))
+  }
+}
+
+final class PhotosCopyShareTests: XCTestCase {
+  private func share(_ args: [String: Any], video: Bool = false, _ type: UTType = .jpeg) -> Double {
+    GlassPhotosPicker.copyShare(isVideo: video, type: type, options: .init(args))
+  }
+
+  func testImagesWithoutConversionCopyCoversTheWholeItem() {
+    XCTAssertEqual(share([:]), 1.0)
+    XCTAssertEqual(share(["compatibleFormat": true], .jpeg), 1.0)
+    XCTAssertEqual(share(["compatibleFormat": true], .png), 1.0)
+  }
+
+  func testImagesThatConvertSplitCopyAndConversion() {
+    XCTAssertEqual(share(["maxWidth": 100]), 0.5)
+    XCTAssertEqual(share(["maxHeight": 100]), 0.5)
+    XCTAssertEqual(share(["imageQuality": 80]), 0.5)
+    XCTAssertEqual(share(["compatibleFormat": true], .heic), 0.5)
+    XCTAssertEqual(share(["compatibleFormat": true], .heif), 0.5)
+    XCTAssertEqual(share([:], .heic), 1.0)
+  }
+
+  /// The codec is unknown before the copy, so compatible videos assume an export.
+  func testVideosSplitOnlyWhenCompatible() {
+    XCTAssertEqual(share([:], video: true, .movie), 1.0)
+    XCTAssertEqual(share(["maxWidth": 100, "imageQuality": 50], video: true, .movie), 1.0)
+    XCTAssertEqual(share(["compatibleFormat": true], video: true, .movie), 0.5)
   }
 }

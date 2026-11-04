@@ -82,17 +82,25 @@ public class AdaptiveLiquidGlassPlugin: NSObject, FlutterPlugin, FlutterStreamHa
       let imports = importName.flatMap { name in
         captureRegistrar.map { FlutterMethodChannel(name: name, binaryMessenger: $0.messenger()) }
       }
-      let ready: (([String: Any]) -> Void)? = imports.map { channel in
-        { item in channel.invokeMethod("itemReady", arguments: item) }
+      let onEvent: ((String, [String: Any]) -> Void)? = imports.map { channel in
+        { method, args in channel.invokeMethod(method, arguments: args) }
       }
+      // Registered before the picker shows, so a cancel while it is open is honoured.
       photosPicker = GlassPhotosPicker.present(
-        arguments: call.arguments, result: result, onItemReady: ready) {
+        arguments: call.arguments, result: result, importName: importName, onEvent: onEvent) {
         [weak self] in self?.photosPicker = nil
       }
+    case "cancelPhotoImport":
+      // A stale or unknown name does nothing.
+      let name = (call.arguments as? [String: Any])?["importChannel"] as? String
+      if let picker = photosPicker, name != nil, picker.importName == name { picker.cancel() }
+      result(nil)
     case "clearPickedPhotos":
       guard photosPicker == nil && !clearingPhotos else {
         result(FlutterError(
-          code: "already_active", message: "Wait for the photo import before clearing picked files.", details: nil))
+          code: "already_active",
+          message: "Wait for the photo import, or call controller.cancel(), before clearing picked files.",
+          details: nil))
         return
       }
       clearingPhotos = true

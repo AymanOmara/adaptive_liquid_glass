@@ -2459,3 +2459,7 @@ Simulator/emulator wall time from the first `ready #` to `import:`, median of 3 
 ## Bench → Before
 
 Not measured in the automated run: needs manual selection in the system picker. Run the example and read the `first item at` / `import:` log lines.
+
+## Bench → After
+
+iOS (Task 10): manual — not run. Needs manual selection in the system picker on the iPhone 17 Pro simulator (20 photos; 5 × HEVC with `compatibleFormat`). The ≥ 2× target on 20 photos is unverified.
