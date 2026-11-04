@@ -12,6 +12,7 @@ import 'glass_button_metrics.dart';
 import 'glass_button_role.dart';
 import 'glass_button_shape.dart';
 import 'glass_button_style.dart';
+import 'loading_ring_value.dart';
 import 'system_button_metrics.dart';
 import 'system_button_press.dart';
 
@@ -162,7 +163,7 @@ class _SystemStyleButtonState extends State<SystemStyleButton> {
         alignment: Alignment.center,
         children: [
           Opacity(opacity: 0, alwaysIncludeSemantics: true, child: content),
-          b.loadingValue == null
+          loadingRingValue(b.loadingValue) == null
               ? CupertinoActivityIndicator(
                   radius: m.fontSize * 0.5,
                   color: labelColor,
@@ -170,7 +171,7 @@ class _SystemStyleButtonState extends State<SystemStyleButton> {
               : CupertinoActivityIndicator.partiallyRevealed(
                   radius: m.fontSize * 0.5,
                   color: labelColor,
-                  progress: b.loadingValue!.clamp(0.0, 1.0),
+                  progress: loadingRingValue(b.loadingValue)!,
                 ),
         ],
       );
@@ -257,7 +258,8 @@ class _SystemStyleButtonState extends State<SystemStyleButton> {
         ),
       ),
     );
-    // One node; a disabled or loading button is still a (disabled) button.
+    // One node; a disabled button, or a loading one without onLoadingPressed,
+    // is still a (disabled) button.
     return MergeSemantics(
       child: Semantics(
         label: b.semanticLabel,

@@ -6,6 +6,7 @@ import 'glass_button_role.dart';
 import 'glass_button_shape.dart';
 import 'glass_button_style.dart';
 import 'glass_control_size.dart';
+import 'loading_ring_value.dart';
 
 /// Material 3 button heights per [GlassControlSize].
 const materialButtonHeights = <GlassControlSize, double>{
@@ -113,7 +114,7 @@ class MaterialGlassButton extends StatelessWidget {
           SizedBox.square(
             dimension: 16,
             child: CircularProgressIndicator(
-              value: b.loadingValue,
+              value: loadingRingValue(b.loadingValue),
               strokeWidth: 2,
               color: foreground,
             ),

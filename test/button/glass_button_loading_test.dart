@@ -47,6 +47,90 @@ void main() {
         }
       }, variant: variant);
 
+      testWidgets('$style $platform: loadingValue is normalised', (
+        tester,
+      ) async {
+        shaderEnv();
+        double? shown() => platform == TargetPlatform.android
+            ? tester
+                  .widget<CircularProgressIndicator>(
+                    find.byType(CircularProgressIndicator),
+                  )
+                  .value
+            : tester
+                  .widget<CupertinoActivityIndicator>(
+                    find.byType(CupertinoActivityIndicator),
+                  )
+                  .progress;
+        for (final (input, expected) in <(double, double?)>[
+          (-1, 0),
+          (2, 1),
+          (double.nan, null),
+          (double.infinity, null),
+        ]) {
+          await tester.pumpWidget(
+            hostFor(
+              GlassButton(
+                onPressed: () {},
+                loading: true,
+                loadingValue: input,
+                style: style,
+                child: const Text('Go'),
+              ),
+            ),
+          );
+          expect(tester.takeException(), isNull);
+          if (expected == null) {
+            // Indeterminate: Material has no value, Cupertino spins fully.
+            if (platform == TargetPlatform.android) {
+              expect(shown(), isNull);
+            } else {
+              expect(
+                find.byWidgetPredicate(
+                  (w) => w is CupertinoActivityIndicator && w.animating,
+                ),
+                findsOneWidget,
+              );
+            }
+          } else {
+            expect(shown(), expected);
+          }
+        }
+      }, variant: variant);
+
+      testWidgets(
+        '$style $platform: without onLoadingPressed taps do nothing',
+        (tester) async {
+          shaderEnv();
+          final handle = tester.ensureSemantics();
+          var pressed = 0;
+          await tester.pumpWidget(
+            hostFor(
+              GlassButton(
+                onPressed: () => pressed++,
+                loading: true,
+                style: style,
+                child: const Text('Go'),
+              ),
+            ),
+          );
+          await tester.tap(find.byType(GlassButton));
+          expect(pressed, 0);
+          expect(
+            tester.getSemantics(find.byType(GlassButton)),
+            matchesSemantics(
+              isButton: true,
+              hasEnabledState: true,
+              isEnabled: false,
+              label: 'Go',
+              value: 'loading',
+            ),
+          );
+          handle.dispose();
+        },
+        variant: variant,
+      );
+
       testWidgets('$style $platform: onLoadingPressed fires while loading', (
         tester,
       ) async {
@@ -85,21 +169,4 @@ void main() {
       }, variant: variant);
     }
   }
-
-  testWidgets('without onLoadingPressed a loading tap does nothing', (
-    tester,
-  ) async {
-    var pressed = 0;
-    await tester.pumpWidget(
-      plainHost(
-        GlassButton(
-          onPressed: () => pressed++,
-          loading: true,
-          child: const Text('Go'),
-        ),
-      ),
-    );
-    await tester.tap(find.byType(GlassButton), warnIfMissed: false);
-    expect(pressed, 0);
-  });
 }

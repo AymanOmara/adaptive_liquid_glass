@@ -18,6 +18,7 @@ import 'glass_button_shape.dart';
 import 'glass_button_style.dart';
 import 'glass_control_size.dart';
 import 'glass_control_size_scope.dart';
+import 'loading_ring_value.dart';
 import 'material_glass_button.dart';
 import 'system_button_metrics.dart';
 import 'system_style_button.dart';
@@ -101,14 +102,16 @@ class GlassButton extends StatelessWidget {
   /// The outline.
   final GlassButtonShape shape;
 
-  /// Shows an activity indicator in place of the content and ignores taps.
+  /// Shows an activity indicator in place of the content and ignores taps
+  /// unless [onLoadingPressed] is set.
   final bool loading;
 
   /// Read after the label while [loading].
   final String loadingLabel;
 
   /// 0-1 progress for a determinate ring while [loading]; null shows the
-  /// spinner.
+  /// spinner. Out-of-range values are clamped to 0-1; NaN or infinity show
+  /// the spinner.
   final double? loadingValue;
 
   /// Called when the button is tapped while [loading], e.g. to cancel.
@@ -157,6 +160,8 @@ class GlassButton extends StatelessWidget {
 
   /// Whether taps do anything.
   bool get active => loading ? onLoadingPressed != null : onPressed != null;
+
+  double? get _ring => loadingRingValue(loadingValue);
 
   /// The callback a tap fires: [onLoadingPressed] while [loading], else
   /// [onPressed]; null when taps do nothing.
@@ -242,7 +247,7 @@ class GlassButton extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           Opacity(opacity: 0, alwaysIncludeSemantics: true, child: content),
-          loadingValue == null
+          _ring == null
               ? CupertinoActivityIndicator(
                   radius: m.fontSize * 0.5,
                   color: labelColor,
@@ -250,7 +255,7 @@ class GlassButton extends StatelessWidget {
               : CupertinoActivityIndicator.partiallyRevealed(
                   radius: m.fontSize * 0.5,
                   color: labelColor,
-                  progress: loadingValue!.clamp(0.0, 1.0),
+                  progress: _ring!,
                 ),
         ],
       );
