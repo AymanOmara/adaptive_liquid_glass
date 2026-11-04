@@ -2455,3 +2455,7 @@ Simulator/emulator wall time from the first `ready #` to `import:`, median of 3 
 | 5 × HEVC, `compatibleFormat` | iPhone 17 Pro sim | | |
 | 20 photos | Android emulator | | |
 | 5 × HEVC, `compatibleFormat` | Android emulator | | |
+
+## Bench → Before
+
+Not measured in the automated run: needs manual selection in the system picker. Run the example and read the `first item at` / `import:` log lines.

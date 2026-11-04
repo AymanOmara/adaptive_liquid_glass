@@ -67,6 +67,29 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
   int _page = 0;
   final _tags = {'Travel': true, 'Food': false, 'Music': false};
   List<GlassPickedPhoto> _photos = const [];
+  final GlassPhotoImportController _import = GlassPhotoImportController();
+  final _stopwatch = Stopwatch();
+  bool _firstItemLogged = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _import.isActive.addListener(() {
+      if (_import.isActive.value) {
+        _firstItemLogged = false;
+        _stopwatch
+          ..reset()
+          ..start();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    // Disposing the controller also releases its isActive listener.
+    _import.dispose();
+    super.dispose();
+  }
 
   void _snack(String message) => ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
@@ -724,7 +747,43 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                     label: 'Select Photos',
                     maxSelection: 0,
                     filter: GlassPhotosPickerFilter.any,
-                    onPicked: (photos) => setState(() => _photos = photos),
+                    compatibleFormat: true,
+                    controller: _import,
+                    onItemReady: (p) {
+                      if (!_firstItemLogged) {
+                        _firstItemLogged = true;
+                        debugPrint(
+                          'first item at ${_stopwatch.elapsedMilliseconds} ms',
+                        );
+                      }
+                      debugPrint('ready #${p.index}: ${p.path}');
+                    },
+                    onPicked: (photos) {
+                      debugPrint(
+                        'import: ${_stopwatch.elapsedMilliseconds} ms for '
+                        '${photos.length} items, cancelled: ${photos.cancelled}',
+                      );
+                      setState(() => _photos = photos);
+                    },
+                  ),
+                  ValueListenableBuilder(
+                    valueListenable: _import.progress,
+                    builder: (context, p, _) =>
+                        p == null || p.phase == GlassPhotoImportPhase.done
+                        ? const SizedBox.shrink()
+                        : Row(
+                            children: [
+                              Expanded(
+                                child: LinearProgressIndicator(
+                                  value: p.fraction,
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: _import.cancel,
+                                child: const Text('Stop'),
+                              ),
+                            ],
+                          ),
                   ),
                   if (_photos.isNotEmpty) ...[
                     const SizedBox(height: 12),
