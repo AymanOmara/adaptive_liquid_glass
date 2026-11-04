@@ -1,4 +1,5 @@
 import Flutter
+import PhotosUI
 import UIKit
 import UniformTypeIdentifiers
 import XCTest
@@ -130,8 +131,8 @@ final class RisingFractionTests: XCTestCase {
   }
 }
 
-/// Presentation timing for the picker: the reply waits for the dismissal,
-/// and a new presentation waits for a running transition.
+/// Presentation timing for the picker: a dismissal and a new presentation
+/// wait out a running transition.
 /// Records whether each presentation started while a transition was running.
 final class RecordingController: UIViewController {
   private(set) var presentedMidTransition: [Bool] = []
@@ -176,35 +177,17 @@ final class PickerPresentationTests: XCTestCase {
     }
   }
 
-  func testReplyWaitsForTheDismissalToEnd() async {
-    let child = UIViewController()
-    await presented(child)
-    var replied = false
-    var settled = false
-    GlassPhotosPicker.dismissThen(child) {
-      replied = true
-      settled = child.presentingViewController == nil && self.root.presentedViewController == nil
-    }
-    XCTAssertFalse(replied)
-    await waitUntil { replied }
-    XCTAssertTrue(replied)
-    XCTAssertTrue(settled)
-  }
-
-  func testAnUnpresentedControllerRepliesAtOnce() {
-    var count = 0
-    GlassPhotosPicker.dismissThen(nil) { count += 1 }
-    GlassPhotosPicker.dismissThen(UIViewController()) { count += 1 }
-    XCTAssertEqual(count, 2)
-  }
-
-  func testDismissDuringThePresentationStillReplies() async {
+  func testDismissWaitsOutARunningPresentation() async {
     let child = UIViewController()
     root.present(child, animated: true)
-    var replied = false
-    GlassPhotosPicker.dismissThen(child) { replied = true }
-    await waitUntil { replied }
-    XCTAssertTrue(replied)
+    GlassPhotosPicker.dismissWhenSettled(child)
+    await waitUntil { self.root.presentedViewController == nil }
+    XCTAssertNil(root.presentedViewController)
+  }
+
+  func testDismissingAnUnpresentedControllerDoesNothing() {
+    GlassPhotosPicker.dismissWhenSettled(nil)
+    GlassPhotosPicker.dismissWhenSettled(UIViewController())
     XCTAssertNil(root.presentedViewController)
   }
 
@@ -235,3 +218,110 @@ final class PickerPresentationTests: XCTestCase {
     XCTAssertNil(root.presentedViewController)
   }
 }
+
+/// The session's single reply: sent at once (not after the dismissal) so an
+/// immediate re-pick reaches native, whose present waits out the dismissal.
+@MainActor
+final class PickerReplyTests: XCTestCase {
+  private var window: UIWindow!
+  private var root: RecordingController!
+  private var replies: [Any?] = []
+  private var finishes = 0
+
+  override func setUp() async throws {
+    let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+    window = UIWindow(windowScene: try XCTUnwrap(scene))
+    root = RecordingController()
+    window.rootViewController = root
+    window.makeKeyAndVisible()
+    replies = []
+    finishes = 0
+  }
+
+  override func tearDown() async throws {
+    window.isHidden = true
+    window = nil
+    root = nil
+  }
+
+  private func waitUntil(_ condition: @escaping () -> Bool) async {
+    let deadline = Date().addingTimeInterval(5)
+    while !condition() && Date() < deadline {
+      try? await Task.sleep(nanoseconds: 20_000_000)
+    }
+  }
+
+  /// A session attached to a picker shown from [root].
+  private func shownSession() async -> (GlassPhotosPicker, PHPickerViewController) {
+    let session = GlassPhotosPicker(
+      result: { self.replies.append($0) }, options: .init([:]), importName: "import",
+      onEvent: nil, onFinish: { self.finishes += 1 })
+    let picker = PHPickerViewController(configuration: PHPickerConfiguration())
+    session.attach(picker)
+    await withCheckedContinuation { done in
+      root.present(picker, animated: true) { done.resume() }
+    }
+    return (session, picker)
+  }
+
+  private func assertSingleEmptyReply(cancelled: Bool, file: StaticString = #filePath, line: UInt = #line) {
+    XCTAssertEqual(replies.count, 1, file: file, line: line)
+    XCTAssertEqual(finishes, 1, file: file, line: line)
+    let reply = replies.first as? [String: Any]
+    XCTAssertEqual((reply?["items"] as? [Any])?.count, 0, file: file, line: line)
+    XCTAssertEqual(reply?["dropped"] as? Int, 0, file: file, line: line)
+    XCTAssertEqual(reply?["cancelled"] as? Bool, cancelled, file: file, line: line)
+  }
+
+  func testAttachWatchesTheSheetForASwipeDismissal() async {
+    let (session, picker) = await shownSession()
+    XCTAssertTrue(picker.delegate === session)
+    XCTAssertTrue(picker.presentationController?.delegate === session)
+  }
+
+  func testThePickersCancelRepliesAtOnceAndDismisses() async {
+    let (session, picker) = await shownSession()
+    session.picker(picker, didFinishPicking: [])
+    assertSingleEmptyReply(cancelled: false)
+    await waitUntil { self.root.presentedViewController == nil }
+    XCTAssertNil(root.presentedViewController)
+  }
+
+  func testCancelWhileTheSheetShowsRepliesAtOnceAndDismisses() async {
+    let (session, picker) = await shownSession()
+    session.cancel()
+    assertSingleEmptyReply(cancelled: true)
+    // The delegate's own callback, if it still comes, does not reply again.
+    session.picker(picker, didFinishPicking: [])
+    session.cancel()
+    assertSingleEmptyReply(cancelled: true)
+    await waitUntil { self.root.presentedViewController == nil }
+    XCTAssertNil(root.presentedViewController)
+  }
+
+  func testASwipeDismissalRepliesLikeThePickersCancelOnce() async throws {
+    let (session, picker) = await shownSession()
+    let sheet = try XCTUnwrap(picker.presentationController)
+    root.dismiss(animated: false) // the sheet is gone, as after a swipe
+    session.presentationControllerDidDismiss(sheet)
+    assertSingleEmptyReply(cancelled: false)
+    session.picker(picker, didFinishPicking: [])
+    session.cancel()
+    session.presentationControllerDidDismiss(sheet)
+    assertSingleEmptyReply(cancelled: false)
+  }
+
+  func testARePickRightAfterCancelPresentsOnceTheDismissalEnds() async {
+    let (session, picker) = await shownSession()
+    session.picker(picker, didFinishPicking: [])
+    XCTAssertEqual(replies.count, 1)
+    // Dart re-picks on the reply, while the first sheet is still leaving.
+    XCTAssertNotNil(root.transitionCoordinator)
+    let second = UIViewController()
+    GlassPhotosPicker.presentWhenSettled(second, from: root) { false }
+    await waitUntil { self.root.presentedViewController === second }
+    XCTAssertTrue(root.presentedViewController === second)
+    XCTAssertEqual(root.presentedMidTransition, [false, false])
+  }
+}
+

@@ -8,7 +8,9 @@ import UniformTypeIdentifiers
 /// Presents `PHPickerViewController` for `pickGlassPhotos` and copies each
 /// chosen item into `NSTemporaryDirectory()`, downscaling or converting it
 /// when asked. The out-of-process picker needs no photo library permission.
-final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate {
+final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate,
+  UIAdaptivePresentationControllerDelegate
+{
   /// How `pickGlassPhotos` asked for the items to be delivered.
   struct Options {
     var maxWidth: Int?
@@ -56,7 +58,7 @@ final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate {
   /// The result was sent; later events are dropped.
   private var replied = false
 
-  private init(
+  init(
     result: @escaping FlutterResult, options: Options, importName: String?,
     onEvent: ((String, [String: Any]) -> Void)?, onFinish: @escaping () -> Void
   ) {
@@ -100,8 +102,7 @@ final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate {
       result: result, options: Options(args), importName: importName, onEvent: onEvent,
       onFinish: onFinish)
     let picker = PHPickerViewController(configuration: config)
-    picker.delegate = session
-    session.pickerController = picker
+    session.attach(picker)
     presentWhenSettled(picker, from: presenter) { session.finished }
     return session
   }
@@ -125,32 +126,46 @@ final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate {
     }
   }
 
-  /// Dismisses [controller] and runs [reply] once it is off screen, so the
-  /// next pick can present. Waits out a running presentation or dismissal;
-  /// runs [reply] at once when [controller] is not presented.
-  static func dismissThen(_ controller: UIViewController?, _ reply: @escaping () -> Void) {
-    guard let controller = controller, controller.presentingViewController != nil else {
-      reply()
-      return
-    }
+  /// Makes this session [picker]'s delegate, and its sheet's, so a swipe
+  /// dismissal is answered too.
+  func attach(_ picker: PHPickerViewController) {
+    picker.delegate = self
+    picker.presentationController?.delegate = self
+    pickerController = picker
+  }
+
+  /// Dismisses [controller], after any transition it is in (a dismissal
+  /// during the presentation would be dropped). Does nothing when
+  /// [controller] is not presented.
+  static func dismissWhenSettled(_ controller: UIViewController?) {
+    guard let controller = controller, controller.presentingViewController != nil else { return }
     if let coordinator = controller.transitionCoordinator {
       coordinator.animate(alongsideTransition: nil) { _ in
-        DispatchQueue.main.async { dismissThen(controller, reply) }
+        DispatchQueue.main.async { dismissWhenSettled(controller) }
       }
       return
     }
-    controller.dismiss(animated: true, completion: reply)
+    controller.dismiss(animated: true)
+  }
+
+  /// The sheet was swiped away: answered like the picker's Cancel. Not
+  /// called when the dismissal is the code's own.
+  func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+    if finished { return }
+    finished = true
+    send([])
   }
 
   /// Stops the import (main thread). While the picker shows, dismisses it
-  /// and answers an empty, cancelled result; afterwards, cancels the import,
-  /// which answers with the items already delivered.
+  /// and answers an empty, cancelled result at once; afterwards, cancels the
+  /// import, which answers with the items already delivered.
   func cancel() {
     if !finished {
-      // Set now, so the delegate cannot answer too; the reply waits for the
-      // dismissal so an immediate re-pick can present.
+      // Set first, so the delegates cannot answer too. The reply does not
+      // wait for the dismissal: a re-pick's present waits it out instead.
       finished = true
-      Self.dismissThen(pickerController) { self.send([], cancelled: true) }
+      Self.dismissWhenSettled(pickerController)
+      send([], cancelled: true)
       return
     }
     importTask?.cancel()
@@ -179,7 +194,9 @@ final class GlassPhotosPicker: NSObject, PHPickerViewControllerDelegate {
     if finished { return }
     finished = true
     if results.isEmpty {
-      Self.dismissThen(picker) { self.send([]) }
+      // At once, so a tap right after Cancel starts a new pick.
+      Self.dismissWhenSettled(picker)
+      send([])
       return
     }
     picker.dismiss(animated: true)
