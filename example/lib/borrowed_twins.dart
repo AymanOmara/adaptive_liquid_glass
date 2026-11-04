@@ -47,6 +47,15 @@ GlassRenderMode? twinBarMode(BuildContext context) =>
       final mode => mode,
     };
 
+/// `-mode custom`: native glass, but the tab bar twins keep the Flutter
+/// renderer (a `labelMaxTextScale` leaves the stock native bar), so the
+/// custom bar's native mode can be measured against the stock one.
+bool twinCustomBar = false;
+
+/// The custom bar's opt-out of the stock native bar, at no visual cost:
+/// 1 is the bar's own text-scale cap.
+double? get twinLabelMaxTextScale => twinCustomBar ? 1 : null;
+
 /// [child] centred at ([x], [y]) in screen points.
 Widget _at(double x, double y, Widget child) => Positioned(
   left: x - 201,
@@ -289,6 +298,7 @@ class _BadgeState extends State<_Badge> {
       selectedIndex: _tab,
       onSelected: (i) => setState(() => _tab = i),
       mode: twinBarMode(context),
+      labelMaxTextScale: twinLabelMaxTextScale,
     ),
     body: const SizedBox.expand(),
   );
@@ -360,6 +370,7 @@ class _TabBarState extends State<_TabBar> {
         selectedIndex: _tab,
         onSelected: (i) => setState(() => _tab = i),
         mode: twinBarMode(context),
+        labelMaxTextScale: twinLabelMaxTextScale,
         minimizeBehavior: widget.minimize
             ? GlassTabBarMinimizeBehavior.onScrollDown
             : GlassTabBarMinimizeBehavior.automatic,
@@ -454,6 +465,7 @@ class _AccessoryTextState extends State<_AccessoryText> {
         selectedIndex: _tab,
         onSelected: (i) => setState(() => _tab = i),
         mode: twinBarMode(context),
+        labelMaxTextScale: twinLabelMaxTextScale,
       ),
       bottomAccessory: !widget.accessory
           ? null
@@ -468,34 +480,38 @@ class _AccessoryTextState extends State<_AccessoryText> {
                 ],
               ),
             ),
-      // SwiftUI lays the page 7.3 pt lower under the accessory (measured).
-      body: Padding(
-        padding: EdgeInsetsDirectional.only(
-          start: 20,
-          top: widget.accessory ? 7.3 : 0,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (var i = 0; i < 25; i++)
-              const SizedBox(
-                height: 34,
-                child: Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  // SF Pro Display, spaced to the SwiftUI page's
-                  // `.system(size: 22)` (its 22 pt optical size is wider).
-                  child: Text(
-                    'Day Week Month Day Week',
-                    style: TextStyle(
-                      fontFamily: 'CupertinoSystemDisplay',
-                      fontSize: 22,
-                      letterSpacing: 0.3,
-                      color: Colors.white,
+      // SwiftUI lays the page 7.3 pt lower under the accessory, and its rows
+      // 0.83 pt higher without one (measured).
+      body: Transform.translate(
+        offset: Offset(0, widget.accessory ? 0 : -0.83),
+        child: Padding(
+          padding: EdgeInsetsDirectional.only(
+            start: 20,
+            top: widget.accessory ? 7.3 : 0,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var i = 0; i < 25; i++)
+                const SizedBox(
+                  height: 34,
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    // SF Pro Display, spaced to the SwiftUI page's
+                    // `.system(size: 22)` (its 22 pt optical size is wider).
+                    child: Text(
+                      'Day Week Month Day Week',
+                      style: TextStyle(
+                        fontFamily: 'CupertinoSystemDisplay',
+                        fontSize: 22,
+                        letterSpacing: 0.33,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     ),
@@ -540,6 +556,7 @@ class _LensReachState extends State<_LensReach> {
         selectedIndex: _tab,
         onSelected: (i) => setState(() => _tab = i),
         mode: twinBarMode(context),
+        labelMaxTextScale: twinLabelMaxTextScale,
       ),
       body: const CustomPaint(painter: _HueRamp(), size: Size.infinite),
     ),

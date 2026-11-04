@@ -27,6 +27,7 @@ import '../core/liquid_glass_theme.dart';
 import '../core/render_mode_resolver.dart';
 import '../foreground/glass_foreground.dart';
 import '../group/glass_content_fill.dart';
+import '../group/glass_content_glyphs.dart';
 import '../group/glass_fill_style.dart';
 import '../group/glass_group.dart';
 import '../group/glass_group_scope.dart';
@@ -1318,6 +1319,8 @@ class _GlassTabBarState extends State<GlassTabBar>
         (i) => !lensShown && i == widget.selectedIndex ? selected : null,
         semantics: true,
         vibrantTint: true,
+        // The lens's hole is a Flutter clip, which native glass cannot see.
+        nativeGlyphs: !lensShown,
       ),
     );
     final m = _magnify.value.clamp(0.0, 1.0);
@@ -1453,9 +1456,12 @@ class _GlassTabBarState extends State<GlassTabBar>
               ),
             ),
           // The native lens stays mounted, empty while hidden: creating its
-          // UIKit view on each press showed the lens frames after iOS's.
+          // UIKit view on each press showed the lens frames after iOS's, and
+          // cancelled the held touch. The key keeps it when the shadow above
+          // comes and goes.
           if (lensShown || !_shaderLens)
             Positioned.fromRect(
+              key: const ValueKey('lens'),
               rect: lensShown
                   ? lens.shift(
                       const Offset(TabBarMetrics.inset, TabBarMetrics.inset),
@@ -1691,6 +1697,7 @@ class _GlassTabBarState extends State<GlassTabBar>
     Color? Function(int index) colorOf, {
     required bool semantics,
     bool vibrantTint = false,
+    bool nativeGlyphs = false,
     Offset scale = const Offset(1, 1),
   }) {
     final labelShift = widget.onSearch == null
@@ -1724,59 +1731,83 @@ class _GlassTabBarState extends State<GlassTabBar>
                         // glass they keep its hue and take their lightness.
                         // The selected tint follows the glass too, less
                         // (only in the plain row: lens copies are filtered).
-                        return VibrantBlend(
-                          enabled: _shaderBar && (tint == null || vibrantTint),
-                          kind: tint == null
-                              ? VibrancyKind.label
-                              : VibrancyKind.tint,
-                          dark:
-                              GlassGroupScope.brightnessOf(context) ==
-                              Brightness.dark,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              // The glyph overhangs the bottom of its slot: iOS sets
-                              // the icon and label closer than a 28 pt box allows.
-                              SizedBox(
-                                height: TabBarMetrics.iconSlot,
-                                child: OverflowBox(
-                                  maxHeight:
-                                      TabBarMetrics.iconSize +
-                                      TabBarMetrics.iconDrop,
-                                  alignment: Alignment.topCenter,
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(
-                                      top: TabBarMetrics.iconDrop,
-                                    ),
-                                    child: _icon(
-                                      widget.items[i],
-                                      i == widget.selectedIndex,
-                                      c,
+                        // Over native glass, which Flutter cannot see,
+                        // native glass draws them as its own content: the
+                        // tint following it as the shader does, the labels
+                        // vibrant. A badge keeps its colours.
+                        final dark =
+                            GlassGroupScope.brightnessOf(context) ==
+                            Brightness.dark;
+                        return GlassContentGlyphs(
+                          enabled:
+                              _nativeBar &&
+                              nativeGlyphs &&
+                              widget.items[i].badge == null,
+                          color: c,
+                          vibrant: tint == null,
+                          gain: tint == null
+                              ? 1
+                              : TabBarMetrics.tintVibrancyGain,
+                          reference: tint == null
+                              ? (dark
+                                    ? TabBarMetrics.nativeLabelVibrancyLevelDark
+                                    : TabBarMetrics.nativeLabelVibrancyLevel)
+                              : dark
+                              ? TabBarMetrics.tintVibrancyReferenceDark
+                              : TabBarMetrics.tintVibrancyReference,
+                          child: VibrantBlend(
+                            enabled:
+                                _shaderBar && (tint == null || vibrantTint),
+                            kind: tint == null
+                                ? VibrancyKind.label
+                                : VibrancyKind.tint,
+                            dark: dark,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // The glyph overhangs the bottom of its slot: iOS sets
+                                // the icon and label closer than a 28 pt box allows.
+                                SizedBox(
+                                  height: TabBarMetrics.iconSlot,
+                                  child: OverflowBox(
+                                    maxHeight:
+                                        TabBarMetrics.iconSize +
+                                        TabBarMetrics.iconDrop,
+                                    alignment: Alignment.topCenter,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                        top: TabBarMetrics.iconDrop,
+                                      ),
+                                      child: _icon(
+                                        widget.items[i],
+                                        i == widget.selectedIndex,
+                                        c,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: TabBarMetrics.labelGap),
-                              // UIKit sizes a label to whole points and sets
-                              // its text at the start, so the ink sits a little
-                              // towards the start of the tab. Beside the search
-                              // tab it sets them further towards the end.
-                              Transform.translate(
-                                offset: Offset(labelShift, 0),
-                                child: IntrinsicWidth(
-                                  stepWidth: 1,
-                                  child: Text(
-                                    widget.items[i].label,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.fade,
-                                    softWrap: false,
-                                    style: TabBarMetrics.label.copyWith(
-                                      color: c,
+                                const SizedBox(height: TabBarMetrics.labelGap),
+                                // UIKit sizes a label to whole points and sets
+                                // its text at the start, so the ink sits a little
+                                // towards the start of the tab. Beside the search
+                                // tab it sets them further towards the end.
+                                Transform.translate(
+                                  offset: Offset(labelShift, 0),
+                                  child: IntrinsicWidth(
+                                    stepWidth: 1,
+                                    child: Text(
+                                      widget.items[i].label,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.fade,
+                                      softWrap: false,
+                                      style: TabBarMetrics.label.copyWith(
+                                        color: c,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         );
                       },

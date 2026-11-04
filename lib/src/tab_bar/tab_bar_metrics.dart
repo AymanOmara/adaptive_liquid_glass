@@ -433,6 +433,15 @@ abstract final class TabBarMetrics {
   /// [tintVibrancyReference] in dark mode.
   static const double tintVibrancyReferenceDark = 0.208;
 
+  /// Untinted labels over native glass: the glass is set to this
+  /// luminosity before moving to the label's level, which keeps its chroma
+  /// (a dark one clips it). Fitted to iOS 26 over a photo; the label then
+  /// takes the glass's chroma whole.
+  static const double nativeLabelVibrancyLevel = 0.5;
+
+  /// [nativeLabelVibrancyLevel] in dark mode.
+  static const double nativeLabelVibrancyLevelDark = 0.95;
+
   /// The selected pill over shader glass: the glass under it becomes
   /// [pillVibrancyScale] times itself raised to [pillVibrancyGamma], so it
   /// darkens more where the glass is darker (iOS 26.4: 235 over white, ~15
