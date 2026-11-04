@@ -49,6 +49,8 @@ class GlassButton extends StatelessWidget {
     this.shape = GlassButtonShape.automatic,
     this.loading = false,
     this.loadingLabel = 'loading',
+    this.loadingValue,
+    this.onLoadingPressed,
     this.tint,
     this.foregroundColor,
     this.cornerRadius,
@@ -71,6 +73,8 @@ class GlassButton extends StatelessWidget {
     this.shape = GlassButtonShape.automatic,
     this.loading = false,
     this.loadingLabel = 'loading',
+    this.loadingValue,
+    this.onLoadingPressed,
     this.tint,
     this.foregroundColor,
     this.cornerRadius,
@@ -102,6 +106,14 @@ class GlassButton extends StatelessWidget {
 
   /// Read after the label while [loading].
   final String loadingLabel;
+
+  /// 0-1 progress for a determinate ring while [loading]; null shows the
+  /// spinner.
+  final double? loadingValue;
+
+  /// Called when the button is tapped while [loading], e.g. to cancel.
+  /// Without it a loading button ignores taps.
+  final VoidCallback? onLoadingPressed;
 
   /// The accent: the prominent fill, the `.bordered` fill (at low opacity)
   /// and the `.bordered` and `.borderless` label. Defaults to the theme's
@@ -144,7 +156,12 @@ class GlassButton extends StatelessWidget {
   bool get _iconOnly => icon != null && label == null;
 
   /// Whether taps do anything.
-  bool get active => onPressed != null && !loading;
+  bool get active => loading ? onLoadingPressed != null : onPressed != null;
+
+  /// The callback a tap fires: [onLoadingPressed] while [loading], else
+  /// [onPressed]; null when taps do nothing.
+  VoidCallback? get effectiveOnPressed =>
+      loading ? onLoadingPressed : onPressed;
 
   /// The size this button resolves to in [context].
   GlassControlSize resolvedSize(BuildContext context) =>
@@ -225,10 +242,16 @@ class GlassButton extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           Opacity(opacity: 0, alwaysIncludeSemantics: true, child: content),
-          CupertinoActivityIndicator(
-            radius: m.fontSize * 0.5,
-            color: labelColor,
-          ),
+          loadingValue == null
+              ? CupertinoActivityIndicator(
+                  radius: m.fontSize * 0.5,
+                  color: labelColor,
+                )
+              : CupertinoActivityIndicator.partiallyRevealed(
+                  radius: m.fontSize * 0.5,
+                  color: labelColor,
+                  progress: loadingValue!.clamp(0.0, 1.0),
+                ),
         ],
       );
     } else if (onPressed == null) {
@@ -257,7 +280,7 @@ class GlassButton extends StatelessWidget {
       shape: outline,
       glassId: glassId,
       mode: mode,
-      onPressed: active ? onPressed : null,
+      onPressed: active ? effectiveOnPressed : null,
       child: ConstrainedBox(
         constraints: box,
         child: Padding(

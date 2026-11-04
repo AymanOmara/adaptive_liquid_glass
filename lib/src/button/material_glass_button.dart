@@ -80,8 +80,9 @@ class MaterialGlassButton extends StatelessWidget {
       GlassButtonShape.circle => const CircleBorder(),
       _ => null,
     };
-    // Loading disables the button but keeps its enabled colours.
-    final VoidCallback? onPressed = b.loading ? null : b.onPressed;
+    // Loading disables the button (keeping its enabled colours) unless
+    // onLoadingPressed makes it tappable.
+    final VoidCallback? onPressed = b.effectiveOnPressed;
     final iconOnly = b.icon != null && b.label == null;
     // Cancel, borderless and plain are text buttons.
     final text = b.role == GlassButtonRole.cancel || textStyle;
@@ -111,7 +112,11 @@ class MaterialGlassButton extends StatelessWidget {
           Opacity(opacity: 0, alwaysIncludeSemantics: true, child: content),
           SizedBox.square(
             dimension: 16,
-            child: CircularProgressIndicator(strokeWidth: 2, color: foreground),
+            child: CircularProgressIndicator(
+              value: b.loadingValue,
+              strokeWidth: 2,
+              color: foreground,
+            ),
           ),
         ],
       );
@@ -122,8 +127,8 @@ class MaterialGlassButton extends StatelessWidget {
       final style = IconButton.styleFrom(
         fixedSize: Size.square(h),
         minimumSize: Size.square(h),
-        backgroundColor: background,
-        foregroundColor: foreground,
+        backgroundColor: b.loading ? loadingBackground : background,
+        foregroundColor: b.loading ? loadingForeground : foreground,
         disabledBackgroundColor: loadingBackground,
         disabledForegroundColor: loadingForeground,
         shape: border,
@@ -149,8 +154,14 @@ class MaterialGlassButton extends StatelessWidget {
     } else {
       final style = ButtonStyle(
         minimumSize: WidgetStatePropertyAll(Size(0, h)),
-        backgroundColor: _colour(background, loadingBackground),
-        foregroundColor: _colour(foreground, loadingForeground),
+        backgroundColor: _colour(
+          b.loading ? loadingBackground : background,
+          loadingBackground,
+        ),
+        foregroundColor: _colour(
+          b.loading ? loadingForeground : foreground,
+          loadingForeground,
+        ),
         shape: border == null ? null : WidgetStatePropertyAll(border),
       );
       final content = withLoading(

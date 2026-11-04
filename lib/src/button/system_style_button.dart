@@ -162,10 +162,16 @@ class _SystemStyleButtonState extends State<SystemStyleButton> {
         alignment: Alignment.center,
         children: [
           Opacity(opacity: 0, alwaysIncludeSemantics: true, child: content),
-          CupertinoActivityIndicator(
-            radius: m.fontSize * 0.5,
-            color: labelColor,
-          ),
+          b.loadingValue == null
+              ? CupertinoActivityIndicator(
+                  radius: m.fontSize * 0.5,
+                  color: labelColor,
+                )
+              : CupertinoActivityIndicator.partiallyRevealed(
+                  radius: m.fontSize * 0.5,
+                  color: labelColor,
+                  progress: b.loadingValue!.clamp(0.0, 1.0),
+                ),
         ],
       );
     }
@@ -245,7 +251,7 @@ class _SystemStyleButtonState extends State<SystemStyleButton> {
       child: GestureDetector(
         onTapCancel: active ? _cancelPress : null,
         child: GlassPressable(
-          onPressed: active ? b.onPressed : null,
+          onPressed: active ? b.effectiveOnPressed : null,
           shape: outline,
           child: content,
         ),
