@@ -1648,8 +1648,10 @@ there is no package-side workaround.
   Older Android versions also fall back for offset or above-window surfaces;
   other hosts retain that fallback too. Other apps, the status bar and
   separate system/protected surfaces remain outside the capture. Saved colours persist
-  locally across launches on iOS and Android; other platforms and hosts
-  without the native plugin keep them in memory. An app that passes
+  locally across launches: natively on iOS and Android, in `localStorage`
+  on the web, and in a JSON file in the app's data directory on macOS,
+  Windows and Linux; hosts without the native plugin or with unavailable
+  storage keep them in memory. An app that passes
   `savedColors` / `onSavedColorsChanged` manages its own storage. A long
   press opens UIKit's context menu to delete one.
 

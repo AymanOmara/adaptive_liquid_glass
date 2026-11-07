@@ -1,3 +1,7 @@
+## Unreleased
+
+- Colour picker: the shared saved palette now persists on the web (`localStorage`) and desktop (a JSON file in the app's per-user data directory, namespaced by executable name). No new dependencies; corrupt data or unavailable storage falls back to the in-memory palette silently.
+
 ## 0.5.2 (2026-11-04)
 
 - Docs: README and API docs cover the progress ring that cancels on tap, swiping the iOS picker away, Android's scaled-down H.264 conversion, and the lost re-tap right after the iOS picker's Cancel (a system limit).

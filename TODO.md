@@ -49,9 +49,9 @@ Remaining README limitations: implementation checks and closure criteria
   reports the full view; experimental axis scaling returned a capture but lost
   the blue foreground probe. Experiment reverted. Require foreground pixels,
   native overlay alpha, clipping and loupe sampling before enabling this path.
-- [ ] Saved palette: desktop/web and missing-plugin hosts retain memory only;
-  persistence there requires a cross-platform storage implementation. Explicit
-  savedColors/onSavedColorsChanged already lets apps supply their own store.
+- [x] Saved palette: desktop/web now persist (localStorage on the web, a JSON
+  file in the app data directory on desktop, no new dependencies);
+  missing-plugin hosts and unavailable stores still fall back to memory.
 - [ ] Native CI: runner and workflow now added; confirm the first hosted run.
   Local lifecycle, batching and tab-bar suites are run by the same script.
 
