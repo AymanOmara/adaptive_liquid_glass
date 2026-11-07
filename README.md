@@ -353,6 +353,7 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `GlassLargeTitleScrollView` | Large-title bar over a body that scrolls itself (`ListView`, paged list), so the title still collapses | `SliverAppBar.large` in a `NestedScrollView` |
 | `GlassScaffold`, `GlassBottomAccessory` | An iOS 26 screen in one widget; the Music-style mini-player slot | Same layout, Material bars |
 | `GlassToolbar`, `GlassToolbarSpacer` | The floating bottom toolbar, merged capsules | Material buttons |
+| `GlassKeyboardToolbar` | Items on the keyboard while a field has focus (`.keyboard` placement) | Full-width surface bar |
 | `GlassTabBar`, `GlassTabBarItem`, `GlassMaterialTabBarStyle` | iOS 26's floating tab bar, draggable lens, `onSearch` tab | `NavigationBar`, floating or edge to edge |
 | `GlassToggle` | iOS 26's switch, glass lens thumb | `Switch` |
 | `GlassSlider` | Slider with a glass lens thumb, optional `divisions`, horizontal or vertical | `Slider` |
@@ -776,6 +777,23 @@ GlassScaffold(
 Neighbouring items merge into one glass capsule. A `GlassToolbarSpacer`
 starts a new capsule and pushes the groups apart, like SwiftUI's
 `ToolbarSpacer`.
+
+`GlassKeyboardToolbar` is SwiftUI's `ToolbarItemGroup(placement: .keyboard)`:
+its items rest on the keyboard while a field inside `child` has focus.
+
+```dart
+GlassKeyboardToolbar(
+  children: [
+    GlassButton.icon(onPressed: () => FocusManager.instance.primaryFocus
+        ?.previousFocus(), icon: CupertinoIcons.chevron_up,
+        semanticLabel: 'Previous field'),
+    const GlassToolbarSpacer(),
+    GlassButton(onPressed: () => FocusManager.instance.primaryFocus
+        ?.unfocus(), child: const Text('Done')),
+  ],
+  child: Column(children: [GlassTextField(...), GlassTextField(...)]),
+)
+```
 
 ### Toggle, slider, segmented control, stepper
 

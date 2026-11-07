@@ -597,25 +597,53 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  GlassTextField(
-                    placeholder: 'Email',
-                    prefix: const Icon(CupertinoIcons.mail),
-                    clearButton: true,
-                    keyboardType: TextInputType.emailAddress,
-                    errorText: _emailError,
-                    onChanged: (v) => setState(
-                      () => _emailError = v.isEmpty || v.contains('@')
-                          ? null
-                          : 'Enter a valid email',
+                  // Prev / next / Done above the keyboard while one of
+                  // these fields has focus.
+                  GlassKeyboardToolbar(
+                    children: [
+                      GlassButton.icon(
+                        onPressed: () =>
+                            FocusManager.instance.primaryFocus?.previousFocus(),
+                        icon: CupertinoIcons.chevron_up,
+                        semanticLabel: 'Previous field',
+                      ),
+                      GlassButton.icon(
+                        onPressed: () =>
+                            FocusManager.instance.primaryFocus?.nextFocus(),
+                        icon: CupertinoIcons.chevron_down,
+                        semanticLabel: 'Next field',
+                      ),
+                      const GlassToolbarSpacer(),
+                      GlassButton(
+                        onPressed: () =>
+                            FocusManager.instance.primaryFocus?.unfocus(),
+                        child: const Text('Done'),
+                      ),
+                    ],
+                    child: Column(
+                      children: [
+                        GlassTextField(
+                          placeholder: 'Email',
+                          prefix: const Icon(CupertinoIcons.mail),
+                          clearButton: true,
+                          keyboardType: TextInputType.emailAddress,
+                          errorText: _emailError,
+                          onChanged: (v) => setState(
+                            () => _emailError = v.isEmpty || v.contains('@')
+                                ? null
+                                : 'Enter a valid email',
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const GlassTextField.password(
+                          placeholder: 'Password',
+                          prefix: Icon(CupertinoIcons.lock),
+                        ),
+                        const SizedBox(height: 12),
+                        const GlassTextField(placeholder: 'Notes', maxLines: 4),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  const GlassTextField.password(
-                    placeholder: 'Password',
-                    prefix: Icon(CupertinoIcons.lock),
-                  ),
-                  const SizedBox(height: 12),
-                  const GlassTextField(placeholder: 'Notes', maxLines: 4),
                   const SizedBox(height: 24),
                   Center(
                     child: GlassContextMenu(

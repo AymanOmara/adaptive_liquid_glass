@@ -1,3 +1,7 @@
+## Unreleased
+
+- `GlassKeyboardToolbar`: SwiftUI's keyboard toolbar (`ToolbarItemGroup(placement: .keyboard)`), glass capsules resting on the keyboard while a field inside it has focus; measured from SwiftUI (48 pt capsules, 16 pt insets). Material: a full-width surface bar on the keyboard.
+
 ## 0.5.2 (2026-11-04)
 
 - Docs: README and API docs cover the progress ring that cancels on tap, swiping the iOS picker away, Android's scaled-down H.264 conversion, and the lost re-tap right after the iOS picker's Cancel (a system limit).

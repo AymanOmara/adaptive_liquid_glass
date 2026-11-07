@@ -186,7 +186,7 @@ capture; Android fonts, haptics, back gestures and physics stay platform-native.
 8- match the flutter shader with the native navigation bar
 
 9- more SwiftUI components (docs/superpowers/notes/component-gap.md):
-  keyboard toolbar, zoom
+  ~~keyboard toolbar~~ (done: `GlassKeyboardToolbar`), zoom
   transitions, TipKit tips; then re-check the gap list for anything new.
   Candidate from app use (2026-10-10): a sliver pinned under the nav bar
   (the app's PinnedBelowBarSliver). Kept app-side for now: sticky bottom

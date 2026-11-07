@@ -19,6 +19,8 @@ enum ControlScenes {
       root = AnyView(NavBarReference(scrollY: y))
     case "controls": root = AnyView(ControlsReference())
     case "toolbar": root = AnyView(ToolbarReference())
+    case "keyboardtoolbar": root = AnyView(KeyboardToolbarReference(dark: false))
+    case "keyboardtoolbardark": root = AnyView(KeyboardToolbarReference(dark: true))
     case "accessory": root = AnyView(AccessoryReference(accessory: true))
     case "tabbar": root = AnyView(AccessoryReference(accessory: false))
     case "tabbarsidebar": root = AnyView(SidebarReference(open: false))
@@ -225,6 +227,37 @@ struct ToolbarReference: View {
         }
     }
     .environment(\.colorScheme, .light)
+  }
+}
+
+/// A focused text field with a keyboard toolbar (up/down, flexible
+/// spacer, Done) above the software keyboard. White (or black) page.
+@available(iOS 26.0, *)
+struct KeyboardToolbarReference: View {
+  let dark: Bool
+  @State private var text = ""
+  @FocusState private var focused: Bool
+  var body: some View {
+    NavigationStack {
+      VStack {
+        TextField("Name", text: $text)
+          .textFieldStyle(.roundedBorder)
+          .focused($focused)
+          .padding()
+        Spacer()
+      }
+      .background(dark ? Color.black : Color.white)
+      .toolbar {
+        ToolbarItemGroup(placement: .keyboard) {
+          Button {} label: { Image(systemName: "chevron.up") }
+          Button {} label: { Image(systemName: "chevron.down") }
+          Spacer()
+          Button("Done") { focused = false }
+        }
+      }
+    }
+    .environment(\.colorScheme, dark ? .dark : .light)
+    .onAppear { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { focused = true } }
   }
 }
 
