@@ -35,7 +35,9 @@ import java.util.concurrent.Executors
  * (the AndroidX result APIs need a `ComponentActivity`). Each chosen item
  * is copied into `cacheDir/adaptive_liquid_glass_picker`; photos are
  * downscaled or converted to JPEG, and HEVC videos re-encoded as H.264
- * ([H264Transcoder]), when asked.
+ * ([H264Transcoder]), when asked. Up to [COPY_CONCURRENCY] items import
+ * at once; video conversion runs one at a time and photo re-encodes two at
+ * a time, as on iOS, to bound codec and bitmap memory.
  */
 internal class GlassPhotosPicker(private val context: Context) :
     PluginRegistry.ActivityResultListener {
@@ -61,6 +63,8 @@ internal class GlassPhotosPicker(private val context: Context) :
     @Volatile
     private var job: PhotoImportJob? = null
     private val io = Executors.newSingleThreadExecutor()
+    private val transcodeGate = ImportGate(TRANSCODE_CONCURRENCY)
+    private val reencodeGate = ImportGate(REENCODE_CONCURRENCY)
     private val main = Handler(Looper.getMainLooper())
     private val dir get() = File(context.cacheDir, "adaptive_liquid_glass_picker")
 
@@ -174,6 +178,7 @@ internal class GlassPhotosPicker(private val context: Context) :
                         }
                     },
                     cancelled = { current.cancel.cancelled },
+                    concurrency = COPY_CONCURRENCY,
                 )
                 main.post {
                     pending = null
@@ -192,7 +197,7 @@ internal class GlassPhotosPicker(private val context: Context) :
                     job = null
                     if (current.cancel.cancelled) {
                         // Only incremental imports keep finished items after a failure.
-                        val kept = if (events != null) delivered.toList() else emptyList()
+                        val kept = if (events != null) delivered.sortedBy { it["index"] as Int } else emptyList()
                         result.success(mapOf("items" to kept, "dropped" to dropped, "cancelled" to true))
                     } else {
                         result.error("load_failed", e.message, null)
@@ -257,16 +262,20 @@ internal class GlassPhotosPicker(private val context: Context) :
             if (options.compatible && H264Transcoder.isHevc(dest)) {
                 val out = File(directory, dest.nameWithoutExtension + ".out.mp4")
                 val durationUs = H264Transcoder.durationUs(dest)
-                // Created just before the codec call so copy time is not counted as a stall.
-                val activity = TranscodeProgress(cancel = job.cancel, onAdvance = { us ->
-                    if (durationUs > 0) {
-                        job.progress.update(
-                            index,
-                            copyShare + (1 - copyShare) * minOf(1.0, us.toDouble() / durationUs),
-                        )
-                    }
-                })
-                if (job.convert(activity) { H264Transcoder.transcode(dest, out, activity) } == true) {
+                val converted = transcodeGate.run(job.cancel) {
+                    // Created inside the gate, just before the codec call, so
+                    // copy and queue time are not counted as a stall.
+                    val activity = TranscodeProgress(cancel = job.cancel, onAdvance = { us ->
+                        if (durationUs > 0) {
+                            job.progress.update(
+                                index,
+                                copyShare + (1 - copyShare) * minOf(1.0, us.toDouble() / durationUs),
+                            )
+                        }
+                    })
+                    job.convert(activity) { H264Transcoder.transcode(dest, out, activity) }
+                }
+                if (converted == true) {
                     dest.delete()
                     dest = out
                     mime = "video/mp4"
@@ -279,7 +288,7 @@ internal class GlassPhotosPicker(private val context: Context) :
             }
             videoInfo(dest, item)
         } else {
-            val encoded = reencode(dest, mime, options)
+            val encoded = reencodeGate.run(job.cancel) { reencode(dest, mime, options) }
             if (encoded != null) {
                 dest = encoded.first
                 mime = encoded.second
@@ -485,6 +494,15 @@ internal class GlassPhotosPicker(private val context: Context) :
             }
             return if (converts) 0.5 else 1.0
         }
+
+        /** Items copied at once; copies are I/O-bound. */
+        const val COPY_CONCURRENCY = 3
+
+        /** Video conversions at once: the hardware codec is the memory and thermal hog. */
+        const val TRANSCODE_CONCURRENCY = 1
+
+        /** Photo decodes and re-encodes at once, bounding bitmap memory. */
+        const val REENCODE_CONCURRENCY = 2
 
         /** Arbitrary, below 0xFFFF as `startActivityForResult` requires. */
         const val REQUEST_CODE = 0x4C47

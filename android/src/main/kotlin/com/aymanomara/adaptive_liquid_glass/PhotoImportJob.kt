@@ -3,6 +3,7 @@ package com.aymanomara.adaptive_liquid_glass
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.concurrent.CancellationException
+import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 
 /** Set from the main thread by `cancelPhotoImport`; read by the import and codec threads. */
@@ -48,6 +49,24 @@ internal class ProgressThrottle(
         put("total", total)
         put("completed", completed)
         if (itemFraction != null) put("itemFraction", itemFraction)
+    }
+}
+
+/**
+ * At most `permits` callers run at once; waiters are served in order and
+ * leave with a cancellation when [ImportCancel] is set while they wait.
+ */
+internal class ImportGate(permits: Int, private val pollMillis: Long = 50) {
+    private val semaphore = Semaphore(permits, true)
+
+    fun <T> run(cancel: ImportCancel, work: () -> T): T {
+        while (!semaphore.tryAcquire(pollMillis, TimeUnit.MILLISECONDS)) cancel.check()
+        try {
+            cancel.check()
+            return work()
+        } finally {
+            semaphore.release()
+        }
     }
 }
 

@@ -156,3 +156,91 @@ class GlassPhotoCacheTest {
         }
     }
 }
+
+class GlassPhotoCacheParallelTest {
+    private fun <T> withRoot(block: (File) -> T): T {
+        val root = Files.createTempDirectory("glass-photos").toFile()
+        try { return block(root) } finally { root.deleteRecursively() }
+    }
+
+    @Test fun runsUpToConcurrencyItemsAtOnceAndNeverMore() = withRoot { root ->
+        val running = java.util.concurrent.atomic.AtomicInteger()
+        val peak = java.util.concurrent.atomic.AtomicInteger()
+        val result = GlassPhotoCache.importItems(root, (0 until 9).toList(), { _, n, _ ->
+            val now = running.incrementAndGet()
+            peak.accumulateAndGet(now) { a, b -> maxOf(a, b) }
+            Thread.sleep(30)
+            running.decrementAndGet()
+            n
+        }, concurrency = 3)
+        assertEquals(3, peak.get())
+        assertEquals((0 until 9).toList(), result.items)
+    }
+
+    @Test fun resultsStayInSelectionOrderWhileReadyFiresOnCompletion() = withRoot { root ->
+        val ready = java.util.Collections.synchronizedList(mutableListOf<Int>())
+        // Item 0 is slowest, so it finishes last.
+        val result = GlassPhotoCache.importItems(root, listOf(0, 1, 2), { _, n, _ ->
+            Thread.sleep(if (n == 0) 150L else 10L)
+            n
+        }, { ready.add(it) }, concurrency = 3)
+        assertEquals(listOf(0, 1, 2), result.items)
+        assertEquals(0, ready.last())
+        assertEquals(3, ready.size)
+    }
+
+    @Test fun cancelKeepsFinishedItemsInOrderAndStartsNoMore() = withRoot { root ->
+        val stop = java.util.concurrent.atomic.AtomicBoolean()
+        val thirdStarted = java.util.concurrent.CountDownLatch(1)
+        val started = java.util.Collections.synchronizedList(mutableListOf<Int>())
+        val result = GlassPhotoCache.importItems(root, (0 until 6).toList(), { i, n, session ->
+            started += i
+            when (i) {
+                2 -> {
+                    thirdStarted.await()
+                    stop.set(true)
+                    throw java.util.concurrent.CancellationException()
+                }
+                3 -> {
+                    thirdStarted.countDown()
+                    while (!stop.get()) Thread.sleep(1)
+                }
+            }
+            File(session, "$n").apply { writeText("x") }
+        }, cancelled = { stop.get() }, concurrency = 2)
+        assertTrue(result.cancelled)
+        // Item 3 was already running at the cancel, so it finishes and is kept.
+        assertEquals(listOf("0", "1", "3"), result.items.map { it.name })
+        assertEquals(listOf(0, 1, 2, 3), started.sorted())
+        assertEquals(3, root.listFiles()!!.size)
+    }
+
+    @Test fun batchFailureWaitsForRunningItemsThenRollsBackEverything() = withRoot { root ->
+        try {
+            GlassPhotoCache.importItems(root, (0 until 4).toList(), { i, n, session ->
+                if (i == 1) throw IOException("boom")
+                Thread.sleep(40)
+                File(session, "$n").apply { writeText("x") }
+            }, concurrency = 2)
+            fail()
+        } catch (e: IOException) {
+            assertEquals("boom", e.message)
+            assertEquals(0, root.listFiles()!!.size)
+        }
+    }
+
+    @Test fun incrementalFailureKeepsDeliveredFiles() = withRoot { root ->
+        val ready = java.util.Collections.synchronizedList(mutableListOf<File>())
+        try {
+            GlassPhotoCache.importItems(root, (0 until 3).toList(), { i, n, session ->
+                if (i == 1) { Thread.sleep(20); throw IOException("boom") }
+                File(session, "$n").apply { writeText("x") }
+            }, { ready.add(it) }, concurrency = 2)
+            fail()
+        } catch (e: IOException) {
+            assertTrue(ready.isNotEmpty())
+            assertTrue(ready.all { it.exists() })
+            assertEquals(ready.size, root.listFiles()!!.size)
+        }
+    }
+}
