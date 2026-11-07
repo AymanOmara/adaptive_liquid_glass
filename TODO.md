@@ -40,7 +40,7 @@ Remaining README limitations: implementation checks and closure criteria
 - [ ] Photos import: copy and conversion still require completing real I/O.
   Keep per-item delivery and codec-stall fallback. Android's selection cap
   is a platform constraint. Done: progress, cancel, killable Android codec
-  and parallel iOS import. Open: parallel Android copy, and the selection cap.
+  and parallel iOS and Android import. Open: the selection cap.
 - [ ] Android shader memory: measure local layers through routes, menus and
   overlapping strata on hardware; keep explicit GlassOverlayContent and
   GlassLayerScope until ordering can be preserved without opt-in.
