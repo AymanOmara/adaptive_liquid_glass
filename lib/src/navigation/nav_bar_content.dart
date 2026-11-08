@@ -92,7 +92,13 @@ class NavBarContent extends StatelessWidget {
             // The toolbar stretches its leading slot to the bar's height.
             leading: lead == null
                 ? null
-                : Center(widthFactor: 1, child: item(lead)),
+                : Center(
+                    widthFactor: 1,
+                    child: GlassButtonMetricsScope(
+                      metrics: NavBarMetrics.loneItem,
+                      child: item(lead),
+                    ),
+                  ),
             middle: title == null
                 ? null
                 : _fade(

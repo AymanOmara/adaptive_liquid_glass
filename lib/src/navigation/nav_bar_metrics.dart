@@ -23,6 +23,19 @@ abstract final class NavBarMetrics {
     cornerRadius: 12,
   );
 
+  /// A lone bar button (the leading item): an icon-only button is a 44-pt
+  /// circle, as SwiftUI's (measured over `-controls navbarphoto`).
+  static const GlassButtonMetrics loneItem = GlassButtonMetrics(
+    height: 44,
+    padding: 14,
+    fontSize: 17,
+    iconSize: 26,
+    iconGap: 6,
+    iconOnlyHeight: 44,
+    iconOnlyExtraWidth: 0,
+    cornerRadius: 12,
+  );
+
   /// Inline title.
   static const double titleFontSize = 17;
 

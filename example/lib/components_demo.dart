@@ -1117,7 +1117,10 @@ class _ZoomDetail extends StatelessWidget {
           height: 280,
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [CupertinoColors.systemOrange, CupertinoColors.systemPink],
+              colors: [
+                CupertinoColors.systemOrange,
+                CupertinoColors.systemPink,
+              ],
             ),
           ),
         ),

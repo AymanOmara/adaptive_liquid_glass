@@ -36,6 +36,8 @@ Widget? borrowedTwin(String scene) => switch (scene) {
   'accessorytext' => const _AccessoryText(accessory: true),
   'tabbartext' => const _AccessoryText(accessory: false),
   'lensreach' => const _LensReach(),
+  'navbarphoto' => const _NavBarPhoto(dark: false),
+  'navbarphotodark' => const _NavBarPhoto(dark: true),
   _ => null,
 };
 
@@ -580,4 +582,42 @@ class _HueRamp extends CustomPainter {
 
   @override
   bool shouldRepaint(_HueRamp old) => false;
+}
+
+/// `-controls navbarphoto(dark)`: an inline "Inbox" bar with a leading
+/// sidebar button and the trailing compose/ellipsis capsule over the
+/// full-screen `photo.png`.
+class _NavBarPhoto extends StatelessWidget {
+  const _NavBarPhoto({required this.dark});
+
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    final scaffold = Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: GlassNavigationBar(
+        title: const Text('Inbox'),
+        leading: GlassButton.icon(
+          onPressed: () {},
+          icon: CupertinoIcons.sidebar_left,
+        ),
+        actions: [
+          GlassButton.icon(
+            onPressed: () {},
+            icon: CupertinoIcons.square_pencil,
+          ),
+          GlassButton.icon(onPressed: () {}, icon: CupertinoIcons.ellipsis),
+        ],
+      ),
+      body: SizedBox.expand(
+        child: Image.asset(
+          'assets/backgrounds/photo.png',
+          fit: BoxFit.fill,
+          filterQuality: FilterQuality.none,
+        ),
+      ),
+    );
+    return dark ? _dark(context, scaffold) : scaffold;
+  }
 }

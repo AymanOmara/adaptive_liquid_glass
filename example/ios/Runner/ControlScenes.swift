@@ -17,6 +17,8 @@ enum ControlScenes {
     case "navbar":
       let y = Double(LaunchArgs.arg("scrollY") ?? "0") ?? 0
       root = AnyView(NavBarReference(scrollY: y))
+    case "navbarphoto": root = AnyView(NavBarPhotoReference(dark: false))
+    case "navbarphotodark": root = AnyView(NavBarPhotoReference(dark: true))
     case "controls": root = AnyView(ControlsReference())
     case "toolbar": root = AnyView(ToolbarReference())
     case "keyboardtoolbar": root = AnyView(KeyboardToolbarReference(dark: false))
@@ -168,6 +170,35 @@ struct NavBarReference: View {
       }
     }
     .environment(\.colorScheme, .light)
+  }
+}
+
+/// `-controls navbarphoto(dark)`: an inline "Inbox" bar with a leading
+/// sidebar button and the trailing compose/ellipsis capsule over the
+/// full-screen `photo.png`, for the bar glass's pixels against the shader.
+@available(iOS 26.0, *)
+struct NavBarPhotoReference: View {
+  let dark: Bool
+  var body: some View {
+    NavigationStack {
+      ZStack {
+        if let image = ReferenceAssets.image("photo") {
+          Image(uiImage: image).resizable().interpolation(.none).ignoresSafeArea()
+        }
+      }
+      .navigationTitle("Inbox")
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .topBarLeading) {
+          Button {} label: { Image(systemName: "sidebar.left") }
+        }
+        ToolbarItemGroup(placement: .topBarTrailing) {
+          Button {} label: { Image(systemName: "square.and.pencil") }
+          Button {} label: { Image(systemName: "ellipsis") }
+        }
+      }
+    }
+    .environment(\.colorScheme, dark ? .dark : .light)
   }
 }
 

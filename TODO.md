@@ -52,7 +52,10 @@ Remaining README limitations: implementation checks and closure criteria
 - [x] Saved palette: desktop/web now persist (localStorage on the web, a JSON
   file in the app data directory on desktop, no new dependencies);
   missing-plugin hosts and unavailable stores still fall back to memory.
-- [ ] Native CI: runner and workflow now added; confirm the first hosted run.
+- [x] Native CI (closed 2026-11-08): both green on main — CI run
+  42510180593, Native iOS run 42509608530 (17 min). A later iOS run was
+  cancelled by the 45-min timeout while queued for a macOS arm64 runner
+  (capacity, not a failure). History:
   Local lifecycle, batching and tab-bar suites are run by the same script.
   2026-11-08: every hosted run since 0.4.0 failed. CI (Linux): the RTL
   mirror test saw a 3/255 antialiasing difference against a limit of 2;
@@ -195,10 +198,27 @@ capture; Android fonts, haptics, back gestures and physics stay platform-native.
   Features (see also 9):
 
 8- match the flutter shader with the native navigation bar
+  2026-11-08: new `-controls/-twin navbarphoto(dark)` scenes (inline bar,
+  leading button + 2-action capsule over photo.png; side_by_side.sh).
+  Fixed: a lone leading icon button is a 44-pt circle as SwiftUI's, not a
+  51.5 cell (NavBarMetrics.loneItem); leading |d| 47 -> 28 light, 39 -> 25
+  dark (rest is the CupertinoIcons glyph vs SF sidebar.left, and tone).
+  Open, region mean |d| shader vs native: capsule 23.5 light / 16.3 dark.
+  Light: ours darker (RGB 186/194/216 vs 195/207/230; iOS frosts whiter).
+  Dark: ours less saturated (blue 119 vs 130; iOS passes more backdrop).
+  Same tone/frost fit as items 4-5; untested whether a lone trailing
+  action is also a circle.
 
 9- more SwiftUI components (docs/superpowers/notes/component-gap.md):
   ~~keyboard toolbar~~ (done: `GlassKeyboardToolbar`), ~~zoom
-  transitions~~ (done: `pushGlassZoom`), ~~TipKit tips~~ (done); then re-check the gap list for anything new.
+  transitions~~ (done: `pushGlassZoom`), ~~TipKit tips~~ (done).
+  Gap list re-checked 2026-11-08: component-gap.md is stale (label, links,
+  gauge, colour picker, wheel, picker styles, empty state, cover,
+  disclosure, refresh, tab minimize/sidebar are done). Next, ranked:
+  menu sections/submenus/primaryAction; separate nav-bar pills
+  (ToolbarItemGroup, sharedBackgroundVisibility); navigationSubtitle;
+  glassEffectTransition; ControlGroup; scroll edge hard/hidden;
+  NavigationSplitView (large).
   Candidate from app use (2026-10-10): a sliver pinned under the nav bar
   (the app's PinnedBelowBarSliver). Kept app-side for now: sticky bottom
   action bar, stage tab strip with counts.

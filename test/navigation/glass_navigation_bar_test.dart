@@ -91,6 +91,28 @@ void main() {
     expect(800 - last.right, moreOrLessEquals(NavBarMetrics.edgeInset));
   }, variant: ios);
 
+  testWidgets('a lone leading icon button is a 44-pt circle, as SwiftUI', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          appBar: GlassNavigationBar(
+            title: const Text('Inbox'),
+            leading: GlassButton.icon(
+              onPressed: () {},
+              icon: CupertinoIcons.sidebar_left,
+            ),
+          ),
+        ),
+      ),
+    );
+    final r = t.getRect(find.byType(GlassButton));
+    expect(r.size, const Size(44, 44));
+    expect(r.left, moreOrLessEquals(NavBarMetrics.edgeInset));
+  }, variant: ios);
+
   testWidgets('RTL: actions at the left edge', (t) async {
     shaderEnv();
     await t.pumpWidget(page(actions: twoActions(), dir: TextDirection.rtl));
