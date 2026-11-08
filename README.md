@@ -1416,6 +1416,29 @@ underneath:
   `GlassSwipeActions.closeGroup(tag)` and `closeAll()` close them from code.
 - VoiceOver and TalkBack get the actions as custom actions.
 
+### Zoom transition
+
+```dart
+GlassZoomSource(
+  id: photo.id,
+  borderRadius: BorderRadius.circular(16),
+  child: GestureDetector(
+    onTap: () => pushGlassZoom<void>(context, sourceId: photo.id,
+        builder: (context) => PhotoDetail(photo)),
+    child: PhotoTile(photo),
+  ),
+)
+```
+
+Like SwiftUI's `.navigationTransition(.zoom(sourceID:in:))`:
+- The page grows out of its source and shrinks back into it on pop. The
+  timing is fitted to the iOS 26.4 simulator.
+- A downward drag or a leading-edge swipe shrinks the page and dismisses
+  it. PopScope and inner scrollables are respected.
+- Reduce Motion gives a cross-fade. The Material path (`GlassAdaptive`)
+  uses a container transform and does not drag.
+- For named routes, use `GlassZoomPageRoute`.
+
 ### iOS 26 colours
 
 `GlassSystemColors` holds iOS 26's red, blue, orange and green. Flutter's

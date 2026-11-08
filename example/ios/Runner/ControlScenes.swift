@@ -93,6 +93,8 @@ enum ControlScenes {
     case "colorsheet": root = AnyView(ColorSheetReference(present: true))
     case "colorrowdark": root = AnyView(ColorSheetReference(present: false, dark: true))
     case "coverclose": root = AnyView(CoverCloseReference())
+    case "zoommotion": root = AnyView(ZoomMotionReference(autoPop: true))
+    case "zoomdrag": root = AnyView(ZoomMotionReference(autoPop: false))
     case "timewheel": root = AnyView(TimeWheelReference())
     case "searchscopes": root = AnyView(SearchScopesReference(query: ""))
     case "searchscopesquery": root = AnyView(SearchScopesReference(query: "Ro"))

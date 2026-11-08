@@ -1,3 +1,7 @@
+## Unreleased
+
+- Zoom transition: `pushGlassZoom` / `GlassZoomPageRoute` grow a page out of a `GlassZoomSource`, as SwiftUI's `.navigationTransition(.zoom)` does. It is fitted to an iOS 26.4 recording and supports drag-to-dismiss, Reduce Motion and Material fallbacks.
+
 ## 0.5.2 (2026-11-04)
 
 - Docs: README and API docs cover the progress ring that cancels on tap, swiping the iOS picker away, Android's scaled-down H.264 conversion, and the lost re-tap right after the iOS picker's Cancel (a system limit).

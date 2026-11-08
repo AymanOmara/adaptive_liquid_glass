@@ -967,10 +967,91 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                         ),
                       ),
                     ),
+                  const SizedBox(height: 24),
+                  const _ZoomCard(),
                   const SizedBox(height: 400),
                 ],
               ),
             ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// A card that zooms open into a detail page (iOS 26 zoom transition).
+class _ZoomCard extends StatelessWidget {
+  const _ZoomCard();
+
+  static const _id = 'demo-zoom-card';
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: () => pushGlassZoom<void>(
+      context,
+      sourceId: _id,
+      builder: (_) => const _ZoomDetail(),
+    ),
+    child: GlassZoomSource(
+      id: _id,
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        height: 140,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: const LinearGradient(
+            colors: [CupertinoColors.systemOrange, CupertinoColors.systemPink],
+          ),
+        ),
+        alignment: AlignmentDirectional.bottomStart,
+        padding: const EdgeInsetsDirectional.all(16),
+        child: const Text(
+          'Zoom transition — tap me',
+          style: TextStyle(
+            color: CupertinoColors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _ZoomDetail extends StatelessWidget {
+  const _ZoomDetail();
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          height: 280,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [CupertinoColors.systemOrange, CupertinoColors.systemPink],
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsetsDirectional.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Detail',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text('Drag down or swipe from the edge to shrink back.'),
+              const SizedBox(height: 20),
+              GlassButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Close'),
+              ),
+            ],
           ),
         ),
       ],
