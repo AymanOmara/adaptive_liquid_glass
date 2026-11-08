@@ -1,14 +1,17 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'saved_colors_storage.dart';
+
 /// The colour picker sheet's saved colours when the app keeps none of its
-/// own: shared by every picker and saved locally on iOS and Android.
-/// Unsupported platforms and hosts without the plugin keep it in memory.
+/// own: shared by every picker and saved locally (natively on iOS and
+/// Android, in localStorage on the web, in a JSON file on desktop). Hosts
+/// without the plugin or with unavailable storage keep it in memory.
 abstract final class SavedColors {
-  static const _channel = MethodChannel('adaptive_liquid_glass');
+  static bool _storageOverridden = false;
+  static SavedColorsStorage? _storageOverride;
   static Future<void>? _loading;
   static Future<void> _writes = Future.value();
   static int _revision = 0;
@@ -30,17 +33,17 @@ abstract final class SavedColors {
   /// Loads once, without replacing edits made while storage was being read.
   static Future<void> ensureLoaded() => _loading ??= _load();
 
-  static bool get _supported =>
-      !kIsWeb &&
-      (defaultTargetPlatform == TargetPlatform.iOS ||
-          defaultTargetPlatform == TargetPlatform.android);
+  static SavedColorsStorage? get _storage => _storageOverridden
+      ? _storageOverride
+      : savedColorsStorageFor(web: kIsWeb, platform: defaultTargetPlatform);
 
   static Future<void> _load() async {
-    if (!_supported) return;
+    final storage = _storage;
+    if (storage == null) return;
     final generation = _generation;
     final revision = _revision;
     try {
-      final stored = await _channel.invokeMethod<Object?>('getSavedColors');
+      final stored = await storage.read();
       if (generation != _generation || revision != _revision) return;
       // Reject a damaged palette as a whole. An empty palette is intentional.
       if (stored is! List ||
@@ -48,10 +51,9 @@ abstract final class SavedColors {
         return;
       }
       shared.value = List.unmodifiable(stored.cast<int>().map(Color.new));
-    } on MissingPluginException {
-      // Tests, desktop/web hosts, and apps that have not rebuilt the plugin.
-    } on PlatformException {
-      // A temporarily unavailable store must not prevent picking colours.
+    } on Exception {
+      // Tests, apps that have not rebuilt the plugin, and temporarily
+      // unavailable stores must not prevent picking colours.
     }
   }
 
@@ -59,21 +61,17 @@ abstract final class SavedColors {
   static Future<void> save(List<Color> colors) {
     final next = List<Color>.unmodifiable(colors);
     final loaded = ensureLoaded();
+    final storage = _storage;
     final generation = _generation;
     _revision++;
     shared.value = next;
     return _writes = _writes.then((_) async {
       await loaded;
-      if (!_supported || generation != _generation) return;
+      if (storage == null || generation != _generation) return;
       try {
-        await _channel.invokeMethod<void>(
-          'setSavedColors',
-          next.map((c) => c.toARGB32()).toList(),
-        );
-      } on MissingPluginException {
-        // Keep the shared in-memory palette when there is no native store.
-      } on PlatformException {
-        // Keep edits usable even when local storage is unavailable.
+        await storage.write(next.map((c) => c.toARGB32()).toList());
+      } on Exception {
+        // Keep the shared in-memory palette when storage is unavailable.
       }
     });
   }
@@ -88,9 +86,19 @@ abstract final class SavedColors {
     return next;
   }
 
-  /// Restores [defaults], for tests.
+  /// Replaces the platform's storage (null: memory only) until
+  /// [debugReset], for tests.
+  @visibleForTesting
+  static void debugOverrideStorage(SavedColorsStorage? storage) {
+    _storageOverridden = true;
+    _storageOverride = storage;
+  }
+
+  /// Restores [defaults] and the platform's storage, for tests.
   @visibleForTesting
   static void debugReset() {
+    _storageOverridden = false;
+    _storageOverride = null;
     _generation++;
     _revision = 0;
     _loading = null;
