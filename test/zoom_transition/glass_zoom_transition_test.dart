@@ -93,7 +93,9 @@ Rect _flight(WidgetTester t) => t.getRect(find.byKey(_page));
 /// Whether the home card paints (the source hides while pushed).
 double _sourceOpacity(WidgetTester t) => t
     .widget<Opacity>(
-      find.ancestor(of: find.byKey(_card), matching: find.byType(Opacity)).first,
+      find
+          .ancestor(of: find.byKey(_card), matching: find.byType(Opacity))
+          .first,
     )
     .opacity;
 
@@ -142,12 +144,11 @@ void main() {
     await t.pumpWidget(_app());
     await _open(t);
     final clip = t.widget<ClipRRect>(
-      find.ancestor(of: find.byKey(_page), matching: find.byType(ClipRRect)).first,
+      find
+          .ancestor(of: find.byKey(_page), matching: find.byType(ClipRRect))
+          .first,
     );
-    expect(
-      (clip.borderRadius as BorderRadius).topLeft.x,
-      closeTo(24, 0.5),
-    );
+    expect((clip.borderRadius as BorderRadius).topLeft.x, closeTo(24, 0.5));
   }, variant: ios);
 
   testWidgets('namespace picks the matching source', (t) async {
@@ -171,7 +172,10 @@ void main() {
     await _open(t);
     expect(_flight(t), const Rect.fromLTWH(0, 0, 800, 600));
     expect(
-      find.ancestor(of: find.byKey(_page), matching: find.byType(FadeTransition)),
+      find.ancestor(
+        of: find.byKey(_page),
+        matching: find.byType(FadeTransition),
+      ),
       findsWidgets,
     );
     await t.pumpAndSettle();
@@ -222,9 +226,7 @@ void main() {
     }, variant: ios);
 
     for (final direction in TextDirection.values) {
-      testWidgets('leading-edge swipe dismisses, ${direction.name}', (
-        t,
-      ) async {
+      testWidgets('leading-edge swipe dismisses, ${direction.name}', (t) async {
         await t.pumpWidget(_app(direction: direction));
         await _open(t);
         await t.pumpAndSettle();
@@ -292,9 +294,7 @@ void main() {
     }, variant: ios);
   });
 
-  testWidgets('Material path: container transform timing, no drag', (
-    t,
-  ) async {
+  testWidgets('Material path: container transform timing, no drag', (t) async {
     await t.pumpWidget(_app(mode: GlassRenderMode.material));
     await _open(t);
     expect(_flight(t).center.dx, closeTo(_sourceRect.center.dx, 1));

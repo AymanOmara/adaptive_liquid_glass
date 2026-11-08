@@ -191,7 +191,8 @@ class _ZoomDragDismissState extends State<ZoomDragDismiss>
     final fling = ZoomTransitionMetrics.flingVelocity;
     final dismiss =
         p > 0 &&
-        (v > fling || (p > ZoomTransitionMetrics.dismissFraction && v > -fling));
+        (v > fling ||
+            (p > ZoomTransitionMetrics.dismissFraction && v > -fling));
     if (dismiss) {
       _dismiss(_dragFrame(drag, size));
     } else {
@@ -253,8 +254,7 @@ class _ZoomDragDismissState extends State<ZoomDragDismiss>
     final full = ZoomFrame.full(size);
     final f = ZoomTransitionMetrics.fallbackScale;
     final start =
-        route.sourceFrame(size) ??
-        ZoomFrame.scaled(size, f, Offset.zero, 0);
+        route.sourceFrame(size) ?? ZoomFrame.scaled(size, f, Offset.zero, 0);
     final drag = _drag ?? _settleFrom * _settle.value;
     final end =
         route.dismissFrom ??
@@ -292,9 +292,7 @@ class _ZoomDragDismissState extends State<ZoomDragDismiss>
                 if (dim > 0)
                   Positioned.fill(
                     child: IgnorePointer(
-                      child: ColoredBox(
-                        color: Color.fromRGBO(0, 0, 0, dim),
-                      ),
+                      child: ColoredBox(color: Color.fromRGBO(0, 0, 0, dim)),
                     ),
                   ),
                 Positioned.fromRect(
@@ -312,10 +310,7 @@ class _ZoomDragDismissState extends State<ZoomDragDismiss>
                           child: Transform.scale(
                             scale: pageScale,
                             alignment: Alignment.topLeft,
-                            child: Opacity(
-                              opacity: pageOpacity,
-                              child: child,
-                            ),
+                            child: Opacity(opacity: pageOpacity, child: child),
                           ),
                         ),
                         if (snapshot != null && t < fade)

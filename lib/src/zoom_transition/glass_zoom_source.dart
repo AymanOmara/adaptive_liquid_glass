@@ -37,8 +37,7 @@ class GlassZoomSource extends StatefulWidget {
 
 /// A mounted [GlassZoomSource], as the route sees it.
 class GlassZoomSourceState extends State<GlassZoomSource> {
-  static final Map<(Object?, Object), List<GlassZoomSourceState>> _sources =
-      {};
+  static final Map<(Object?, Object), List<GlassZoomSourceState>> _sources = {};
 
   /// The last mounted source with [id] in [namespace], if any.
   static GlassZoomSourceState? lookup(Object? namespace, Object id) {
