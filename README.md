@@ -701,7 +701,8 @@ CustomScrollView(slivers: [
 ```
 
 No bar background, as on iOS 26: a `GlassBackButton` when the route can
-pop, the actions merged into one glass capsule, and a fade at the top once
+pop (a `leading` icon button is a 44-pt circle, as SwiftUI's), the actions
+merged into one glass capsule, and a fade at the top once
 content is under the bar. `GlassScrollEdgeStyle.progressive` is an opt-in
 graduated blur under the bar (strongest at the top, easing to sharp further
 down); the default `uniform` is one even blur. The large title scrolls away

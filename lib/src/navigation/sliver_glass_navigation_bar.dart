@@ -47,7 +47,8 @@ class SliverGlassNavigationBar extends StatelessWidget {
   /// The inline title; defaults to [largeTitle].
   final Widget? title;
 
-  /// Defaults to a `GlassBackButton` when the route can pop.
+  /// Defaults to a `GlassBackButton` when the route can pop. An icon-only
+  /// `GlassButton` here is a 44-pt circle, as SwiftUI's lone bar button.
   final Widget? leading;
 
   /// Whether to add the default back button.

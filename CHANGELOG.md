@@ -1,3 +1,7 @@
+## Unreleased
+
+- Navigation bars: an icon-only `leading` button is now a 44-pt circle, as SwiftUI's lone bar button, instead of a 51.5-pt cell (`NavBarMetrics.loneItem`).
+
 ## 0.6.0 (2026-11-09)
 
 - Photos (Android): items import in parallel (3 copies, 1 video transcode, 2 photo re-encodes); `onItemReady` may arrive out of selection order, the final result stays in order. A mixed batch delivers its first photo without waiting for the videos ahead of it.
