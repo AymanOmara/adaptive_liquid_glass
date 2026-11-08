@@ -53,7 +53,7 @@ entrypoint (fidelity constants, not stable API).
 | Link | `Link(destination:)` | **no** | med | S | url_launcher wrapper in glass capsule |
 | Share link | `ShareLink(item:)` | **no** | med | S | native share sheet via `share_plus`; glass pill trigger |
 | PhotosPicker | `PhotosPicker` (PhotosUI) | yes | low | L | `GlassPhotosPicker` / `pickGlassPhotos`: PHPicker on iOS, Photo Picker on Android, files copied to temp |
-| Keyboard toolbar | `ToolbarItem(placement: .keyboard)` | **no** | med | M | glass accessory bar above keyboard (done/next); measure vs iOS 26 quick-type bar glass |
+| Keyboard toolbar | `ToolbarItem(placement: .keyboard)` | **yes** — `GlassKeyboardToolbar` | med | M | done 2026-11-08: measured (`-controls keyboardtoolbar`): 48 pt capsules on the keyboard top, 16 pt side insets; Material: full-width surface bar |
 | ToolbarSpacer | `ToolbarSpacer(.flexible)` | **yes** — `GlassToolbarSpacer` | med | — | bottom toolbar only |
 
 ### Controls
@@ -158,7 +158,7 @@ entrypoint (fidelity constants, not stable API).
 7. ~~**GlassDatePicker upgrades**~~ — done (styles, modes, `GlassCalendar`/`GlassDateWheel` exported; wheel and time geometry estimated, not measured). *M, med value.* Export internal `GlassCalendar` as standalone graphical picker; add `.hourAndMinute` time rows and wheel variant reusing the new `GlassWheelPicker`. Material: `showDatePicker`/`showTimePicker`. Measure against iOS 26 compact→graphical popover and wheel picker perspective.
 8. **GlassWheelPicker** — *M, med value.* `GlassWheelPicker<T>({items, selected, onChanged, itemExtent})` — `CupertinoPicker` in a glass capsule with a clear-glass selection lens band and haptics; also serves as `GlassPicker(wheel)` style. Material: dialog wheel fallback. Measure against iOS wheel picker: row perspective, lens blur depth, haptic cadence.
 
-Honorable mentions (next after the 8): keyboard toolbar (M), `GlassShareLink` (S),
+Honorable mentions (next after the 8): ~~keyboard toolbar (M)~~ done, `GlassShareLink` (S),
 picker `.inline`/`.navigationLink` row compositions (S), nav-bar separate
 action pills (verify first), `tabBarMinimizeBehavior` (M), sidebarAdaptable (L),
 zoom transitions (L), TipKit tips (M), `GlassColorPicker` (S), `PhotosPicker` (L).

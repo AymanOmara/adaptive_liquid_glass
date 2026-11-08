@@ -1,10 +1,7 @@
 import 'package:flutter/widgets.dart';
 
-import '../button/glass_button_metrics_scope.dart';
 import '../core/glass_render_mode.dart';
-import '../group/glass_group.dart';
-import '../group/glass_union_scope.dart';
-import 'glass_toolbar_spacer.dart';
+import 'glass_toolbar_row.dart';
 import 'toolbar_metrics.dart';
 
 /// iOS 26's bottom toolbar: bar items floating in glass capsules, with no
@@ -44,49 +41,12 @@ class GlassToolbar extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(ToolbarMetrics.height);
 
   @override
-  Widget build(BuildContext context) {
-    final groups = <List<Widget>>[[]];
-    for (final child in children) {
-      if (child is GlassToolbarSpacer) {
-        groups.add([]);
-      } else {
-        groups.last.add(child);
-      }
-    }
-    final row = <Widget>[];
-    for (var i = 0; i < groups.length; i++) {
-      if (i > 0) row.add(const Spacer());
-      if (groups[i].isEmpty) continue;
-      row.add(
-        GlassButtonMetricsScope(
-          // A lone item is a circle; grouped items are a little wider.
-          metrics: groups[i].length == 1
-              ? ToolbarMetrics.single
-              : ToolbarMetrics.grouped,
-          child: GlassUnionScope(
-            id: (GlassToolbar, i),
-            child: Row(mainAxisSize: MainAxisSize.min, children: groups[i]),
-          ),
-        ),
-      );
-    }
-    // Bar items keep their size at any text size, as on iOS.
-    return MediaQuery.withNoTextScaling(
-      child: SizedBox(
-        height: ToolbarMetrics.height,
-        child: Padding(
-          padding: const EdgeInsetsDirectional.symmetric(
-            horizontal: ToolbarMetrics.edgeInset,
-          ),
-          child: GlassGroup(
-            mode: mode,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: row,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => GlassToolbarRow(
+    single: ToolbarMetrics.single,
+    grouped: ToolbarMetrics.grouped,
+    height: ToolbarMetrics.height,
+    edgeInset: ToolbarMetrics.edgeInset,
+    mode: mode,
+    children: children,
+  );
 }

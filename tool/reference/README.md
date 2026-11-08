@@ -16,6 +16,11 @@ colorrow, coverclose): `tool/reference/capture_more.sh <UDID>` (or
 `measure_components.py build/reference`; it merges into the existing
 "components" section and measures only the captures present.
 
+Keyboard toolbar (measured 2026-11-08): `capture_one.sh <UDID> keyboardtoolbar`
+(and `keyboardtoolbardark`) focuses a field under a `.keyboard` toolbar;
+48 pt capsules sit on the keyboard top, 16 pt from the sides
+(`lib/src/toolbar/keyboard_toolbar_metrics.dart`).
+
 Sheet side insets by detent height: `-controls sheetheight -height <pt>
 [-grabber 0]` presents a SwiftUI `.height(<pt>)` sheet over mid-grey
 (measured 2026-10-14: 300-765 float 8 pt in, 775 and up run edge to edge).
