@@ -1351,8 +1351,8 @@ controller.cancel(); // from anywhere, e.g. a "Stop" button
 
 `GlassPhotoImportProgress` carries `total`, `completed`, `currentIndex`,
 `itemFraction` (null when the size is unknown), `fraction` and `phase`.
-`index` is the item's selection order: iOS imports in parallel, so
-`onItemReady` can arrive out of order and a UI should place items by `index`
+`index` is the item's selection order: iOS and Android import in parallel,
+so `onItemReady` can arrive out of order and a UI should place items by `index`
 (null with an older native plugin). Cancel is not an error: `onError` is not
 called, finished items are kept, partial files are deleted and `cancelled` is
 set. On `GlassPhotosPicker`, the trigger shows a progress ring while
@@ -1576,8 +1576,8 @@ there is no package-side workaround.
   `onItemReady` delivers completed files early; `onPicked` and the final result
   still wait for the full batch. Very large videos can therefore take time to
   arrive. The trigger shows a progress ring until the batch finishes (tap
-  it to cancel); iOS imports
-  selections in parallel (3 loads, 1 video export, 2 photo re-encodes).
+  it to cancel); iOS and Android import
+  selections in parallel (3 copies, 1 video conversion, 2 photo re-encodes).
   Successful copies stay until `clearGlassPickedPhotos()` or the OS deletes
   them. On Android the
   H.264 conversion (HEVC videos with

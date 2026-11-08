@@ -59,8 +59,8 @@ int _nextImport = 0;
 /// a later item fails; this future may still throw. Callback errors are reported
 /// through [FlutterError.reportError] without interrupting the import. With an
 /// older native plugin, callbacks are delivered with the final result instead.
-/// On iOS, [onItemReady] order may differ from selection order; use
-/// [GlassPickedPhoto.index] to place an item.
+/// Items import in parallel, so [onItemReady] order may differ from selection
+/// order; use [GlassPickedPhoto.index] to place an item.
 ///
 /// [onProgress] receives throttled [GlassPhotoImportProgress] snapshots;
 /// use its `fraction` to drive one progress bar.

@@ -1,3 +1,7 @@
+## Unreleased
+
+- Photos (Android): items import in parallel (3 copies, 1 video transcode, 2 photo re-encodes); `onItemReady` may arrive out of selection order, the final result stays in order. A mixed batch delivers its first photo without waiting for the videos ahead of it.
+
 ## 0.5.2 (2026-11-04)
 
 - Docs: README and API docs cover the progress ring that cancels on tap, swiping the iOS picker away, Android's scaled-down H.264 conversion, and the lost re-tap right after the iOS picker's Cancel (a system limit).

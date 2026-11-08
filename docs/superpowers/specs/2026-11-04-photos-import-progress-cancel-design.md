@@ -153,7 +153,8 @@ controller.cancel(); // from anywhere, e.g. a "Stop" button
   - A volatile flag is checked by the import loop, the copy and
     `TranscodeProgress.checkActive()`.
   - The single-thread `io` executor stays, so items still finish in order and
-    there are no new ordering semantics on Android.
+    there are no new ordering semantics on Android. (Superseded 2026-11-08:
+    Android now imports 3 items at a time like iOS; see CHANGELOG.)
   - With incremental delivery, finished items are kept. In batch mode (no
     callback), cancel keeps finished files too: the user explicitly stopped,
     so this is not a failure rollback.

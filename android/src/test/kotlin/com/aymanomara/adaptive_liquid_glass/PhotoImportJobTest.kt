@@ -92,3 +92,55 @@ class PhotoImportJobTest {
         assertTrue(!job.quarantined)
     }
 }
+
+class ImportGateTest {
+    @Test
+    fun gateNeverRunsMoreThanItsPermits() {
+        val gate = ImportGate(2)
+        val running = java.util.concurrent.atomic.AtomicInteger()
+        val peak = java.util.concurrent.atomic.AtomicInteger()
+        val threads = (0 until 6).map {
+            Thread {
+                gate.run(ImportCancel()) {
+                    peak.accumulateAndGet(running.incrementAndGet()) { a, b -> maxOf(a, b) }
+                    Thread.sleep(30)
+                    running.decrementAndGet()
+                }
+            }.apply { start() }
+        }
+        threads.forEach { it.join() }
+        assertEquals(2, peak.get())
+    }
+
+    @Test
+    fun cancelWhileWaitingThrowsWithoutRunning() {
+        val gate = ImportGate(1, pollMillis = 5)
+        val cancel = ImportCancel()
+        val hold = java.util.concurrent.CountDownLatch(1)
+        val holder = Thread { gate.run(ImportCancel()) { hold.await() } }.apply { start() }
+        Thread.sleep(20)
+        var ran = false
+        val waiter = Thread {
+            try {
+                gate.run(cancel) { ran = true }
+                fail("expected cancel")
+            } catch (e: CancellationException) {
+                // expected
+            }
+        }.apply { start() }
+        Thread.sleep(20)
+        cancel.cancelled = true
+        waiter.join(1000)
+        hold.countDown()
+        holder.join()
+        assertTrue(!ran)
+        assertTrue(!waiter.isAlive)
+    }
+
+    @Test
+    fun permitIsReleasedAfterFailure() {
+        val gate = ImportGate(1)
+        try { gate.run(ImportCancel()) { error("x") } } catch (e: IllegalStateException) {}
+        assertEquals(1, gate.run(ImportCancel()) { 1 })
+    }
+}
