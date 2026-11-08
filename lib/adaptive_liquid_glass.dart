@@ -139,3 +139,6 @@ export 'src/toolbar/glass_keyboard_toolbar.dart';
 export 'src/toolbar/glass_toolbar.dart';
 export 'src/toolbar/glass_toolbar_spacer.dart';
 export 'src/wheel_picker/glass_wheel_picker.dart';
+export 'src/zoom_transition/glass_zoom_page_route.dart'
+    show GlassZoomPageRoute, pushGlassZoom;
+export 'src/zoom_transition/glass_zoom_source.dart';

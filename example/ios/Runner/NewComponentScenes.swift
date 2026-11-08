@@ -789,3 +789,44 @@ struct TipPopoverReference: View {
     .statusBarHidden(true)
   }
 }
+
+/// Zoom navigation transition (iOS 26 `.navigationTransition(.zoom)` +
+/// `.matchedTransitionSource`): a 160 x 200 blue card (24 pt corners)
+/// centred at (120, 300) on white; tapping it pushes a solid orange page
+/// that zooms out of it. `-controls zoommotion` pops 1.5 s after the push
+/// (push + pop timing); `-controls zoomdrag` stays for a drag-to-dismiss
+/// take. `tool/reference/measure_zoom.py` tracks the orange box per frame.
+@available(iOS 26.0, *)
+struct ZoomMotionReference: View {
+  var autoPop: Bool
+  @Namespace private var ns
+  @State private var path: [Int] = []
+  var body: some View {
+    NavigationStack(path: $path) {
+      ZStack(alignment: .topLeading) {
+        Color.white
+        RoundedRectangle(cornerRadius: 24)
+          .fill(Color.blue)
+          .frame(width: 160, height: 200)
+          .matchedTransitionSource(id: "card", in: ns)
+          .position(x: 120, y: 300)
+          .onTapGesture { path = [1] }
+      }
+      .frame(width: 402, height: 874)
+      .ignoresSafeArea()
+      .toolbar(.hidden, for: .navigationBar)
+      .navigationDestination(for: Int.self) { _ in
+        Color.orange
+          .ignoresSafeArea()
+          .toolbar(.hidden, for: .navigationBar)
+          .navigationTransition(.zoom(sourceID: "card", in: ns))
+          .onAppear {
+            guard autoPop else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { path = [] }
+          }
+      }
+    }
+    .environment(\.colorScheme, .light)
+    .statusBarHidden(true)
+  }
+}

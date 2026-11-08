@@ -134,7 +134,7 @@ entrypoint (fidelity constants, not stable API).
 | Sidebar adaptable | `TabView` `.sidebarAdaptable` | **no** | med | L | sidebar + tab bar + search in one adaptive container |
 | Tab bar minimize | `.tabBarMinimizeBehavior` (verify) | **no** | med | M | scroll-linked shrink to lens |
 | Page style | `TabView` `.page` style | **partial** — `GlassPageControl` + `PageView` | med | S | dots exist; no page container wiring |
-| Zoom transition | `matchedTransitionSource` / `navigationTransition(.zoom)` | **no** | med | L | hero zoom into detail; Flutter route hero work |
+| Zoom transition | `matchedTransitionSource` / `navigationTransition(.zoom)` | yes (`pushGlassZoom`) | med | L | hero zoom into detail; Flutter route hero work |
 | List insetGrouped | `.listStyle(.insetGrouped)` | **yes** — `GlassListSection` | high | — | platter, separators, header/footer, `glass:` variant |
 | List plain | `.listStyle(.plain)` | **partial** — plain `ListView` | med | S | no glass separators/swipe integration tuned for plain |
 | List sidebar | `.listStyle(.sidebar)` | **no** | low | L | tied to sidebarAdaptable |
