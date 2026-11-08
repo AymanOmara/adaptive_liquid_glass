@@ -148,6 +148,9 @@ void main() {
     expect(SearchMetrics.hideShrinkStart, 0.083);
     expect(SearchMetrics.hideShrinkEnd, 0.167);
     expect(SearchMetrics.hideShrinkPower, 1.3);
+    // The field's spring starts 1.5 frames after the row's jump (fitted
+    // to four recordings: rms 7.3 pt with no delay, 2.8 with it).
+    expect(SearchMetrics.hideFieldDelay, 0.025);
   });
 
   testWidgets('dismissing: the row jumps to the idle insets, the button '
@@ -182,8 +185,10 @@ void main() {
       await t.pump(const Duration(milliseconds: 16));
       elapsed += const Duration(milliseconds: 16);
       final s = elapsed.inMicroseconds / 1e6;
-      if (simulation.isDone(s)) break;
-      final p = simulation.x(s);
+      // The field holds at the jump for [hideFieldDelay], then springs.
+      final f = math.max(0.0, s - SearchMetrics.hideFieldDelay);
+      if (simulation.isDone(f)) break;
+      final p = simulation.x(f);
       final end = t.getTopRight(field).dx;
       expect(
         end,

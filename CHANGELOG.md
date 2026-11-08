@@ -1,3 +1,7 @@
+## Unreleased
+
+- Search (iOS): when `GlassSearchable` is dismissed, the field's end now holds for 1.5 frames after the row's jump and then springs, as SwiftUI's does, so it no longer reaches the close button a frame early (`SearchMetrics.hideFieldDelay`).
+
 ## 0.5.2 (2026-11-04)
 
 - Docs: README and API docs cover the progress ring that cancels on tap, swiping the iOS picker away, Android's scaled-down H.264 conversion, and the lost re-tap right after the iOS picker's Cancel (a system limit).
