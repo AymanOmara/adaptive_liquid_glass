@@ -144,6 +144,13 @@ abstract final class SearchMetrics {
     dampingFraction: 0.56,
   );
 
+  /// Seconds the field's end holds at the jump before [hide] starts:
+  /// SwiftUI's spring begins about 1.5 frames after the row's jump
+  /// (fitted to four recordings, iOS 26.4: rms 7.3 pt starting at the
+  /// jump, 2.8 with this delay). The glyph fade and the shrink keep the
+  /// clock since the jump.
+  static const double hideFieldDelay = 0.025;
+
   /// Seconds into the hide before the close button's glyph blurs out:
   /// SwiftUI blurs it rather than fading it flat, its blur growing and
   /// its opacity falling together to nothing by [hideGlyphFadeEnd]

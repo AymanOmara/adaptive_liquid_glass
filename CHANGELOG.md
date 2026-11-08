@@ -2,6 +2,7 @@
 
 - Photos (Android): items import in parallel (3 copies, 1 video transcode, 2 photo re-encodes); `onItemReady` may arrive out of selection order, the final result stays in order. A mixed batch delivers its first photo without waiting for the videos ahead of it.
 - Colour picker: the shared saved palette now persists on the web (`localStorage`) and desktop (a JSON file in the app's per-user data directory, namespaced by executable name). No new dependencies; corrupt data or unavailable storage falls back to the in-memory palette silently.
+- Search (iOS): when `GlassSearchable` is dismissed, the field's end now holds for 1.5 frames after the row's jump and then springs, as SwiftUI's does, so it no longer reaches the close button a frame early (`SearchMetrics.hideFieldDelay`).
 
 ## 0.5.2 (2026-11-04)
 

@@ -15,8 +15,8 @@ Audit 2026-10-30 (against README Known limitations and 0.3.0):
   passed on API 37; existing capture/fallback checks also pass on API 35,
   2026-10-30). Resized/transformed surfaces and some older
   Android composition orders still fall back (README details).
-- Item 6's component measurements are complete; only the final search-hide
-  frame alignment noted there remains open.
+- Item 6's component measurements are complete, including the search-hide
+  frame alignment (2026-11-08).
 - Item 12's completed enhancements shipped by 0.3.0; its only remaining
   decision is whether implicit batching should default on.
 
@@ -139,8 +139,12 @@ capture; Android fonts, haptics, back gestures and physics stay platform-native.
   2026-10-16).
   Search hide: the button's glass merges into the field (2026-10-17,
   build/motion/search-hide-full), shrinks and its glyph blurs out as
-  SwiftUI's (row-tracked error 1.6-2.0); left: the field's end reaches
-  the button about a frame early.
+  SwiftUI's (row-tracked error 1.6-2.0). The field's spring now starts
+  1.5 frames after the row's jump, as SwiftUI's (four recordings,
+  2026-11-08: field-end rms 7.3 pt starting at the jump, 2.8 with the
+  delay; SearchMetrics.hideFieldDelay). Twin re-measured: start offset
+  0.7 -> 1.9 frames against SwiftUI's 1.2-1.75, field-end median error
+  2.3 -> 0.15 pt.
 
 7- tab bar vs native iOS 26 (details: docs/superpowers/notes/tabbar-todo.md)
   Update 2026-10-23: stock two-to-four-tab icon bars in native mode

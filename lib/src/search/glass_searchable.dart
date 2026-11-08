@@ -246,7 +246,12 @@ class _GlassSearchableState extends State<GlassSearchable>
     _reveal.value = 0;
     _hide.value = 0;
     _hide
-        .animateWith(SpringSimulation(SearchMetrics.hide, 0, 1, 0))
+        .animateWith(
+          _DelayedSimulation(
+            SpringSimulation(SearchMetrics.hide, 0, 1, 0),
+            SearchMetrics.hideFieldDelay,
+          ),
+        )
         .whenCompleteOrCancel(() {
           if (mounted && _hiding) _endHide();
         });
@@ -753,4 +758,23 @@ class _EndEdgeClipper extends CustomClipper<Rect> {
   @override
   bool shouldReclip(_EndEdgeClipper oldClipper) =>
       oldClipper.direction != direction;
+}
+
+/// [inner] held at its start for [delay] seconds (the field's end at the
+/// jump, see [SearchMetrics.hideFieldDelay]), so the controller's clock
+/// still counts from the jump.
+class _DelayedSimulation extends Simulation {
+  _DelayedSimulation(this.inner, this.delay);
+
+  final Simulation inner;
+  final double delay;
+
+  @override
+  double x(double time) => inner.x(math.max(0, time - delay));
+
+  @override
+  double dx(double time) => time < delay ? 0 : inner.dx(time - delay);
+
+  @override
+  bool isDone(double time) => time >= delay && inner.isDone(time - delay);
 }
