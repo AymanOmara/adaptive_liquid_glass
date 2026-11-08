@@ -198,7 +198,7 @@ capture; Android fonts, haptics, back gestures and physics stay platform-native.
 
 9- more SwiftUI components (docs/superpowers/notes/component-gap.md):
   ~~keyboard toolbar~~ (done: `GlassKeyboardToolbar`), zoom
-  transitions, TipKit tips; then re-check the gap list for anything new.
+  transitions, ~~TipKit tips~~ (done); then re-check the gap list for anything new.
   Candidate from app use (2026-10-10): a sliver pinned under the nav bar
   (the app's PinnedBelowBarSliver). Kept app-side for now: sticky bottom
   action bar, stage tab strip with counts.

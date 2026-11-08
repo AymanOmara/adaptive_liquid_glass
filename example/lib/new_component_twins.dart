@@ -17,6 +17,8 @@ Widget? newComponentTwin(String scene) => switch (scene) {
   'searchmotion' => const _SearchMotion(),
   'colorrow' || 'colorrowdark' => const _ColorRow(),
   'contextmenuuikitmotion' => const _ContextMenuMotion(),
+  'tips' || 'tipsdark' => const _Tips(),
+  'tippopover' || 'tippopoverdark' => const _TipPopover(),
   _ => null,
 };
 
@@ -384,6 +386,87 @@ class _ColorRowState extends State<_ColorRow> {
               onChanged: (c) => setState(() => _colour = c),
             ),
           ],
+        ),
+      ],
+    ),
+  );
+}
+
+/// TipsReference: two inline tips, 16 pt from the sides, from y 100,
+/// 40 apart, over the system background.
+class _Tips extends StatelessWidget {
+  const _Tips();
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: CupertinoDynamicColor.resolve(
+      CupertinoColors.systemBackground,
+      context,
+    ),
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(16, 100, 16, 0),
+      child: Column(
+        children: [
+          GlassTipView(
+            tip: GlassTip(
+              title: const Text('Save as a Favorite'),
+              message: const Text(
+                'Your favorite places always appear at the top of the list.',
+              ),
+              image: const Icon(CupertinoIcons.star),
+              actions: const [
+                GlassTipAction(label: 'Learn More', onPressed: _noop),
+                GlassTipAction(label: 'Not Now', onPressed: _noop),
+              ],
+            ),
+          ),
+          const SizedBox(height: 40),
+          const GlassTipView(
+            tip: GlassTip(
+              title: Text('Swipe to Delete'),
+              message: Text('Swipe left on a row to remove it.'),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// TipPopoverReference: a 44 pt filter glyph centred at (201, 300) with a
+/// popover tip.
+class _TipPopover extends StatelessWidget {
+  const _TipPopover();
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: CupertinoDynamicColor.resolve(
+      CupertinoColors.systemBackground,
+      context,
+    ),
+    child: Stack(
+      children: [
+        Positioned(
+          left: 201 - 22,
+          top: 300 - 22,
+          child: GlassPopoverTip(
+            tip: const GlassTip(
+              title: Text('Add a Filter'),
+              message: Text('Narrow the list down to what matters.'),
+              image: Icon(CupertinoIcons.line_horizontal_3_decrease_circle),
+            ),
+            child: SizedBox.square(
+              dimension: 44,
+              child: Icon(
+                CupertinoIcons.line_horizontal_3_decrease_circle,
+                size: 28,
+                color: CupertinoDynamicColor.resolve(
+                  CupertinoColors.systemBlue,
+                  context,
+                ),
+              ),
+            ),
+          ),
         ),
       ],
     ),

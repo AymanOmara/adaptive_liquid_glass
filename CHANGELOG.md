@@ -4,6 +4,7 @@
 - Colour picker: the shared saved palette now persists on the web (`localStorage`) and desktop (a JSON file in the app's per-user data directory, namespaced by executable name). No new dependencies; corrupt data or unavailable storage falls back to the in-memory palette silently.
 - Search (iOS): when `GlassSearchable` is dismissed, the field's end now holds for 1.5 frames after the row's jump and then springs, as SwiftUI's does, so it no longer reaches the close button a frame early (`SearchMetrics.hideFieldDelay`).
 - `GlassKeyboardToolbar`: SwiftUI's keyboard toolbar (`ToolbarItemGroup(placement: .keyboard)`), glass capsules resting on the keyboard while a field inside it has focus; measured from SwiftUI (48 pt capsules, 16 pt insets). Material: a full-width surface bar on the keyboard.
+- `GlassTipView` and `GlassPopoverTip`: TipKit's inline and popover tips (title, message, image, actions, close), shown once through a `GlassTipController` whose dismissal the app persists. RTL, dark mode, Reduce Motion and a Material path.
 
 ## 0.5.2 (2026-11-04)
 

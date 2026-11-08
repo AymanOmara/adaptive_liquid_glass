@@ -70,6 +70,10 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
   final GlassPhotoImportController _import = GlassPhotoImportController();
   final _stopwatch = Stopwatch();
   bool _firstItemLogged = false;
+  // Persist these through onDismissed (e.g. shared_preferences) to show
+  // each tip once.
+  final _inlineTip = GlassTipController();
+  final _popoverTip = GlassTipController(dismissed: true);
 
   @override
   void initState() {
@@ -88,6 +92,8 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
   void dispose() {
     // Disposing the controller also releases its isActive listener.
     _import.dispose();
+    _inlineTip.dispose();
+    _popoverTip.dispose();
     super.dispose();
   }
 
@@ -952,6 +958,58 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                       GlassButton(
                         onPressed: () => _snack('Refresh'),
                         child: const Text('Refresh'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  GlassTipView(
+                    controller: _inlineTip,
+                    tip: GlassTip(
+                      title: const Text('Save as a Favorite'),
+                      message: const Text(
+                        'Your favorite places always appear at the top.',
+                      ),
+                      image: const Icon(CupertinoIcons.star),
+                      actions: [
+                        GlassTipAction(
+                          label: 'Learn More',
+                          onPressed: () => _snack('Learn More'),
+                        ),
+                        GlassTipAction(
+                          label: 'Not Now',
+                          onPressed: () => _inlineTip.dismiss(
+                            GlassTipDismissReason.actionPerformed,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      GlassPopoverTip(
+                        controller: _popoverTip,
+                        tip: const GlassTip(
+                          title: Text('Add a Filter'),
+                          message: Text('Narrow the list down.'),
+                          image: Icon(
+                            CupertinoIcons.line_horizontal_3_decrease_circle,
+                          ),
+                        ),
+                        child: GlassButton(
+                          onPressed: () => _snack('Filter'),
+                          child: const Icon(
+                            CupertinoIcons.line_horizontal_3_decrease_circle,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      GlassButton(
+                        onPressed: () {
+                          _inlineTip.reset();
+                          _popoverTip.reset();
+                        },
+                        child: const Text('Show tips'),
                       ),
                     ],
                   ),
