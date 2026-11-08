@@ -141,22 +141,36 @@ struct GlassSpec: Identifiable, Equatable {
     } else {
       glow = nil
     }
-    let f = s["fills"] as? [Double] ?? []
-    fills = stride(from: 0, to: f.count - 5, by: 6).enumerated().map { i, k in
-      GlassFill(
-        id: i,
-        frame: CGRect(x: f[k], y: f[k + 1], width: f[k + 2], height: f[k + 3]),
-        opacity: f[k + 4], style: Int(f[k + 5]))
+    // Explicit types throughout: older Swift compilers (Xcode 26 on CI)
+    // time out inferring these closures.
+    let f: [Double] = (s["fills"] as? [Double]) ?? []
+    var parsedFills: [GlassFill] = []
+    var k = 0
+    while k + 5 < f.count {
+      let frame = CGRect(x: f[k], y: f[k + 1], width: f[k + 2], height: f[k + 3])
+      let style: Int = Int(f[k + 5])
+      parsedFills.append(
+        GlassFill(id: parsedFills.count, frame: frame, opacity: f[k + 4], style: style))
+      k += 6
     }
-    let g = s["glyphs"] as? [Double] ?? []
-    glyphs = stride(from: 0, to: g.count - 8, by: 9).compactMap { k in
-      let key = Int(g[k + 4])
-      guard let image = masks[key] else { return nil }
-      return GlassGlyph(
-        frame: CGRect(x: g[k], y: g[k + 1], width: g[k + 2], height: g[k + 3]),
-        key: key, color: Int(g[k + 5]), gain: g[k + 6], reference: g[k + 7],
-        vibrant: g[k + 8] != 0, image: image)
+    fills = parsedFills
+    let g: [Double] = (s["glyphs"] as? [Double]) ?? []
+    var parsedGlyphs: [GlassGlyph] = []
+    k = 0
+    while k + 8 < g.count {
+      let key: Int = Int(g[k + 4])
+      if let image: UIImage = masks[key] {
+        let frame = CGRect(x: g[k], y: g[k + 1], width: g[k + 2], height: g[k + 3])
+        let color: Int = Int(g[k + 5])
+        let vibrant: Bool = g[k + 8] != 0
+        parsedGlyphs.append(
+          GlassGlyph(
+            frame: frame, key: key, color: color, gain: g[k + 6],
+            reference: g[k + 7], vibrant: vibrant, image: image))
+      }
+      k += 9
     }
+    glyphs = parsedGlyphs
   }
 }
 

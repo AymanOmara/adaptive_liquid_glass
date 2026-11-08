@@ -54,6 +54,13 @@ Remaining README limitations: implementation checks and closure criteria
   missing-plugin hosts and unavailable stores still fall back to memory.
 - [ ] Native CI: runner and workflow now added; confirm the first hosted run.
   Local lifecycle, batching and tab-bar suites are run by the same script.
+  2026-11-08: every hosted run since 0.4.0 failed. CI (Linux): the RTL
+  mirror test saw a 3/255 antialiasing difference against a limit of 2;
+  now bounded by worst <= 16 and mean < 0.5. Native iOS: Xcode 26 on
+  `macos-26` timed out type-checking the fill/glyph parsing closures in
+  `GlassPlatformView.swift` (Xcode 27 locally is fine); rewritten with
+  explicit types. The last run also never got a macOS arm64 runner
+  (capacity). Confirm both workflows green after the next push.
 
 Support boundaries (not fixable by changing a widget): no shader lens without
 shader-filter support; system/protected surfaces and other apps are outside

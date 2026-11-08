@@ -150,17 +150,23 @@ void main() {
         await raster(CupertinoIcons.back, TextDirection.rtl),
       );
       expect(rtl.rgba, isNot(orderedEquals(ltr.rgba)));
+      // Mirrored paths can differ slightly at antialiased edges, and by how
+      // much depends on the rasteriser (macOS stays within 2, Linux CI 3):
+      // bound the worst edge pixel loosely and the average tightly. An
+      // unmirrored glyph differs by ~255 over its whole stroke.
+      var worst = 0;
+      var total = 0;
       for (var y = 0; y < ltr.height; y++) {
         for (var x = 0; x < ltr.width; x++) {
           final from = (y * ltr.width + x) * 4;
           final to = (y * ltr.width + ltr.width - 1 - x) * 4;
-          // Mirrored paths can differ slightly at antialiased edges.
-          expect(
-            (rtl.rgba[to + 3] - ltr.rgba[from + 3]).abs(),
-            lessThanOrEqualTo(2),
-          );
+          final d = (rtl.rgba[to + 3] - ltr.rgba[from + 3]).abs();
+          total += d;
+          if (d > worst) worst = d;
         }
       }
+      expect(worst, lessThanOrEqualTo(16));
+      expect(total / (ltr.width * ltr.height), lessThan(0.5));
       final normal = await raster(CupertinoIcons.house);
       final reversed = await raster(CupertinoIcons.house, TextDirection.rtl);
       expect(reversed, orderedEquals(normal));
