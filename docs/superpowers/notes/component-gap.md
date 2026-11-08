@@ -99,7 +99,7 @@ entrypoint (fidelity constants, not stable API).
 | ProgressView | `ProgressView` linear/circular | **yes** — `GlassProgressIndicator` | high | — | both styles, determinate + indeterminate |
 | Badge | `.badge(_:)` | **yes** — `GlassBadge` (+ `GlassTabBarItem.badge`) | med | — | count caps at 99+, dot |
 | Empty/error state | `ContentUnavailableView` | **no** | high | S | icon/title/description/actions; very common |
-| TipKit | `Tip` / `.popoverTip` | **no** | low | M | verify: liquid-glass restyle of tips in 26; needs persistence + rules plumbing |
+| TipKit | `Tip` / `.popoverTip` | yes | low | M | `GlassTipView`, `GlassPopoverTip`; show-once via `GlassTipController` (app persists); no rules/events engine |
 | Toast | no SwiftUI API | **yes** — `showGlassToast` (beyond SwiftUI) | med | — | swipe-dismiss, queue, actions |
 | Page control | UIKit `UIPageControl` | **yes** — `GlassPageControl` | med | — | tap halves, scrub, haptics |
 
@@ -161,4 +161,4 @@ entrypoint (fidelity constants, not stable API).
 Honorable mentions (next after the 8): keyboard toolbar (M), `GlassShareLink` (S),
 picker `.inline`/`.navigationLink` row compositions (S), nav-bar separate
 action pills (verify first), `tabBarMinimizeBehavior` (M), sidebarAdaptable (L),
-zoom transitions (L), TipKit tips (M), `GlassColorPicker` (S), `PhotosPicker` (L).
+zoom transitions (L), `GlassColorPicker` (S), `PhotosPicker` (L).

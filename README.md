@@ -379,6 +379,7 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `GlassListSection`, `GlassListTile` | Inset-grouped list, like Settings; rows with leading/title/value/trailing | `Card` of `ListTile`s |
 | `GlassDisclosureGroup` | SwiftUI's DisclosureGroup: a list row with a rotating chevron that expands its rows | `ExpansionTile` |
 | `GlassEmptyState` (`+ .search`) | ContentUnavailableView: icon, title, description, actions | plain centred column |
+| `GlassTipView`, `GlassPopoverTip`, `GlassTipController` | TipKit's `TipView` and `.popoverTip`: image, title, message, actions, close; shown once | Material 3 card |
 | `GlassChip` | Capsule chip with selected state and delete button | `FilterChip` / `InputChip` |
 | `GlassBadge` | Red count capsule (dot when empty) on a child's top trailing corner | `Badge` |
 | `GlassActivityIndicator` | iOS's spinner on its own (`ProgressView()` with no value) | `CircularProgressIndicator` |
@@ -977,6 +978,30 @@ to localise them). Actions are small buttons unless a
 `GlassControlSizeScope` above says otherwise. It draws no platter of its
 own and nothing animates. Geometry measured against SwiftUI on iOS 26.4.
 On Android the same column takes Material 3 typography.
+
+### Tips
+
+```dart
+final favoriteTip = GlassTipController(
+  dismissed: prefs.getBool('favoriteTip') ?? false,
+  onDismissed: (_) => prefs.setBool('favoriteTip', true),
+);
+
+GlassTipView(tip: const GlassTip(title: Text('Save as a Favorite')),
+    controller: favoriteTip)
+
+GlassPopoverTip(tip: filterTip, controller: filterTipController,
+    child: filterButton)
+```
+
+TipKit's inline `TipView` and `.popoverTip`: an opaque platter (or a
+bubble with an arrow, above the anchor or below when there is no room)
+with an image, title, message, actions and a close button. A tip shows
+until its controller is dismissed (close, a tap outside a popover, or
+your action); the package stores nothing, so persist through
+`onDismissed` and hydrate with `dismissed:`. `reset()` shows it again.
+There is no rules or events engine. Mirrors under RTL; Reduce Motion
+drops the scale and collapse animations. On Android: a Material 3 card.
 
 ### Gauge
 

@@ -1,3 +1,7 @@
+## Unreleased
+
+- `GlassTipView` and `GlassPopoverTip`: TipKit's inline and popover tips (title, message, image, actions, close), shown once through a `GlassTipController` whose dismissal the app persists. RTL, dark mode, Reduce Motion and a Material path.
+
 ## 0.5.2 (2026-11-04)
 
 - Docs: README and API docs cover the progress ring that cancels on tap, swiping the iOS picker away, Android's scaled-down H.264 conversion, and the lost re-tap right after the iOS picker's Cancel (a system limit).

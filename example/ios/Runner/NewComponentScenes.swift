@@ -1,4 +1,5 @@
 import SwiftUI
+import TipKit
 
 // MARK: - References for the new components. Laid out the same way in the
 // Flutter twins for side-by-side checks.
@@ -707,5 +708,84 @@ enum ContextMenuOpener {
     }
     for sub in view.subviews { if let f = find(in: sub) { return f } }
     return nil
+  }
+}
+
+// MARK: - TipKit references (`-controls tips`, `tipsdark`, `tippopover`).
+
+@available(iOS 26.0, *)
+struct FavoriteReferenceTip: Tip {
+  var title: Text { Text("Save as a Favorite") }
+  var message: Text? { Text("Your favorite places always appear at the top of the list.") }
+  var image: Image? { Image(systemName: "star") }
+  var actions: [Action] {
+    [Action(id: "learn", title: "Learn More"), Action(id: "later", title: "Not Now")]
+  }
+}
+
+@available(iOS 26.0, *)
+struct SwipeReferenceTip: Tip {
+  var title: Text { Text("Swipe to Delete") }
+  var message: Text? { Text("Swipe left on a row to remove it.") }
+}
+
+@available(iOS 26.0, *)
+struct FilterReferenceTip: Tip {
+  var title: Text { Text("Add a Filter") }
+  var message: Text? { Text("Narrow the list down to what matters.") }
+  var image: Image? { Image(systemName: "line.3.horizontal.decrease.circle") }
+}
+
+/// Resets TipKit and shows every tip, once per launch.
+@available(iOS 26.0, *)
+enum TipReferenceSetup {
+  static let once: Void = {
+    try? Tips.resetDatastore()
+    Tips.showAllTipsForTesting()
+    try? Tips.configure([.displayFrequency(.immediate)])
+  }()
+}
+
+/// Two inline tips 16 pt from the sides, the first's top at y=100: an
+/// image, title, message and two actions; then a title and message only
+/// 40 pt below. White (or black when [dark]) 402 x 874 page.
+@available(iOS 26.0, *)
+struct TipsReference: View {
+  var dark = false
+  init(dark: Bool = false) { self.dark = dark; _ = TipReferenceSetup.once }
+  var body: some View {
+    VStack(spacing: 40) {
+      TipView(FavoriteReferenceTip())
+      TipView(SwipeReferenceTip())
+      Spacer()
+    }
+    .padding(.horizontal, 16)
+    .padding(.top, 100)
+    .frame(width: 402, height: 874, alignment: .top)
+    .background(dark ? Color.black : Color.white)
+    .ignoresSafeArea()
+    .environment(\.colorScheme, dark ? .dark : .light)
+    .statusBarHidden(true)
+  }
+}
+
+/// A 44 pt filter glyph centred at (201, 300) on white with a popover tip.
+@available(iOS 26.0, *)
+struct TipPopoverReference: View {
+  var dark = false
+  init(dark: Bool = false) { self.dark = dark; _ = TipReferenceSetup.once }
+  var body: some View {
+    ZStack(alignment: .top) {
+      (dark ? Color.black : Color.white).ignoresSafeArea()
+      Image(systemName: "line.3.horizontal.decrease.circle")
+        .font(.system(size: 28))
+        .frame(width: 44, height: 44)
+        .popoverTip(FilterReferenceTip())
+        .position(x: 201, y: 300)
+    }
+    .frame(width: 402, height: 874)
+    .ignoresSafeArea()
+    .environment(\.colorScheme, dark ? .dark : .light)
+    .statusBarHidden(true)
   }
 }
