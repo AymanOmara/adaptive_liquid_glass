@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
@@ -10,7 +12,10 @@ import 'android_glass_toggle.dart';
 // `hidden`.
 Future<void> main() async {
   await AdaptiveLiquidGlass.initialize(mode: GlassRenderMode.shader);
-  const page = String.fromEnvironment('PAGE', defaultValue: 'large');
+  // `SIMCTL_CHILD_PAGE=hard xcrun simctl launch ...` also picks the page.
+  final page =
+      Platform.environment['PAGE'] ??
+      const String.fromEnvironment('PAGE', defaultValue: 'large');
   runApp(
     AndroidGlassTheme(
       data: const LiquidGlassThemeData(defaultMode: GlassRenderMode.shader),
