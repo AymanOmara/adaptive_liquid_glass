@@ -142,6 +142,44 @@ void main() {
     expect(find.byType(GlassScrollEdge), findsNothing);
   }, variant: android);
 
+  testWidgets('hard: a sharp blur and flat tint, no gradient fade', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      plainHost(
+        const GlassScrollEdge(
+          visible: true,
+          height: 100,
+          style: GlassScrollEdgeStyle.hard,
+        ),
+      ),
+    );
+    expect(find.byType(BackdropFilter), findsOneWidget);
+    expect(find.byType(ProgressiveBlur), findsNothing);
+    final boxes = t
+        .widgetList<DecoratedBox>(find.byType(DecoratedBox))
+        .map((d) => d.decoration)
+        .whereType<BoxDecoration>();
+    expect(boxes.any((d) => d.gradient != null), isFalse);
+    expect(boxes.any((d) => d.color != null), isTrue);
+    // The blur reaches the edge's bottom: no fade hides its end.
+    expect(t.getSize(find.byType(BackdropFilter)).height, 100);
+  }, variant: ios);
+
+  testWidgets('hidden: draws nothing', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      plainHost(
+        const GlassScrollEdge(
+          visible: true,
+          height: 100,
+          style: GlassScrollEdgeStyle.hidden,
+        ),
+      ),
+    );
+    expect(find.byType(BackdropFilter), findsNothing);
+    expect(find.byType(DecoratedBox), findsNothing);
+  }, variant: ios);
+
   test('uniforms are in screen device px', () {
     expect(
       progressiveBlurUniforms(

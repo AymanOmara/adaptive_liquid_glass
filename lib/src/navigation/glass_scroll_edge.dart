@@ -48,6 +48,8 @@ class GlassScrollEdge extends StatelessWidget {
   );
 
   Widget _edge(BuildContext context, {required bool blur}) {
+    if (style == GlassScrollEdgeStyle.hidden) return const SizedBox.shrink();
+    final hard = style == GlassScrollEdgeStyle.hard;
     final bg = CupertinoDynamicColor.resolve(
       CupertinoTheme.of(context).scaffoldBackgroundColor,
       context,
@@ -57,7 +59,7 @@ class GlassScrollEdge extends StatelessWidget {
       alignment: Alignment.topCenter,
       child: ClipRect(
         child: SizedBox(
-          height: height * NavBarMetrics.edgeBlurExtent,
+          height: hard ? height : height * NavBarMetrics.edgeBlurExtent,
           child: BackdropFilter(
             filter: ImageFilter.blur(
               sigmaX: NavBarMetrics.edgeBlurSigma,
@@ -88,18 +90,25 @@ class GlassScrollEdge extends StatelessWidget {
                       )
                     : uniform,
               DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      bg,
-                      bg.withValues(alpha: 0.85),
-                      bg.withValues(alpha: 0),
-                    ],
-                    stops: const [0, 0.6, 1],
-                  ),
-                ),
+                decoration: hard
+                    // A flat tint with a crisp lower edge.
+                    ? BoxDecoration(
+                        color: bg.withValues(
+                          alpha: NavBarMetrics.edgeHardTintAlpha,
+                        ),
+                      )
+                    : BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            bg,
+                            bg.withValues(alpha: 0.85),
+                            bg.withValues(alpha: 0),
+                          ],
+                          stops: const [0, 0.6, 1],
+                        ),
+                      ),
               ),
             ],
           ),

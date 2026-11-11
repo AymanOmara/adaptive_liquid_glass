@@ -75,6 +75,20 @@ abstract final class NavBarMetrics {
   /// edge's bottom.
   static const double edgeProgressiveFalloff = 1.2;
 
+  /// The `hard` scroll edge's background tint opacity (estimated by eye).
+  static const double edgeHardTintAlpha = 0.7;
+
+  // Subtitle (`navigationSubtitle`). Estimated by eye from iOS 26.
+
+  /// The inline subtitle under the inline title.
+  static const double subtitleFontSize = 12;
+
+  /// The subtitle under a large title.
+  static const double largeSubtitleFontSize = 15;
+
+  /// Extra height a large-title subtitle adds below the large title.
+  static const double largeSubtitleHeight = 20;
+
   /// The largest text scale the inline title takes: iOS's inline title
   /// keeps its size at any Dynamic Type setting in the fixed-height bar.
   static const double titleMaxTextScale = 1;
