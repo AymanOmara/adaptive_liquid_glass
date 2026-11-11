@@ -60,6 +60,10 @@ enum ControlScenes {
       UIKitContextMenuReference(size: CGSize(width: 360, height: 80), white: true))
     case "stepper": root = AnyView(StepperReference())
     case "picker": root = AnyView(PickerReference())
+    case "palettemenu": root = AnyView(PaletteMenuReference(symbols: false))
+    case "palettemenusymbols": root = AnyView(PaletteMenuReference(symbols: true))
+    case "palettestandalone": root = AnyView(PaletteStandaloneReference())
+    case "multidate": root = AnyView(MultiDateReference())
     case "datepicker": root = AnyView(DatePickerReference())
     case "datetimepicker": root = AnyView(DatePickerReference(time: true))
     case "searchtab": root = AnyView(SearchTabReference())
@@ -762,6 +766,102 @@ struct PickerReference: View {
     .frame(width: 402, height: 874)
     .ignoresSafeArea()
     .environment(\.colorScheme, .light)
+    .statusBarHidden(true)
+  }
+}
+
+/// A `Menu` (a "Flag" label, centre 201, 300) whose first section is a
+/// `.palette` picker — five coloured circles, or five SF Symbols with
+/// `symbols` — above two buttons. Tap the label to open. White page.
+@available(iOS 26.0, *)
+struct PaletteMenuReference: View {
+  let symbols: Bool
+  @State private var choice = 1
+  private let colours: [(String, Color)] = [
+    ("Red", .red), ("Orange", .orange), ("Yellow", .yellow), ("Green", .green), ("Blue", .blue),
+  ]
+  private let icons = ["star", "heart", "bolt", "flag", "bell"]
+  var body: some View {
+    ZStack(alignment: .topLeading) {
+      Color.white
+      Menu {
+        Picker("Flag", selection: $choice) {
+          if symbols {
+            ForEach(icons.indices, id: \.self) { i in
+              Label(icons[i].capitalized, systemImage: icons[i]).tag(i)
+            }
+          } else {
+            ForEach(colours.indices, id: \.self) { i in
+              Label(colours[i].0, systemImage: "circle.fill").tint(colours[i].1).tag(i)
+            }
+          }
+        }
+        .pickerStyle(.palette)
+        Button("Mark as Read", systemImage: "envelope.open") {}
+        Button("Delete", systemImage: "trash", role: .destructive) {}
+      } label: {
+        Label("Flag", systemImage: "flag")
+      }
+      .fixedSize().position(x: 201, y: 300)
+    }
+    .frame(width: 402, height: 874)
+    .ignoresSafeArea()
+    .environment(\.colorScheme, .light)
+    .environment(\.locale, Locale(identifier: "en_US"))
+    .statusBarHidden(true)
+  }
+}
+
+/// A `.palette` picker of five SF Symbols outside any menu, centre 201,
+/// 200, and the same picker in a `Form` row below. White page.
+@available(iOS 26.0, *)
+struct PaletteStandaloneReference: View {
+  @State private var choice = 1
+  private let icons = ["star", "heart", "bolt", "flag", "bell"]
+  private var picker: some View {
+    Picker("Symbol", selection: $choice) {
+      ForEach(icons.indices, id: \.self) { i in
+        Label(icons[i].capitalized, systemImage: icons[i]).tag(i)
+      }
+    }
+    .pickerStyle(.palette)
+  }
+  var body: some View {
+    ZStack(alignment: .topLeading) {
+      Color.white
+      picker.fixedSize().position(x: 201, y: 200)
+      Form { picker }.frame(width: 402, height: 300).position(x: 201, y: 560)
+    }
+    .frame(width: 402, height: 874)
+    .ignoresSafeArea()
+    .environment(\.colorScheme, .light)
+    .environment(\.locale, Locale(identifier: "en_US"))
+    .statusBarHidden(true)
+  }
+}
+
+/// en_US: a `MultiDatePicker` limited to 1 Oct – 31 Dec 2026 with 6, 7, 8
+/// and 9 Oct 2026 selected, top-left at 0, 120, 402 wide. White page.
+@available(iOS 26.0, *)
+struct MultiDateReference: View {
+  @State private var dates: Set<DateComponents> = Set((6...9).map {
+    DateComponents(calendar: Calendar(identifier: .gregorian), year: 2026, month: 10, day: $0)
+  })
+  private let bounds: Range<Date> = {
+    let c = Calendar(identifier: .gregorian)
+    return c.date(from: DateComponents(year: 2026, month: 10, day: 1))!
+      ..< c.date(from: DateComponents(year: 2027, month: 1, day: 1))!
+  }()
+  var body: some View {
+    ZStack(alignment: .topLeading) {
+      Color.white
+      MultiDatePicker("Dates", selection: $dates, in: bounds)
+        .frame(width: 402).position(x: 201, y: 340)
+    }
+    .frame(width: 402, height: 874)
+    .ignoresSafeArea()
+    .environment(\.colorScheme, .light)
+    .environment(\.locale, Locale(identifier: "en_US"))
     .statusBarHidden(true)
   }
 }
