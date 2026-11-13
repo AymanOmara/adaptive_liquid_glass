@@ -33,4 +33,8 @@ abstract final class PageControlMetrics {
 
   /// How long a dot's fade takes.
   static const Duration dotAnimation = Duration(milliseconds: 200);
+
+  /// A `GlassPageView`'s dots' bottom edge above the bottom safe area.
+  /// ESTIMATED from the iOS 26 `.page` style, not measured.
+  static const double pageViewBottom = 12;
 }

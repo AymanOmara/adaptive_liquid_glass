@@ -67,6 +67,7 @@ export 'src/gauge/glass_gauge.dart';
 export 'src/gauge/glass_gauge_style.dart';
 export 'src/glass_effect.dart';
 export 'src/group/glass_group.dart' show GlassGroup;
+export 'src/inspector/glass_inspector.dart';
 export 'src/label/glass_label.dart';
 export 'src/label/glass_label_layout.dart';
 export 'src/layer/glass_layer_scope.dart' show GlassLayerScope;
@@ -90,6 +91,7 @@ export 'src/navigation/glass_scroll_edge_style.dart';
 export 'src/navigation/sliver_glass_navigation_bar.dart'
     show SliverGlassNavigationBar;
 export 'src/page_control/glass_page_control.dart';
+export 'src/page_control/glass_page_view.dart';
 export 'src/photos_picker/glass_photo_import_controller.dart'
     show GlassPhotoImportController;
 export 'src/photos_picker/glass_photo_import_progress.dart';
@@ -109,6 +111,7 @@ export 'src/refresh/glass_refresh.dart';
 export 'src/refresh/glass_refresh_indicator.dart';
 export 'src/refresh/glass_refresh_scroll_physics.dart';
 export 'src/refresh/sliver_glass_refresh.dart';
+export 'src/safe_area_bar/glass_safe_area_bar.dart';
 export 'src/scaffold/glass_bottom_accessory.dart';
 export 'src/scaffold/glass_scaffold.dart';
 export 'src/scroll_indicators/glass_scroll_indicator_visibility.dart';

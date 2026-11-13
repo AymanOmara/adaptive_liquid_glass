@@ -930,3 +930,107 @@ struct ScrollIndicatorsReference: View {
     .statusBarHidden(true)
   }
 }
+
+// MARK: - Inspector, safeAreaBar and the page-style TabView.
+
+/// A "Notes" navigation stack over a white list with an `.inspector`
+/// ("Details", Font/Size rows) presented 0.5 s after launch: a sheet on a
+/// compact iPhone, a trailing column on a regular-width iPad. With
+/// `autoToggle` it closes and reopens every 2.5 s for present/dismiss
+/// recordings.
+@available(iOS 26.0, *)
+struct InspectorReference: View {
+  var dark = false
+  var autoToggle = false
+  @State private var shown = false
+  var body: some View {
+    NavigationStack {
+      List(0..<30) { i in Text("Note \(i + 1)") }
+        .navigationTitle("Notes")
+        .toolbar {
+          Button {
+            shown.toggle()
+          } label: { Image(systemName: "info.circle") }
+        }
+        .inspector(isPresented: $shown) {
+          Form {
+            Section("Text") {
+              LabeledContent("Font", value: "SF Pro")
+              LabeledContent("Size", value: "17 pt")
+            }
+          }
+          .navigationTitle("Details")
+        }
+    }
+    .environment(\.colorScheme, dark ? .dark : .light)
+    .statusBarHidden(true)
+    .onAppear {
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { shown = true }
+      guard autoToggle else { return }
+      Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in shown.toggle() }
+    }
+  }
+}
+
+/// 40 alternating orange/blue 60 pt rows under a `.safeAreaBar` at the top
+/// (a glass "Filter" capsule) and another at the bottom (a glass "3 drafts"
+/// capsule and a large glass "Compose" button). Drag the rows to see the
+/// scroll edge effect under the bars.
+@available(iOS 26.0, *)
+struct SafeAreaBarReference: View {
+  var dark = false
+  var body: some View {
+    ScrollView {
+      LazyVStack(spacing: 0) {
+        ForEach(0..<40) { i in
+          Text("Row \(i + 1)")
+            .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
+            .padding(.horizontal, 16)
+            .background(i % 2 == 0 ? Color.orange : Color.blue)
+        }
+      }
+    }
+    .safeAreaBar(edge: .top) {
+      Text("Filter")
+        .padding(.horizontal, 16).frame(height: 44)
+        .glassEffect()
+    }
+    .safeAreaBar(edge: .bottom) {
+      HStack {
+        Text("3 drafts").padding(.horizontal, 16).frame(height: 44).glassEffect()
+        Spacer()
+        Button("Compose") {}.buttonStyle(.glass).controlSize(.large)
+      }
+      .padding(.horizontal, 16)
+    }
+    .environment(\.colorScheme, dark ? .dark : .light)
+    .statusBarHidden(true)
+  }
+}
+
+/// A `.page` TabView of four colour pages ("Page 1"…"Page 4") filling the
+/// screen, index dots at the default display mode; `background` adds
+/// `.indexViewStyle(.page(backgroundDisplayMode: .always))`.
+@available(iOS 26.0, *)
+struct PageStyleReference: View {
+  var background = false
+  var dark = false
+  @State private var page = 0
+  let colors: [Color] = [.orange, .blue, .green, .purple]
+  var body: some View {
+    TabView(selection: $page) {
+      ForEach(0..<4) { i in
+        ZStack {
+          colors[i]
+          Text("Page \(i + 1)").font(.largeTitle).foregroundStyle(.white)
+        }
+        .tag(i)
+      }
+    }
+    .tabViewStyle(.page)
+    .indexViewStyle(.page(backgroundDisplayMode: background ? .always : .automatic))
+    .ignoresSafeArea()
+    .environment(\.colorScheme, dark ? .dark : .light)
+    .statusBarHidden(true)
+  }
+}

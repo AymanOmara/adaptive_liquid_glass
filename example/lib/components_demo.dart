@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart' show CupertinoColors, CupertinoIcons;
 import 'package:flutter/material.dart';
 
 import 'android_glass_toggle.dart';
+import 'inspector_safe_area_page_demo.dart';
 
 /// `flutter run -t lib/components_demo.dart`: every component on one
 /// `GlassScaffold`, over a photo. Add `--dart-define=MODE=shader` (or
@@ -1154,6 +1155,8 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                     ),
                   const SizedBox(height: 24),
                   const _ZoomCard(),
+                  const SizedBox(height: 24),
+                  const InspectorSafeAreaPageLinks(),
                   const SizedBox(height: 400),
                 ],
               ),
