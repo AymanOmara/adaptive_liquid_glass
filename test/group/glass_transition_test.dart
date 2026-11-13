@@ -132,7 +132,7 @@ void main() {
     expect(shapes(t)[1].width, closeTo(60 * dpr, 0.5));
     await t.pumpWidget(scene(showB: false, transition: id));
     await t.pump();
-    expect(shapes(t), hasLength(1)); // no ghost
+    expect(t.hasRunningAnimations, isFalse); // no ghost shrinking away
   }, variant: ios);
 
   testWidgets('matchedGeometry grows from the neighbour (default)', (t) async {

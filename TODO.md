@@ -217,7 +217,7 @@ capture; Android fonts, haptics, back gestures and physics stay platform-native.
   disclosure, refresh, tab minimize/sidebar are done). Next, ranked:
   menu sections/submenus/primaryAction; separate nav-bar pills
   (ToolbarItemGroup, sharedBackgroundVisibility); navigationSubtitle;
-  glassEffectTransition; ControlGroup; scroll edge hard/hidden;
+  ControlGroup; scroll edge hard/hidden;
   NavigationSplitView (large).
   Candidate from app use (2026-10-10): a sliver pinned under the nav bar
   (the app's PinnedBelowBarSliver). Kept app-side for now: sticky bottom

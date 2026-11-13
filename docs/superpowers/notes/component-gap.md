@@ -164,7 +164,7 @@ Next, ranked:
 1. **Menu sections / submenus / `primaryAction`** — M, high. *In progress in another session.* `GlassMenuButton` is flat items only.
 2. **Separate nav-bar pills** (`ToolbarItemGroup`, `sharedBackgroundVisibility`) — M, high. *In progress in another session.* Actions currently merge into one capsule.
 3. **`navigationSubtitle`** — S, med.
-4. **`glassEffectTransition`** — M, med.
+4. ~~**`glassEffectTransition`**~~ — done: `GlassTransition` (`matchedGeometry`, `materialize`, `identity`) on `LiquidGlass(transition:)` / `.glassEffect`.
 5. **`ControlGroup`** — S, low-med.
 6. **Scroll edge `hard` / `hidden`** — S, med. `GlassScrollEdgeStyle` has only `uniform` and `progressive`.
 7. **`NavigationSplitView`** — L, med (iPad pattern).
