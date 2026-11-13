@@ -4,6 +4,9 @@
 - Navigation bars: separate pills, as SwiftUI's `ToolbarItemGroup` / `ToolbarSpacer(.fixed)`: a `GlassToolbarSpacer` in `actions` starts a new capsule 12 pt away (`NavBarMetrics.groupGap`). New `GlassBarItem(sharedBackground: false)` stands apart with no capsule, as `.sharedBackgroundVisibility(.hidden)`. Native and shader paths.
 - Menus: `GlassMenuItem.section` (SwiftUI's `Section`, with an optional title and dividers between sections) and `GlassMenuItem.submenu` (a nested `Menu`: the menu recedes and the submenu's card shows over it, as iOS 26) in `GlassMenuButton`, `GlassMenuAnchor` and `GlassContextMenu`. Measured from SwiftUI (`MenuMetrics`: 1 pt dividers, 15 pt titles, chevrons). Gliding skips titles and dividers. Material: dividers, title labels and `SubmenuButton`; the context menu's popup lists a submenu's rows under its title.
 - `GlassMenuButton.primaryAction`: SwiftUI's `Menu(primaryAction:)`; a tap runs it and a long-press opens the menu, on both paths.
+- `GlassForm`: SwiftUI's `Form`, a scrolling column of grouped sections on the grouped background, measured from iOS 26 (the first platter 42.33 pt below the safe top under a header, 35 pt between sections, 76 pt across a footer and a header). The keyboard replaces the bottom safe area. Material: 24-pt gaps on the surface colour.
+- `GlassGroupBox`: SwiftUI's `GroupBox`, an 8-pt rounded platter with 16-pt padding and an optional label and icon; nested boxes alternate fills as SwiftUI's do. Material: a filled `Card`.
+- Lists: a `GlassSwipeActions` row whose tile has a leading now insets its separator under the title, as a plain row with a leading does.
 
 ## 0.6.0 (2026-11-09)
 

@@ -257,6 +257,35 @@ abstract final class GlassColors {
   static const CupertinoDynamicColor pickerPageBackground =
       CupertinoColors.systemGroupedBackground;
 
+  /// A form's page behind its sections (iOS's systemGroupedBackground).
+  static const CupertinoDynamicColor formBackground =
+      CupertinoColors.systemGroupedBackground;
+
+  /// A group box's platter (iOS's secondarySystemBackground).
+  static const CupertinoDynamicColor groupBoxBackground =
+      CupertinoColors.secondarySystemBackground;
+
+  /// A group box's platter inside another group box (iOS's
+  /// tertiarySystemBackground).
+  static const CupertinoDynamicColor groupBoxNestedBackground =
+      CupertinoColors.tertiarySystemBackground;
+
+  /// A plain list's page (iOS's systemBackground).
+  static const CupertinoDynamicColor plainListBackground =
+      CupertinoColors.systemBackground;
+
+  /// A sidebar list's page (iOS's systemGroupedBackground).
+  static const CupertinoDynamicColor sidebarListBackground =
+      CupertinoColors.systemGroupedBackground;
+
+  /// A sidebar list's selected row (black at 12%, as the sidebar tab
+  /// bar's; dark estimated).
+  static const CupertinoDynamicColor sidebarListSelection =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0x1F000000),
+        darkColor: Color(0x29FFFFFF),
+      );
+
   /// CupertinoTheme's default primary colour. A list row's icon uses
   /// [listIcon] while the theme keeps this default.
   static const CupertinoDynamicColor listDefaultAccent =

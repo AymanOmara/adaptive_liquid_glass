@@ -12,6 +12,7 @@ import '../disclosure/disclosure_separator_scope.dart';
 import '../disclosure/glass_disclosure_group.dart';
 import '../liquid_glass.dart';
 import 'glass_list_tile.dart';
+import 'list_leading.dart';
 import 'list_metrics.dart';
 import 'list_section_scope.dart';
 
@@ -105,9 +106,7 @@ class GlassListSection extends StatelessWidget {
   /// The separator's start inset: the title's start under a row with a
   /// leading, else the row's inset.
   double _separatorStart(Widget row) =>
-      row is GlassListTile && row.leading != null
-      ? ListMetrics.textStart
-      : ListMetrics.horizontalPadding;
+      hasLeading(row) ? ListMetrics.textStart : ListMetrics.horizontalPadding;
 
   Widget _glass(BuildContext context) {
     final separator = CupertinoDynamicColor.resolve(
@@ -249,7 +248,7 @@ class GlassListSection extends StatelessWidget {
                   (above) => Divider(
                     height: 1,
                     color: separatorColor,
-                    indent: above is GlassListTile && above.leading != null
+                    indent: hasLeading(above)
                         ? ListMetrics.materialLeadingInset
                         : ListMetrics.materialInset,
                   ),
