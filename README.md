@@ -702,7 +702,7 @@ CustomScrollView(slivers: [
 
 No bar background, as on iOS 26: a `GlassBackButton` when the route can
 pop (a `leading` icon button is a 44-pt circle, as SwiftUI's), the actions
-merged into one glass capsule, and a fade at the top once
+merged into one glass capsule (a lone action is a 44-pt circle), and a fade at the top once
 content is under the bar. `GlassScrollEdgeStyle.progressive` is an opt-in
 graduated blur under the bar (strongest at the top, easing to sharp further
 down); the default `uniform` is one even blur. The large title scrolls away
@@ -710,6 +710,30 @@ with the content, the inline title fades in once it has gone, and pulling
 down stretches the large title. Metrics are measured from SwiftUI's
 `NavigationStack` (`tool/reference/`). On Android these are `AppBar` and
 `SliverAppBar.large`.
+
+Split the actions into separate pills as SwiftUI's `ToolbarItemGroup` and
+`ToolbarSpacer` do: a `GlassToolbarSpacer` in `actions` starts a new capsule
+12 pt away. A `GlassBarItem(sharedBackground: false)` stands apart with no
+capsule, as `.sharedBackgroundVisibility(.hidden)` (give it a non-glass
+child, such as a plain button or an avatar). Both paths, native and shader.
+
+```dart
+GlassNavigationBar(
+  title: const Text('Inbox'),
+  actions: [
+    GlassButton.icon(onPressed: compose, icon: CupertinoIcons.square_pencil, semanticLabel: 'Compose'),
+    GlassButton.icon(onPressed: more, icon: CupertinoIcons.ellipsis, semanticLabel: 'More'),
+    const GlassToolbarSpacer(),
+    GlassButton.icon(onPressed: share, icon: CupertinoIcons.share, semanticLabel: 'Share'),
+    const GlassToolbarSpacer(),
+    GlassBarItem(
+      sharedBackground: false,
+      child: GlassButton.icon(onPressed: profile, icon: CupertinoIcons.person_crop_circle_fill,
+          semanticLabel: 'Profile', style: GlassButtonStyle.plain),
+    ),
+  ],
+)
+```
 
 A list in `SliverFillRemaining` takes every drag, so the large title never
 collapses. When the body scrolls itself (a `ListView`, a paged list), use

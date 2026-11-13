@@ -81,6 +81,7 @@ export 'src/menu/glass_menu_controller.dart' show GlassMenuController;
 export 'src/menu/glass_menu_item.dart';
 export 'src/native/glass_batch.dart' show GlassBatch;
 export 'src/navigation/glass_back_button.dart' show GlassBackButton;
+export 'src/navigation/glass_bar_item.dart';
 export 'src/navigation/glass_large_title_scroll_view.dart';
 export 'src/navigation/glass_navigation_bar.dart';
 export 'src/navigation/glass_scroll_edge_style.dart';

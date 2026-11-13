@@ -91,6 +91,106 @@ void main() {
     expect(800 - last.right, moreOrLessEquals(NavBarMetrics.edgeInset));
   }, variant: ios);
 
+  testWidgets('a lone trailing icon button is a 44-pt circle, as SwiftUI', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(page(actions: [twoActions().last]));
+    final r = t.getRect(find.byType(GlassButton));
+    expect(r.size, const Size(44, 44));
+    expect(800 - r.right, moreOrLessEquals(NavBarMetrics.edgeInset));
+  }, variant: ios);
+
+  testWidgets('a GlassToolbarSpacer splits the actions into separate pills', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(
+      page(
+        actions: [
+          ...twoActions(),
+          const GlassToolbarSpacer(),
+          GlassButton.icon(
+            onPressed: () {},
+            icon: CupertinoIcons.share,
+            semanticLabel: 'Share',
+          ),
+        ],
+      ),
+    );
+    final members = t
+        .widgetList<GlassMember>(find.byType(GlassMember))
+        .toList();
+    expect(members, hasLength(3));
+    expect(members[0].unionId, members[1].unionId);
+    expect(members[2].unionId, isNot(members[0].unionId));
+    final buttons = find.byType(GlassButton);
+    final more = t.getRect(buttons.at(1));
+    final share = t.getRect(buttons.at(2));
+    // The group keeps its 51.5-pt cells; the lone share pill is a circle.
+    expect(
+      more.width,
+      NavBarMetrics.item.iconOnlyHeight + NavBarMetrics.item.iconOnlyExtraWidth,
+    );
+    expect(share.size, const Size(44, 44));
+    expect(share.left - more.right, moreOrLessEquals(NavBarMetrics.groupGap));
+    expect(800 - share.right, moreOrLessEquals(NavBarMetrics.edgeInset));
+  }, variant: ios);
+
+  testWidgets('a GlassBarItem with no shared background stands apart bare', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(
+      page(
+        actions: [
+          ...twoActions(),
+          GlassBarItem(
+            sharedBackground: false,
+            child: GlassButton.icon(
+              onPressed: () {},
+              icon: CupertinoIcons.person_crop_circle_fill,
+              style: GlassButtonStyle.plain,
+              semanticLabel: 'Profile',
+            ),
+          ),
+        ],
+      ),
+    );
+    // Only the pair draws glass; the bare item draws none.
+    final members = t
+        .widgetList<GlassMember>(find.byType(GlassMember))
+        .toList();
+    expect(members, hasLength(2));
+    final cell = t.getRect(
+      find
+          .ancestor(
+            of: find.byType(GlassBarItem),
+            matching: find.byType(SizedBox),
+          )
+          .first,
+    );
+    expect(cell.size, const Size.square(NavBarMetrics.bareItemSize));
+    expect(800 - cell.right, moreOrLessEquals(NavBarMetrics.edgeInset));
+    final more = t.getRect(find.byType(GlassButton).at(1));
+    expect(cell.left - more.right, moreOrLessEquals(NavBarMetrics.groupGap));
+  }, variant: ios);
+
+  testWidgets('pills on the Material path: spacers draw nothing', (t) async {
+    GlassPlatform.instance.debugReset();
+    await t.pumpWidget(
+      page(
+        actions: [
+          ...twoActions(),
+          const GlassToolbarSpacer(),
+          const GlassBarItem(sharedBackground: false, child: Text('Me')),
+        ],
+      ),
+    );
+    expect(t.takeException(), isNull);
+    expect(find.text('Me'), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
   testWidgets('a lone leading icon button is a 44-pt circle, as SwiftUI', (
     t,
   ) async {

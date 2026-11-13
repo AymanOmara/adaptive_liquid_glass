@@ -23,8 +23,9 @@ abstract final class NavBarMetrics {
     cornerRadius: 12,
   );
 
-  /// A lone bar button (the leading item): an icon-only button is a 44-pt
-  /// circle, as SwiftUI's (measured over `-controls navbarphoto`).
+  /// A lone bar button (the leading item, a single trailing action or a
+  /// trailing group of one): an icon-only button is a 44-pt circle, as
+  /// SwiftUI's (measured over `-controls navbarphoto` and `navbarlone`).
   static const GlassButtonMetrics loneItem = GlassButtonMetrics(
     height: 44,
     padding: 14,
@@ -35,6 +36,14 @@ abstract final class NavBarMetrics {
     iconOnlyExtraWidth: 0,
     cornerRadius: 12,
   );
+
+  /// The gap between separate trailing groups (a `GlassToolbarSpacer` or
+  /// a `GlassBarItem` with no shared background), as SwiftUI's
+  /// `ToolbarSpacer(.fixed)` (measured over `-controls navbarpills`).
+  static const double groupGap = 12;
+
+  /// The cell of a bar item with no shared background.
+  static const double bareItemSize = 44;
 
   /// Inline title.
   static const double titleFontSize = 17;

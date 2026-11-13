@@ -19,6 +19,9 @@ enum ControlScenes {
       root = AnyView(NavBarReference(scrollY: y))
     case "navbarphoto": root = AnyView(NavBarPhotoReference(dark: false))
     case "navbarphotodark": root = AnyView(NavBarPhotoReference(dark: true))
+    case "navbarlone": root = AnyView(NavBarPhotoReference(dark: false, lone: true))
+    case "navbarpills": root = AnyView(NavBarPillsReference(dark: false))
+    case "navbarpillsdark": root = AnyView(NavBarPillsReference(dark: true))
     case "controls": root = AnyView(ControlsReference())
     case "toolbar": root = AnyView(ToolbarReference())
     case "keyboardtoolbar": root = AnyView(KeyboardToolbarReference(dark: false))
@@ -179,13 +182,37 @@ struct NavBarReference: View {
 @available(iOS 26.0, *)
 struct NavBarPhotoReference: View {
   let dark: Bool
+  /// `navbarlone`: no leading item and a lone trailing ellipsis.
+  var lone = false
   var body: some View {
-    NavigationStack {
-      ZStack {
-        if let image = ReferenceAssets.image("photo") {
-          Image(uiImage: image).resizable().interpolation(.none).ignoresSafeArea()
-        }
+    if lone { loneBar } else { pair }
+  }
+
+  private var photo: some View {
+    ZStack {
+      if let image = ReferenceAssets.image("photo") {
+        Image(uiImage: image).resizable().interpolation(.none).ignoresSafeArea()
       }
+    }
+  }
+
+  private var loneBar: some View {
+    NavigationStack {
+      photo
+        .navigationTitle("Inbox")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+          ToolbarItem(placement: .topBarTrailing) {
+            Button {} label: { Image(systemName: "ellipsis") }
+          }
+        }
+    }
+    .environment(\.colorScheme, dark ? .dark : .light)
+  }
+
+  private var pair: some View {
+    NavigationStack {
+      photo
       .navigationTitle("Inbox")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
@@ -196,6 +223,42 @@ struct NavBarPhotoReference: View {
           Button {} label: { Image(systemName: "square.and.pencil") }
           Button {} label: { Image(systemName: "ellipsis") }
         }
+      }
+    }
+    .environment(\.colorScheme, dark ? .dark : .light)
+  }
+}
+
+/// `-controls navbarpills(dark)`: trailing items in separate glass pills
+/// over `photo.png` — a compose/ellipsis group, a fixed `ToolbarSpacer`, a
+/// lone share item, another spacer, and an item whose shared background is
+/// hidden (`sharedBackgroundVisibility(.hidden)`).
+@available(iOS 26.0, *)
+struct NavBarPillsReference: View {
+  let dark: Bool
+  var body: some View {
+    NavigationStack {
+      ZStack {
+        if let image = ReferenceAssets.image("photo") {
+          Image(uiImage: image).resizable().interpolation(.none).ignoresSafeArea()
+        }
+      }
+      .navigationTitle("Inbox")
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItemGroup(placement: .topBarTrailing) {
+          Button {} label: { Image(systemName: "square.and.pencil") }
+          Button {} label: { Image(systemName: "ellipsis") }
+        }
+        ToolbarSpacer(.fixed, placement: .topBarTrailing)
+        ToolbarItem(placement: .topBarTrailing) {
+          Button {} label: { Image(systemName: "square.and.arrow.up") }
+        }
+        ToolbarSpacer(.fixed, placement: .topBarTrailing)
+        ToolbarItem(placement: .topBarTrailing) {
+          Button {} label: { Image(systemName: "person.crop.circle.fill") }
+        }
+        .sharedBackgroundVisibility(.hidden)
       }
     }
     .environment(\.colorScheme, dark ? .dark : .light)

@@ -1,4 +1,5 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/testing.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -28,6 +29,7 @@ class ReferenceTwin extends StatelessWidget {
       defaultValue: 'controls',
     ),
     this.mode,
+    this.constants = GlassConstants.standard,
   });
 
   /// The scene to show; the main app passes `-twin <name>` here.
@@ -35,6 +37,9 @@ class ReferenceTwin extends StatelessWidget {
 
   /// The glass path (`-mode shader|native|auto`); null is the default.
   final String? mode;
+
+  /// The glass constants (`-constants <json>`); standard by default.
+  final GlassConstants constants;
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +49,7 @@ class ReferenceTwin extends StatelessWidget {
 
   Widget _build(BuildContext context) => LiquidGlassTheme(
     data: LiquidGlassThemeData(
+      constants: constants,
       defaultMode: switch (mode) {
         'shader' => GlassRenderMode.shader,
         'native' || 'custom' => GlassRenderMode.native,

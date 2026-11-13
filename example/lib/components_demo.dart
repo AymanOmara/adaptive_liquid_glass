@@ -128,6 +128,19 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
             ),
           ],
         ),
+        // A spacer starts a separate pill; a GlassBarItem without a shared
+        // background stands apart bare, as SwiftUI's
+        // .sharedBackgroundVisibility(.hidden).
+        const GlassToolbarSpacer(),
+        GlassBarItem(
+          sharedBackground: false,
+          child: GlassButton.icon(
+            onPressed: () => _snack('Profile'),
+            icon: CupertinoIcons.person_crop_circle_fill,
+            semanticLabel: 'Profile',
+            style: GlassButtonStyle.plain,
+          ),
+        ),
       ],
     ),
     tabBar: _toolbar
