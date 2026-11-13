@@ -1,6 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
-    show IconButton, MenuAnchor, MenuController, MenuItemButton, Theme;
+    show
+        Divider,
+        IconButton,
+        Icons,
+        MenuAnchor,
+        MenuController,
+        MenuItemButton,
+        SubmenuButton,
+        Theme,
+        Tooltip,
+        TooltipTriggerMode;
 
 import '../button/glass_button.dart';
 import '../core/effective_glass_mode.dart';
@@ -10,6 +20,7 @@ import 'glass_menu_anchor.dart';
 import 'glass_menu_controller.dart';
 import 'glass_menu_controller_host.dart';
 import 'glass_menu_item.dart';
+import 'menu_sections.dart';
 
 part 'material_menu.dart';
 
@@ -32,6 +43,9 @@ part 'material_menu.dart';
 /// `Menu` does. Measured from SwiftUI (`MenuMetrics`). Tap outside or choose an
 /// item to close it. On the Material path it is a Material 3 [MenuAnchor].
 /// Without [icon] and [semanticLabel] it is the "More" ellipsis button.
+///
+/// With [primaryAction] it is SwiftUI's `Menu(primaryAction:)`: a tap runs
+/// the action and a long-press opens the menu.
 class GlassMenuButton extends StatelessWidget {
   /// Creates a menu button.
   const GlassMenuButton({
@@ -41,6 +55,7 @@ class GlassMenuButton extends StatelessWidget {
     required this.items,
     this.controller,
     this.mode,
+    this.primaryAction,
   });
 
   /// The button's icon; defaults to an ellipsis.
@@ -59,6 +74,10 @@ class GlassMenuButton extends StatelessWidget {
   /// The rendering path; see [GlassRenderMode].
   final GlassRenderMode? mode;
 
+  /// What a tap runs, as SwiftUI's `Menu(primaryAction:)`; the menu then
+  /// opens on a long-press. Null: a tap opens the menu.
+  final VoidCallback? primaryAction;
+
   @override
   Widget build(BuildContext context) => GlassModeBuilder(
     mode: mode,
@@ -68,17 +87,22 @@ class GlassMenuButton extends StatelessWidget {
             semanticLabel: semanticLabel,
             items: items,
             controller: controller,
+            primaryAction: primaryAction,
           )
         : GlassMenuAnchor(
             items: items,
             mode: mode,
             controller: controller,
-            builder: (context, open) => GlassButton.icon(
-              onPressed: open,
-              icon: icon,
-              semanticLabel: semanticLabel,
-              mode: mode,
-            ),
+            builder: (context, open) {
+              final button = GlassButton.icon(
+                onPressed: primaryAction ?? open,
+                icon: icon,
+                semanticLabel: semanticLabel,
+                mode: mode,
+              );
+              if (primaryAction == null) return button;
+              return GestureDetector(onLongPress: open, child: button);
+            },
           ),
   );
 }

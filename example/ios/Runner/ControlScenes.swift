@@ -41,6 +41,10 @@ enum ControlScenes {
     case "lensreach": root = AnyView(LensReachReference())
     case "sheet": root = AnyView(SheetReference(large: false))
     case "menu": root = AnyView(MenuReference())
+    case "menusections": root = AnyView(MenuSectionsReference())
+    case "menusectionsdark": root = AnyView(MenuSectionsReference(dark: true))
+    case "menusections2": root = AnyView(MenuSectionsReference(second: true))
+    case "menuprimary": root = AnyView(MenuPrimaryReference())
     case "search": root = AnyView(SearchReference())
     case "sheetlarge": root = AnyView(SheetReference(large: true))
     case "sheetheight":
@@ -52,6 +56,7 @@ enum ControlScenes {
     case "popover": root = AnyView(PopoverReference())
     case "contextmenu": root = AnyView(ContextMenuReference())
     case "contextmenuopen": root = AnyView(ContextMenuReference(open: true))
+    case "contextmenusections": root = AnyView(ContextMenuReference(open: true, sections: true))
     case "contextmenuuikit": root = AnyView(UIKitContextMenuReference())
     case "contextmenuuikitleft": root = AnyView(UIKitContextMenuReference(x: 110))
     case "contextmenuuikitstripes": root = AnyView(UIKitContextMenuReference(stripes: true))
@@ -490,6 +495,84 @@ struct MenuReference: View {
   }
 }
 
+/// A trailing toolbar menu with SwiftUI's menu structure: a titled
+/// Section (Copy, Duplicate), an untitled one holding a submenu (Sort By:
+/// Name, Date, Size) and Share, then a loose destructive Delete. Tap the
+/// ellipsis to open, "Sort By" to open the submenu. Mid-grey page.
+@available(iOS 26.0, *)
+struct MenuSectionsReference: View {
+  var dark = false
+  /// Two titled sections instead: Edit (Copy with an icon, Paste
+  /// without) and Arrange (Name, Date), for a header after a divider and
+  /// a row without an icon next to one with.
+  var second = false
+  var body: some View {
+    NavigationStack {
+      Color(white: 0.5).ignoresSafeArea()
+        .toolbar {
+          ToolbarItem(placement: .topBarTrailing) {
+            if second {
+              Menu {
+                Section("Edit") {
+                  Button("Copy", systemImage: "doc.on.doc") {}
+                  Button("Paste") {}
+                }
+                Section("Arrange") {
+                  Button("Name") {}
+                  Button("Date") {}
+                }
+              } label: { Image(systemName: "ellipsis") }
+            } else {
+            Menu {
+              Section("Edit") {
+                Button("Copy", systemImage: "doc.on.doc") {}
+                Button("Duplicate", systemImage: "plus.square.on.square") {}
+              }
+              Section {
+                Menu {
+                  Button("Name") {}
+                  Button("Date") {}
+                  Button("Size") {}
+                } label: { Label("Sort By", systemImage: "arrow.up.arrow.down") }
+                Button("Share", systemImage: "square.and.arrow.up") {}
+              }
+              Button("Delete", systemImage: "trash", role: .destructive) {}
+            } label: { Image(systemName: "ellipsis") }
+            }
+          }
+        }
+    }
+    .environment(\.colorScheme, dark ? .dark : .light)
+  }
+}
+
+/// `Menu(primaryAction:)` in the trailing toolbar slot: a tap adds one
+/// to the count in the middle, a long-press opens the menu (Copy, Share).
+/// Mid-grey page.
+@available(iOS 26.0, *)
+struct MenuPrimaryReference: View {
+  @State private var count = 0
+  var body: some View {
+    NavigationStack {
+      ZStack {
+        Color(white: 0.5).ignoresSafeArea()
+        Text("\(count)").font(.largeTitle)
+      }
+      .toolbar {
+        ToolbarItem(placement: .topBarTrailing) {
+          Menu {
+            Button("Copy", systemImage: "doc.on.doc") {}
+            Button("Share", systemImage: "square.and.arrow.up") {}
+          } label: {
+            Image(systemName: "plus")
+          } primaryAction: { count += 1 }
+        }
+      }
+    }
+    .environment(\.colorScheme, .light)
+  }
+}
+
 /// A searchable list; iOS 26 puts the field at the bottom. White page.
 @available(iOS 26.0, *)
 struct SearchReference: View {
@@ -703,6 +786,8 @@ struct PopoverReference: View {
 @available(iOS 26.0, *)
 struct ContextMenuReference: View {
   var open = false
+  /// Sectioned: Copy; "Sort By" Name, Date; a Share submenu; Delete.
+  var sections = false
   var body: some View {
     ZStack {
       Color(white: 0.5).ignoresSafeArea()
@@ -710,9 +795,24 @@ struct ContextMenuReference: View {
         .frame(width: 200, height: 120)
         .overlay(Text("Long-press me"))
         .contextMenu {
-          Button("Copy", systemImage: "doc.on.doc") {}
-          Button("Share", systemImage: "square.and.arrow.up") {}
-          Button("Delete", systemImage: "trash", role: .destructive) {}
+          if sections {
+            Button("Copy", systemImage: "doc.on.doc") {}
+            Section("Sort By") {
+              Button("Name") {}
+              Button("Date") {}
+            }
+            Section {
+              Menu("Share", systemImage: "square.and.arrow.up") {
+                Button("Mail", systemImage: "envelope") {}
+                Button("Messages", systemImage: "message") {}
+              }
+              Button("Delete", systemImage: "trash", role: .destructive) {}
+            }
+          } else {
+            Button("Copy", systemImage: "doc.on.doc") {}
+            Button("Share", systemImage: "square.and.arrow.up") {}
+            Button("Delete", systemImage: "trash", role: .destructive) {}
+          }
         }
         .position(x: 201, y: 300)
     }

@@ -110,21 +110,50 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
           icon: CupertinoIcons.ellipsis,
           semanticLabel: 'More',
           items: [
-            GlassMenuItem(
-              label: 'Copy',
-              icon: CupertinoIcons.doc_on_doc,
-              onSelected: () => _snack('Copy'),
+            GlassMenuItem.section(
+              title: 'Edit',
+              items: [
+                GlassMenuItem(
+                  label: 'Copy',
+                  icon: CupertinoIcons.doc_on_doc,
+                  onSelected: () => _snack('Copy'),
+                ),
+                GlassMenuItem(
+                  label: 'Share',
+                  icon: CupertinoIcons.share,
+                  onSelected: () => _snack('Share'),
+                ),
+              ],
             ),
-            GlassMenuItem(
-              label: 'Share',
-              icon: CupertinoIcons.share,
-              onSelected: () => _snack('Share'),
+            GlassMenuItem.submenu(
+              label: 'Sort By',
+              icon: CupertinoIcons.arrow_up_arrow_down,
+              items: [
+                GlassMenuItem(label: 'Name', onSelected: () => _snack('Name')),
+                GlassMenuItem(label: 'Date', onSelected: () => _snack('Date')),
+              ],
             ),
+            GlassMenuItem.section(
+              items: [
+                GlassMenuItem(
+                  label: 'Delete',
+                  icon: CupertinoIcons.trash,
+                  destructive: true,
+                  onSelected: () => _snack('Delete'),
+                ),
+              ],
+            ),
+          ],
+        ),
+        GlassMenuButton(
+          icon: CupertinoIcons.plus,
+          semanticLabel: 'New',
+          primaryAction: () => _snack('New document'),
+          items: [
             GlassMenuItem(
-              label: 'Delete',
-              icon: CupertinoIcons.trash,
-              destructive: true,
-              onSelected: () => _snack('Delete'),
+              label: 'New Folder',
+              icon: CupertinoIcons.folder,
+              onSelected: () => _snack('New Folder'),
             ),
           ],
         ),
@@ -659,11 +688,31 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                           icon: CupertinoIcons.doc_on_doc,
                           onSelected: () => _snack('Copy'),
                         ),
-                        GlassMenuItem(
-                          label: 'Delete',
-                          icon: CupertinoIcons.trash,
-                          destructive: true,
-                          onSelected: () => _snack('Delete'),
+                        GlassMenuItem.submenu(
+                          label: 'Share',
+                          icon: CupertinoIcons.share,
+                          items: [
+                            GlassMenuItem(
+                              label: 'Mail',
+                              icon: CupertinoIcons.mail,
+                              onSelected: () => _snack('Mail'),
+                            ),
+                            GlassMenuItem(
+                              label: 'Messages',
+                              icon: CupertinoIcons.chat_bubble,
+                              onSelected: () => _snack('Messages'),
+                            ),
+                          ],
+                        ),
+                        GlassMenuItem.section(
+                          items: [
+                            GlassMenuItem(
+                              label: 'Delete',
+                              icon: CupertinoIcons.trash,
+                              destructive: true,
+                              onSelected: () => _snack('Delete'),
+                            ),
+                          ],
                         ),
                       ],
                       child: const LiquidGlass(

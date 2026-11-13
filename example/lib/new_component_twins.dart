@@ -17,6 +17,9 @@ Widget? newComponentTwin(String scene) => switch (scene) {
   'searchmotion' => const _SearchMotion(),
   'colorrow' || 'colorrowdark' => const _ColorRow(),
   'contextmenuuikitmotion' => const _ContextMenuMotion(),
+  'contextmenusections' => const _ContextMenuSections(),
+  'menusections' || 'menusectionsdark' => const _MenuSections(),
+  'menusections2' => const _MenuSections(second: true),
   'tips' || 'tipsdark' => const _Tips(),
   'tippopover' || 'tippopoverdark' => const _TipPopover(),
   _ => null,
@@ -52,6 +55,162 @@ class _ContextMenuMotion extends StatelessWidget {
                 icon: CupertinoIcons.trash,
                 destructive: true,
                 onSelected: _noop,
+              ),
+            ],
+            child: Container(
+              width: 200,
+              height: 120,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              alignment: Alignment.center,
+              child: const Text(
+                'Long-press me',
+                style: TextStyle(color: Colors.black, fontSize: 17),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// MenuSectionsReference: a sectioned menu in the trailing bar slot.
+class _MenuSections extends StatelessWidget {
+  const _MenuSections({this.second = false});
+
+  final bool second;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xFF808080),
+    extendBodyBehindAppBar: true,
+    appBar: GlassNavigationBar(
+      actions: [
+        GlassMenuButton(
+          items: second
+              ? [
+                  const GlassMenuItem.section(
+                    title: 'Edit',
+                    items: [
+                      GlassMenuItem(
+                        label: 'Copy',
+                        icon: CupertinoIcons.doc_on_doc,
+                        onSelected: _noop,
+                      ),
+                      GlassMenuItem(label: 'Paste', onSelected: _noop),
+                    ],
+                  ),
+                  const GlassMenuItem.section(
+                    title: 'Arrange',
+                    items: [
+                      GlassMenuItem(label: 'Name', onSelected: _noop),
+                      GlassMenuItem(label: 'Date', onSelected: _noop),
+                    ],
+                  ),
+                ]
+              : [
+                  const GlassMenuItem.section(
+                    title: 'Edit',
+                    items: [
+                      GlassMenuItem(
+                        label: 'Copy',
+                        icon: CupertinoIcons.doc_on_doc,
+                        onSelected: _noop,
+                      ),
+                      GlassMenuItem(
+                        label: 'Duplicate',
+                        icon: CupertinoIcons.plus_square_on_square,
+                        onSelected: _noop,
+                      ),
+                    ],
+                  ),
+                  const GlassMenuItem.section(
+                    items: [
+                      GlassMenuItem.submenu(
+                        label: 'Sort By',
+                        icon: CupertinoIcons.arrow_up_arrow_down,
+                        items: [
+                          GlassMenuItem(label: 'Name', onSelected: _noop),
+                          GlassMenuItem(label: 'Date', onSelected: _noop),
+                          GlassMenuItem(label: 'Size', onSelected: _noop),
+                        ],
+                      ),
+                      GlassMenuItem(
+                        label: 'Share',
+                        icon: CupertinoIcons.square_arrow_up,
+                        onSelected: _noop,
+                      ),
+                    ],
+                  ),
+                  const GlassMenuItem(
+                    label: 'Delete',
+                    icon: CupertinoIcons.trash,
+                    destructive: true,
+                    onSelected: _noop,
+                  ),
+                ],
+        ),
+      ],
+    ),
+    body: const SizedBox.expand(),
+  );
+}
+
+/// ContextMenuReference(sections:): a 200 x 120 white card centred at
+/// (201, 300) on mid grey; its sectioned context menu opens on a long press.
+class _ContextMenuSections extends StatelessWidget {
+  const _ContextMenuSections();
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: const Color(0xFF808080),
+    child: Stack(
+      children: [
+        Positioned(
+          left: 101,
+          top: 240,
+          child: GlassContextMenu(
+            items: const [
+              GlassMenuItem(
+                label: 'Copy',
+                icon: CupertinoIcons.doc_on_doc,
+                onSelected: _noop,
+              ),
+              GlassMenuItem.section(
+                title: 'Sort By',
+                items: [
+                  GlassMenuItem(label: 'Name', onSelected: _noop),
+                  GlassMenuItem(label: 'Date', onSelected: _noop),
+                ],
+              ),
+              GlassMenuItem.section(
+                items: [
+                  GlassMenuItem.submenu(
+                    label: 'Share',
+                    icon: CupertinoIcons.square_arrow_up,
+                    items: [
+                      GlassMenuItem(
+                        label: 'Mail',
+                        icon: CupertinoIcons.mail,
+                        onSelected: _noop,
+                      ),
+                      GlassMenuItem(
+                        label: 'Messages',
+                        icon: CupertinoIcons.chat_bubble,
+                        onSelected: _noop,
+                      ),
+                    ],
+                  ),
+                  GlassMenuItem(
+                    label: 'Delete',
+                    icon: CupertinoIcons.trash,
+                    destructive: true,
+                    onSelected: _noop,
+                  ),
+                ],
               ),
             ],
             child: Container(

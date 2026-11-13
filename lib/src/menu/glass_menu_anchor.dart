@@ -57,7 +57,7 @@ class _GlassMenuAnchorState extends State<GlassMenuAnchor>
   final LayerLink _link = LayerLink();
 
   /// The panel, to hit-test a gliding finger against.
-  final GlobalKey _panel = GlobalKey();
+  final GlobalKey<GlassMenuPanelState> _panel = GlobalKey();
 
   /// The row a glide highlights, if any.
   final ValueNotifier<int?> _highlighted = ValueNotifier(null);
@@ -170,21 +170,12 @@ class _GlassMenuAnchorState extends State<GlassMenuAnchor>
   @override
   bool glideTo(Offset globalPosition) {
     if (!_portal.isShowing || _closing) return false;
+    final panel = _panel.currentState;
     final box = _panel.currentContext?.findRenderObject();
-    if (box is! RenderBox || !box.hasSize) return false;
+    if (panel == null || box is! RenderBox || !box.hasSize) return false;
     final local = box.globalToLocal(globalPosition);
     final inside = (Offset.zero & box.size).contains(local);
-    int? index;
-    if (inside) {
-      final i =
-          ((local.dy - MenuMetrics.verticalPadding) / MenuMetrics.rowHeight)
-              .floor();
-      if (i >= 0 &&
-          i < widget.items.length &&
-          widget.items[i].onSelected != null) {
-        index = i;
-      }
-    }
+    final index = inside ? panel.rowAt(globalPosition) : null;
     if (index != null && _highlighted.value != index) {
       HapticFeedback.selectionClick();
     }
@@ -197,7 +188,7 @@ class _GlassMenuAnchorState extends State<GlassMenuAnchor>
     final index = _highlighted.value;
     _highlighted.value = null;
     if (_closing || index == null) return false;
-    _choose(widget.items[index]);
+    _panel.currentState?.activateRow(index);
     return true;
   }
 

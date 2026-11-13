@@ -57,6 +57,53 @@ abstract final class MenuMetrics {
   /// The menu's padding above its first row and below its last.
   static const double verticalPadding = 10.17;
 
+  // Sections and submenus, measured from SwiftUI's `Section` and nested
+  // `Menu` (`-controls menusections`, `menusections2`, `menusubmenu`;
+  // docs/superpowers/notes/menu-sections.md).
+
+  /// A section break: the padding above the divider, the divider, the
+  /// padding below it (10.17 + 1 + 10.17 between the rows around it).
+  static const double dividerThickness = 1;
+
+  /// The divider's inset from the menu's leading edge.
+  static const double dividerStart = 25.67;
+
+  /// The divider's inset from the menu's trailing edge.
+  static const double dividerEnd = 24.33;
+
+  /// A section title's size (secondary label colour).
+  static const double headerFontSize = 15;
+
+  /// A section title's block, from the menu's top padding (or the
+  /// divider's) to the first row.
+  static const double headerHeight = 29.67;
+
+  /// A section title's baseline from the top of its block.
+  static const double headerBaseline = 16.17;
+
+  /// A section title's start from the menu's leading edge.
+  static const double headerStart = 30;
+
+  /// A label's start in a row without an icon, when no row of its section
+  /// has one.
+  static const double plainLabelStart = 31;
+
+  /// A submenu row's chevron: its centre from the menu's trailing edge.
+  static const double chevronCentreFromEnd = 30.5;
+
+  /// The chevron's glyph size (its ink measures 6.33 × 10.67).
+  static const double chevronSize = 15;
+
+  /// How small the menu shrinks, from its top-trailing corner, while a
+  /// submenu is open.
+  static const double recededScale = 0.96;
+
+  /// How much of the receded menu's content shows.
+  static const double recededOpacity = 0.5;
+
+  /// How long a submenu takes to open or close (estimated).
+  static const Duration submenu = Duration(milliseconds: 300);
+
   /// The menu springing out of its button.
   static final SpringDescription open = swiftUISpring(
     response: 0.35,
