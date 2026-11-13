@@ -158,8 +158,8 @@ merging.
 | 1 | Menu sections / submenus / `primaryAction` | `GlassMenuItem.section`, `.submenu`, `GlassMenuButton.primaryAction` | committed 5c545cd |
 | 2 | Separate nav-bar pills | `GlassBarItem` | committed 9c180ce |
 | 3 | `navigationSubtitle` | nav-bar subtitle | committed 748e0c1, `ayman/blissful-proskuriakova-1cb305` |
-| 4 | `glassEffectTransition` | `GlassTransition` (`matchedGeometry`, `materialize`, `identity`) | committed b1ecfd0, `ayman/dazzling-wilbur-3bef58`; analyze/screenshots pending |
-| 5 | `ControlGroup` | `GlassControlGroup` | **not committed** (`ayman/optimistic-kalam-74e479` has no work yet) |
+| 4 | `glassEffectTransition` | `GlassTransition` (`matchedGeometry`, `materialize`, `identity`) | committed b1ecfd0 + 43e9eed, `ayman/dazzling-wilbur-3bef58`; no screenshots |
+| 5 | `ControlGroup` | `GlassControlGroup` | committed 27d5b95, `ayman/optimistic-kalam-74e479`; 4 tests pass, no screenshots |
 | 6 | Scroll edge `hard` / `hidden` | `GlassScrollEdgeStyle.hard` / `.hidden` | committed 748e0c1 (same branch as 3) |
 | 7 | `NavigationSplitView` | `GlassSplitView`, `GlassSplitViewColumn`, `GlassSplitViewVisibility`, `GlassSplitViewController` | committed 064cb32, `ayman/dazzling-edison-1baeee`; analyze/screenshots pending |
 
