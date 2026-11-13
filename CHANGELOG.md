@@ -10,6 +10,8 @@
 - `GlassPickerStyle.palette`: SwiftUI's `.pickerStyle(.palette)`, which iOS 26 draws outside a `Menu` as a segmented control (measured, iOS 26.4); `GlassPickerItem.icon` shows a glyph in place of the label. Material: `SegmentedButton`.
 - `GlassDateRangePicker`: a range of days inline, as a capsule opening the range sheet or as the range calendar (`GlassDatePickerStyle.graphical`). Material: a button opening `showDateRangePicker`.
 - `GlassDatePickerMode.hourAndMinute`: an alias of `time`, SwiftUI's name.
+- `GlassTextEditor`: SwiftUI's `TextEditor`, a scrolling multi-line editor in a glass rounded rect (200 pt by default, or its parent's height) that pads itself above the keyboard. Material: a filled `TextField` that expands to its height.
+- `GlassScrollIndicators` and `GlassScrollIndicatorVisibility`: SwiftUI's `.scrollIndicators(_:)`, a UIKit-style indicator that fades after scrolling (Material `Scrollbar` on Android). Indicator metrics are estimates pending SwiftUI captures.
 
 ## 0.6.0 (2026-11-09)
 

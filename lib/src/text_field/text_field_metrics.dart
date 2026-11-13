@@ -51,4 +51,16 @@ abstract final class TextFieldMetrics {
 
   /// The content's opacity when disabled (estimated).
   static const double disabledOpacity = 0.5;
+
+  /// `GlassTextEditor`'s height when its parent leaves it unbounded.
+  static const double editorHeight = 200;
+
+  /// `GlassTextEditor`'s text inset from its sides: UITextView's 5-pt
+  /// line-fragment padding plus the 11 pt SwiftUI places around a glass
+  /// `TextEditor`.
+  static const double editorHorizontalInset = 16;
+
+  /// `GlassTextEditor`'s text inset from its top and bottom: UITextView's
+  /// 8-pt text-container inset plus 5 pt of padding.
+  static const double editorVerticalInset = 13;
 }

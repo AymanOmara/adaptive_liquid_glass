@@ -376,6 +376,8 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `showGlassFullScreenCover`, `GlassFullScreenCoverHandle` | `.fullScreenCover`: opaque edge-to-edge modal sliding up | full-screen `Dialog` |
 | `showGlassToast`, `GlassToastAction`, `GlassToastHandle` | Glass capsule toast from the top, queued, swipe to dismiss | `SnackBar` |
 | `GlassTextField` (`+ .password`) | Text field in a glass capsule; password with an eye button | `TextField` |
+| `GlassTextEditor` | Scrolling multi-line editor in a glass rounded rect (SwiftUI `TextEditor`) | filled `TextField` |
+| `GlassScrollIndicators` | UIKit-style scroll indicators (SwiftUI `.scrollIndicators`) | `Scrollbar` |
 | `GlassSearchField` | Search capsule with magnifier and clear button | `SearchBar` |
 | `GlassSearchable`, `GlassSearchController`, `GlassSearchSuggestion` | `.searchable`: field with a springing Cancel, suggestions listed in place of the content, scopes; bottom or navigation-bar placement | `SearchAnchor` |
 | `GlassListSection`, `GlassListTile` | Inset-grouped list, like Settings; rows with leading/title/value/trailing | `Card` of `ListTile`s |
@@ -851,6 +853,28 @@ overlapping thumbs the drag's direction picks; each thumb is its own
 slider for VoiceOver. On Android it is a `RangeSlider`. All four follow the reading direction and
 Reduce Motion. On Android they are `Switch`, `Slider`, `SegmentedButton`
 and a pair of icon buttons.
+
+### Text editor and scroll indicators
+
+```dart
+SizedBox(
+  height: 240,
+  child: GlassTextEditor(controller: notes, placeholder: 'Notes'),
+)
+
+GlassScrollIndicators(
+  visibility: GlassScrollIndicatorVisibility.hidden,
+  child: ListView(children: rows),
+)
+```
+
+`GlassTextEditor` is SwiftUI's `TextEditor` in a glass rounded rect: it
+fills its parent's height (200 pt when unbounded, or `height`), scrolls its
+text with UIKit-style indicators, and keeps the caret above the keyboard
+when the keyboard covers part of it. Android draws a filled Material
+`TextField` that expands to the same height. `GlassScrollIndicators` gives
+any scrollable SwiftUI's `.scrollIndicators(.automatic / .visible / .hidden
+/ .never)`; `.hidden` also turns off Flutter's desktop scrollbar.
 
 ### Text field and search field
 

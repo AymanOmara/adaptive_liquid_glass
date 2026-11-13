@@ -705,7 +705,21 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                         ),
                         const SizedBox(height: 12),
                         const GlassTextField(placeholder: 'Notes', maxLines: 4),
+                        const SizedBox(height: 12),
+                        const GlassTextEditor(placeholder: 'Journal'),
                       ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    height: 160,
+                    child: GlassScrollIndicators(
+                      visibility: GlassScrollIndicatorVisibility.visible,
+                      child: ListView.builder(
+                        itemCount: 30,
+                        itemBuilder: (context, i) =>
+                            ListTile(title: Text('Row ${i + 1}')),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),

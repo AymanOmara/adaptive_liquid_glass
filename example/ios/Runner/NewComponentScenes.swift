@@ -830,3 +830,103 @@ struct ZoomMotionReference: View {
     .statusBarHidden(true)
   }
 }
+
+// MARK: - TextEditor and scroll indicators (GlassTextEditor,
+// GlassScrollIndicators). Laid out the same way in
+// example/lib/editor_twins.dart.
+
+/// `-controls <scene>` for the editor and scroll-indicator references,
+/// chained after ControlScenes in SceneDelegate.
+enum EditorScenes {
+  static let sample = (1...24).map {
+    "Line \($0): the quick brown fox jumps over the lazy dog."
+  }.joined(separator: "\n")
+
+  static func install(in window: UIWindow?) -> Bool {
+    guard #available(iOS 26.0, *), let which = LaunchArgs.arg("controls") else { return false }
+    let root: AnyView
+    switch which {
+    case "texteditor": root = AnyView(TextEditorReference(dark: false))
+    case "texteditordark": root = AnyView(TextEditorReference(dark: true))
+    case "texteditorfocus": root = AnyView(TextEditorReference(dark: false, focus: true))
+    case "texteditorempty": root = AnyView(TextEditorReference(dark: false, empty: true))
+    case "scrollindicators": root = AnyView(ScrollIndicatorsReference(dark: false))
+    case "scrollindicatorsdark": root = AnyView(ScrollIndicatorsReference(dark: true))
+    default: return false
+    }
+    window?.rootViewController = UIHostingController(rootView: root)
+    window?.makeKeyAndVisible()
+    return true
+  }
+}
+
+/// Top: a bare TextEditor (362 x 160, centre 201, 130) on a yellow frame so
+/// its text inset shows. Bottom: the same editor inside a 24 pt glass rect
+/// (362 x 200, centre 201, 400), scrollContentBackground hidden, over a
+/// mid-grey band (y 280-520). `focus` focuses the glass editor (keyboard
+/// up); `empty` leaves both empty with a "Notes" placeholder overlay.
+@available(iOS 26.0, *)
+struct TextEditorReference: View {
+  let dark: Bool
+  var focus = false
+  var empty = false
+  @State private var top = ""
+  @State private var text = ""
+  @FocusState private var focused: Bool
+  var body: some View {
+    ZStack(alignment: .topLeading) {
+      (dark ? Color.black : Color.white)
+      Color(white: 0.5).frame(width: 402, height: 240).position(x: 201, y: 400)
+      TextEditor(text: $top)
+        .frame(width: 362, height: 160)
+        .background(Color.yellow.opacity(0.4))
+        .position(x: 201, y: 130)
+      ZStack(alignment: .topLeading) {
+        TextEditor(text: $text)
+          .scrollContentBackground(.hidden)
+          .focused($focused)
+        if text.isEmpty {
+          Text("Notes").foregroundStyle(.secondary)
+            .padding(.top, 8).padding(.leading, 5)
+            .allowsHitTesting(false)
+        }
+      }
+      .padding(.horizontal, 11).padding(.vertical, 5)
+      .frame(width: 362, height: 200)
+      .glassEffect(.regular, in: .rect(cornerRadius: 24))
+      .position(x: 201, y: 400)
+    }
+    .frame(width: 402, height: 874)
+    .ignoresSafeArea(.container)
+    .environment(\.colorScheme, dark ? .dark : .light)
+    .preferredColorScheme(dark ? .dark : .light)
+    .statusBarHidden(true)
+    .onAppear {
+      if !empty { top = EditorScenes.sample; text = EditorScenes.sample }
+      if focus { DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { focused = true } }
+    }
+  }
+}
+
+/// A full-screen plain ScrollView of 60 rows (44 pt) that flashes its
+/// indicators on appear; swipe it to record the indicator's fade.
+@available(iOS 26.0, *)
+struct ScrollIndicatorsReference: View {
+  let dark: Bool
+  var body: some View {
+    ScrollView {
+      LazyVStack(alignment: .leading, spacing: 0) {
+        ForEach(0..<60) { i in
+          Text("Row \(i)").frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .padding(.horizontal, 16)
+        }
+      }
+    }
+    .scrollIndicators(.visible)
+    .scrollIndicatorsFlash(onAppear: true)
+    .background(dark ? Color.black : Color.white)
+    .environment(\.colorScheme, dark ? .dark : .light)
+    .preferredColorScheme(dark ? .dark : .light)
+    .statusBarHidden(true)
+  }
+}
