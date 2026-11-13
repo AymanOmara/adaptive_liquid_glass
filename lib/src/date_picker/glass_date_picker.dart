@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
         CalendarDatePicker,
+        DateTimeRange,
+        DateUtils,
         DefaultMaterialLocalizations,
         MaterialLocalizations,
         TextButton,
@@ -23,8 +25,10 @@ import 'glass_calendar.dart';
 import 'glass_date_picker_mode.dart';
 import 'glass_date_picker_style.dart';
 import 'glass_date_wheel.dart';
+import 'show_glass_date_picker.dart';
 
 part 'date_picker_capsule.dart';
+part 'glass_date_range_picker.dart';
 
 /// iOS 26's date picker, like SwiftUI's `DatePicker`: the value in a
 /// grey capsule opening a popover ([GlassDatePickerStyle.compact], the

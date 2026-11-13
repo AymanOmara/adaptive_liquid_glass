@@ -360,9 +360,10 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `GlassRangeSlider` | Two-thumb range slider on the same track (SwiftUI has none) | `RangeSlider` |
 | `GlassSegmentedControl`, `GlassSegment` | Segmented control, sliding lens | `SegmentedButton` |
 | `GlassStepper` | Minus/plus capsule stepper | pair of icon buttons |
-| `GlassPicker`, `GlassPickerItem` | Menu-style picker, current choice checked | `DropdownButton` |
+| `GlassPicker`, `GlassPickerItem` | Menu, inline, navigation-link or palette (segmented) picker | `DropdownButton` / `SegmentedButton` |
 | `GlassWheelPicker` | `.pickerStyle(.wheel)`: scrolling rows under a clear-glass selection band, haptics | `ListWheelScrollView` on a Material surface |
 | `GlassDatePicker` | Compact date picker opening a glass calendar | text button + `showDatePicker` |
+| `GlassDateRangePicker` | A range of days: a capsule opening the range sheet, or the range calendar inline | text button + `showDateRangePicker` |
 | `showGlassDatePicker`, `showGlassDateRangePicker`, `GlassCalendar` (`.range`) | The calendar sheet for one date or a range | `showDatePicker` / `showDateRangePicker` |
 | `GlassMenuButton`, `GlassMenuItem` | Pull-down glass menu from an icon button | `MenuAnchor` |
 | `GlassMenuController` | Drives a menu from an outer gesture: slide-to-select (`glideTo`) | open/close only |
@@ -1214,6 +1215,11 @@ GlassPicker<Period>(
   any widget.
 - **Picker:** SwiftUI's menu style. It opens the glass menu with the
   current choice checked.
+- **Palette picker:** `style: GlassPickerStyle.palette` lays the choices
+  side by side with the current one on a thumb. On iOS 26 SwiftUI draws
+  `.pickerStyle(.palette)` outside a `Menu` as its segmented control, so
+  this is `GlassSegmentedControl`; an item's `icon` replaces its label
+  (which VoiceOver still reads). On Android it is a `SegmentedButton`.
 
 ### Date picker
 
@@ -1244,6 +1250,14 @@ start begins again), drawn as iOS does with blue end circles and a lighter
 band between; the checkmark confirms once both ends are picked. On
 Android it is `showDateRangePicker`. `GlassCalendar.range` is the
 calendar on its own.
+
+`GlassDateRangePicker(value: trip, firstDate: ..., lastDate: ...,
+onChanged: ...)` keeps a range inline: by default a capsule reading
+"Oct 6 – Oct 9, 2026" that opens the same sheet, or with
+`style: GlassDatePickerStyle.graphical` the range calendar itself.
+`onChanged` receives only complete ranges. On Android both are a button
+opening `showDateRangePicker`. `GlassDatePickerMode.hourAndMinute` is
+SwiftUI's name for `GlassDatePickerMode.time`.
 
 ### Alert and confirmation dialog
 

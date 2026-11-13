@@ -13,4 +13,10 @@ enum GlassPickerStyle {
   /// chevron; tapping pushes a page of the choices that pops on selection
   /// (`.pickerStyle(.navigationLink)`).
   navigationLink,
+
+  /// The choices side by side in a capsule track, the current one on a
+  /// thumb (`.pickerStyle(.palette)` outside a `Menu`, which SwiftUI on
+  /// iOS 26 draws as a segmented control). Choices with an
+  /// [GlassPickerItem.icon] show the icon and read their label.
+  palette,
 }

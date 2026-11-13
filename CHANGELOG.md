@@ -1,3 +1,9 @@
+## Unreleased
+
+- `GlassPickerStyle.palette`: SwiftUI's `.pickerStyle(.palette)`, which iOS 26 draws outside a `Menu` as a segmented control (measured, iOS 26.4); `GlassPickerItem.icon` shows a glyph in place of the label. Material: `SegmentedButton`.
+- `GlassDateRangePicker`: a range of days inline, as a capsule opening the range sheet or as the range calendar (`GlassDatePickerStyle.graphical`). Material: a button opening `showDateRangePicker`.
+- `GlassDatePickerMode.hourAndMinute`: an alias of `time`, SwiftUI's name.
+
 ## 0.6.0 (2026-11-09)
 
 - Navigation bars: an icon-only `leading` button is now a 44-pt circle, as SwiftUI's lone bar button, instead of a 51.5-pt cell (`NavBarMetrics.loneItem`).
