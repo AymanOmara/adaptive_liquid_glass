@@ -1,3 +1,8 @@
+## Unreleased
+
+- Navigation bars: a lone trailing action is a 44-pt circle, as SwiftUI's, instead of a 51.5-pt cell.
+- Navigation bars: separate pills, as SwiftUI's `ToolbarItemGroup` / `ToolbarSpacer(.fixed)`: a `GlassToolbarSpacer` in `actions` starts a new capsule 12 pt away (`NavBarMetrics.groupGap`). New `GlassBarItem(sharedBackground: false)` stands apart with no capsule, as `.sharedBackgroundVisibility(.hidden)`. Native and shader paths.
+
 ## 0.6.0 (2026-11-09)
 
 - Navigation bars: an icon-only `leading` button is now a 44-pt circle, as SwiftUI's lone bar button, instead of a 51.5-pt cell (`NavBarMetrics.loneItem`).

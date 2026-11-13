@@ -18,14 +18,16 @@ Future<void> main() async {
   // Preloads the shaders on any platform, as MODE may force them.
   await AdaptiveLiquidGlass.initialize(mode: GlassRenderMode.shader);
   final args = await LaunchArgs.read();
-  if (args.twin != null) {
-    return runApp(ReferenceTwin(scene: args.twin!, mode: args.mode));
-  }
   final constants = args.constants == null
       ? GlassConstants.standard
       : GlassConstants.fromJson(
           (jsonDecode(args.constants!) as Map).cast<String, Object?>(),
         );
+  if (args.twin != null) {
+    return runApp(
+      ReferenceTwin(scene: args.twin!, mode: args.mode, constants: constants),
+    );
+  }
   // Harness entries (`-scene`, `-motion`) default to the shader: that is
   // what the fidelity harness fits, and `auto` is native glass on iOS 26.
   // `-mode native` (or `auto`) renders them with Apple's glass instead.

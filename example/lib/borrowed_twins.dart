@@ -38,6 +38,9 @@ Widget? borrowedTwin(String scene) => switch (scene) {
   'lensreach' => const _LensReach(),
   'navbarphoto' => const _NavBarPhoto(dark: false),
   'navbarphotodark' => const _NavBarPhoto(dark: true),
+  'navbarlone' => const _NavBarPhoto(dark: false, lone: true),
+  'navbarpills' => const _NavBarPills(dark: false),
+  'navbarpillsdark' => const _NavBarPills(dark: true),
   _ => null,
 };
 
@@ -588,7 +591,58 @@ class _HueRamp extends CustomPainter {
 /// sidebar button and the trailing compose/ellipsis capsule over the
 /// full-screen `photo.png`.
 class _NavBarPhoto extends StatelessWidget {
-  const _NavBarPhoto({required this.dark});
+  const _NavBarPhoto({required this.dark, this.lone = false});
+
+  final bool dark;
+
+  /// `navbarlone`: no leading item and a lone trailing ellipsis.
+  final bool lone;
+
+  @override
+  Widget build(BuildContext context) {
+    final scaffold = Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: GlassNavigationBar(
+        title: const Text('Inbox'),
+        leading: lone
+            ? null
+            : GlassButton.icon(
+                onPressed: () {},
+                icon: CupertinoIcons.sidebar_left,
+              ),
+        actions: [
+          if (!lone)
+            GlassButton.icon(
+              onPressed: () {},
+              icon: CupertinoIcons.square_pencil,
+            ),
+          GlassButton.icon(onPressed: () {}, icon: CupertinoIcons.ellipsis),
+        ],
+      ),
+      body: const _Photo(),
+    );
+    return dark ? _dark(context, scaffold) : scaffold;
+  }
+}
+
+/// `photo.png` filling the screen, as the SwiftUI references.
+class _Photo extends StatelessWidget {
+  const _Photo();
+
+  @override
+  Widget build(BuildContext context) => SizedBox.expand(
+    child: Image.asset(
+      'assets/backgrounds/photo.png',
+      fit: BoxFit.fill,
+      filterQuality: FilterQuality.none,
+    ),
+  );
+}
+
+/// `-controls navbarpills(dark)`: a compose/ellipsis group, a spacer, a
+/// lone share pill, a spacer and a bare avatar item over `photo.png`.
+class _NavBarPills extends StatelessWidget {
+  const _NavBarPills({required this.dark});
 
   final bool dark;
 
@@ -598,25 +652,26 @@ class _NavBarPhoto extends StatelessWidget {
       extendBodyBehindAppBar: true,
       appBar: GlassNavigationBar(
         title: const Text('Inbox'),
-        leading: GlassButton.icon(
-          onPressed: () {},
-          icon: CupertinoIcons.sidebar_left,
-        ),
         actions: [
           GlassButton.icon(
             onPressed: () {},
             icon: CupertinoIcons.square_pencil,
           ),
           GlassButton.icon(onPressed: () {}, icon: CupertinoIcons.ellipsis),
+          const GlassToolbarSpacer(),
+          GlassButton.icon(onPressed: () {}, icon: CupertinoIcons.share),
+          const GlassToolbarSpacer(),
+          GlassBarItem(
+            sharedBackground: false,
+            child: GlassButton.icon(
+              onPressed: () {},
+              icon: CupertinoIcons.person_crop_circle_fill,
+              style: GlassButtonStyle.plain,
+            ),
+          ),
         ],
       ),
-      body: SizedBox.expand(
-        child: Image.asset(
-          'assets/backgrounds/photo.png',
-          fit: BoxFit.fill,
-          filterQuality: FilterQuality.none,
-        ),
-      ),
+      body: const _Photo(),
     );
     return dark ? _dark(context, scaffold) : scaffold;
   }

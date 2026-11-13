@@ -7,11 +7,14 @@ import '../core/glass_colors.dart';
 import '../core/glass_render_mode.dart';
 import '../group/glass_group.dart';
 import '../group/glass_union_scope.dart';
+import '../toolbar/glass_toolbar_spacer.dart';
 import 'glass_back_button.dart';
+import 'glass_bar_item.dart';
 import 'nav_bar_metrics.dart';
 
 /// The bar row shared by both navigation bars: leading item, centred
-/// title, trailing actions merged into one glass capsule. No safe area.
+/// title, trailing actions merged into glass capsules (one per group). No
+/// safe area.
 class NavBarContent extends StatelessWidget {
   /// Creates the row.
   const NavBarContent({
@@ -40,7 +43,9 @@ class NavBarContent extends StatelessWidget {
   /// When set, opacity changes animate over this long.
   final Duration? titleFade;
 
-  /// Trailing items, merged into one capsule.
+  /// Trailing items, merged into one capsule; a [GlassToolbarSpacer]
+  /// starts a new one and a [GlassBarItem] with no shared background
+  /// stands alone with none.
   final List<Widget> actions;
 
   /// Rendering mode for the bar's glass.
@@ -68,6 +73,54 @@ class NavBarContent extends StatelessWidget {
             },
           ),
         );
+
+  /// The actions as groups: each its own glass capsule (a union), a group
+  /// of one a 44-pt circle as SwiftUI's lone bar button, a bare item a
+  /// 44-pt cell with no glass; [NavBarMetrics.groupGap] between them.
+  Widget? _trailing(Widget Function(Widget) item) {
+    final groups = <List<Widget>>[[]];
+    for (final action in actions) {
+      if (action is GlassToolbarSpacer) {
+        groups.add([]);
+      } else if (action is GlassBarItem && !action.sharedBackground) {
+        groups
+          ..add([action])
+          ..add([]);
+      } else {
+        groups.last.add(action);
+      }
+    }
+    final row = <Widget>[];
+    for (var i = 0; i < groups.length; i++) {
+      final group = groups[i];
+      if (group.isEmpty) continue;
+      if (row.isNotEmpty) {
+        row.add(const SizedBox(width: NavBarMetrics.groupGap));
+      }
+      final first = group.first;
+      row.add(
+        first is GlassBarItem && !first.sharedBackground
+            ? SizedBox.square(
+                dimension: NavBarMetrics.bareItemSize,
+                child: Center(child: first),
+              )
+            : GlassButtonMetricsScope(
+                metrics: group.length == 1
+                    ? NavBarMetrics.loneItem
+                    : NavBarMetrics.item,
+                child: GlassUnionScope(
+                  id: (_actionsUnion, i),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: group),
+                ),
+              ),
+      );
+    }
+    if (row.isEmpty) return null;
+    return GlassGroup(
+      mode: mode,
+      child: item(Row(mainAxisSize: MainAxisSize.min, children: row)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,17 +172,7 @@ class NavBarContent extends StatelessWidget {
                       ),
                     ),
                   ),
-            trailing: actions.isEmpty
-                ? null
-                : GlassGroup(
-                    mode: mode,
-                    child: GlassUnionScope(
-                      id: _actionsUnion,
-                      child: item(
-                        Row(mainAxisSize: MainAxisSize.min, children: actions),
-                      ),
-                    ),
-                  ),
+            trailing: _trailing(item),
             middleSpacing: 8,
           ),
         ),

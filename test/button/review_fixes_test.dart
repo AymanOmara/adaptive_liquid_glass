@@ -1,5 +1,4 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
-import 'package:adaptive_liquid_glass/src/navigation/nav_bar_metrics.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/cupertino.dart';
@@ -98,9 +97,7 @@ void main() {
     await t.tap(find.text('open'));
     await t.pumpAndSettle();
     expect(t.getSize(find.byType(GlassBackButton)), const Size(44, 44));
-    expect(
-      t.getSize(find.byType(GlassButton).last).width,
-      NavBarMetrics.item.iconOnlyHeight + NavBarMetrics.item.iconOnlyExtraWidth,
-    );
+    // A lone trailing action is a 44-pt circle, as SwiftUI's.
+    expect(t.getSize(find.byType(GlassButton).last), const Size(44, 44));
   }, variant: ios);
 }
