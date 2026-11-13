@@ -7,6 +7,9 @@
 - `GlassForm`: SwiftUI's `Form`, a scrolling column of grouped sections on the grouped background, measured from iOS 26 (the first platter 42.33 pt below the safe top under a header, 35 pt between sections, 76 pt across a footer and a header). The keyboard replaces the bottom safe area. Material: 24-pt gaps on the surface colour.
 - `GlassGroupBox`: SwiftUI's `GroupBox`, an 8-pt rounded platter with 16-pt padding and an optional label and icon; nested boxes alternate fills as SwiftUI's do. Material: a filled `Card`.
 - Lists: a `GlassSwipeActions` row whose tile has a leading now insets its separator under the title, as a plain row with a leading does.
+- `GlassPickerStyle.palette`: SwiftUI's `.pickerStyle(.palette)`, which iOS 26 draws outside a `Menu` as a segmented control (measured, iOS 26.4); `GlassPickerItem.icon` shows a glyph in place of the label. Material: `SegmentedButton`.
+- `GlassDateRangePicker`: a range of days inline, as a capsule opening the range sheet or as the range calendar (`GlassDatePickerStyle.graphical`). Material: a button opening `showDateRangePicker`.
+- `GlassDatePickerMode.hourAndMinute`: an alias of `time`, SwiftUI's name.
 
 ## 0.6.0 (2026-11-09)
 

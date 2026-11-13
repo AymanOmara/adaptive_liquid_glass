@@ -6,6 +6,8 @@ import 'package:flutter/material.dart'
         MaterialPageRoute,
         kMinInteractiveDimension;
 
+import '../controls/glass_segment.dart';
+import '../controls/glass_segmented_control.dart';
 import '../core/effective_glass_mode.dart';
 import '../core/glass_colors.dart';
 import '../core/glass_mode_builder.dart';
@@ -66,6 +68,22 @@ import 'picker_page.dart';
 ///   items: periods,
 ///   selected: period,
 ///   onChanged: (p) => setState(() => period = p),
+/// )
+/// ```
+///
+/// [GlassPickerStyle.palette] lays the choices side by side in a capsule
+/// track, as SwiftUI draws `.pickerStyle(.palette)` outside a menu; give
+/// the items an [GlassPickerItem.icon] for a row of glyphs:
+///
+/// ```dart
+/// GlassPicker<Mark>(
+///   style: GlassPickerStyle.palette,
+///   items: const [
+///     GlassPickerItem(value: Mark.star, label: 'Star', icon: CupertinoIcons.star),
+///     GlassPickerItem(value: Mark.flag, label: 'Flag', icon: CupertinoIcons.flag),
+///   ],
+///   selected: mark,
+///   onChanged: (m) => setState(() => mark = m),
 /// )
 /// ```
 ///
@@ -158,8 +176,30 @@ class GlassPicker<T> extends StatelessWidget {
         mode: mode,
       ),
       GlassPickerStyle.navigationLink => _link(context, effective),
+      GlassPickerStyle.palette => _palette(),
     },
   );
+
+  // SwiftUI draws a palette outside a menu as its segmented control
+  // (measured, iOS 26.4), so it is one; on Material, a SegmentedButton.
+  Widget _palette() {
+    final control = GlassSegmentedControl<T>(
+      segments: [
+        for (final i in items)
+          GlassSegment(
+            value: i.value,
+            label: i.icon == null ? Text(i.label) : Icon(i.icon),
+            semanticLabel: i.icon == null ? null : i.label,
+          ),
+      ],
+      selected: selected,
+      onChanged: onChanged,
+      mode: mode,
+    );
+    return semanticLabel == null
+        ? control
+        : Semantics(label: semanticLabel, container: true, child: control);
+  }
 
   // At larger text the dropdown takes the width it is given (and its
   // choice wraps) rather than overflowing; at the default size it keeps

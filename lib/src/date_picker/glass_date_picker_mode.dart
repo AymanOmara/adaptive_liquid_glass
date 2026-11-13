@@ -18,5 +18,8 @@ enum GlassDatePickerMode {
   time,
 
   /// Both (`[.date, .hourAndMinute]`).
-  dateAndTime,
+  dateAndTime;
+
+  /// SwiftUI's name for [time] (`DatePickerComponents.hourAndMinute`).
+  static const GlassDatePickerMode hourAndMinute = time;
 }

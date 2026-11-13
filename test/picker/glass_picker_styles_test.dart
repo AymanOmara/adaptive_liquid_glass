@@ -293,4 +293,91 @@ void main() {
       expect(find.text('Month'), findsOneWidget);
     }, variant: ios);
   });
+
+  group('palette', () {
+    testWidgets('a segmented control of the choices; a tap picks', (t) async {
+      shaderEnv();
+      final picked = <String>[];
+      await t.pumpWidget(
+        appHost(
+          _Harness(style: GlassPickerStyle.palette, onChanged: picked.add),
+        ),
+      );
+      final control = t.widget<GlassSegmentedControl<String>>(
+        find.byType(GlassSegmentedControl<String>),
+      );
+      expect(control.segments.map((s) => s.value), ['d', 'w', 'm']);
+      expect(control.selected, 'w');
+      await t.tap(find.text('Month'));
+      await t.pumpAndSettle();
+      expect(picked, ['m']);
+      expect(
+        t
+            .widget<GlassSegmentedControl<String>>(
+              find.byType(GlassSegmentedControl<String>),
+            )
+            .selected,
+        'm',
+      );
+    }, variant: ios);
+
+    testWidgets('icon choices show the icon and read the label', (t) async {
+      shaderEnv();
+      await t.pumpWidget(
+        appHost(
+          GlassPicker<int>(
+            style: GlassPickerStyle.palette,
+            items: const [
+              GlassPickerItem(
+                value: 0,
+                label: 'Star',
+                icon: CupertinoIcons.star,
+              ),
+              GlassPickerItem(
+                value: 1,
+                label: 'Flag',
+                icon: CupertinoIcons.flag,
+              ),
+            ],
+            selected: 0,
+            onChanged: (_) {},
+          ),
+        ),
+      );
+      expect(find.byIcon(CupertinoIcons.star), findsOneWidget);
+      expect(find.text('Star'), findsNothing);
+      expect(find.bySemanticsLabel('Flag'), findsOneWidget);
+    }, variant: ios);
+
+    testWidgets('no onChanged: a tap does nothing', (t) async {
+      shaderEnv();
+      await t.pumpWidget(
+        appHost(
+          const _Harness(style: GlassPickerStyle.palette, enabled: false),
+        ),
+      );
+      expect(
+        t
+            .widget<GlassSegmentedControl<String>>(
+              find.byType(GlassSegmentedControl<String>),
+            )
+            .onChanged,
+        isNull,
+      );
+    }, variant: ios);
+
+    testWidgets('Material: a SegmentedButton', (t) async {
+      shaderEnv();
+      final picked = <String>[];
+      await t.pumpWidget(
+        appHost(
+          _Harness(style: GlassPickerStyle.palette, onChanged: picked.add),
+        ),
+      );
+      expect(find.byType(SegmentedButton<String>), findsOneWidget);
+      await t.tap(find.text('Day'));
+      await t.pumpAndSettle();
+      expect(picked, ['d']);
+    }, variant: android);
+  });
 }

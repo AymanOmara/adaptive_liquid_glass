@@ -61,6 +61,7 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
   bool _advanced = false;
   double _count = 3;
   DateTime _date = DateTime(2026, 10, 6);
+  DateTimeRange? _trip;
   Color _accent = const Color(0xFF007AFF);
   String? _emailError;
   final _rows = ['Copied Image', 'Meeting notes', 'Shopping list'];
@@ -636,6 +637,21 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                           child: const Text('Date range'),
                         ),
                         const SizedBox(height: 12),
+                        GlassDateRangePicker(
+                          value: _trip,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2030),
+                          onChanged: (r) => setState(() => _trip = r),
+                        ),
+                        const SizedBox(height: 12),
+                        GlassDateRangePicker(
+                          style: GlassDatePickerStyle.graphical,
+                          value: _trip,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2030),
+                          onChanged: (r) => setState(() => _trip = r),
+                        ),
+                        const SizedBox(height: 12),
                         GlassColorPicker(
                           label: const Text('Accent'),
                           value: _accent,
@@ -796,6 +812,13 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                         onChanged: (p) => setState(() => _period = p),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 24),
+                  GlassPicker<_Period>(
+                    style: GlassPickerStyle.palette,
+                    items: _periods,
+                    selected: _period,
+                    onChanged: (p) => setState(() => _period = p),
                   ),
                   const SizedBox(height: 24),
                   GlassListSection(

@@ -17,4 +17,15 @@ abstract final class PickerMetrics {
   /// The inline picker's checkmark size (estimated: SF Symbols'
   /// `checkmark` at body size).
   static const double checkSize = 17;
+
+  /// A palette picker's swatch inside a `Menu` (measured, iOS 26.4: a
+  /// 17-pt `circle.fill`). Kept for the in-menu palette row.
+  static const double paletteSwatchSize = 17;
+
+  /// The pitch between a menu palette's swatches (measured: 42.6 pt).
+  static const double paletteSwatchPitch = 42.6;
+
+  /// The rounded square behind a menu palette's selected swatch
+  /// (measured: 37.5 pt; its corner radius estimated at 8).
+  static const double paletteSelectionSize = 37.5;
 }
