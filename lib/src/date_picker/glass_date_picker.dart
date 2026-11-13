@@ -148,13 +148,17 @@ class _GlassDatePickerState extends State<GlassDatePicker> {
       context: anchor,
       overlap: PopoverMetrics.calendarOverlap,
       mode: widget.mode,
-      builder: (context) => GlassCalendar(
-        selected: widget.value,
-        firstDate: widget.firstDate,
-        lastDate: widget.lastDate,
-        showWeekNumbers: widget.showWeekNumbers,
-        firstDayOfWeek: widget.firstDayOfWeek,
-        onSelected: (d) => Navigator.of(context).pop(d),
+      // The calendar sets its own weights; undo the popover's semibold.
+      builder: (context) => DefaultTextStyle.merge(
+        style: const TextStyle(fontWeight: FontWeight.w400),
+        child: GlassCalendar(
+          selected: widget.value,
+          firstDate: widget.firstDate,
+          lastDate: widget.lastDate,
+          showWeekNumbers: widget.showWeekNumbers,
+          firstDayOfWeek: widget.firstDayOfWeek,
+          onSelected: (d) => Navigator.of(context).pop(d),
+        ),
       ),
     );
     if (!mounted) return;
@@ -177,23 +181,26 @@ class _GlassDatePickerState extends State<GlassDatePicker> {
       overlap: PopoverMetrics.calendarOverlap,
       mode: widget.mode,
       builder: (context) => StatefulBuilder(
-        builder: (context, setLatest) => Padding(
-          padding: const EdgeInsetsDirectional.all(
-            DatePickerWheelMetrics.popoverPadding,
-          ),
-          child: GlassDateWheel(
-            pickerMode: GlassDatePickerMode.time,
-            value: latest,
-            firstDate: widget.firstDate,
-            lastDate: widget.lastDate,
-            minuteInterval: widget.minuteInterval,
-            use24HourFormat: widget.use24HourFormat,
-            mode: widget.mode,
-            onChanged: (d) {
-              latest = d;
-              setLatest(() {});
-              widget.onChanged?.call(d);
-            },
+        builder: (context, setLatest) => DefaultTextStyle.merge(
+          style: const TextStyle(fontWeight: FontWeight.w400),
+          child: Padding(
+            padding: const EdgeInsetsDirectional.all(
+              DatePickerWheelMetrics.popoverPadding,
+            ),
+            child: GlassDateWheel(
+              pickerMode: GlassDatePickerMode.time,
+              value: latest,
+              firstDate: widget.firstDate,
+              lastDate: widget.lastDate,
+              minuteInterval: widget.minuteInterval,
+              use24HourFormat: widget.use24HourFormat,
+              mode: widget.mode,
+              onChanged: (d) {
+                latest = d;
+                setLatest(() {});
+                widget.onChanged?.call(d);
+              },
+            ),
           ),
         ),
       ),
@@ -263,9 +270,17 @@ class _GlassDatePickerState extends State<GlassDatePicker> {
       children: [
         _calendar(),
         const SizedBox(height: DatePickerWheelMetrics.timeRowGap),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [_timeCapsule()],
+        SizedBox(
+          height: DatePickerWheelMetrics.timeRowHeight,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.symmetric(
+              horizontal: DatePickerWheelMetrics.timeRowInset,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [_timeCapsule()],
+            ),
+          ),
         ),
       ],
     ),
@@ -304,6 +319,7 @@ class _GlassDatePickerState extends State<GlassDatePicker> {
       lastDate: widget.lastDate,
       showWeekNumbers: widget.showWeekNumbers,
       firstDayOfWeek: widget.firstDayOfWeek,
+      inline: true,
       onSelected: (d) {
         final v = widget.value;
         widget.onChanged?.call(

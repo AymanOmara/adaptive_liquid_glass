@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import 'android_glass_toggle.dart';
 import 'inspector_safe_area_page_demo.dart';
+import 'plain_list_demo.dart';
 
 /// `flutter run -t lib/components_demo.dart`: every component on one
 /// `GlassScaffold`, over a photo. Add `--dart-define=MODE=shader` (or
@@ -59,6 +60,7 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
   RangeValues _hours = const RangeValues(9, 17);
   double _brightness = 0.4;
   bool _toolbar = false;
+  Color _flag = CupertinoColors.systemOrange;
   bool _advanced = false;
   double _count = 3;
   DateTime _date = DateTime(2026, 10, 6);
@@ -135,6 +137,27 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                 GlassMenuItem(label: 'Date', onSelected: () => _snack('Date')),
               ],
             ),
+            // SwiftUI's .pickerStyle(.palette) inside a Menu: a row of
+            // swatches, the current one on a rounded square.
+            GlassMenuItem.picker(
+              title: 'Flag',
+              style: GlassPickerStyle.palette,
+              items: [
+                for (final (name, c) in const [
+                  ('Red', CupertinoColors.systemRed),
+                  ('Orange', CupertinoColors.systemOrange),
+                  ('Yellow', CupertinoColors.systemYellow),
+                  ('Green', CupertinoColors.systemGreen),
+                  ('Blue', CupertinoColors.systemBlue),
+                ])
+                  GlassMenuItem(
+                    label: name,
+                    color: c,
+                    checked: _flag == c,
+                    onSelected: () => setState(() => _flag = c),
+                  ),
+              ],
+            ),
             GlassMenuItem.section(
               items: [
                 GlassMenuItem(
@@ -199,7 +222,7 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
               ),
               GlassButton.icon(
                 onPressed: () => _snack('Flag'),
-                icon: CupertinoIcons.flag,
+                icon: CupertinoIcons.flag_fill,
                 semanticLabel: 'Flag',
               ),
               const GlassToolbarSpacer(),
@@ -1157,6 +1180,15 @@ class _ComponentsDemoState extends State<ComponentsDemo> {
                   const _ZoomCard(),
                   const SizedBox(height: 24),
                   const InspectorSafeAreaPageLinks(),
+                  const SizedBox(height: 12),
+                  GlassButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const PlainListDemoPage(),
+                      ),
+                    ),
+                    child: const Text('Plain list'),
+                  ),
                   const SizedBox(height: 400),
                 ],
               ),

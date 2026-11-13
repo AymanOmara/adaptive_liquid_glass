@@ -36,6 +36,7 @@ class GlassChip extends StatelessWidget {
     super.key,
     required this.label,
     this.subtitle,
+    this.trailing,
     this.icon,
     this.selected = false,
     this.onSelected,
@@ -58,6 +59,13 @@ class GlassChip extends StatelessWidget {
   /// secondary label colour; read after the label by assistive tech. The
   /// chip keeps its height.
   final String? subtitle;
+
+  /// A widget after the label (and [subtitle]), before the delete
+  /// button: a badge, a chevron, a small image. It takes the chip's icon
+  /// colour and text style (white on a selected chip) and should fit the
+  /// 32 pt capsule; it is read with the label. On the Material path it
+  /// ends the chip's label.
+  final Widget? trailing;
 
   /// An icon before the label.
   final IconData? icon;
@@ -98,7 +106,8 @@ class GlassChip extends StatelessWidget {
 
   static const VisualDensity _density = VisualDensity(vertical: -3);
 
-  Widget _materialLabel(BuildContext context) => subtitle == null
+  Widget _materialLabel(BuildContext context) =>
+      subtitle == null && trailing == null
       ? Text(label)
       : Row(
           mainAxisSize: MainAxisSize.min,
@@ -106,14 +115,20 @@ class GlassChip extends StatelessWidget {
             Flexible(
               child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
-            const SizedBox(width: ChipMetrics.subtitleGap),
-            Text(
-              subtitle!,
-              maxLines: 1,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+            if (subtitle != null) ...[
+              const SizedBox(width: ChipMetrics.subtitleGap),
+              Text(
+                subtitle!,
+                maxLines: 1,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
+            ],
+            if (trailing != null) ...[
+              const SizedBox(width: ChipMetrics.iconGap),
+              trailing!,
+            ],
           ],
         );
 
@@ -188,6 +203,20 @@ class GlassChip extends StatelessWidget {
                         GlassColors.secondaryLabel,
                         context,
                       ),
+              ),
+            ),
+          ],
+          if (trailing != null) ...[
+            const SizedBox(width: ChipMetrics.iconGap),
+            DefaultTextStyle.merge(
+              style: IOSText.style(
+                ChipMetrics.labelSize,
+                weight: FontWeight.w500,
+                color: selected ? GlassColors.white : null,
+              ),
+              child: IconTheme.merge(
+                data: const IconThemeData(size: ChipMetrics.iconSize),
+                child: trailing!,
               ),
             ),
           ],

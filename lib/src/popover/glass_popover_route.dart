@@ -84,7 +84,12 @@ class GlassPopoverRoute<T> extends PopupRoute<T> {
               padding: const EdgeInsets.symmetric(
                 vertical: PopoverMetrics.verticalInset,
               ),
-              child: Builder(builder: builder),
+              // SwiftUI's iPhone popover sets its plain text semibold
+              // (measured from the popover-iphone-swiftui capture).
+              child: DefaultTextStyle.merge(
+                style: const TextStyle(fontWeight: PopoverMetrics.textWeight),
+                child: Builder(builder: builder),
+              ),
             ),
           ),
         ),

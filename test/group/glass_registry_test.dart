@@ -39,6 +39,33 @@ void main() {
     expect(errors.single.exceptionAsString(), contains('16'));
   });
 
+  test('the shape-limit error is reported once per group', () {
+    final errors = <FlutterErrorDetails>[];
+    final previous = FlutterError.onError;
+    FlutterError.onError = errors.add;
+    addTearDown(() => FlutterError.onError = previous);
+
+    final r = GlassRegistry();
+    for (var i = 0; i < GlassRegistry.maxShapes; i++) {
+      r.register(entry());
+    }
+    // Five extra members, each registering twice (a rebuild).
+    for (var i = 0; i < 10; i++) {
+      expect(r.register(entry()), isFalse);
+    }
+    expect(errors, hasLength(1));
+    final message = errors.single.exceptionAsString();
+    expect(message, contains('GlassBatch'));
+    expect(message, contains('batchImplicitGroups'));
+
+    // Another group reports its own overflow.
+    final other = GlassRegistry();
+    for (var i = 0; i <= GlassRegistry.maxShapes; i++) {
+      other.register(entry());
+    }
+    expect(errors, hasLength(2));
+  });
+
   test('press geometry scales about the centre and translates', () {
     const g = GlassPressGeometry(
       scaleX: 1.5,

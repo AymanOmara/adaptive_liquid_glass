@@ -20,10 +20,15 @@ import 'material_dialog_action_label.dart';
 /// chosen action (the cancel action on a tap outside), after its
 /// `onPressed` has run. On the Material path it is a Material 3
 /// [AlertDialog] with the actions stacked.
+///
+/// [useRootNavigator] (true by default, as [showDialog]'s) pushes the
+/// dialog on the root [Navigator], above a tab bar or any shell around a
+/// nested navigator; false pushes it on the nearest one.
 Future<GlassDialogAction?> showGlassConfirmationDialog({
   required BuildContext context,
   String? title,
   required List<GlassDialogAction> actions,
+  bool useRootNavigator = true,
   GlassRenderMode? mode,
 }) async {
   final effective = resolveGlassMode(
@@ -42,6 +47,7 @@ Future<GlassDialogAction?> showGlassConfirmationDialog({
   if (effective == EffectiveGlassMode.material) {
     chosen = await showDialog<GlassDialogAction>(
       context: context,
+      useRootNavigator: useRootNavigator,
       builder: (context) => AlertDialog(
         // Larger text scrolls rather than overflowing the screen.
         scrollable: MediaQuery.textScalerOf(context).scale(1) > 1,
@@ -52,18 +58,14 @@ Future<GlassDialogAction?> showGlassConfirmationDialog({
           for (final a in actions)
             TextButton(
               onPressed: () => Navigator.of(context).pop(a),
-              style: a.role == GlassButtonRole.destructive
-                  ? TextButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.error,
-                    )
-                  : null,
+              style: materialDialogActionStyle(context, a),
               child: materialDialogActionLabel(context, a),
             ),
         ],
       ),
     );
   } else {
-    final navigator = Navigator.of(context);
+    final navigator = Navigator.of(context, rootNavigator: useRootNavigator);
     chosen = await navigator.push(
       GlassDialogRoute(
         title: title,

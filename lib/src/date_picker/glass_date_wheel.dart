@@ -428,12 +428,7 @@ class _GlassDateWheelState extends State<GlassDateWheel> {
   @override
   Widget build(BuildContext context) {
     final columns = _columns(cupertinoL10n(context));
-    // Every time style keeps UIDatePicker's 320-pt surface (measured).
-    final width = widget.pickerMode == GlassDatePickerMode.date
-        ? DatePickerWheelMetrics.dayWidth +
-              DatePickerWheelMetrics.monthWidth +
-              DatePickerWheelMetrics.yearWidth
-        : WheelPickerMetrics.width;
+    final wheel = Row(mainAxisSize: MainAxisSize.min, children: columns);
     // The rows keep their size at any text size, as UIDatePicker's.
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: WheelPickerMetrics.maxTextScale,
@@ -443,10 +438,10 @@ class _GlassDateWheelState extends State<GlassDateWheel> {
           container: true,
           child: SizedBox(
             height: WheelPickerMetrics.height,
-            width: width,
+            width: WheelPickerMetrics.width,
             child: effective == EffectiveGlassMode.material
-                ? _material(context, columns)
-                : _glass(columns),
+                ? _material(context, wheel)
+                : _glass(wheel),
           ),
         ),
       ),
@@ -467,7 +462,7 @@ class _GlassDateWheelState extends State<GlassDateWheel> {
     ),
   );
 
-  Widget _glass(List<Widget> columns) => LiquidGlass(
+  Widget _glass(Widget wheel) => LiquidGlass(
     shape: const GlassShape.rect(WheelPickerMetrics.surfaceRadius),
     mode: widget.mode,
     child: Stack(
@@ -481,12 +476,12 @@ class _GlassDateWheelState extends State<GlassDateWheel> {
             child: const SizedBox.expand(),
           ),
         ),
-        Row(mainAxisSize: MainAxisSize.min, children: columns),
+        Center(child: wheel),
       ],
     ),
   );
 
-  Widget _material(BuildContext context, List<Widget> columns) {
+  Widget _material(BuildContext context, Widget wheel) {
     final scheme = Theme.of(context).colorScheme;
     return Material(
       color: scheme.surfaceContainerHigh,
@@ -507,7 +502,7 @@ class _GlassDateWheelState extends State<GlassDateWheel> {
               ),
             ),
           ),
-          Row(mainAxisSize: MainAxisSize.min, children: columns),
+          Center(child: wheel),
         ],
       ),
     );

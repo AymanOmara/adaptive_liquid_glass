@@ -208,14 +208,14 @@ void main() {
         child: Align(child: GlassGroup(child: _chips(25))),
       ),
     );
-    // Past the cap the registry reports a non-fatal error per member.
+    // Past the cap the registry reports one non-fatal error per group.
     final errors = <FlutterErrorDetails>[];
     final saved = FlutterError.onError;
     FlutterError.onError = errors.add;
     await t.pumpWidget(app(const LiquidGlassThemeData()));
     await settle(t);
     FlutterError.onError = saved;
-    expect(errors, hasLength(25 - GlassRegistry.maxShapes));
+    expect(errors, hasLength(1));
     // Members past the 16th each get a group (and a view) of their own.
     expect(
       find.byType(UiKitView),

@@ -160,6 +160,8 @@ void main() {
         ],
         121.3: [121.3, 107.0, 94.3, 82.7, 72.3, 63.3, 55.3, 48.0, 41.7],
       };
+      // Compare to the UIKit frames directly. Flutter's own rubber-band
+      // spring varies by SDK version.
       takes.forEach((from, frames) {
         final sim = physics.createBallisticSimulation(_at(from), 0)!;
         for (var i = 0; i < frames.length; i++) {
@@ -173,12 +175,6 @@ void main() {
           expect(sim.x(t), lessThanOrEqualTo(0.01));
         }
       });
-      // Flutter's bouncing simulation is far slower to start.
-      final flutter = const BouncingScrollPhysics().createBallisticSimulation(
-        _at(121.3),
-        0,
-      )!;
-      expect(-flutter.x(4 / 60), greaterThan(72.3 + 10));
     });
 
     test('a fling up faster than the launch speeds the spring up', () {

@@ -151,7 +151,8 @@ class _GlassNavigationBarState extends State<GlassNavigationBar> {
         final bar = widget._materialBar();
         return widget.materialBuilder?.call(bar) ?? bar;
       }
-      final top = MediaQuery.paddingOf(context).top;
+      final pad = MediaQuery.paddingOf(context);
+      final top = pad.top;
       return NavBarStatusStyle(
         child: Stack(
           clipBehavior: Clip.none,
@@ -167,7 +168,13 @@ class _GlassNavigationBarState extends State<GlassNavigationBar> {
               ),
             ),
             Padding(
-              padding: EdgeInsets.only(top: top),
+              // The bar's content keeps to the horizontal safe area (a
+              // landscape notch, a split view's floating sidebar).
+              padding: EdgeInsets.only(
+                top: top,
+                left: pad.left,
+                right: pad.right,
+              ),
               child: NavBarContent(
                 leading: widget.leading,
                 automaticallyImplyLeading: widget.automaticallyImplyLeading,

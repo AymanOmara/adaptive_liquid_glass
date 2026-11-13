@@ -10,6 +10,7 @@ class _MaterialMenu extends StatefulWidget {
     required this.items,
     this.controller,
     this.primaryAction,
+    this.style,
   });
 
   final IconData icon;
@@ -17,6 +18,7 @@ class _MaterialMenu extends StatefulWidget {
   final List<GlassMenuItem> items;
   final GlassMenuController? controller;
   final VoidCallback? primaryAction;
+  final ButtonStyle? style;
 
   @override
   State<_MaterialMenu> createState() => _MaterialMenuState();
@@ -77,6 +79,7 @@ class _MaterialMenuState extends State<_MaterialMenu>
         return IconButton(
           icon: Icon(widget.icon),
           tooltip: widget.semanticLabel,
+          style: widget.style,
           onPressed: toggle,
         );
       }
@@ -86,7 +89,11 @@ class _MaterialMenuState extends State<_MaterialMenu>
         triggerMode: TooltipTriggerMode.manual,
         child: GestureDetector(
           onLongPress: toggle,
-          child: IconButton(icon: Icon(widget.icon), onPressed: primary),
+          child: IconButton(
+            icon: Icon(widget.icon),
+            style: widget.style,
+            onPressed: primary,
+          ),
         ),
       );
     },
@@ -119,7 +126,9 @@ List<Widget> _materialMenuChildren(
           ),
         ),
       for (final item in sections[s].rows)
-        if (item.isSubmenu)
+        if (item.isPalette)
+          _materialPalette(context, item)
+        else if (item.isSubmenu)
           SubmenuButton(
             leadingIcon: item.icon == null ? null : Icon(item.icon),
             menuChildren: _materialMenuChildren(context, item.children),
@@ -145,6 +154,42 @@ List<Widget> _materialMenuChildren(
           ),
     ],
   ];
+}
+
+/// A palette picker as Material draws one: its choices' swatches side by
+/// side as selectable icon buttons, which close the menu when pressed.
+Widget _materialPalette(BuildContext context, GlassMenuItem palette) {
+  final theme = Theme.of(context);
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final item in palette.children)
+          Builder(
+            // The menu's own context, under its MenuController.
+            builder: (context) => IconButton(
+              isSelected: item.checked ?? false,
+              tooltip: item.semanticLabel ?? item.label,
+              onPressed: item.onSelected == null
+                  ? null
+                  : () {
+                      MenuController.maybeOf(context)?.close();
+                      item.onSelected!();
+                    },
+              style: IconButton.styleFrom(
+                backgroundColor: (item.checked ?? false)
+                    ? theme.colorScheme.secondaryContainer
+                    : null,
+              ),
+              icon: item.icon == null
+                  ? Icon(Icons.circle, color: item.color)
+                  : Icon(item.icon, color: item.color),
+            ),
+          ),
+      ],
+    ),
+  );
 }
 
 Widget _materialLabel(GlassMenuItem item) => Semantics(

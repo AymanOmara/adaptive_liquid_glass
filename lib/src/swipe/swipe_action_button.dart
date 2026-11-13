@@ -115,47 +115,56 @@ class SwipeActionButton extends StatelessWidget {
         ),
       ),
     );
-    // The row exposes its actions as custom semantics actions.
+    // The row exposes its actions as custom semantics actions. The buttons
+    // sit behind the row, often outside any Material or Cupertino text
+    // style, so they set their own: without one a label falls back to the
+    // debug style (yellow, double underline).
     return ExcludeSemantics(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onPressed,
-        child: !stacked
-            ? capsule
-            : Column(
-                children: [
-                  capsule,
-                  // The gap is to the label's ink; its line box starts
-                  // above that.
-                  SizedBox(height: labelGap - SwipeMetrics.labelInkTop),
-                  // Under the icon, however wide the label.
-                  Align(
-                    alignment: side,
-                    child: SizedBox(
-                      width: naturalWidth,
-                      height: SwipeMetrics.stackedLabelHeight,
-                      child: OverflowBox(
-                        alignment: Alignment.topCenter,
-                        minWidth: 0,
-                        minHeight: 0,
-                        maxWidth: double.infinity,
-                        maxHeight: double.infinity,
-                        child: Text(
-                          action.label,
-                          maxLines: 1,
-                          softWrap: false,
-                          style: SwipeMetrics.label.copyWith(
-                            color: CupertinoDynamicColor.resolve(
-                              GlassColors.secondaryLabel,
-                              context,
+      child: DefaultTextStyle(
+        style: SwipeMetrics.label.copyWith(
+          color: GlassColors.white,
+          decoration: TextDecoration.none,
+        ),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onPressed,
+          child: !stacked
+              ? capsule
+              : Column(
+                  children: [
+                    capsule,
+                    // The gap is to the label's ink; its line box starts
+                    // above that.
+                    SizedBox(height: labelGap - SwipeMetrics.labelInkTop),
+                    // Under the icon, however wide the label.
+                    Align(
+                      alignment: side,
+                      child: SizedBox(
+                        width: naturalWidth,
+                        height: SwipeMetrics.stackedLabelHeight,
+                        child: OverflowBox(
+                          alignment: Alignment.topCenter,
+                          minWidth: 0,
+                          minHeight: 0,
+                          maxWidth: double.infinity,
+                          maxHeight: double.infinity,
+                          child: Text(
+                            action.label,
+                            maxLines: 1,
+                            softWrap: false,
+                            style: SwipeMetrics.label.copyWith(
+                              color: CupertinoDynamicColor.resolve(
+                                GlassColors.secondaryLabel,
+                                context,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+        ),
       ),
     );
   }

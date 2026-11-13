@@ -1,0 +1,452 @@
+{
+  "source": "docs/superpowers/notes/measurements/ios-26.4/scrollindicatorstracedark/indicator-trace",
+  "sample_count": 1183,
+  "rejected_lines": 0,
+  "baseline": {
+    "last_active": {
+      "line": 250,
+      "t": 4.4533,
+      "oy": 256.0,
+      "dragging": 1.0,
+      "decelerating": 0.0,
+      "indicator": {
+        "class": "_UIScrollViewScrollIndicator",
+        "x": 396.0,
+        "y": 151.33,
+        "w": 3.0,
+        "h": 237.67,
+        "op": 1.0,
+        "a": 1.0,
+        "hid": 0.0
+      }
+    },
+    "first_idle": {
+      "line": 251,
+      "t": 4.471,
+      "oy": 256.0,
+      "dragging": 0.0,
+      "decelerating": 0.0,
+      "indicator": {
+        "class": "_UIScrollViewScrollIndicator",
+        "x": 396.0,
+        "y": 151.33,
+        "w": 3.0,
+        "h": 237.67,
+        "op": 1.0,
+        "a": 1.0,
+        "hid": 0.0
+      }
+    }
+  },
+  "geometry": {
+    "units": "points",
+    "sample_count": 100,
+    "ranges": {
+      "x": [
+        396.0,
+        396.0
+      ],
+      "y": [
+        67.33,
+        151.33
+      ],
+      "w": [
+        3.0,
+        3.0
+      ],
+      "h": [
+        237.67,
+        237.67
+      ]
+    },
+    "first_visible": {
+      "line": 151,
+      "t": 2.7869,
+      "oy": -54.0,
+      "dragging": 1.0,
+      "decelerating": 0.0,
+      "indicator": {
+        "class": "_UIScrollViewScrollIndicator",
+        "x": 396.0,
+        "y": 67.33,
+        "w": 3.0,
+        "h": 237.67,
+        "op": 1.0,
+        "a": 1.0,
+        "hid": 0.0
+      }
+    },
+    "last_visible": {
+      "line": 326,
+      "t": 5.7199,
+      "oy": 256.0,
+      "dragging": 0.0,
+      "decelerating": 0.0,
+      "indicator": {
+        "class": "_UIScrollViewScrollIndicator",
+        "x": 396.0,
+        "y": 151.33,
+        "w": 3.0,
+        "h": 237.67,
+        "op": 0.01,
+        "a": 0.0,
+        "hid": 0.0
+      }
+    }
+  },
+  "fade": {
+    "peak_opacity": 1.0,
+    "opacity_zero_threshold": 0.001,
+    "hold_seconds_bounds": [
+      1.0333,
+      1.05
+    ],
+    "last_full_opacity": {
+      "line": 312,
+      "t": 5.4866,
+      "oy": 256.0,
+      "dragging": 0.0,
+      "decelerating": 0.0,
+      "indicator": {
+        "class": "_UIScrollViewScrollIndicator",
+        "x": 396.0,
+        "y": 151.33,
+        "w": 3.0,
+        "h": 237.67,
+        "op": 1.0,
+        "a": 0.0,
+        "hid": 0.0
+      }
+    },
+    "first_fading": {
+      "line": 313,
+      "t": 5.5033,
+      "oy": 256.0,
+      "dragging": 0.0,
+      "decelerating": 0.0,
+      "indicator": {
+        "class": "_UIScrollViewScrollIndicator",
+        "x": 396.0,
+        "y": 151.33,
+        "w": 3.0,
+        "h": 237.67,
+        "op": 0.992,
+        "a": 0.0,
+        "hid": 0.0
+      }
+    },
+    "last_positive_opacity": {
+      "line": 326,
+      "t": 5.7199,
+      "oy": 256.0,
+      "dragging": 0.0,
+      "decelerating": 0.0,
+      "indicator": {
+        "class": "_UIScrollViewScrollIndicator",
+        "x": 396.0,
+        "y": 151.33,
+        "w": 3.0,
+        "h": 237.67,
+        "op": 0.01,
+        "a": 0.0,
+        "hid": 0.0
+      }
+    },
+    "first_zero_opacity": {
+      "line": 327,
+      "t": 5.7366,
+      "oy": 256.0,
+      "dragging": 0.0,
+      "decelerating": 0.0,
+      "indicator": {
+        "class": "_UIScrollViewScrollIndicator",
+        "x": 396.0,
+        "y": 151.33,
+        "w": 3.0,
+        "h": 237.67,
+        "op": 0.0,
+        "a": 0.0,
+        "hid": 0.0
+      }
+    },
+    "duration_seconds_bounds": [
+      0.2166,
+      0.25
+    ],
+    "samples": [
+      {
+        "line": 312,
+        "t": 5.4866,
+        "oy": 256.0,
+        "dragging": 0.0,
+        "decelerating": 0.0,
+        "indicator": {
+          "class": "_UIScrollViewScrollIndicator",
+          "x": 396.0,
+          "y": 151.33,
+          "w": 3.0,
+          "h": 237.67,
+          "op": 1.0,
+          "a": 0.0,
+          "hid": 0.0
+        }
+      },
+      {
+        "line": 313,
+        "t": 5.5033,
+        "oy": 256.0,
+        "dragging": 0.0,
+        "decelerating": 0.0,
+        "indicator": {
+          "class": "_UIScrollViewScrollIndicator",
+          "x": 396.0,
+          "y": 151.33,
+          "w": 3.0,
+          "h": 237.67,
+          "op": 0.992,
+          "a": 0.0,
+          "hid": 0.0
+        }
+      },
+      {
+        "line": 314,
+        "t": 5.52,
+        "oy": 256.0,
+        "dragging": 0.0,
+        "decelerating": 0.0,
+        "indicator": {
+          "class": "_UIScrollViewScrollIndicator",
+          "x": 396.0,
+          "y": 151.33,
+          "w": 3.0,
+          "h": 237.67,
+          "op": 0.967,
+          "a": 0.0,
+          "hid": 0.0
+        }
+      },
+      {
+        "line": 315,
+        "t": 5.5366,
+        "oy": 256.0,
+        "dragging": 0.0,
+        "decelerating": 0.0,
+        "indicator": {
+          "class": "_UIScrollViewScrollIndicator",
+          "x": 396.0,
+          "y": 151.33,
+          "w": 3.0,
+          "h": 237.67,
+          "op": 0.923,
+          "a": 0.0,
+          "hid": 0.0
+        }
+      },
+      {
+        "line": 316,
+        "t": 5.5532,
+        "oy": 256.0,
+        "dragging": 0.0,
+        "decelerating": 0.0,
+        "indicator": {
+          "class": "_UIScrollViewScrollIndicator",
+          "x": 396.0,
+          "y": 151.33,
+          "w": 3.0,
+          "h": 237.67,
+          "op": 0.859,
+          "a": 0.0,
+          "hid": 0.0
+        }
+      },
+      {
+        "line": 317,
+        "t": 5.57,
+        "oy": 256.0,
+        "dragging": 0.0,
+        "decelerating": 0.0,
+        "indicator": {
+          "class": "_UIScrollViewScrollIndicator",
+          "x": 396.0,
+          "y": 151.33,
+          "w": 3.0,
+          "h": 237.67,
+          "op": 0.773,
+          "a": 0.0,
+          "hid": 0.0
+        }
+      },
+      {
+        "line": 318,
+        "t": 5.5866,
+        "oy": 256.0,
+        "dragging": 0.0,
+        "decelerating": 0.0,
+        "indicator": {
+          "class": "_UIScrollViewScrollIndicator",
+          "x": 396.0,
+          "y": 151.33,
+          "w": 3.0,
+          "h": 237.67,
+          "op": 0.676,
+          "a": 0.0,
+          "hid": 0.0
+        }
+      },
+      {
+        "line": 319,
+        "t": 5.6032,
+        "oy": 256.0,
+        "dragging": 0.0,
+        "decelerating": 0.0,
+        "indicator": {
+          "class": "_UIScrollViewScrollIndicator",
+          "x": 396.0,
+          "y": 151.33,
+          "w": 3.0,
+          "h": 237.67,
+          "op": 0.565,
+          "a": 0.0,
+          "hid": 0.0
+        }
+      },
+      {
+        "line": 320,
+        "t": 5.6199,
+        "oy": 256.0,
+        "dragging": 0.0,
+        "decelerating": 0.0,
+        "indicator": {
+          "class": "_UIScrollViewScrollIndicator",
+          "x": 396.0,
+          "y": 151.33,
+          "w": 3.0,
+          "h": 237.67,
+          "op": 0.451,
+          "a": 0.0,
+          "hid": 0.0
+        }
+      },
+      {
+        "line": 321,
+        "t": 5.6366,
+        "oy": 256.0,
+        "dragging": 0.0,
+        "decelerating": 0.0,
+        "indicator": {
+          "class": "_UIScrollViewScrollIndicator",
+          "x": 396.0,
+          "y": 151.33,
+          "w": 3.0,
+          "h": 237.67,
+          "op": 0.34,
+          "a": 0.0,
+          "hid": 0.0
+        }
+      },
+      {
+        "line": 322,
+        "t": 5.6533,
+        "oy": 256.0,
+        "dragging": 0.0,
+        "decelerating": 0.0,
+        "indicator": {
+          "class": "_UIScrollViewScrollIndicator",
+          "x": 396.0,
+          "y": 151.33,
+          "w": 3.0,
+          "h": 237.67,
+          "op": 0.237,
+          "a": 0.0,
+          "hid": 0.0
+        }
+      },
+      {
+        "line": 323,
+        "t": 5.6699,
+        "oy": 256.0,
+        "dragging": 0.0,
+        "decelerating": 0.0,
+        "indicator": {
+          "class": "_UIScrollViewScrollIndicator",
+          "x": 396.0,
+          "y": 151.33,
+          "w": 3.0,
+          "h": 237.67,
+          "op": 0.154,
+          "a": 0.0,
+          "hid": 0.0
+        }
+      },
+      {
+        "line": 324,
+        "t": 5.6866,
+        "oy": 256.0,
+        "dragging": 0.0,
+        "decelerating": 0.0,
+        "indicator": {
+          "class": "_UIScrollViewScrollIndicator",
+          "x": 396.0,
+          "y": 151.33,
+          "w": 3.0,
+          "h": 237.67,
+          "op": 0.086,
+          "a": 0.0,
+          "hid": 0.0
+        }
+      },
+      {
+        "line": 325,
+        "t": 5.7033,
+        "oy": 256.0,
+        "dragging": 0.0,
+        "decelerating": 0.0,
+        "indicator": {
+          "class": "_UIScrollViewScrollIndicator",
+          "x": 396.0,
+          "y": 151.33,
+          "w": 3.0,
+          "h": 237.67,
+          "op": 0.038,
+          "a": 0.0,
+          "hid": 0.0
+        }
+      },
+      {
+        "line": 326,
+        "t": 5.7199,
+        "oy": 256.0,
+        "dragging": 0.0,
+        "decelerating": 0.0,
+        "indicator": {
+          "class": "_UIScrollViewScrollIndicator",
+          "x": 396.0,
+          "y": 151.33,
+          "w": 3.0,
+          "h": 237.67,
+          "op": 0.01,
+          "a": 0.0,
+          "hid": 0.0
+        }
+      },
+      {
+        "line": 327,
+        "t": 5.7366,
+        "oy": 256.0,
+        "dragging": 0.0,
+        "decelerating": 0.0,
+        "indicator": {
+          "class": "_UIScrollViewScrollIndicator",
+          "x": 396.0,
+          "y": 151.33,
+          "w": 3.0,
+          "h": 237.67,
+          "op": 0.0,
+          "a": 0.0,
+          "hid": 0.0
+        }
+      }
+    ]
+  },
+  "status": "complete"
+}

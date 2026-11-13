@@ -36,6 +36,25 @@ import 'text_field_metrics.dart';
 /// button when [clearButton] is on and the text is not empty. An
 /// [errorText] shows under the field. [GlassTextField.password] obscures
 /// the text and adds an eye button that shows and hides it.
+///
+/// Geometry: [contentPadding] replaces the measured insets and [minHeight]
+/// the 48-pt height (see [TextFieldMetrics]), for a composer or a compact
+/// form row:
+///
+/// ```dart
+/// GlassTextField(
+///   minHeight: 52,
+///   contentPadding: const EdgeInsetsDirectional.fromSTEB(16, 4, 4, 4),
+///   suffix: sendButton, // a 44-pt circle
+/// )
+/// ```
+///
+/// [textDirection], [textAlign] and [style] apply to the editable text
+/// only: the capsule, prefix and suffix follow the ambient [Directionality].
+///
+/// On Android (the Material path) it is a Material 3 [TextField] styled by
+/// the app's `InputDecorationTheme`; [materialBuilder] replaces or restyles
+/// it.
 class GlassTextField extends StatefulWidget {
   /// Creates a text field.
   const GlassTextField({
@@ -65,6 +84,12 @@ class GlassTextField extends StatefulWidget {
     this.mode,
     this.showPasswordLabel = 'Show password',
     this.hidePasswordLabel = 'Hide password',
+    this.contentPadding,
+    this.minHeight,
+    this.textDirection,
+    this.textAlign = TextAlign.start,
+    this.style,
+    this.materialBuilder,
   }) : _password = false,
        assert(
          !obscureText || maxLines == 1,
@@ -91,6 +116,12 @@ class GlassTextField extends StatefulWidget {
     this.mode,
     this.showPasswordLabel = 'Show password',
     this.hidePasswordLabel = 'Hide password',
+    this.contentPadding,
+    this.minHeight,
+    this.textDirection,
+    this.textAlign = TextAlign.start,
+    this.style,
+    this.materialBuilder,
   }) : obscureText = true,
        maxLines = 1,
        minLines = null,
@@ -181,6 +212,51 @@ class GlassTextField extends StatefulWidget {
   /// shown.
   final String hidePasswordLabel;
 
+  /// The glass field's insets around its content (prefix, text and
+  /// trailing widgets), in single- and multi-line modes. When set it
+  /// replaces the measured insets entirely, and a [suffix] gets no extra
+  /// end gap. Null keeps [TextFieldMetrics]' insets: 16 pt at the start
+  /// (12 before a prefix), 16 at the end (8 before trailing widgets, plus
+  /// 6 around a suffix) and 13 above and below multi-line text.
+  ///
+  /// The Material path ignores it; use [materialBuilder] or the
+  /// `InputDecorationTheme`.
+  final EdgeInsetsDirectional? contentPadding;
+
+  /// The glass field's height: a single-line capsule is this tall (growing
+  /// with Dynamic Type), a multi-line field never shorter. Null keeps
+  /// [TextFieldMetrics.height] (48 pt). The Material path ignores it.
+  final double? minHeight;
+
+  /// The editable text's direction, on both paths. Null follows the
+  /// ambient [Directionality]. Only the text and placeholder follow it;
+  /// the capsule, prefix and suffix keep the ambient direction, so an
+  /// Arabic message typed in an English app reads right-to-left in a
+  /// left-to-right field.
+  final TextDirection? textDirection;
+
+  /// How the editable text is aligned, on both paths.
+  final TextAlign textAlign;
+
+  /// The editable text's style, merged over the default (17 pt in the
+  /// label colour on iOS, the theme's `bodyLarge` on Android). A colour in
+  /// it is the text's foreground colour.
+  final TextStyle? style;
+
+  /// Replaces the Material path's [TextField], given the one the field
+  /// would build (wired to its controller, focus, decoration and
+  /// callbacks). Ignored on the glass paths.
+  ///
+  /// ```dart
+  /// materialBuilder: (context, field) => TextField(
+  ///   controller: field.controller,
+  ///   focusNode: field.focusNode,
+  ///   onChanged: field.onChanged,
+  ///   decoration: field.decoration!.copyWith(filled: false),
+  /// )
+  /// ```
+  final Widget Function(BuildContext context, TextField field)? materialBuilder;
+
   /// Whether this field shows the password's eye button.
   final bool _password;
 
@@ -267,16 +343,18 @@ class _GlassTextFieldState extends State<GlassTextField> {
       shape: _multiLine
           ? const GlassShape.rect(TextFieldMetrics.multiLineRadius)
           : const GlassShape.capsule(),
-      padding: EdgeInsetsDirectional.only(
-        start: widget.prefix != null
-            ? TextFieldMetrics.prefixInset
-            : TextFieldMetrics.startInset,
-        end: _hasTrailing
-            ? TextFieldMetrics.trailingInset
-            : TextFieldMetrics.endInset,
-        top: _multiLine ? TextFieldMetrics.multiLineVerticalPadding : 0,
-        bottom: _multiLine ? TextFieldMetrics.multiLineVerticalPadding : 0,
-      ),
+      padding:
+          widget.contentPadding ??
+          EdgeInsetsDirectional.only(
+            start: widget.prefix != null
+                ? TextFieldMetrics.prefixInset
+                : TextFieldMetrics.startInset,
+            end: _hasTrailing
+                ? TextFieldMetrics.trailingInset
+                : TextFieldMetrics.endInset,
+            top: _multiLine ? TextFieldMetrics.multiLineVerticalPadding : 0,
+            bottom: _multiLine ? TextFieldMetrics.multiLineVerticalPadding : 0,
+          ),
       // Disabled dims the content, not the glass (like GlassButton).
       child: Opacity(
         opacity: widget.enabled ? 1 : TextFieldMetrics.disabledOpacity,
@@ -303,15 +381,15 @@ class _GlassTextFieldState extends State<GlassTextField> {
     );
     return _multiLine
         ? ConstrainedBox(
-            constraints: const BoxConstraints(
-              minHeight: TextFieldMetrics.height,
+            constraints: BoxConstraints(
+              minHeight: widget.minHeight ?? TextFieldMetrics.height,
             ),
             child: glass,
           )
         // The capsule grows with Dynamic Type (never below its height).
         : SizedBox(
             height:
-                TextFieldMetrics.height *
+                (widget.minHeight ?? TextFieldMetrics.height) *
                 IOSText.growth(
                   MediaQuery.textScalerOf(context),
                   TextFieldMetrics.fontSize,
@@ -333,7 +411,9 @@ class _GlassTextFieldState extends State<GlassTextField> {
       style: IOSText.style(
         TextFieldMetrics.fontSize,
         color: CupertinoDynamicColor.resolve(GlassColors.label, context),
-      ),
+      ).merge(widget.style),
+      textDirection: widget.textDirection,
+      textAlign: widget.textAlign,
       padding: EdgeInsets.zero,
       enabled: widget.enabled,
       obscureText: _obscured,
@@ -407,8 +487,10 @@ class _GlassTextFieldState extends State<GlassTextField> {
               ),
             if (widget.suffix != null)
               Padding(
-                padding: const EdgeInsetsDirectional.only(
-                  end: TextFieldMetrics.clearPadding,
+                padding: EdgeInsetsDirectional.only(
+                  end: widget.contentPadding == null
+                      ? TextFieldMetrics.clearPadding
+                      : 0,
                 ),
                 child: IconTheme.merge(
                   data: IconThemeData(
@@ -425,30 +507,37 @@ class _GlassTextFieldState extends State<GlassTextField> {
   }
 
   Widget _material(BuildContext context) {
-    Widget field() => TextField(
-      controller: _controller,
-      focusNode: widget.focusNode,
-      autofocus: widget.autofocus,
-      decoration: InputDecoration(
-        hintText: widget.placeholder,
-        prefixIcon: widget.prefix,
-        suffixIcon: _materialTrailing(context),
-        errorText: widget.errorText,
-        filled: true,
-        enabled: widget.enabled,
-      ),
-      obscureText: _obscured,
-      maxLines: widget.maxLines,
-      minLines: widget.minLines,
-      keyboardType: widget.keyboardType,
-      textInputAction: widget.textInputAction,
-      textCapitalization: widget.textCapitalization,
-      autocorrect: widget.autocorrect,
-      autofillHints: widget.autofillHints,
-      inputFormatters: widget.inputFormatters,
-      onChanged: widget.onChanged,
-      onSubmitted: widget.onSubmitted,
-    );
+    Widget field() {
+      final field = TextField(
+        controller: _controller,
+        focusNode: widget.focusNode,
+        autofocus: widget.autofocus,
+        decoration: InputDecoration(
+          hintText: widget.placeholder,
+          prefixIcon: widget.prefix,
+          suffixIcon: _materialTrailing(context),
+          errorText: widget.errorText,
+          filled: true,
+          enabled: widget.enabled,
+        ),
+        obscureText: _obscured,
+        maxLines: widget.maxLines,
+        minLines: widget.minLines,
+        keyboardType: widget.keyboardType,
+        textInputAction: widget.textInputAction,
+        textCapitalization: widget.textCapitalization,
+        autocorrect: widget.autocorrect,
+        autofillHints: widget.autofillHints,
+        inputFormatters: widget.inputFormatters,
+        onChanged: widget.onChanged,
+        onSubmitted: widget.onSubmitted,
+        textDirection: widget.textDirection,
+        textAlign: widget.textAlign,
+        style: widget.style,
+      );
+      return widget.materialBuilder?.call(context, field) ?? field;
+    }
+
     final Widget body = widget.clearButton && !widget._password
         ? ListenableBuilder(
             listenable: _controller,

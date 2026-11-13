@@ -56,7 +56,7 @@ void main() {
     c.toggleSidebar();
     await t.pumpAndSettle();
     expect(find.text('Side'), findsOneWidget);
-    expect(t.getRect(find.text('Detail')).left, greaterThanOrEqualTo(270));
+    expect(t.getRect(find.text('Detail')).left, greaterThanOrEqualTo(320));
   });
 
   testWidgets('compact: shows the sidebar, a tap pushes the detail', (t) async {

@@ -1,0 +1,16 @@
+{
+  "runtime": "iOS 26.4",
+  "device": "A5CC4AD4-0EE7-470A-839E-5CC96CDDDEB0",
+  "scene": "scrollindicatorstrace",
+  "gesture": {
+    "from": [
+      200,
+      650
+    ],
+    "to": [
+      200,
+      320
+    ],
+    "duration": 1.5
+  }
+}

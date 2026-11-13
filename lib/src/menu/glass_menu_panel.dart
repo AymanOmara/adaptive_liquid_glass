@@ -7,6 +7,7 @@ import '../core/glass_shape.dart';
 import '../core/ios_text.dart';
 import '../group/glass_group.dart';
 import '../liquid_glass.dart';
+import '../picker/picker_metrics.dart';
 import 'glass_menu_item.dart';
 import 'glass_menu_row.dart';
 import 'menu_metrics.dart';
@@ -23,6 +24,7 @@ class GlassMenuPanel extends StatefulWidget {
     required this.onChoose,
     this.mode,
     this.highlighted,
+    this.width = MenuMetrics.width,
   });
 
   /// The items, top to bottom.
@@ -37,6 +39,11 @@ class GlassMenuPanel extends StatefulWidget {
   /// The row a glide highlights, an index into the rows that show (see
   /// [GlassMenuPanelState.rowAt]), if any; see [GlassMenuController].
   final ValueListenable<int?>? highlighted;
+
+  /// The panel's width: [MenuMetrics.width] for a menu's, narrower for a
+  /// context menu's (`ContextMenuMetrics.menuWidth`); the rows' columns
+  /// keep their distance from its centre.
+  final double width;
 
   @override
   State<GlassMenuPanel> createState() => GlassMenuPanelState();
@@ -174,7 +181,7 @@ class GlassMenuPanelState extends State<GlassMenuPanel>
       ),
     );
     return SizedBox(
-      width: MenuMetrics.width,
+      width: widget.width,
       child: Semantics(
         scopesRoute: true,
         explicitChildNodes: true,
@@ -310,19 +317,77 @@ class GlassMenuPanelState extends State<GlassMenuPanel>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var s = 0; s < sections.length; s++) ...[
-          if (s > 0) _divider(context),
+          // SwiftUI draws no separator line under a palette's swatch row;
+          // the gap stays.
+          if (s > 0)
+            sections[s - 1].rows.any((r) => r.isPalette)
+                ? const SizedBox(
+                    height:
+                        MenuMetrics.verticalPadding * 2 +
+                        MenuMetrics.dividerThickness,
+                  )
+                : _divider(context),
           if (sections[s].title case final title?) _header(context, title),
           for (final item in sections[s].rows)
-            _row(
-              item,
-              choices: choices,
-              icons: sections[s].rows.any((r) => r.icon != null),
-              highlight: interactive ? highlight : null,
-              interactive: interactive,
-              trailing: item.isSubmenu ? CupertinoIcons.chevron_forward : null,
-            ),
+            if (item.isPalette)
+              _palette(
+                item,
+                highlight: interactive ? highlight : null,
+                interactive: interactive,
+              )
+            else
+              _row(
+                item,
+                choices: choices,
+                icons: sections[s].rows.any((r) => r.icon != null),
+                highlight: interactive ? highlight : null,
+                interactive: interactive,
+                trailing: item.isSubmenu
+                    ? CupertinoIcons.chevron_forward
+                    : null,
+              ),
         ],
       ],
+    );
+  }
+
+  /// A palette picker's swatches side by side in equal cells, centred,
+  /// each a row a finger can glide over.
+  Widget _palette(
+    GlassMenuItem palette, {
+    int? highlight,
+    required bool interactive,
+  }) {
+    final swatches = [
+      for (final item in palette.children)
+        if (!interactive)
+          _PaletteSwatch(item: item, highlighted: false, onTap: null)
+        else
+          () {
+            final index = _rows.length;
+            _rows.add(item);
+            if (_keys.length <= index) _keys.add(GlobalKey());
+            final key = _keys[index];
+            return _PaletteSwatch(
+              key: key,
+              item: item,
+              highlighted: highlight == index,
+              onTap: item.enabled ? () => _tap(item, key) : null,
+            );
+          }(),
+    ];
+    return SizedBox(
+      height: PickerMetrics.paletteRowHeight,
+      child: Semantics(
+        container: true,
+        label: palette.semanticLabel ?? palette.label,
+        child: Center(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(mainAxisSize: MainAxisSize.min, children: swatches),
+          ),
+        ),
+      ),
     );
   }
 
@@ -343,6 +408,7 @@ class GlassMenuPanelState extends State<GlassMenuPanel>
         icons: icons,
         trailing: trailing,
         weight: weight,
+        inset: _inset,
       );
     }
     final index = _rows.length;
@@ -357,9 +423,12 @@ class GlassMenuPanelState extends State<GlassMenuPanel>
       highlighted: highlight == index,
       trailing: trailing,
       weight: weight,
+      inset: _inset,
       onTap: item.enabled ? () => _tap(item, key) : null,
     );
   }
+
+  double get _inset => (widget.width - MenuMetrics.width) / 2;
 }
 
 Widget _divider(BuildContext context) => Padding(
@@ -410,4 +479,74 @@ Widget _header(BuildContext context, String title) {
       ),
     ),
   );
+}
+
+/// One swatch of a menu palette: the choice's icon tinted with its colour,
+/// or a filled circle of its colour; the chosen one on a rounded square.
+class _PaletteSwatch extends StatelessWidget {
+  const _PaletteSwatch({
+    super.key,
+    required this.item,
+    required this.highlighted,
+    required this.onTap,
+  });
+
+  final GlassMenuItem item;
+  final bool highlighted;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = CupertinoDynamicColor.resolve(
+      item.color ?? GlassColors.label,
+      context,
+    );
+    final glyph = item.icon == null
+        ? Container(
+            width: PickerMetrics.paletteSwatchSize,
+            height: PickerMetrics.paletteSwatchSize,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          )
+        : Icon(item.icon, size: PickerMetrics.paletteSwatchSize, color: color);
+    final chosen = item.checked ?? false;
+    final square = CupertinoDynamicColor.resolve(
+      highlighted
+          ? GlassColors.menuHighlight
+          : GlassColors.menuPaletteSelection,
+      context,
+    );
+    return Semantics(
+      button: true,
+      selected: chosen,
+      enabled: onTap != null,
+      label: item.semanticLabel ?? item.label,
+      onTap: onTap,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: SizedBox(
+          width: PickerMetrics.paletteSwatchPitch,
+          height: PickerMetrics.paletteRowHeight,
+          child: OverflowBox(
+            maxHeight: PickerMetrics.paletteSelectionSize,
+            child: Container(
+              width: PickerMetrics.paletteSelectionSize,
+              height: PickerMetrics.paletteSelectionSize,
+              alignment: Alignment.center,
+              decoration: chosen || highlighted
+                  ? BoxDecoration(
+                      color: square,
+                      borderRadius: BorderRadius.circular(
+                        PickerMetrics.paletteSelectionRadius,
+                      ),
+                    )
+                  : null,
+              child: Opacity(opacity: onTap == null ? 0.35 : 1, child: glyph),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

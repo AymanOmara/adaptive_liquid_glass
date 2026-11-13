@@ -34,6 +34,7 @@ class GlassCalendar extends StatefulWidget {
     required this.lastDate,
     this.showWeekNumbers = false,
     this.firstDayOfWeek,
+    this.inline = false,
   }) : assert(
          firstDayOfWeek == null || (firstDayOfWeek >= 0 && firstDayOfWeek < 7),
          'firstDayOfWeek is 0 (Sunday) to 6 (Saturday)',
@@ -61,6 +62,7 @@ class GlassCalendar extends StatefulWidget {
     required this.lastDate,
     this.showWeekNumbers = false,
     this.firstDayOfWeek,
+    this.inline = false,
   }) : assert(
          firstDayOfWeek == null || (firstDayOfWeek >= 0 && firstDayOfWeek < 7),
          'firstDayOfWeek is 0 (Sunday) to 6 (Saturday)',
@@ -107,6 +109,11 @@ class GlassCalendar extends StatefulWidget {
   /// `MaterialLocalizations.firstDayOfWeekIndex` counts
   /// (`DateTime.monday % 7` is Monday). Null follows the locale.
   final int? firstDayOfWeek;
+
+  /// Whether to lay out as SwiftUI's inline `.graphical` picker: filling
+  /// the available width with 44-pt rows and circles, rather than the
+  /// compact picker's 320-pt popover calendar.
+  final bool inline;
 
   @override
   State<GlassCalendar> createState() => _GlassCalendarState();
@@ -236,106 +243,156 @@ class _GlassCalendarState extends State<GlassCalendar> {
           blue: blue,
         ),
     ];
-    return SizedBox(
-      width: DatePickerMetrics.calendarWidth,
-      child: Padding(
-        padding: const EdgeInsets.all(DatePickerMetrics.calendarPadding),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    final inline = widget.inline;
+    final header = Row(
+      children: [
+        if (inline) const SizedBox(width: DatePickerMetrics.inlineInset),
+        Expanded(
+          child: Row(
+            children: [
+              Flexible(
+                child: Text(
+                  l10n.formatMonthYear(_month),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: IOSText.style(
+                    DatePickerMetrics.headerFontSize,
+                    weight: FontWeight.w600,
+                    color: label,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(CupertinoIcons.chevron_right, size: 15, color: blue),
+            ],
+          ),
+        ),
+        if (inline) ...[
+          // Two adjacent 43.33-pt buttons, chevrons centred; UIKit lets
+          // the last overhang the edge so its ink sits 8 pt in, so it is
+          // trimmed here to end at the edge with the same ink position.
+          _arrow(
+            CupertinoIcons.chevron_left,
+            -1,
+            label,
+            l10n.previousMonthTooltip,
+            width: DatePickerMetrics.inlineArrowWidth,
+          ),
+          _arrow(
+            CupertinoIcons.chevron_right,
+            1,
+            label,
+            l10n.nextMonthTooltip,
+            width:
+                DatePickerMetrics.inlineArrowWidth / 2 +
+                _inlineChevron / 2 +
+                DatePickerMetrics.inlineInset,
+          ),
+        ] else ...[
+          const SizedBox(width: 8),
+          _arrow(
+            CupertinoIcons.chevron_left,
+            -1,
+            label,
+            l10n.previousMonthTooltip,
+          ),
+          const SizedBox(width: 16),
+          _arrow(CupertinoIcons.chevron_right, 1, label, l10n.nextMonthTooltip),
+        ],
+      ],
+    );
+    final body = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (inline)
+          SizedBox(height: DatePickerMetrics.inlineHeaderHeight, child: header)
+        else
+          header,
+        const SizedBox(height: DatePickerMetrics.inlineWeekdayGap),
+        Row(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          l10n.formatMonthYear(_month),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: IOSText.style(
-                            DatePickerMetrics.headerFontSize,
-                            weight: FontWeight.w600,
-                            color: label,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(CupertinoIcons.chevron_right, size: 15, color: blue),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                _arrow(
-                  CupertinoIcons.chevron_left,
-                  -1,
-                  label,
-                  l10n.previousMonthTooltip,
-                ),
-                const SizedBox(width: 16),
-                _arrow(
-                  CupertinoIcons.chevron_right,
-                  1,
-                  label,
-                  l10n.nextMonthTooltip,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                if (widget.showWeekNumbers)
-                  const SizedBox(
-                    width: DatePickerWheelMetrics.weekNumberWidth,
-                    child: Center(child: Text('')),
-                  ),
-                for (final w in weekdays)
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        w,
-                        maxLines: 1,
-                        style: IOSText.style(
-                          DatePickerMetrics.weekdayFontSize,
-                          weight: FontWeight.w600,
-                          color: resolve(GlassColors.tertiaryLabel),
+            if (widget.showWeekNumbers)
+              const SizedBox(
+                width: DatePickerWheelMetrics.weekNumberWidth,
+                child: Center(child: Text('')),
+              ),
+            for (final w in weekdays)
+              Expanded(
+                child: SizedBox(
+                  height: inline ? DatePickerMetrics.inlineWeekdayHeight : null,
+                  child: Center(
+                    child: Text(
+                      w,
+                      maxLines: 1,
+                      style: IOSText.style(
+                        DatePickerMetrics.weekdayFontSize,
+                        weight: FontWeight.w600,
+                        // Measured inline: secondaryLabel.
+                        color: resolve(
+                          inline
+                              ? GlassColors.secondaryLabel
+                              : GlassColors.tertiaryLabel,
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            for (var r = 0; r * 7 < cells.length; r++)
-              SizedBox(
-                height: DatePickerMetrics.row,
-                child: _rangeBand(
-                  r * 7 - lead + 1,
-                  daysInMonth,
-                  blue,
-                  Row(
-                    children: [
-                      if (widget.showWeekNumbers)
-                        _weekNumber(
-                          r * 7 - lead + 1,
-                          resolve(GlassColors.tertiaryLabel),
-                        ),
-                      for (var c = 0; c < 7; c++)
-                        Expanded(
-                          child: r * 7 + c < cells.length
-                              ? cells[r * 7 + c]
-                              : const SizedBox(),
-                        ),
-                    ],
                   ),
                 ),
               ),
           ],
         ),
+        SizedBox(height: inline ? 1 : 4),
+        for (var r = 0; r * 7 < cells.length; r++)
+          SizedBox(
+            height: inline
+                ? DatePickerMetrics.inlineRow
+                : DatePickerMetrics.row,
+            child: _rangeBand(
+              r * 7 - lead + 1,
+              daysInMonth,
+              blue,
+              Row(
+                children: [
+                  if (widget.showWeekNumbers)
+                    _weekNumber(
+                      r * 7 - lead + 1,
+                      resolve(GlassColors.tertiaryLabel),
+                    ),
+                  for (var c = 0; c < 7; c++)
+                    Expanded(
+                      child: r * 7 + c < cells.length
+                          ? cells[r * 7 + c]
+                          : const SizedBox(),
+                    ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+    if (inline) {
+      return Padding(
+        padding: const EdgeInsetsDirectional.only(
+          top: DatePickerMetrics.inlineTop,
+        ),
+        child: body,
+      );
+    }
+    return SizedBox(
+      width: DatePickerMetrics.calendarWidth,
+      child: Padding(
+        padding: const EdgeInsets.all(DatePickerMetrics.calendarPadding),
+        child: body,
       ),
     );
   }
+
+  /// The inline arrows' chevron width (measured 15.33).
+  static const double _inlineChevron = 15.33;
+
+  double get _selection => widget.inline
+      ? DatePickerMetrics.inlineSelection
+      : DatePickerMetrics.selection;
 
   /// Puts the lighter capsule behind a week row's in-range days: from
   /// the first such day's circle to the last's, so it ends under the
@@ -358,14 +415,14 @@ class _GlassCalendarState extends State<GlassCalendar> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final column = (constraints.maxWidth - lead) / 7;
-        const inset = DatePickerMetrics.selection / 2;
+        final inset = _selection / 2;
         return Stack(
           children: [
             PositionedDirectional(
               start: lead + column * (from! + 0.5) - inset,
-              width: column * (to! - from) + DatePickerMetrics.selection,
-              top: (constraints.maxHeight - DatePickerMetrics.selection) / 2,
-              height: DatePickerMetrics.selection,
+              width: column * (to! - from) + _selection,
+              top: (constraints.maxHeight - _selection) / 2,
+              height: _selection,
               child: DecoratedBox(
                 decoration: ShapeDecoration(
                   shape: const StadiumBorder(),
@@ -380,16 +437,37 @@ class _GlassCalendarState extends State<GlassCalendar> {
     );
   }
 
-  Widget _arrow(IconData icon, int by, Color colour, String label) => Semantics(
+  Widget _arrow(
+    IconData icon,
+    int by,
+    Color colour,
+    String label, {
+    double? width,
+  }) => Semantics(
     button: true,
     label: label,
     child: GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => _page(by),
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Icon(icon, size: 20, color: colour),
-      ),
+      child: width == null
+          ? Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(icon, size: 20, color: colour),
+            )
+          : SizedBox(
+              width: width,
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Padding(
+                  padding: EdgeInsetsDirectional.only(
+                    start:
+                        (DatePickerMetrics.inlineArrowWidth - _inlineChevron) /
+                        2,
+                  ),
+                  child: Icon(icon, size: 20, color: colour),
+                ),
+              ),
+            ),
     ),
   );
 
@@ -402,8 +480,15 @@ class _GlassCalendarState extends State<GlassCalendar> {
     required Color blue,
   }) {
     final enabled = _selectable(day);
-    final colour = isSelected
+    // Measured (iOS 26.4): a selected day other than today takes a
+    // blue-tinted circle and a blue number; today, or a range's ends,
+    // the solid circle and a white number.
+    final solid = isSelected && (isToday || _isRange);
+    final tinted = isSelected && !solid;
+    final colour = solid
         ? GlassColors.white
+        : tinted
+        ? blue
         : !enabled
         ? CupertinoDynamicColor.resolve(GlassColors.tertiaryLabel, context)
         : isToday
@@ -418,11 +503,18 @@ class _GlassCalendarState extends State<GlassCalendar> {
         onTap: enabled ? () => _tap(day) : null,
         child: Center(
           child: Container(
-            width: DatePickerMetrics.selection,
-            height: DatePickerMetrics.selection,
+            width: _selection,
+            height: _selection,
             alignment: Alignment.center,
             decoration: isSelected
-                ? ShapeDecoration(shape: const CircleBorder(), color: blue)
+                ? ShapeDecoration(
+                    shape: const CircleBorder(),
+                    color: solid
+                        ? blue
+                        : blue.withValues(
+                            alpha: DatePickerMetrics.selectedTintAlpha,
+                          ),
+                  )
                 : null,
             child: FittedBox(
               fit: BoxFit.scaleDown,

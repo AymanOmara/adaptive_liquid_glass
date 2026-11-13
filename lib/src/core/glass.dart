@@ -25,8 +25,12 @@ import 'glass_variant.dart';
 /// ```
 @immutable
 class Glass {
-  const Glass._(this.variant, {this.tintColor, bool? interactive})
-    : _interactive = interactive;
+  const Glass._(
+    this.variant, {
+    this.tintColor,
+    bool? interactive,
+    this.materialSurfaceColor,
+  }) : _interactive = interactive;
 
   /// Standard glass (`Glass.regular`).
   static const Glass regular = Glass._(GlassVariant.regular);
@@ -68,6 +72,10 @@ class Glass {
   /// Optional tint colour blended into the glass body.
   final Color? tintColor;
 
+  /// The Material path's surface colour, set by [materialSurface]; null
+  /// derives it from the tint or the colour scheme.
+  final Color? materialSurfaceColor;
+
   /// Set by [interactive]; null when never set.
   final bool? _interactive;
 
@@ -75,25 +83,51 @@ class Glass {
   bool get isInteractive => _interactive ?? false;
 
   /// Returns a copy tinted with [color]; `null` removes the tint.
-  Glass tint(Color? color) =>
-      Glass._(variant, tintColor: color, interactive: _interactive);
+  Glass tint(Color? color) => Glass._(
+    variant,
+    tintColor: color,
+    interactive: _interactive,
+    materialSurfaceColor: materialSurfaceColor,
+  );
 
   /// Returns a copy that reacts to touch when [enabled].
   ///
   /// A `LiquidGlass` with `onPressed` makes its glass interactive; pass
   /// `interactive(false)` to opt out of the press visuals there.
-  Glass interactive([bool enabled = true]) =>
-      Glass._(variant, tintColor: tintColor, interactive: enabled);
+  Glass interactive([bool enabled = true]) => Glass._(
+    variant,
+    tintColor: tintColor,
+    interactive: enabled,
+    materialSurfaceColor: materialSurfaceColor,
+  );
+
+  /// Returns a copy whose Material (Android) surface is [color], for tinted
+  /// chrome on Android while iOS keeps its glass; `null` restores the
+  /// derived surface (the tint, else the colour scheme's container).
+  /// Labels on it take black or white for contrast. The glass paths ignore
+  /// it.
+  ///
+  /// ```dart
+  /// Glass.regular.materialSurface(scheme.primaryContainer)
+  /// ```
+  Glass materialSurface(Color? color) => Glass._(
+    variant,
+    tintColor: tintColor,
+    interactive: _interactive,
+    materialSurfaceColor: color,
+  );
 
   @override
   bool operator ==(Object other) =>
       other is Glass &&
       other.variant == variant &&
       other.tintColor == tintColor &&
-      other._interactive == _interactive;
+      other._interactive == _interactive &&
+      other.materialSurfaceColor == materialSurfaceColor;
 
   @override
-  int get hashCode => Object.hash(variant, tintColor, _interactive);
+  int get hashCode =>
+      Object.hash(variant, tintColor, _interactive, materialSurfaceColor);
 
   @override
   String toString() =>

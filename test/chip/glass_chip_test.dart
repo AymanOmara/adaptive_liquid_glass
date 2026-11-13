@@ -220,4 +220,87 @@ void main() {
   }, variant: android);
 }
 
-void _noop() {}
+void _noop() {
+  group('W25 trailing', () {
+    testWidgets('glass: after the label and subtitle, before delete; the '
+        'capsule stays 32 pt', (t) async {
+      shaderEnv();
+      await t.pumpWidget(
+        plainHost(
+          GlassChip(
+            label: 'Labels',
+            subtitle: '3',
+            trailing: const Icon(CupertinoIcons.chevron_down, key: Key('t')),
+            onDeleted: () {},
+          ),
+        ),
+      );
+      final label = t.getRect(find.text('Labels'));
+      final subtitle = t.getRect(find.text('3'));
+      final trailing = t.getRect(find.byKey(const Key('t')));
+      final delete = t.getRect(find.byIcon(CupertinoIcons.xmark_circle_fill));
+      expect(label.right, lessThanOrEqualTo(subtitle.left));
+      expect(subtitle.right + ChipMetrics.iconGap, trailing.left);
+      expect(trailing.right, lessThanOrEqualTo(delete.left));
+      expect(trailing.width, ChipMetrics.iconSize);
+      expect(t.getSize(find.byType(GlassChip)).height, ChipMetrics.height);
+    }, variant: ios);
+
+    testWidgets('glass: white on a selected chip', (t) async {
+      shaderEnv();
+      await t.pumpWidget(
+        plainHost(
+          const GlassChip(
+            label: 'Tag',
+            selected: true,
+            trailing: Icon(CupertinoIcons.chevron_down, key: Key('t')),
+          ),
+        ),
+      );
+      final theme = IconTheme.of(t.element(find.byKey(const Key('t'))));
+      expect(theme.color, const Color(0xFFFFFFFF));
+    }, variant: ios);
+
+    testWidgets('glass: right to left puts it before the label', (t) async {
+      shaderEnv();
+      await t.pumpWidget(
+        plainHost(
+          const Directionality(
+            textDirection: TextDirection.rtl,
+            child: GlassChip(
+              label: 'Tag',
+              trailing: Icon(CupertinoIcons.chevron_down, key: Key('t')),
+            ),
+          ),
+        ),
+      );
+      expect(
+        t.getRect(find.byKey(const Key('t'))).right,
+        lessThanOrEqualTo(t.getRect(find.text('Tag')).left),
+      );
+    }, variant: ios);
+
+    testWidgets('Material: ends the chip label', (t) async {
+      await t.pumpWidget(
+        plainHost(
+          GlassChip(
+            label: 'Tag',
+            onSelected: (_) {},
+            trailing: const Icon(Icons.expand_more, key: Key('t')),
+          ),
+        ),
+      );
+      expect(
+        find.descendant(
+          of: find.byType(FilterChip),
+          matching: find.byKey(const Key('t')),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        t.getRect(find.byKey(const Key('t'))).left,
+        greaterThan(t.getRect(find.text('Tag')).right),
+      );
+    }, variant: android);
+  });
+}

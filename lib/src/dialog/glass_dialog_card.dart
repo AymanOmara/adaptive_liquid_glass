@@ -33,6 +33,7 @@ class GlassDialogCard extends StatelessWidget {
     required this.confirmation,
     this.title,
     this.message,
+    this.messageSpan,
     this.icon,
     this.content,
     this.platformOrder = false,
@@ -44,6 +45,10 @@ class GlassDialogCard extends StatelessWidget {
 
   /// The alert's message.
   final String? message;
+
+  /// A rich message in [message]'s place, in its style and spacing (any
+  /// style in the span merges over it).
+  final InlineSpan? messageSpan;
 
   /// A widget above the title.
   final Widget? icon;
@@ -72,7 +77,9 @@ class GlassDialogCard extends StatelessWidget {
     Color resolve(Color c) => CupertinoDynamicColor.resolve(c, context);
     final secondary = resolve(GlassColors.secondaryLabel);
     final title = this.title;
-    final message = this.message;
+    final messageSpan = this.messageSpan;
+    // Whether a message (plain or rich) is shown.
+    final message = this.message ?? (messageSpan == null ? null : '');
     final icon = this.icon;
     final content = this.content;
     final scale =
@@ -104,6 +111,9 @@ class GlassDialogCard extends StatelessWidget {
         ),
     ];
     final alertText = !confirmation || message != null;
+    // At larger Dynamic Type the buttons grow too, so the whole card
+    // scrolls; otherwise only its text does.
+    final scrollsWhole = scale > 1;
     final text = Padding(
       padding: EdgeInsetsDirectional.symmetric(
         horizontal: alertText ? DialogMetrics.textInset : 0,
@@ -134,8 +144,8 @@ class GlassDialogCard extends StatelessWidget {
           if (title != null && message != null)
             const SizedBox(height: DialogMetrics.messageGap),
           if (message != null)
-            Text(
-              message,
+            Text.rich(
+              messageSpan ?? TextSpan(text: message),
               textAlign: alertText ? TextAlign.start : TextAlign.center,
               style: IOSText.style(
                 DialogMetrics.messageSize,
@@ -163,13 +173,19 @@ class GlassDialogCard extends StatelessWidget {
           DialogMetrics.padding,
         ),
         child: _scrollable(
-          scale > 1,
+          scrollsWhole,
           Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (title != null || message != null || icon != null) ...[
-                text,
+                // A long text scrolls between its fixed gaps, keeping the
+                // buttons on screen, as UIKit's alert does; at larger
+                // Dynamic Type the whole card scrolls instead.
+                if (scrollsWhole)
+                  text
+                else
+                  Flexible(child: SingleChildScrollView(child: text)),
                 // Under a message, UIKit's line spacing below its last
                 // line adds to the gap.
                 SizedBox(
@@ -234,7 +250,8 @@ class GlassDialogCard extends StatelessWidget {
   }
 
   /// At larger Dynamic Type the card's text and buttons scroll when they
-  /// outgrow the screen, as an iOS alert's do.
+  /// outgrow the screen, as an iOS alert's do. At the default sizes only
+  /// the text scrolls.
   static Widget _scrollable(bool scrolls, Widget child) =>
       scrolls ? SingleChildScrollView(child: child) : child;
 }

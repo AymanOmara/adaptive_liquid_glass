@@ -44,8 +44,16 @@ void main() {
     expect(bar.thickness, ScrollIndicatorMetrics.thickness);
     expect(bar.interactive, isFalse);
     expect(bar.thumbVisibility, isFalse);
+    expect(bar.timeToFade, ScrollIndicatorMetrics.timeToFade);
     expect(find.byType(Scrollbar), findsNothing);
   }, variant: ios);
+
+  test('hold before fade matches the measured UIKit bounds', () {
+    // ios-26.4 scrollindicators* summary.json hold_seconds_bounds: the
+    // union is [1.0167, 1.05] s, and every capture contains ~1.033 s.
+    final ms = ScrollIndicatorMetrics.timeToFade.inMilliseconds;
+    expect(ms, inInclusiveRange(1017, 1050));
+  });
 
   testWidgets('hidden and never draw no bar', (t) async {
     shaderEnv();

@@ -20,8 +20,12 @@ abstract final class ScrollIndicatorMetrics {
   /// The bar's shortest length.
   static const double minLength = 36;
 
-  /// How long the bar stays after the content stops.
-  static const Duration timeToFade = Duration(milliseconds: 500);
+  /// How long the bar stays at full opacity after the content stops.
+  ///
+  /// Measured on iOS 26.4: `hold_seconds_bounds` in
+  /// docs/superpowers/notes/measurements/ios-26.4/scrollindicators*/
+  /// summary.json spans 1.0167–1.05 s, and ~1.033 s lies in every capture.
+  static const Duration timeToFade = Duration(milliseconds: 1033);
 
   /// How long the bar takes to fade out.
   static const Duration fadeDuration = Duration(milliseconds: 250);

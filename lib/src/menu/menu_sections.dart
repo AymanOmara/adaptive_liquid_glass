@@ -5,7 +5,9 @@ typedef MenuSection = ({String? title, List<GlassMenuItem> rows});
 
 /// A menu's rows grouped into sections, top to bottom: each
 /// [GlassMenuItem.section] is one, and the rows between them form one
-/// each. Empty sections are dropped.
+/// each. A palette [GlassMenuItem.picker] is a section of its own, titled
+/// with its title, whose one row is the palette. Empty sections are
+/// dropped.
 List<MenuSection> menuSections(List<GlassMenuItem> items) {
   final out = <MenuSection>[];
   var loose = <GlassMenuItem>[];
@@ -15,6 +17,13 @@ List<MenuSection> menuSections(List<GlassMenuItem> items) {
   }
 
   for (final item in items) {
+    if (item.isPalette) {
+      flush();
+      if (item.children.isNotEmpty) {
+        out.add((title: item.label.isEmpty ? null : item.label, rows: [item]));
+      }
+      continue;
+    }
     if (!item.isSection) {
       loose.add(item);
       continue;
@@ -37,8 +46,9 @@ List<GlassMenuItem> menuRows(List<GlassMenuItem> items) => [
   for (final s in menuSections(items)) ...s.rows,
 ];
 
-/// Every action of [items] in order, sections and submenus opened up.
+/// Every action of [items] in order, sections, submenus and palettes
+/// opened up.
 List<GlassMenuItem> menuActions(List<GlassMenuItem> items) => [
   for (final row in menuRows(items))
-    ...row.isSubmenu ? menuActions(row.children) : [row],
+    ...row.isSubmenu || row.isPalette ? menuActions(row.children) : [row],
 ];

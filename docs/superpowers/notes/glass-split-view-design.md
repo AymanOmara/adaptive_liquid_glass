@@ -18,8 +18,10 @@ rows in the sidebar call `showColumn(detail)` (compact push) and bars call
 
 ## Layout
 - **Regular** (width >= `TabSidebarMetrics.regularWidth` = 700): columns side
-  by side. Sidebar = floating glass panel, 270 wide, inset 10, radius 26 —
-  same metrics as the internal `GlassTabSidebar` sidebar. Content column
+  by side. Sidebar = floating glass panel, 320 wide by default
+  (`_defaultSidebarWidth`; native width estimated at ~319 pt from
+  `sidebar-ipad-swiftui.png`, an estimate, not a measured frame), inset 10,
+  radius 26. `GlassTabSidebar` keeps its own 270-pt width. Content column
   (3-col) is 320 wide, plain page with a hairline separator; detail fills.
   `automatic`/`all` show every column; `doubleColumn` hides the sidebar of
   a 3-column view; `detailOnly` hides sidebar and content. Hiding animates

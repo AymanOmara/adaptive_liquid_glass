@@ -18,6 +18,19 @@ Captures: `images/listform-native-*.png` (form, groupbox, plain, sidebar, sideba
 ## Separators
 - A swipeable row (`GlassSwipeActions`) around a tile with a leading insets its separator under the title (`hasLeading`).
 
-## Open
-- Plain list and sidebar list widgets (colours are in `GlassColors`: `plainListBackground`, `sidebarListBackground`, `sidebarListSelection`).
-- Twins/demo page, README sections, swipe and sidebar-collapse recordings.
+## Plain and sidebar lists
+
+- `GlassPlainList` and `GlassSidebarList` are implemented. The reference
+  scenes and Flutter twins include `plain`, `sidebar`, `sidebarcollapsed`
+  and `sidebarsplit`.
+- In the saved iPhone sidebar captures, the platter and row boundaries
+  match within one physical pixel in both appearances. The selected-row
+  fill matches at RGB (209, 209, 214) in light mode and (58, 58, 60) in dark
+  mode. These samples come from x = 350 pt, clear of the row labels.
+- The plain-list swipe-open pair is saved as
+  `images/plain-swipe-open-swiftui.png` and
+  `images/plain-swipe-open-flutter.png`.
+- The expanded iPad sidebar pair is saved as `images/sidebar-ipad-swiftui.png`
+  and `images/sidebar-ipad-flutter.png`; the dark pair uses the `-dark`
+  filenames. These use `-listform sidebarsplit[dark]` and
+  `-twin sidebarsplit[dark]` on iOS 26.4.

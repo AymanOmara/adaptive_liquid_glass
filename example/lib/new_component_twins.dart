@@ -16,28 +16,54 @@ Widget? newComponentTwin(String scene) => switch (scene) {
   'refreshmotiondark' => const _RefreshMotion(dark: true),
   'searchmotion' => const _SearchMotion(),
   'colorrow' || 'colorrowdark' => const _ColorRow(),
-  'contextmenuuikitmotion' => const _ContextMenuMotion(),
+  'contextmenuuikitmotion' || 'contextmenuuikit' => const _ContextMenuMotion(),
+  'contextmenuuikitleft' => const _ContextMenuMotion(cx: 110),
+  'contextmenuuikitright' => const _ContextMenuMotion(cx: 330),
+  'contextmenuuikitlow' => const _ContextMenuMotion(cy: 682),
+  'contextmenuuikitbottom' => const _ContextMenuMotion(cy: 802),
+  'contextmenuuikittop' => const _ContextMenuMotion(cy: 82),
+  'contextmenuuikittall' => const _ContextMenuMotion(
+    cy: 422,
+    size: Size(200, 600),
+  ),
+  'contextmenuuikitwhite' => const _ContextMenuMotion(white: true),
+  'contextmenuuikitwide' => const _ContextMenuMotion(
+    size: Size(360, 80),
+    white: true,
+  ),
   'contextmenusections' => const _ContextMenuSections(),
   'menusections' || 'menusectionsdark' => const _MenuSections(),
   'menusections2' => const _MenuSections(second: true),
+  'palettemenu' => const _PaletteMenu(),
+  'palettemenudark' => const _PaletteMenu(dark: true),
   'tips' || 'tipsdark' => const _Tips(),
   'tippopover' || 'tippopoverdark' => const _TipPopover(),
   _ => null,
 };
 
-/// UIKitContextMenuReference(openOnTap:): a 200 x 120 white card centred
-/// at (201, 362) on mid grey, its context menu opened by a long press.
+/// UIKitContextMenuReference: a white card of [size] centred at ([cx],
+/// [cy]) on screen, on mid grey (or [white]), its
+/// context menu opened by a long press.
 class _ContextMenuMotion extends StatelessWidget {
-  const _ContextMenuMotion();
+  const _ContextMenuMotion({
+    this.cx = 201,
+    this.cy = 362,
+    this.size = const Size(200, 120),
+    this.white = false,
+  });
+
+  final double cx, cy;
+  final Size size;
+  final bool white;
 
   @override
   Widget build(BuildContext context) => ColoredBox(
-    color: const Color(0xFF808080),
+    color: white ? Colors.white : const Color(0xFF808080),
     child: Stack(
       children: [
         Positioned(
-          left: 101,
-          top: 302,
+          left: cx - size.width / 2,
+          top: cy - size.height / 2,
           child: GlassContextMenu(
             items: [
               GlassMenuItem(
@@ -58,8 +84,8 @@ class _ContextMenuMotion extends StatelessWidget {
               ),
             ],
             child: Container(
-              width: 200,
-              height: 120,
+              width: size.width,
+              height: size.height,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
@@ -628,6 +654,79 @@ class _TipPopover extends StatelessWidget {
           ),
         ),
       ],
+    ),
+  );
+}
+
+/// PaletteMenuReference(symbols: false): a menu button centred at
+/// (201, 300) whose menu holds a five-colour palette titled "Flag" (Orange
+/// chosen), "Mark as Read" and "Delete". White page, black in dark.
+class _PaletteMenu extends StatelessWidget {
+  const _PaletteMenu({this.dark = false});
+
+  final bool dark;
+
+  static const _flags = [
+    ('Red', CupertinoColors.systemRed),
+    ('Orange', CupertinoColors.systemOrange),
+    ('Yellow', CupertinoColors.systemYellow),
+    ('Green', CupertinoColors.systemGreen),
+    ('Blue', CupertinoColors.systemBlue),
+  ];
+
+  @override
+  Widget build(BuildContext context) => MediaQuery(
+    data: MediaQuery.of(
+      context,
+    ).copyWith(platformBrightness: dark ? Brightness.dark : Brightness.light),
+    child: CupertinoTheme(
+      data: CupertinoThemeData(
+        brightness: dark ? Brightness.dark : Brightness.light,
+      ),
+      child: ColoredBox(
+        color: dark ? const Color(0xFF000000) : const Color(0xFFFFFFFF),
+        child: Stack(
+          children: [
+            Positioned(
+              left: 201 - 22,
+              top: 300 - 22,
+              child: GlassMenuButton(
+                icon: CupertinoIcons.flag_fill,
+                semanticLabel: 'Flag',
+                // Center the wide palette menu on this deliberately
+                // near-edge opener, as UIKit does for a palette row.
+                placement: GlassMenuPlacement.centred,
+                items: [
+                  GlassMenuItem.picker(
+                    title: 'Flag',
+                    style: GlassPickerStyle.palette,
+                    items: [
+                      for (var i = 0; i < _flags.length; i++)
+                        GlassMenuItem(
+                          label: _flags[i].$1,
+                          color: _flags[i].$2,
+                          checked: i == 1,
+                          onSelected: _noop,
+                        ),
+                    ],
+                  ),
+                  const GlassMenuItem(
+                    label: 'Mark as Read',
+                    icon: CupertinoIcons.envelope_open,
+                    onSelected: _noop,
+                  ),
+                  const GlassMenuItem(
+                    label: 'Delete',
+                    icon: CupertinoIcons.trash,
+                    destructive: true,
+                    onSelected: _noop,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     ),
   );
 }

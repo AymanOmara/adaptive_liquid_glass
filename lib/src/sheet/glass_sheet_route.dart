@@ -23,6 +23,7 @@ class GlassSheetRoute<T> extends PopupRoute<T> {
     this.grabberSize,
     this.glass,
     this.mode,
+    this.contentSurface,
     this.capturedThemes,
     this.barrierLabel,
     super.settings,
@@ -57,6 +58,9 @@ class GlassSheetRoute<T> extends PopupRoute<T> {
 
   /// The sheet's glass.
   final Glass? glass;
+
+  /// See [GlassSheet.contentSurface].
+  final Color? contentSurface;
 
   /// The rendering path.
   final GlassRenderMode? mode;
@@ -98,6 +102,7 @@ class GlassSheetRoute<T> extends PopupRoute<T> {
         grabberSize: grabberSize,
         glass: glass,
         mode: mode,
+        contentSurface: contentSurface,
         onDismiss: () => Navigator.of(context).pop(),
         child: Builder(builder: builder),
       ),

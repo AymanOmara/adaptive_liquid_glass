@@ -64,9 +64,17 @@ abstract final class DatePickerWheelMetrics {
   /// date (estimated; SwiftUI does not wrap them).
   static const double capsuleRunGap = 8;
 
-  /// The gap between an inline calendar and the time row under it
-  /// (estimated).
-  static const double timeRowGap = 8;
+  /// The gap between an inline calendar's last week row and the time
+  /// row under it (measured, `-controls calendargraphicaltime`: 5.33).
+  static const double timeRowGap = 5.33;
+
+  /// The inline calendar's time row height (measured: 40, the time
+  /// capsule 38 inside it).
+  static const double timeRowHeight = 40;
+
+  /// The time row's inset from the calendar's sides (measured: the "Time"
+  /// label and the capsule both sit 8 pt in).
+  static const double timeRowInset = 8;
 
   /// The week-number column's width in a calendar showing them
   /// (estimated).

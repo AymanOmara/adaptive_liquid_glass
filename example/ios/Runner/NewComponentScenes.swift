@@ -569,10 +569,11 @@ struct SearchScopesReference: View {
 /// UIContextMenuInteraction (what SwiftUI's `.contextMenu` rides on), so
 /// ContextMenuOpener can open it: SwiftUI's delegate ignores a
 /// programmatic presentation. Mid-grey page (or `white`), the card
-/// `size` centred at `x`, 300 in the safe area (362 on screen).
+/// `size` centred at `x`, `y` in the safe area (`y` + 62 on screen).
 @available(iOS 26.0, *)
 struct UIKitContextMenuReference: View {
   var x: CGFloat = 201
+  var y: CGFloat = 300
   var size = CGSize(width: 200, height: 120)
   var white = false
   /// Black and white stripes 100 pt wide behind the card: sharp edges
@@ -585,7 +586,7 @@ struct UIKitContextMenuReference: View {
     ZStack {
       Color(white: white ? 1 : 0.5).ignoresSafeArea()
         .onTapGesture {
-          if openOnTap { ContextMenuOpener.open(at: CGPoint(x: x, y: 362)) }
+          if openOnTap { ContextMenuOpener.open(at: CGPoint(x: x, y: y + 62)) }
         }
       if stripes {
         HStack(spacing: 0) {
@@ -596,13 +597,13 @@ struct UIKitContextMenuReference: View {
       }
       UIKitMenuCard().frame(width: size.width, height: size.height)
         .border(white ? Color.black : Color.clear, width: white ? 1 : 0)
-        .position(x: x, y: 300)
+        .position(x: x, y: y)
     }
     .environment(\.colorScheme, .light)
     .onAppear {
       guard !openOnTap else { return }
       DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-        ContextMenuOpener.open(at: CGPoint(x: x, y: 362))
+        ContextMenuOpener.open(at: CGPoint(x: x, y: y + 62))
       }
     }
   }
@@ -852,11 +853,190 @@ enum EditorScenes {
     case "texteditorempty": root = AnyView(TextEditorReference(dark: false, empty: true))
     case "scrollindicators": root = AnyView(ScrollIndicatorsReference(dark: false))
     case "scrollindicatorsdark": root = AnyView(ScrollIndicatorsReference(dark: true))
+    // Measurement scenes: each also writes its UIKit view tree to
+    // `<tmp>/viewdump.json` every second, and the scroll ones trace the
+    // indicator to `<tmp>/indicator-trace` (ViewDump below).
+    case "calendargraphical": root = AnyView(GraphicalCalendarReference(time: false))
+    case "calendargraphicaltime": root = AnyView(GraphicalCalendarReference(time: true))
+    case "datewheeldump": root = AnyView(DateWheelReference())
+    case "timewheeldump": root = AnyView(TimeWheelReference())
+    case "scrollindicatorstrace": root = AnyView(ScrollIndicatorsReference(dark: false))
+    case "scrollindicatorstracedark": root = AnyView(ScrollIndicatorsReference(dark: true))
+    case "scrollindicatorslong": root = AnyView(ScrollIndicatorsReference(dark: false, rows: 2000))
     default: return false
     }
     window?.rootViewController = UIHostingController(rootView: root)
     window?.makeKeyAndVisible()
+    if ["calendargraphical", "calendargraphicaltime", "datewheeldump", "timewheeldump"].contains(which) {
+      ViewDump.start(scene: which)
+    } else if which.hasPrefix("scrollindicatorstrace") || which == "scrollindicatorslong" {
+      ViewDump.start(scene: which)
+      ViewDump.traceIndicators()
+    }
     return true
+  }
+}
+
+/// en_US, 6 Oct 2026 09:41, white page: a `.graphical` date picker 370 pt
+/// wide (16 pt from the sides) centred at 201, 230 and, below it, one at
+/// its own size (`fixedSize`) centred at 201, 650. With `time`, a single
+/// 370-pt date-and-time graphical picker centred at 201, 340.
+@available(iOS 26.0, *)
+struct GraphicalCalendarReference: View {
+  let time: Bool
+  @State private var date = Calendar(identifier: .gregorian).date(
+    from: DateComponents(year: 2026, month: 10, day: 6, hour: 9, minute: 41))!
+  var body: some View {
+    Page {
+      if time {
+        DatePicker("", selection: $date, displayedComponents: [.date, .hourAndMinute])
+          .datePickerStyle(.graphical).labelsHidden().frame(width: 370)
+          .position(x: 201, y: 340)
+      } else {
+        DatePicker("", selection: $date, displayedComponents: .date)
+          .datePickerStyle(.graphical).labelsHidden().frame(width: 370)
+          .position(x: 201, y: 230)
+        DatePicker("", selection: $date, displayedComponents: .date)
+          .datePickerStyle(.graphical).labelsHidden().fixedSize()
+          .position(x: 201, y: 650)
+      }
+    }
+  }
+}
+
+/// Reference harness only. Writes the key window's visible UIKit views
+/// (class, frame in window points, alpha, background RGBA, corner radius,
+/// label text and font size) to `<tmp>/viewdump.json` every second for
+/// 40 s, so geometry is read from UIKit rather than from pixels. Trace
+/// mode also logs, every display frame for 20 s, the first scroll view's
+/// offset and each `*Indicator*` view's window frame and presentation
+/// opacity to `<tmp>/indicator-trace` (t from launch).
+enum ViewDump {
+  private static var timer: Timer?
+  private static var link: CADisplayLink?
+  private static var t0 = CACurrentMediaTime()
+  private static var lines: [String] = []
+
+  private static var window: UIWindow? {
+    UIApplication.shared.connectedScenes
+      .compactMap { ($0 as? UIWindowScene)?.keyWindow }.first
+  }
+
+  static func start(scene: String) {
+    timer?.invalidate()
+    link?.invalidate()
+    link = nil
+    t0 = CACurrentMediaTime()
+    let directory = FileManager.default.temporaryDirectory
+    for name in ["viewdump.json", "indicator-trace"] {
+      try? FileManager.default.removeItem(at: directory.appendingPathComponent(name))
+    }
+    try? scene.write(
+      to: directory.appendingPathComponent("measurement-scene"),
+      atomically: true, encoding: .utf8)
+    var n = 0
+    timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { t in
+      n += 1
+      if n > 40 { t.invalidate() }
+      write()
+    }
+  }
+
+  private static func rgba(_ c: UIColor?) -> [Double]? {
+    guard let c else { return nil }
+    var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+    guard c.getRed(&r, green: &g, blue: &b, alpha: &a),
+          [r, g, b, a].allSatisfy({ $0.isFinite }) else { return nil }
+    return [r, g, b, a].map { Double($0) }
+  }
+
+  // UIKit can expose non-finite geometry while wheel rows are transformed.
+  // Keep the hierarchy readable and mark those values explicitly as null.
+  private static func jsonValue(_ value: Any) -> Any {
+    if let number = value as? NSNumber {
+      return number.doubleValue.isFinite ? value : NSNull()
+    }
+    if let values = value as? [Any] { return values.map(jsonValue) }
+    if let values = value as? [String: Any] { return values.mapValues(jsonValue) }
+    return value
+  }
+
+  private static func write() {
+    guard let window else { return }
+    var out: [[String: Any]] = []
+    func walk(_ v: UIView, _ depth: Int) {
+      if v.isHidden || v.alpha < 0.01 { return }
+      let f = v.convert(v.bounds, to: window)
+      var e: [String: Any] = [
+        "c": String(describing: type(of: v)), "d": depth,
+        "x": f.minX, "y": f.minY, "w": f.width, "h": f.height,
+        "a": v.alpha, "r": v.layer.cornerRadius,
+      ]
+      if let bg = rgba(v.backgroundColor) { e["bg"] = bg }
+      if let l = v as? UILabel {
+        e["t"] = l.text ?? ""; e["fs"] = l.font.pointSize
+        if let tc = rgba(l.textColor) { e["tc"] = tc }
+      }
+      if let s = v as? UIScrollView { e["oy"] = s.contentOffset.y; e["ch"] = s.contentSize.height }
+      if let picker = v as? UIDatePicker {
+        e["date"] = ISO8601DateFormatter().string(from: picker.date)
+      }
+      if let picker = v as? UIPickerView {
+        e["components"] = (0..<picker.numberOfComponents).map { component in
+          var value: [String: Any] = ["selectedRow": picker.selectedRow(inComponent: component)]
+          let width = picker.rowSize(forComponent: component).width
+          if width.isFinite { value["width"] = width }
+          return value
+        }
+      }
+      if let i = v as? UIImageView, let img = i.image { e["img"] = "\(img.size)" }
+      out.append(e)
+      for s in v.subviews { walk(s, depth + 1) }
+    }
+    walk(window, 0)
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent("viewdump.json")
+    if let data = try? JSONSerialization.data(withJSONObject: jsonValue(out)) { try? data.write(to: url, options: .atomic) }
+  }
+
+  static func traceIndicators() {
+    lines = []
+    let l = CADisplayLink(target: Ticker.shared, selector: #selector(Ticker.tick))
+    l.add(to: .main, forMode: .common)
+    link = l
+  }
+
+  fileprivate static func sample() {
+    let t = CACurrentMediaTime() - t0
+    guard let window else { return }
+    var scroll: UIScrollView?
+    var bars: [UIView] = []
+    func walk(_ v: UIView) {
+      if scroll == nil, let s = v as? UIScrollView { scroll = s }
+      if String(describing: type(of: v)).contains("Indicator") { bars.append(v) }
+      v.subviews.forEach(walk)
+    }
+    walk(window)
+    var line = String(
+      format: "%.4f oy=%.2f dragging=%d decelerating=%d",
+      t, scroll?.contentOffset.y ?? .nan,
+      scroll?.isDragging == true ? 1 : 0, scroll?.isDecelerating == true ? 1 : 0)
+    for b in bars {
+      let f = b.convert(b.bounds, to: window)
+      let op = b.layer.presentation()?.opacity ?? b.layer.opacity
+      line += String(format: " | %@ x=%.2f y=%.2f w=%.2f h=%.2f op=%.3f a=%.3f hid=%d",
+        String(describing: type(of: b)), f.minX, f.minY, f.width, f.height, op, b.alpha, b.isHidden ? 1 : 0)
+    }
+    lines.append(line)
+    if t > 20 {
+      link?.invalidate(); link = nil
+      let url = FileManager.default.temporaryDirectory.appendingPathComponent("indicator-trace")
+      try? lines.joined(separator: "\n").write(to: url, atomically: true, encoding: .utf8)
+    }
+  }
+
+  private final class Ticker: NSObject {
+    static let shared = Ticker()
+    @objc func tick() { ViewDump.sample() }
   }
 }
 
@@ -913,10 +1093,11 @@ struct TextEditorReference: View {
 @available(iOS 26.0, *)
 struct ScrollIndicatorsReference: View {
   let dark: Bool
+  var rows = 60
   var body: some View {
     ScrollView {
       LazyVStack(alignment: .leading, spacing: 0) {
-        ForEach(0..<60) { i in
+        ForEach(0..<rows, id: \.self) { i in
           Text("Row \(i)").frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             .padding(.horizontal, 16)
         }

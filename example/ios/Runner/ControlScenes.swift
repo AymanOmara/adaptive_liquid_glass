@@ -22,6 +22,8 @@ enum ControlScenes {
     case "navbarlone": root = AnyView(NavBarPhotoReference(dark: false, lone: true))
     case "navbarpills": root = AnyView(NavBarPillsReference(dark: false))
     case "navbarpillsdark": root = AnyView(NavBarPillsReference(dark: true))
+    case "navbarpillsflat": root = AnyView(NavBarPillsReference(dark: false, flat: true))
+    case "navbarpillsflatdark": root = AnyView(NavBarPillsReference(dark: true, flat: true))
     case "controls": root = AnyView(ControlsReference())
     case "toolbar": root = AnyView(ToolbarReference())
     case "keyboardtoolbar": root = AnyView(KeyboardToolbarReference(dark: false))
@@ -64,11 +66,20 @@ enum ControlScenes {
     case "contextmenuuikitleft": root = AnyView(UIKitContextMenuReference(x: 110))
     case "contextmenuuikitstripes": root = AnyView(UIKitContextMenuReference(stripes: true))
     case "contextmenuuikitmotion": root = AnyView(UIKitContextMenuReference(openOnTap: true))
+    // Placement by the screen's edges, and the lifted card's shadow on white.
+    case "contextmenuuikitlow": root = AnyView(UIKitContextMenuReference(y: 620))
+    case "contextmenuuikitbottom": root = AnyView(UIKitContextMenuReference(y: 740))
+    case "contextmenuuikittop": root = AnyView(UIKitContextMenuReference(y: 20))
+    case "contextmenuuikitright": root = AnyView(UIKitContextMenuReference(x: 330))
+    case "contextmenuuikittall": root = AnyView(
+      UIKitContextMenuReference(y: 360, size: CGSize(width: 200, height: 600)))
+    case "contextmenuuikitwhite": root = AnyView(UIKitContextMenuReference(white: true))
     case "contextmenuuikitwide": root = AnyView(
       UIKitContextMenuReference(size: CGSize(width: 360, height: 80), white: true))
     case "stepper": root = AnyView(StepperReference())
     case "picker": root = AnyView(PickerReference())
     case "palettemenu": root = AnyView(PaletteMenuReference(symbols: false))
+    case "palettemenudark": root = AnyView(PaletteMenuReference(symbols: false, dark: true))
     case "palettemenusymbols": root = AnyView(PaletteMenuReference(symbols: true))
     case "palettestandalone": root = AnyView(PaletteStandaloneReference())
     case "multidate": root = AnyView(MultiDateReference())
@@ -252,10 +263,14 @@ struct NavBarPhotoReference: View {
 @available(iOS 26.0, *)
 struct NavBarPillsReference: View {
   let dark: Bool
+  /// A flat mid-grey page instead of the photo, to read the capsules' tone.
+  var flat = false
   var body: some View {
     NavigationStack {
       ZStack {
-        if let image = ReferenceAssets.image("photo") {
+        if flat {
+          Color(white: 0.5).ignoresSafeArea()
+        } else if let image = ReferenceAssets.image("photo") {
           Image(uiImage: image).resizable().interpolation(.none).ignoresSafeArea()
         }
       }
@@ -946,6 +961,7 @@ struct PickerReference: View {
 @available(iOS 26.0, *)
 struct PaletteMenuReference: View {
   let symbols: Bool
+  var dark = false
   @State private var choice = 1
   private let colours: [(String, Color)] = [
     ("Red", .red), ("Orange", .orange), ("Yellow", .yellow), ("Green", .green), ("Blue", .blue),
@@ -953,7 +969,7 @@ struct PaletteMenuReference: View {
   private let icons = ["star", "heart", "bolt", "flag", "bell"]
   var body: some View {
     ZStack(alignment: .topLeading) {
-      Color.white
+      dark ? Color.black : Color.white
       Menu {
         Picker("Flag", selection: $choice) {
           if symbols {
@@ -976,7 +992,7 @@ struct PaletteMenuReference: View {
     }
     .frame(width: 402, height: 874)
     .ignoresSafeArea()
-    .environment(\.colorScheme, .light)
+    .environment(\.colorScheme, dark ? .dark : .light)
     .environment(\.locale, Locale(identifier: "en_US"))
     .statusBarHidden(true)
   }
@@ -1378,6 +1394,160 @@ private enum SystemButtonGeometryLog {
       .appendingPathComponent("system-button-geometry.json")
     if let data = try? JSONSerialization.data(withJSONObject: values, options: [.sortedKeys, .prettyPrinted]) {
       try? data.write(to: url, options: .atomic)
+    }
+  }
+}
+
+// Native comparison scenes for the component gap documentation.
+enum GapScenes {
+  static func install(in window: UIWindow?) -> Bool {
+    guard #available(iOS 26.0, *), let which = LaunchArgs.arg("controls") else { return false }
+    let root: AnyView
+    switch which {
+    case "gapsubtitle": root = AnyView(GapSubtitle(inline: false, edge: nil))
+    case "gapsubtitleinline": root = AnyView(GapSubtitle(inline: true, edge: nil))
+    case "gapedgehard": root = AnyView(GapSubtitle(inline: false, edge: .hard))
+    case "gapedgehidden": root = AnyView(GapSubtitle(inline: false, edge: nil, edgeHidden: true))
+    case "gapedgesoft": root = AnyView(GapSubtitle(inline: false, edge: .soft))
+    case "gaptransition": root = AnyView(GapTransition())
+    case "gapcontrolgroup": root = AnyView(GapControlGroup())
+    case "gapsplit": root = AnyView(GapSplit())
+    default: return false
+    }
+    window?.rootViewController = UIHostingController(rootView: root)
+    window?.makeKeyAndVisible()
+    return true
+  }
+}
+
+private let gapColors: [Color] = [.red, .pink, .purple, .indigo, .blue, .cyan, .teal, .green, .mint, .yellow, .orange, .brown]
+
+@available(iOS 26.0, *)
+struct GapSubtitle: View {
+  let inline: Bool
+  let edge: ScrollEdgeEffectStyle?
+  var edgeHidden = false
+  var body: some View {
+    NavigationStack {
+      ScrollView {
+        LazyVStack(spacing: 0) {
+          ForEach(0..<80, id: \.self) { i in
+            Text("Message \(i)").fontWeight(.semibold)
+              .foregroundStyle(gapColors[i % gapColors.count])
+              .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+              .padding(.horizontal, 16)
+          }
+        }
+      }
+      .scrollEdgeEffectStyle(edge ?? .automatic, for: .top)
+      .scrollEdgeEffectHidden(edgeHidden, for: .top)
+      .navigationTitle("Inbox")
+      .navigationSubtitle("3 unread")
+      .navigationBarTitleDisplayMode(inline ? .inline : .large)
+      .toolbar {
+        ToolbarItem(placement: .topBarTrailing) {
+          Button("More", systemImage: "ellipsis") {}
+        }
+      }
+    }
+  }
+}
+
+@available(iOS 26.0, *)
+struct GapTransition: View {
+  @State private var shown = true
+  var body: some View {
+    ZStack {
+      LinearGradient(colors: [Color(red: 0x3A/255, green: 0x7B/255, blue: 0xD5/255),
+                              Color(red: 0xE9/255, green: 0x64/255, blue: 0x43/255)],
+                     startPoint: .topLeading, endPoint: .bottomTrailing).ignoresSafeArea()
+      VStack(spacing: 24) {
+        Text("matchedGeometry").font(.system(size: 22, weight: .semibold)).foregroundStyle(.white)
+        GlassEffectContainer(spacing: 24) {
+          HStack(spacing: 42) {
+            Image(systemName: "star.fill").frame(width: 72, height: 72).glassEffect(.regular, in: .circle)
+            if shown {
+              Image(systemName: "heart.fill").frame(width: 72, height: 72).glassEffect(.regular, in: .circle)
+                .glassEffectTransition(.matchedGeometry)
+              Image(systemName: "bolt.fill").frame(width: 72, height: 72).glassEffect(.regular, in: .circle)
+                .glassEffectTransition(.matchedGeometry)
+            }
+          }.frame(width: 300, height: 72, alignment: .leading)
+        }
+        Button(shown ? "Hide" : "Show") { withAnimation { shown.toggle() } }
+          .buttonStyle(.borderedProminent)
+      }
+    }
+  }
+}
+
+@available(iOS 26.0, *)
+struct GapControlGroup: View {
+  @State private var match = 1
+  var body: some View {
+    NavigationStack {
+      ZStack(alignment: .topLeading) {
+        LinearGradient(colors: [Color(red: 0x3A/255, green: 0x7B/255, blue: 0xD5/255),
+                                Color(red: 0xF2/255, green: 0x99/255, blue: 0x4A/255),
+                                Color(red: 0xEB/255, green: 0x57/255, blue: 0x57/255)],
+                       startPoint: .topLeading, endPoint: .bottomTrailing).ignoresSafeArea()
+        VStack(alignment: .leading, spacing: 10) {
+          Text("ControlGroup").font(.system(size: 28, weight: .bold)).foregroundStyle(.white)
+          cap("Automatic style — \(match) of 5")
+          ControlGroup {
+            Button("Previous", systemImage: "chevron.up") { match = max(1, match - 1) }
+            Button("Next", systemImage: "chevron.down") { match = min(5, match + 1) }
+          }.fixedSize()
+          cap("Without dividers (toolbar look)")
+          ControlGroup {
+            Button("Reply", systemImage: "arrowshape.turn.up.left") {}
+            Button("Share", systemImage: "square.and.arrow.up") {}
+          }.controlGroupStyle(.navigation).fixedSize()
+          cap("Three members")
+          ControlGroup {
+            Button("Bold", systemImage: "bold") {}
+            Button("Italic", systemImage: "italic") {}
+            Button("Underline", systemImage: "underline") {}
+          }.fixedSize()
+          cap("Menu style")
+          ControlGroup {
+            Button("Copy", systemImage: "doc.on.doc") {}
+            Button("Delete", systemImage: "trash", role: .destructive) {}
+          } label: { Label("Actions", systemImage: "ellipsis") }
+            .controlGroupStyle(.menu).fixedSize()
+        }.padding(24)
+      }
+    }
+  }
+  func cap(_ s: String) -> some View {
+    Text(s).foregroundStyle(.white.opacity(0.7)).padding(.top, 18)
+  }
+}
+
+@available(iOS 26.0, *)
+struct GapSplit: View {
+  let boxes: [(String, String, Int)] = [("Inbox", "tray", 12), ("Favorites", "star", 3),
+    ("Sent", "paperplane", 0), ("Drafts", "doc", 2), ("Trash", "trash", 0)]
+  @State private var picked: Int?
+  var body: some View {
+    NavigationSplitView {
+      List(selection: $picked) {
+        ForEach(boxes.indices, id: \.self) { i in
+          NavigationLink(value: i) {
+            LabeledContent { if boxes[i].2 > 0 { Text("\(boxes[i].2)") } } label: {
+              Label(boxes[i].0, systemImage: boxes[i].1)
+            }
+          }
+        }
+      }.navigationTitle("Mailboxes")
+    } detail: {
+      ZStack {
+        LinearGradient(colors: [Color(red: 0x7A/255, green: 0xA7/255, blue: 1),
+                                Color(red: 1, green: 0x9E/255, blue: 0xC4/255),
+                                Color(red: 1, green: 0xD2/255, blue: 0x7A/255)],
+                       startPoint: .topLeading, endPoint: .bottomTrailing).ignoresSafeArea()
+        Text(boxes[picked ?? 0].0).font(.system(size: 34, weight: .bold)).foregroundStyle(.white)
+      }.navigationTitle(boxes[picked ?? 0].0).navigationBarTitleDisplayMode(.inline)
     }
   }
 }

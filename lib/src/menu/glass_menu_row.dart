@@ -19,6 +19,7 @@ class GlassMenuRow extends StatelessWidget {
     this.icons = true,
     this.trailing,
     this.weight = FontWeight.w400,
+    this.inset = 0,
   });
 
   /// The item shown.
@@ -45,6 +46,11 @@ class GlassMenuRow extends StatelessWidget {
   /// The label's weight: semibold for an open submenu's own row.
   final FontWeight weight;
 
+  /// How far the checkmark, icon and label sit from [MenuMetrics]'
+  /// columns: half the difference a narrower panel makes (a context
+  /// menu's, measured 1 in from a 250-pt UIKit menu's edge).
+  final double inset;
+
   @override
   Widget build(BuildContext context) {
     final color = CupertinoDynamicColor.resolve(
@@ -63,11 +69,13 @@ class GlassMenuRow extends StatelessWidget {
     final scale =
         MediaQuery.textScalerOf(context).scale(MenuMetrics.fontSize) /
         MenuMetrics.fontSize;
-    final labelStart = choices
-        ? MenuMetrics.checkLabelStart
-        : icons
-        ? MenuMetrics.labelStart
-        : MenuMetrics.plainLabelStart;
+    final labelStart =
+        inset +
+        (choices
+            ? MenuMetrics.checkLabelStart
+            : icons
+            ? MenuMetrics.labelStart
+            : MenuMetrics.plainLabelStart);
     final end = trailing == null
         ? MenuMetrics.trailingPadding
         : MenuMetrics.chevronCentreFromEnd + MenuMetrics.chevronSize;
@@ -83,7 +91,7 @@ class GlassMenuRow extends StatelessWidget {
         ),
       if (choices && (item.checked ?? false))
         PositionedDirectional(
-          start: MenuMetrics.checkCentre - MenuMetrics.checkSize / 2,
+          start: inset + MenuMetrics.checkCentre - MenuMetrics.checkSize / 2,
           top: 0,
           bottom: 0,
           child: Icon(
@@ -94,7 +102,7 @@ class GlassMenuRow extends StatelessWidget {
         ),
       if (item.icon != null && !choices)
         PositionedDirectional(
-          start: MenuMetrics.iconCentre - MenuMetrics.iconSize / 2,
+          start: inset + MenuMetrics.iconCentre - MenuMetrics.iconSize / 2,
           top: 0,
           bottom: 0,
           child: Icon(item.icon, size: MenuMetrics.iconSize, color: color),

@@ -26,11 +26,20 @@ void main() {
 
   testWidgets('date columns follow the locale order (mdy)', (t) async {
     shaderEnv();
-    await t.pumpWidget(plainHost(_wheel(onChanged: (_) {})));
+    await t.pumpWidget(plainHost(Center(child: _wheel(onChanged: (_) {}))));
+    final bands = t.widgetList<LiquidGlass>(find.byType(LiquidGlass)).toList();
+    expect(bands, hasLength(2));
+    expect(
+      t.getSize(find.byWidget(bands.first)).width,
+      WheelPickerMetrics.width,
+    );
+    expect(
+      t.getSize(find.byWidget(bands.last)).width,
+      WheelPickerMetrics.width - 2 * WheelPickerMetrics.bandInset,
+    );
     expect(_column(0, 'October'), findsOneWidget);
     expect(_column(1, '6'), findsOneWidget);
     expect(_column(2, '2026'), findsOneWidget);
-    expect(find.byType(LiquidGlass), findsNWidgets(2));
   }, variant: ios);
 
   testWidgets('null onChanged disables every column', (t) async {

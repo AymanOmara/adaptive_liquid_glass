@@ -8,9 +8,33 @@ import 'glass_scroll_edge_style.dart';
 import 'nav_bar_metrics.dart';
 import 'progressive_blur.dart';
 
+/// Which edge of the screen a [GlassScrollEdge] sits on.
+enum GlassScrollEdgePosition {
+  /// Under a top bar: the fade runs down from the top.
+  top,
+
+  /// Over a bottom bar: the fade runs up from the bottom.
+  bottom,
+}
+
 /// iOS 26's scroll edge effect: content under the bar is blurred and the
-/// page background fades out below the top edge, shown while content is
+/// page background fades out away from the [edge], shown while content is
 /// under the bar.
+///
+/// The glass bars draw it themselves; place one directly for custom
+/// chrome, sized to the bar's height plus its fade:
+///
+/// ```dart
+/// Positioned(
+///   left: 0, right: 0, bottom: 0,
+///   child: GlassScrollEdge(
+///     visible: scrolledUnder,
+///     height: 120,
+///     edge: GlassScrollEdgePosition.bottom,
+///     color: pageColor,
+///   ),
+/// )
+/// ```
 class GlassScrollEdge extends StatelessWidget {
   /// Creates the edge.
   const GlassScrollEdge({
@@ -19,6 +43,8 @@ class GlassScrollEdge extends StatelessWidget {
     required this.height,
     this.blurred = true,
     this.style = GlassScrollEdgeStyle.uniform,
+    this.edge = GlassScrollEdgePosition.top,
+    this.color,
   });
 
   /// Whether content is under the bar.
@@ -37,8 +63,17 @@ class GlassScrollEdge extends StatelessWidget {
   /// content under the bar flickers between blurred, sharp and dimmed.
   final bool blurred;
 
-  /// How content under the bar is blurred.
+  /// How content under the bar is blurred. At the bottom edge
+  /// [GlassScrollEdgeStyle.progressive] blurs uniformly.
   final GlassScrollEdgeStyle style;
+
+  /// The edge the effect sits on.
+  final GlassScrollEdgePosition edge;
+
+  /// The colour content fades into; defaults to the Cupertino theme's
+  /// scaffold background. Set it to the page's colour on a tinted or
+  /// custom background.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) => GlassModeBuilder(
@@ -51,12 +86,13 @@ class GlassScrollEdge extends StatelessWidget {
     if (style == GlassScrollEdgeStyle.hidden) return const SizedBox.shrink();
     final hard = style == GlassScrollEdgeStyle.hard;
     final bg = CupertinoDynamicColor.resolve(
-      CupertinoTheme.of(context).scaffoldBackgroundColor,
+      color ?? CupertinoTheme.of(context).scaffoldBackgroundColor,
       context,
     );
     // Blur under the bar itself; the fade below hides its edge.
+    final top = edge == GlassScrollEdgePosition.top;
     final uniform = Align(
-      alignment: Alignment.topCenter,
+      alignment: top ? Alignment.topCenter : Alignment.bottomCenter,
       child: ClipRect(
         child: SizedBox(
           height: hard ? height : height * NavBarMetrics.edgeBlurExtent,
@@ -80,7 +116,7 @@ class GlassScrollEdge extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               if (blur)
-                style == GlassScrollEdgeStyle.progressive
+                style == GlassScrollEdgeStyle.progressive && top
                     // Graduated over the whole edge: the fade below adds
                     // to it rather than hiding a hard lower edge.
                     ? ProgressiveBlur(
@@ -99,8 +135,12 @@ class GlassScrollEdge extends StatelessWidget {
                       )
                     : BoxDecoration(
                         gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
+                          begin: top
+                              ? Alignment.topCenter
+                              : Alignment.bottomCenter,
+                          end: top
+                              ? Alignment.bottomCenter
+                              : Alignment.topCenter,
                           colors: [
                             bg,
                             bg.withValues(alpha: 0.85),

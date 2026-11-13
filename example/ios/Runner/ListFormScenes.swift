@@ -18,6 +18,7 @@ enum ListFormScenes {
     case "plainswipe": root = AnyView(PlainListReference(swipe: true))
     case "sidebar": root = AnyView(SidebarListReference(collapsed: false))
     case "sidebarcollapsed": root = AnyView(SidebarListReference(collapsed: true))
+    case "sidebarsplit": root = AnyView(SidebarSplitReference())
     case "form": root = AnyView(FormReference())
     case "groupbox": root = AnyView(GroupBoxReference())
     default: return false
@@ -152,5 +153,35 @@ struct GroupBoxReference: View {
       .padding(.horizontal, 16)
       .padding(.top, 60)
     }
+  }
+}
+
+/// The same sidebar list as a `NavigationSplitView`'s sidebar column on
+/// iPad (run on an iPad simulator, landscape or portrait).
+@available(iOS 26.0, *)
+struct SidebarSplitReference: View {
+  @State private var selection: String? = "Inbox"
+  @State private var libraryOpen = true
+  @State private var tagsOpen = true
+  @State private var columns = NavigationSplitViewVisibility.all
+  var body: some View {
+    NavigationSplitView(columnVisibility: $columns) {
+      List(selection: $selection) {
+        Section(isExpanded: $libraryOpen) {
+          Label("Inbox", systemImage: "tray").tag("Inbox")
+          Label("Drafts", systemImage: "doc").tag("Drafts")
+          Label("Sent", systemImage: "paperplane").tag("Sent")
+        } header: { Text("Library") }
+        Section(isExpanded: $tagsOpen) {
+          Label("Work", systemImage: "folder").tag("Work")
+          Label("Family", systemImage: "folder").tag("Family")
+        } header: { Text("Tags") }
+      }
+      .listStyle(.sidebar)
+      .toolbar(.hidden, for: .navigationBar)
+    } detail: {
+      Text(selection ?? "None")
+    }
+    .navigationSplitViewStyle(.balanced)
   }
 }

@@ -79,6 +79,9 @@ void main() {
     expect(style.fontSize, 17);
     expect(style.decoration, isNot(TextDecoration.underline));
     expect(style.letterSpacing, -0.43);
+    // SwiftUI's iPhone popover label is semibold (popover-iphone-swiftui
+    // capture: ~1.28x the regular text's ink, 2.5% wider).
+    expect(style.fontWeight, FontWeight.w600);
   }, variant: ios);
 
   testWidgets('GlassPopoverAnchor: the opener steps aside while open', (

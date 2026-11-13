@@ -8,6 +8,15 @@ import '../core/shape_border.dart';
 import '../foreground/glass_label_style.dart';
 import '../interaction/glass_pressable.dart';
 
+/// The Material path's surface colour for [glass] in [scheme]: its
+/// `materialSurface`, else its tint, else the scheme's container.
+Color materialGlassColor(Glass glass, ColorScheme scheme) =>
+    glass.materialSurfaceColor ??
+    glass.tintColor ??
+    (glass.variant == GlassVariant.clear
+        ? scheme.surfaceContainerLow.withValues(alpha: 0.85)
+        : scheme.surfaceContainerHigh);
+
 /// Material 3 rendering of a glass member (spec §8).
 class MaterialGlass extends StatelessWidget {
   /// Creates a Material glass surface.
@@ -50,14 +59,10 @@ class MaterialGlass extends StatelessWidget {
     if (glass.variant == GlassVariant.identity) return child;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    // A tint is kept as given (a brand colour stays that colour), with
-    // black or white labels for contrast.
-    final tint = glass.tintColor;
-    final Color color =
-        tint ??
-        (glass.variant == GlassVariant.clear
-            ? scheme.surfaceContainerLow.withValues(alpha: 0.85)
-            : scheme.surfaceContainerHigh);
+    // A tint (or a materialSurface) is kept as given (a brand colour stays
+    // that colour), with black or white labels for contrast.
+    final tint = glass.materialSurfaceColor ?? glass.tintColor;
+    final color = materialGlassColor(glass, scheme);
     final content = adaptiveForeground
         ? GlassLabelStyle(
             color: tint == null

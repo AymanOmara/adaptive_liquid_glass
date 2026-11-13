@@ -89,7 +89,9 @@ Future<GlassDialogAction?> showGlassActionSheet({
                 ListTile(
                   title: Text(
                     a.label,
-                    style: a.role == GlassButtonRole.destructive
+                    style: a.tint != null
+                        ? TextStyle(color: a.tint)
+                        : a.role == GlassButtonRole.destructive
                         ? TextStyle(color: Theme.of(context).colorScheme.error)
                         : null,
                   ),

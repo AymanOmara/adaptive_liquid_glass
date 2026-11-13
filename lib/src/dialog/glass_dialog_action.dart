@@ -12,6 +12,7 @@ class GlassDialogAction {
     this.subtitle,
     this.onPressed,
     this.role = GlassButtonRole.none,
+    this.tint,
   });
 
   /// The button's label.
@@ -27,4 +28,10 @@ class GlassDialogAction {
   /// [GlassButtonRole.destructive] draws the label red;
   /// [GlassButtonRole.cancel] is the action a tap outside takes.
   final GlassButtonRole role;
+
+  /// The label's colour, in place of the label colour (or a destructive
+  /// action's red); its subtitle stays secondary. As SwiftUI's
+  /// `.tint(_:)` on an alert, it colours the text, not the capsule. On
+  /// the Material path it is the [TextButton]'s foreground.
+  final Color? tint;
 }

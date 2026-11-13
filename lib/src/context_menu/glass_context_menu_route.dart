@@ -146,6 +146,7 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
     final lifted = ContextMenuMetrics.lifted(
       previewRect,
       MediaQuery.sizeOf(context),
+      padding,
     );
     _lifted = lifted;
     final page = iosPageText(
@@ -181,6 +182,7 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
                   final s = previewRect.width > 0
                       ? at.width / previewRect.width
                       : 1.0;
+                  final shadow = _dim(animation.value).clamp(0.0, 1.0);
                   return Transform(
                     transform: Matrix4.identity()
                       ..translateByDouble(
@@ -190,7 +192,30 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
                         1,
                       )
                       ..scaleByDouble(s, s, 1, 1),
-                    child: child,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      fit: StackFit.passthrough,
+                      children: [
+                        // UIKit's shadow under the lifted item (measured),
+                        // cast by its bounds: the item is not built twice.
+                        // The blur is undone by the item's scale so it
+                        // measures in screen points.
+                        if (shadow > 0)
+                          Positioned.fill(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                boxShadow: [
+                                  ContextMenuMetrics.previewShadow(
+                                    opacity: shadow,
+                                    scale: s,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        child!,
+                      ],
+                    ),
                   );
                 },
                 child: preview,
@@ -215,6 +240,7 @@ class GlassContextMenuRoute extends PopupRoute<GlassMenuItem> {
               child: GlassMenuPanel(
                 items: items,
                 mode: mode,
+                width: ContextMenuMetrics.menuWidth,
                 onChoose: (item) => Navigator.of(context).pop(item),
               ),
             ),

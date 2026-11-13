@@ -1,8 +1,9 @@
 # iOS 26 component gap analysis
 
-Branch `docs/component-gap`, Oct 2026; refreshed Nov 2026. Inventory taken from
-`lib/adaptive_liquid_glass.dart` (64 exported files) read against the iOS 26
-SwiftUI/UIKit control and container catalogue. No code changed.
+Originally drafted in Oct 2026 and refreshed in Nov 2026. The inventory is based
+on `lib/adaptive_liquid_glass.dart` and the iOS 26 SwiftUI/UIKit control and
+container catalogue; this note also records the implementations, simulator
+captures and measurements completed during the refresh.
 
 Legend — have: **yes** / **partial** / **no** (+ our class). Common: how often
 the component appears in typical apps. Effort: **S** (≤ a focused day),
@@ -75,11 +76,11 @@ entrypoint (fidelity constants, not stable API).
 | Wheel | `.pickerStyle(.wheel)` | **yes** — `GlassWheelPicker` | med | — | done |
 | Inline | `.pickerStyle(.inline)` | **yes** — `GlassPickerStyle.inline` | med | — | done |
 | NavigationLink | `.pickerStyle(.navigationLink)` | **yes** — `GlassPickerStyle.navigationLink` | med | — | done |
-| Palette | `.pickerStyle(.palette)` | **yes** — `GlassPickerStyle.palette` | low | — | done (63b3518, branch pending merge) |
+| Palette | `.pickerStyle(.palette)` | **yes** — `GlassPickerStyle.palette` | low | — | done (63b3518) |
 | Date compact | `.datePickerStyle(.compact)` | **yes** — `GlassDatePicker` | med | — | capsule → glass calendar popover |
-| Date graphical | `.datePickerStyle(.graphical)` | **yes** — `GlassDatePicker(style: graphical)`, `GlassCalendar` exported | med | — | inline calendar, `showWeekNumbers`; geometry estimated |
-| Date wheel | `.datePickerStyle(.wheel)` | **yes** — `GlassDatePicker(style: wheel)`, `GlassDateWheel` | med | — | columns on one surface; geometry estimated, not measured |
-| Time / range | `hourAndMinute`, `DateRange` graph | **yes** — `pickerMode: time` / `dateAndTime`, `GlassDateRangePicker` | med | — | range picker done (63b3518, branch pending merge) |
+| Date graphical | `.datePickerStyle(.graphical)` | **yes** — `GlassDatePicker(style: graphical)`, `GlassCalendar` exported | med | — | inline calendar, `showWeekNumbers`; inline geometry measured (`-controls calendargraphical`, `calendargraphicaltime`: fills its width, 44-pt rows/circles, tinted selection, time row); week-number gutter uses a package-defined width (the recorded native graphical picker has no gutter) |
+| Date wheel | `.datePickerStyle(.wheel)` | **yes** — `GlassDatePicker(style: wheel)`, `GlassDateWheel` | med | — | selection band and column label alignment measured on iOS 26.4 (see `controls.json` → `date_wheel` and `date_wheel_time`); native drag trials recorded in §4 measurements |
+| Time / range | `hourAndMinute`, `DateRange` graph | **yes** — `pickerMode: time` / `dateAndTime`, `GlassDateRangePicker` | med | — | range picker done (63b3518) |
 
 ### Text & search
 
@@ -87,8 +88,8 @@ entrypoint (fidelity constants, not stable API).
 |---|---|---|---|---|---|
 | TextField | `TextField` | **yes** — `GlassTextField` | high | — | prefix/suffix, clear, error, autofill |
 | SecureField | `SecureField` | **yes** — `GlassTextField.password` | med | — | eye reveal |
-| TextEditor | `TextEditor` | **yes** — `GlassTextEditor` | med | — | done (71a59a3, branch pending merge) |
-| Searchable | `.searchable` + scopes/suggestions | **yes** — `GlassSearchable` + `GlassSearchController` | high | — | Cancel spring, suggestion platter, scopes, `navigationBar`/`bottom` placement; geometry estimated, not measured |
+| TextEditor | `TextEditor` | **yes** — `GlassTextEditor` | med | — | done (71a59a3) |
+| Searchable | `.searchable` + scopes/suggestions | **yes** — `GlassSearchable` + `GlassSearchController` | high | — | Cancel spring, suggestion platter, scopes, `navigationBar`/`bottom` placement; measured (`SearchMetrics`: `-controls search`, `searchactive`, `searchmotion`, `searchscopes*`, `searchdrawer*`; `controls.json` → `search`, `searchable`, `search_scopes`, `search_suggestions`, `search_drawer`) |
 | Tab search | `Tab(role: .search)` | **yes** — `GlassTabBar.onSearch` | med | — | circle lens tab |
 | Text input on glass | `GlassForeground` vibrant labels | **yes** — `GlassForeground` | high | — | brightness-sampled label colors |
 
@@ -107,15 +108,15 @@ entrypoint (fidelity constants, not stable API).
 
 | component | SwiftUI API | we have? | common | effort | notes |
 |---|---|---|---|---|---|
-| Menu | `Menu` pull-down | **yes** — `GlassMenuButton` + `GlassMenuItem.section` / `.submenu`, `primaryAction` | high | — | done (5c545cd, branch pending merge); submenus use the iOS 26 recede presentation; `GlassContextMenu` gains sections and submenus |
-| Context menu | `.contextMenu` | **partial** — `GlassContextMenu` | med | M | works (lifted preview + glass menu) but "not measured against SwiftUI" per doc comment |
-| Popover | `.popover` | **yes** — `showGlassPopover` / `GlassPopoverAnchor` | med | — | iPhone bubble, no arrow, undimmed; verify: iOS 26 popover-on-iPhone behavior we should re-measure |
+| Menu | `Menu` pull-down | **yes** — `GlassMenuButton` + `GlassMenuItem.section` / `.submenu`, `primaryAction` | high | — | done (5c545cd); submenus use the iOS 26 recede presentation; `GlassMenuItem.picker` supports a palette swatch row |
+| Context menu | `.contextMenu` | **yes** — `GlassContextMenu` | med | — | measured against UIKit (`ContextMenuMetrics`: lift, shadow, 250-pt menu, safe-area clamp, springs); oversized preview scaling and menu overlap implemented; fresh tall-preview pair in §4 |
+| Popover | `.popover` | **yes** — `showGlassPopover` / `GlassPopoverAnchor` | med | — | iPhone bubble, no arrow, undimmed; rechecked on iOS 26.4 in §4 |
 | Alert | `.alert` | **yes** — `showGlassAlert` | high | — | |
 | Confirmation dialog | `.confirmationDialog` | **yes** — `showGlassConfirmationDialog` | high | — | tap-outside = cancel |
 | Action sheet | UIKit `UIAlertController` action sheet | **yes** — `showGlassActionSheet` | med | — | |
 | Sheet + detents | `.sheet` + `.presentationDetents` | **yes** — `showGlassSheet` / `GlassSheetDetent` | high | — | medium/large/fraction/height, grabber |
 | Full-screen cover | `.fullScreenCover` | **yes** — `showGlassFullScreenCover` | med | — | done (`GlassFullScreenCoverHandle`, drag configuration) |
-| Inspector | `Inspector` (iOS 17+) | **yes** — `GlassInspector` | low | — | done (3213048, branch pending merge) |
+| Inspector | `Inspector` (iOS 17+) | **yes** — `GlassInspector` | low | — | done (3213048) |
 | Glass effect container | `GlassEffectContainer` | **yes** — `GlassGroup` | high | — | spacing merge, shared backdrop |
 | Glass union | `glassEffectUnion` | **yes** — `LiquidGlass.unionId` | med | — | per-member |
 | Glass morph | `glassEffectID` | **yes** — `LiquidGlass.glassId` | med | — | hero morph inside group |
@@ -126,55 +127,52 @@ entrypoint (fidelity constants, not stable API).
 |---|---|---|---|---|---|
 | Inline nav bar | `NavigationStack` bar | **yes** — `GlassNavigationBar` | high | — | leading auto-back, merged actions |
 | Large title | large title + collapse | **yes** — `SliverGlassNavigationBar` | high | — | scroll fade-in, pull stretch |
-| Bar items | `ToolbarItem` in nav bar | **yes** — `GlassBarItem`, separate trailing pills | high | — | done (9c180ce, branch pending merge); lone trailing item is a 44-pt circle |
+| Bar items | `ToolbarItem` in nav bar | **yes** — `GlassBarItem`, separate trailing pills | high | — | done (9c180ce); lone trailing item is a 44-pt circle |
 | Bottom toolbar/bottom bar | `.toolbar` bottom bar | **yes** — `GlassToolbar` | med | — | floating capsules, spacers, no top placement |
-| safeAreaBar | `.safeAreaBar` | **yes** — `GlassSafeAreaBar` | low | — | done (3213048, branch pending merge) |
+| safeAreaBar | `.safeAreaBar` | **yes** — `GlassSafeAreaBar` | low | — | done (3213048) |
 | Bottom accessory | `.tabBarBottomAccessory` (verify name) | **yes** — `GlassBottomAccessory` | med | — | Music mini-player pattern |
 | Tab bar | `TabView` tab bar | **yes** — `GlassTabBar` | high | — | lens press, drag, badges, search tab |
 | Sidebar adaptable | `TabView` `.sidebarAdaptable` | **yes** — `GlassTabBarStyle.sidebarAdaptable` (via `GlassScaffold`) | med | — | done; `GlassTabSidebar` is internal |
 | Tab bar minimize | `.tabBarMinimizeBehavior` | **yes** — `GlassTabBar.minimizeBehavior` / `GlassTabBarMinimizeBehavior` | med | — | done |
-| Page style | `TabView` `.page` style | **yes** — `GlassPageView` + `GlassPageControl` | med | — | done (3213048, branch pending merge) |
+| Page style | `TabView` `.page` style | **yes** — `GlassPageView` + `GlassPageControl` | med | — | done (3213048) |
 | Zoom transition | `matchedTransitionSource` / `navigationTransition(.zoom)` | **yes** — `pushGlassZoom`, `GlassZoomSource` | med | — | done |
 | List insetGrouped | `.listStyle(.insetGrouped)` | **yes** — `GlassListSection` | high | — | platter, separators, header/footer, `glass:` variant |
-| List plain | `.listStyle(.plain)` | **partial** — plain `ListView` | med | S | no glass separators/swipe integration tuned for plain |
-| List sidebar | `.listStyle(.sidebar)` | **no** | low | L | tied to sidebarAdaptable |
+| List plain | `.listStyle(.plain)` | **yes** — `GlassPlainList`, `GlassPlainListSection` | med | — | measured inset hairlines (16/56 pt), sticky headers, swipe rows, Material path; swipe-open pair in §4 |
+| List sidebar | `.listStyle(.sidebar)` | **yes** — `GlassSidebarList` | low | L | iPhone rows compared with SwiftUI; regular rows inside `GlassSplitView` use the measured 320-pt sidebar width; iPhone light and dark compared; fresh expanded iPad pair in §4 |
 | Section | `Section` headers/footers | **yes** — `GlassListSection` header/footer | high | — | list context only |
-| Form | `Form` | **yes** — `GlassForm` | high | — | done (2839880, branch pending merge) |
+| Form | `Form` | **yes** — `GlassForm` | high | — | done (2839880) |
 | DisclosureGroup | `DisclosureGroup` | **yes** — `GlassDisclosureGroup` | high | — | done |
 | Swipe actions | `.swipeActions` | **yes** — `GlassSwipeActions` | high | — | leading+trailing, full swipe, rubber-band |
 | Pull to refresh | `.refreshable` | **yes** — `GlassRefresh`, `SliverGlassRefresh` | high | — | done |
-| GroupBox | `GroupBox` | **yes** — `GlassGroupBox` | low | — | done (2839880, branch pending merge) |
-| Scroll edge effects | `scrollEdgeEffectStyle` | **yes** — `GlassScrollEdgeStyle` (`uniform`, `progressive`, `hard`, `hidden`) | high | — | `hard`/`hidden` on branch `ayman/blissful-proskuriakova-1cb305` (748e0c1); progressive needs Impeller |
-| Scroll indicators | `.scrollIndicators` | **yes** — `GlassScrollIndicators` / `GlassScrollIndicatorVisibility` | low | — | done (71a59a3, branch pending merge) |
+| GroupBox | `GroupBox` | **yes** — `GlassGroupBox` | low | — | done (2839880) |
+| Scroll edge effects | `scrollEdgeEffectStyle` | **yes** — `GlassScrollEdgeStyle` (`uniform`, `progressive`, `hard`, `hidden`) | high | — | `hard`/`hidden` done (748e0c1); progressive needs Impeller |
+| Scroll indicators | `.scrollIndicators` | **yes** — `GlassScrollIndicators` / `GlassScrollIndicatorVisibility` | low | — | implemented (71a59a3); iOS 26.4 geometry, minimum length, edge insets, color, hold and fade measured in §4; measured fade hold is ~1.02–1.05 s (`hold_seconds_bounds` in each `summary.json`), and `timeToFade` is set to 1033 ms, inside those bounds |
 
-## 3. Remaining gaps (ranked)
+## 3. Previously ranked gaps — completed
 
-Refreshed 2026-11-13. Every row below is built and merged into `main`
-(2026-11-13).
+Refreshed 2026-11-13. Every row below has an implementation in this checkout.
 
-| # | gap | public API | status / branch |
+| # | gap | public API | status |
 |---|---|---|---|
-| 1 | Menu sections / submenus / `primaryAction` | `GlassMenuItem.section`, `.submenu`, `GlassMenuButton.primaryAction` | committed 5c545cd |
-| 2 | Separate nav-bar pills | `GlassBarItem` | committed 9c180ce |
-| 3 | `navigationSubtitle` | nav-bar subtitle | committed 748e0c1, `ayman/blissful-proskuriakova-1cb305` |
-| 4 | `glassEffectTransition` | `GlassTransition` (`matchedGeometry`, `materialize`, `identity`) | committed b1ecfd0 + 43e9eed, `ayman/dazzling-wilbur-3bef58`; no screenshots |
-| 5 | `ControlGroup` | `GlassControlGroup` | committed 27d5b95, `ayman/optimistic-kalam-74e479`; 4 tests pass, no screenshots |
-| 6 | Scroll edge `hard` / `hidden` | `GlassScrollEdgeStyle.hard` / `.hidden` | committed 748e0c1 (same branch as 3) |
-| 7 | `NavigationSplitView` | `GlassSplitView`, `GlassSplitViewColumn`, `GlassSplitViewVisibility`, `GlassSplitViewController` | committed 064cb32, `ayman/dazzling-edison-1baeee`; analyze/screenshots pending |
+| 1 | Menu sections / submenus / `primaryAction` | `GlassMenuItem.section`, `.submenu`, `GlassMenuButton.primaryAction` | done (5c545cd) |
+| 2 | Separate nav-bar pills | `GlassBarItem` | done (9c180ce) |
+| 3 | `navigationSubtitle` | nav-bar subtitle | done (748e0c1); screenshots in §4 |
+| 4 | `glassEffectTransition` | `GlassTransition` (`matchedGeometry`, `materialize`, `identity`) | done (b1ecfd0 + 43e9eed); visible and hidden comparison captures in §4 |
+| 5 | `ControlGroup` | `GlassControlGroup` | done (27d5b95); 4 tests passed; showcase captures in §4 show the same scene (`-twin gapcontrolgroup`); the Flutter capsule is 44 pt glass vs SwiftUI's smaller grey one |
+| 6 | Scroll edge `hard` / `hidden` | `GlassScrollEdgeStyle.hard` / `.hidden` | done (748e0c1, with 3); scrolled comparison captures in §4 |
+| 7 | `NavigationSplitView` | `GlassSplitView`, `GlassSplitViewColumn`, `GlassSplitViewVisibility`, `GlassSplitViewController` | done (064cb32); analyze clean (deprecation infos only), 6 tests passed on the original implementation; refreshed iPad captures in §4 |
 
 Also built in parallel (rows updated above): `GlassInspector`,
 `GlassSafeAreaBar`, `GlassPageView` (3213048); `GlassPickerStyle.palette`,
 `GlassDateRangePicker` (63b3518); `GlassForm`, `GlassGroupBox` (2839880);
 `GlassTextEditor`, `GlassScrollIndicators` (71a59a3).
 
-Still open: `List sidebar` (a demo image exists, no widget), plain-list glass
-separators.
 
 ## 4. Visuals (iOS Simulator)
 
-Captured by the sessions that built each component; files in
-`docs/superpowers/notes/images/`. Missing: subtitle, scroll edge, transition,
-control group and split view (screenshots not yet produced).
+Captured on iOS 26.4 with iPhone 17 Pro and iPad 26.4 simulators; files are in
+`docs/superpowers/notes/images/`. Paired captures use the same appearance;
+all are full-resolution device captures. Exceptions are noted per row.
 
 | component | image |
 |---|---|
@@ -185,4 +183,78 @@ control group and split view (screenshots not yet produced).
 | GlassForm | ![](images/listform-native-form.png) |
 | GlassGroupBox | ![](images/listform-native-groupbox.png) |
 | Plain list | ![](images/listform-native-plain.png) |
-| List sidebar | ![](images/listform-native-sidebar.png) |
+| List sidebar | ![](images/listform-native-sidebar.png) ![](images/listform-twin-sidebar.png) (native, `GlassSidebarList`) |
+| Nav subtitle (large) — Flutter / SwiftUI | ![](images/gap-subtitle-flutter.png) ![](images/gap-subtitle-swiftui.png) |
+| Navigation split view (iPad) — Flutter / SwiftUI | ![](images/gap-split-flutter.png) ![](images/gap-split-swiftui.png) |
+| Sidebar list (dark, Flutter / SwiftUI) | ![](images/gap-sidebar-dark-flutter.png) ![](images/listform-native-sidebardark.png) |
+| Hard scroll edge (Flutter / SwiftUI) | ![](images/gap-edge-hard-flutter.png) ![](images/gap-edge-hard-swiftui.png) |
+| Hidden scroll edge (Flutter / SwiftUI) | ![](images/gap-edge-hidden-flutter.png) ![](images/gap-edge-hidden-swiftui.png) |
+| Glass transition, visible (Flutter / SwiftUI) | ![](images/gap-transition-flutter.png) ![](images/gap-transition-swiftui.png) |
+| Glass transition, hidden (Flutter / SwiftUI) | ![](images/gap-transition-hidden-flutter.png) ![](images/gap-transition-hidden-swiftui.png) |
+| Control group (Flutter / SwiftUI) — same scene; capsule size/fill differ | ![](images/gap-controlgroup-flutter.png) ![](images/gap-controlgroup-swiftui.png) |
+| Sidebar split, iPad light (Flutter / SwiftUI) | ![](images/sidebar-ipad-flutter.png) ![](images/sidebar-ipad-swiftui.png) |
+| Sidebar split, iPad dark (Flutter / SwiftUI) | ![](images/sidebar-ipad-dark-flutter.png) ![](images/sidebar-ipad-dark-swiftui.png) |
+| Photo navbar pills, light (Flutter / SwiftUI) | ![](images/navbar-pills-photo-flutter.png) ![](images/navbar-pills-photo-swiftui.png) |
+| Photo navbar pills, dark (Flutter / SwiftUI) | ![](images/navbar-pills-photo-dark-flutter.png) ![](images/navbar-pills-photo-dark-swiftui.png) |
+| Open palette menu, light (Flutter / SwiftUI) | ![](images/palette-menu-open-flutter.png) ![](images/palette-menu-open-swiftui.png) |
+| Open palette menu, dark (Flutter / SwiftUI) | ![](images/palette-menu-open-dark-flutter.png) ![](images/palette-menu-open-dark-swiftui.png) |
+| Plain list, swipe open (Flutter / SwiftUI) | ![](images/plain-swipe-open-flutter.png) ![](images/plain-swipe-open-swiftui.png) |
+| iPhone popover (Flutter / SwiftUI) | ![](images/popover-iphone-flutter.png) ![](images/popover-iphone-swiftui.png) |
+| Context menu, standard and tall (Flutter / UIKit) | [captures and measurements](context-menu-parity.md) |
+| Scroll indicators, trace light / dark (SwiftUI) | ![](images/scrollindicatorstrace.png) ![](images/scrollindicatorstracedark.png) |
+| Scroll indicators, long content / bottom edge (SwiftUI) | ![](images/scrollindicatorslong.png) ![](images/scrollindicators-bottom-swiftui.png) |
+| Date wheel, hit-trial baseline (SwiftUI) | ![](images/date-wheel-hit-baseline-swiftui.png) |
+
+The capture target reads `-twin` scenes through the example launch channel.
+Use the commands below for the SwiftUI references and the corresponding
+`-twin` launch argument for Flutter. `gap_capture.dart` supports `controlgroup`,
+`transition`, `split`, and `sidebarsplit` twins. The hard and hidden edge pages use
+`-twin hard` and `-twin hidden`.
+
+| Comparison | SwiftUI launch arguments | Flutter launch environment |
+|---|---|---|
+| Hard scroll edge | `-controls gapedgehard` | `-twin hard` |
+| Hidden scroll edge | `-controls gapedgehidden` | `-twin hidden` |
+| Glass transition | `-controls gaptransition` | `-twin transition` |
+| Control group | `-controls gapcontrolgroup` | `-twin controlgroup` |
+| Split view | `-controls gapsplit` | `-twin split` |
+| Sidebar split view (iPad) | `-listform sidebarsplit` / `sidebarsplitdark` | `-twin sidebarsplit` / `sidebarsplitdark` |
+
+For scroll edge, drag the content under the bar before taking the
+screenshot. For split view, use an iPad and capture the sidebar expanded.
+
+For palette menus and photo-background navbar pills, use the main example
+target. Pair `-controls palettemenu` or `palettemenudark` with the same
+`-twin` scene and open the menu on both sides. Pair `-controls navbarpills`
+and `navbarpillsdark` with their corresponding `-twin` scenes. The saved
+flat-gray navbar captures match within one 8-bit RGB level at the capsule
+center in both appearances. Photo-background and open-palette comparisons
+are shown in §4. Centered menu placement is available on `GlassMenuButton`,
+and the palette twin uses it to keep the open menu within the viewport. The
+iPad light split/sidebar captures show tint and backdrop differences between
+the native and Flutter rendering paths. The iPad dark pair shows the same
+tint and backdrop differences.
+
+For wheel and scroll-indicator measurements, launch `-controls datewheeldump`
+or `timewheeldump`,
+`scrollindicatorstrace`, `scrollindicatorstracedark` or
+`scrollindicatorslong`. The bottom-edge trace has no scene of its own: its
+folder, `measurements/ios-26.4/scrollindicatorsbottom/`, records
+`"scene": "scrollindicatorstrace"` in `run.json`, i.e. the trace scene
+dragged to the content end. The app writes the scene name to
+`tmp/measurement-scene`, the view frames to `tmp/viewdump.json`, and the
+indicator trace to `tmp/indicator-trace` after 20 seconds. Use
+`xcrun simctl get_app_container <device> <bundle-id> data` to locate
+that directory. Raw traces, view dumps, frame-bracketed summaries and wheel
+trial dumps are in `measurements/ios-26.4/`. On iPhone 17 Pro, the vertical
+indicator measures 3 pt wide with a 3 pt trailing inset. Its top inset is 3 pt
+below the 62 pt safe-area origin, and its bottom inset is 3 pt at the content
+end. Its length is 237.67 pt for 60 rows and reaches the 36 pt minimum for
+2,000 rows. The light and dark colors match `0x59000000` and `0x80FFFFFF`.
+Across light, dark, long-content and bottom-edge traces, the fade begins
+1.017–1.050 s (`hold_seconds_bounds`) after the final dragging/deceleration frame and lasts
+0.217–0.250 s to opacity 0.001. Date-wheel drag trials place the first date
+column boundary between x=204 (column 0) and x=230 pt (column 1) — no trial
+falls in between — and the second at x=258 pt and the time-wheel transitions at
+x=169 and x=224 pt. Trial starting points on each side and changed UIKit
+components are recorded in `datewheel/hit-trials.json`.

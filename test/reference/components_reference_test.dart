@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart'
     show GlassSheetDetent, GlassStepper;
@@ -539,6 +540,10 @@ void main() {
       DatePickerWheelMetrics.bandHeight,
       moreOrLessEquals(n(d, 'band_height'), epsilon: pt),
     );
+    expect(
+      WheelPickerMetrics.width - WheelPickerMetrics.bandInset * 2,
+      moreOrLessEquals(n(d, 'band_width'), epsilon: pt),
+    );
     // Columns centred on the 402-pt screen.
     const total =
         DatePickerWheelMetrics.monthWidth +
@@ -906,6 +911,7 @@ void main() {
   test('context menu', () {
     final c = m('context_menu');
     const screen = Size(402, 874);
+    const safe = EdgeInsets.only(top: 62, bottom: 34);
     // The scenes' cards: 200 x 120 at x 201 and 110, 360 x 80 at 201,
     // centred at y 362 on screen.
     const cards = {
@@ -917,7 +923,7 @@ void main() {
       final scene = c[key] as Map<String, dynamic>;
       final lifted = (scene['card'] as List).cast<num>();
       final menu = (scene['menu'] as List).cast<num>();
-      final got = ContextMenuMetrics.lifted(card, screen);
+      final got = ContextMenuMetrics.lifted(card, screen, safe);
       expect(got.left, moreOrLessEquals(lifted[0].toDouble(), epsilon: 1));
       expect(got.top, moreOrLessEquals(lifted[1].toDouble(), epsilon: 1));
       expect(got.right, moreOrLessEquals(lifted[2].toDouble(), epsilon: 1));
@@ -935,6 +941,25 @@ void main() {
         screen.width - ContextMenuMetrics.margin - width,
       );
       expect(left, moreOrLessEquals(menu[0].toDouble(), epsilon: 1.5));
+      // Over the grey page: the menu's width, and the lifted card's
+      // shadow above it (a Gaussian of the card's edge, not offset).
+      if (scene['shadow'] case final Map<String, dynamic> shadow) {
+        expect(
+          ContextMenuMetrics.menuWidth,
+          moreOrLessEquals(width, epsilon: 1),
+        );
+        const a = ContextMenuMetrics.previewShadowColor;
+        for (final MapEntry(:key, :value) in shadow.entries) {
+          final d = double.parse(key);
+          final x = d / (ContextMenuMetrics.previewShadowSigma * math.sqrt2);
+          final model = 1 - a.a * 0.5 * _erfc(x);
+          expect(
+            model,
+            moreOrLessEquals((value as num).toDouble(), epsilon: 0.012),
+            reason: '$key pt above the card',
+          );
+        }
+      }
     }
     // The dim over a 128 grey and a white page.
     Color over(int v) {
@@ -952,5 +977,38 @@ void main() {
     expect(n(page, 'edge_spread'), lessThanOrEqualTo(1 / 3));
     expect(over(255), sameColour(hex(page, 'white')));
     expect(over(0), sameColour(hex(page, 'black')));
+    // Near the safe area's edges UIKit shifts the lifted card to stay 20
+    // inside it: a card centred past the home indicator stops 20 above the
+    // safe bottom; a 600-pt card starts 20 below the safe top.
+    final bottom = (c['contextmenuuikitbottom']['card'] as List).cast<num>();
+    final low = ContextMenuMetrics.lifted(
+      const Rect.fromLTWH(101, 742, 200, 120),
+      screen,
+      safe,
+    );
+    expect(low.bottom, moreOrLessEquals(bottom[3].toDouble(), epsilon: 1));
+    expect(low.top, moreOrLessEquals(bottom[1].toDouble(), epsilon: 1));
+    final tall = (c['contextmenuuikittall']['card'] as List).cast<num>();
+    final high = ContextMenuMetrics.lifted(
+      const Rect.fromLTWH(101, 122, 200, 600),
+      screen,
+      safe,
+    );
+    expect(high.top, moreOrLessEquals(tall[1].toDouble(), epsilon: 1.5));
+    expect(high.left, moreOrLessEquals(tall[0].toDouble(), epsilon: 1.5));
+    expect(high.right, moreOrLessEquals(tall[2].toDouble(), epsilon: 1.5));
   });
+}
+
+/// The complementary error function (Abramowitz & Stegun 7.1.26, to 1.5e-7).
+double _erfc(double x) {
+  final t = 1 / (1 + 0.3275911 * x.abs());
+  final y =
+      t *
+      (0.254829592 +
+          t *
+              (-0.284496736 +
+                  t * (1.421413741 + t * (-1.453152027 + t * 1.061405429)))) *
+      math.exp(-x * x);
+  return x >= 0 ? y : 2 - y;
 }

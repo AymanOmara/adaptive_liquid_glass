@@ -248,7 +248,9 @@ List<PopupMenuEntry<GlassMenuItem>> _popupItems(List<GlassMenuItem> items) {
         if (item.isSubmenu) ...[
           _popupTitle(item.label),
           ..._popupItems(item.children),
-        ] else
+        ] else if (item.isPalette)
+          ..._popupItems(item.children)
+        else
           PopupMenuItem(
             value: item,
             enabled: item.onSelected != null,

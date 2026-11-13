@@ -21,7 +21,10 @@ import 'search_metrics.dart';
 ///
 /// The placeholder defaults to the localized "Search". Put it in a
 /// `GlassScaffold.bottomAccessory` slot or a toolbar for iOS 26's bottom
-/// search. On the Material path it is a Material 3 [SearchBar].
+/// search.
+///
+/// On Android (the Material path) it is a Material 3 [SearchBar], styled by
+/// the app's `SearchBarTheme`; [materialBuilder] replaces or restyles it.
 class GlassSearchField extends StatefulWidget {
   /// Creates a search field.
   const GlassSearchField({
@@ -35,6 +38,7 @@ class GlassSearchField extends StatefulWidget {
     this.glass,
     this.mode,
     this.semanticLabel,
+    this.materialBuilder,
   });
 
   /// The text; one is made when null.
@@ -65,6 +69,21 @@ class GlassSearchField extends StatefulWidget {
   /// Without it the placeholder is the label.
   final String? semanticLabel;
 
+  /// Replaces the Material path's [SearchBar], given the one the field
+  /// would build (wired to the field's controller, focus and callbacks).
+  /// Ignored on the glass paths.
+  ///
+  /// ```dart
+  /// materialBuilder: (context, bar) => SearchBar(
+  ///   controller: bar.controller,
+  ///   focusNode: bar.focusNode,
+  ///   hintText: bar.hintText,
+  ///   onChanged: bar.onChanged,
+  ///   elevation: const WidgetStatePropertyAll(0),
+  /// )
+  /// ```
+  final Widget Function(BuildContext context, SearchBar bar)? materialBuilder;
+
   @override
   State<GlassSearchField> createState() => _GlassSearchFieldState();
 }
@@ -94,19 +113,22 @@ class _GlassSearchFieldState extends State<GlassSearchField> {
     return GlassModeBuilder(
       mode: widget.mode,
       builder: (context, mode) => mode == EffectiveGlassMode.material
-          ? _labelled(
-              SearchBar(
-                controller: _controller,
-                focusNode: widget.focusNode,
-                hintText: placeholder,
-                autoFocus: widget.autofocus,
-                onChanged: widget.onChanged,
-                onSubmitted: widget.onSubmitted,
-                leading: const Icon(CupertinoIcons.search),
-              ),
-            )
+          ? _labelled(_materialBar(context, placeholder))
           : _glass(context, placeholder),
     );
+  }
+
+  Widget _materialBar(BuildContext context, String placeholder) {
+    final bar = SearchBar(
+      controller: _controller,
+      focusNode: widget.focusNode,
+      hintText: placeholder,
+      autoFocus: widget.autofocus,
+      onChanged: widget.onChanged,
+      onSubmitted: widget.onSubmitted,
+      leading: const Icon(CupertinoIcons.search),
+    );
+    return widget.materialBuilder?.call(context, bar) ?? bar;
   }
 
   /// [field] with [GlassSearchField.semanticLabel] merged into its node.

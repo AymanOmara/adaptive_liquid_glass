@@ -507,6 +507,10 @@ def more_components(d):
     return out
 
 
+# Distances above the lifted card, in points, where its shadow is read.
+SHADOW_AT = (1, 4, 8, 12, 16, 24, 32, 40)
+
+
 def last_components(d):
     """The components item 6 left unmeasured, from captures in `d`
     (build/reference/swiftui/; see capture_last.sh)."""
@@ -785,6 +789,25 @@ def last_components(d):
         cm[name] = {"card": [r(cx0), r(cy0), r(cx1), r(cy1)],
                     "menu": [r(mx.min() / S), r(my[0]), r((mx.max() + 1) / S), r(my[1])],
                     "dim": hexc(bg)}
+        if name != "contextmenuuikitwide":
+            # The lifted card's shadow: the dimmed page above the card's
+            # top edge, as a fraction of the page far from it.
+            lum = a.mean(axis=-1)
+            cm[name]["shadow"] = {
+                str(k): round(float(lum[int((cy0 - k) * S), int(cx * S)]
+                                    / lum[100, 100]), 3)
+                for k in SHADOW_AT}
+    # Near the safe area's edges: a card centred at 802 (past the home
+    # indicator) and a 200 x 600 card centred at 422.
+    for name, cy in (("contextmenuuikitbottom", 790), ("contextmenuuikittall", 300)):
+        if not (d / f"{name}.png").exists():
+            continue
+        a = load(d, f"{name}.png")
+        # The menu's shadow greys the card's top edge a little.
+        white = a.min(axis=-1) >= 230
+        cx0, cx1 = at_run(white[int(cy * S)], int(150 * S))
+        cy0, cy1 = at_run(white[:, int((cx0 + 30) * S)], int(cy * S))
+        cm[name] = {"card": [r(cx0), r(cy0), r(cx1), r(cy1)]}
     if cm:
         out["context_menu"] = cm
     # The page behind the menu over 100-pt black and white stripes

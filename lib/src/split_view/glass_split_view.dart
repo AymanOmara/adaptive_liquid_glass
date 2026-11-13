@@ -5,6 +5,7 @@ import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
 import '../liquid_glass.dart';
+import '../list/sidebar_column_scope.dart';
 import '../tab_bar/tab_sidebar_metrics.dart';
 import 'glass_split_view_column.dart';
 import 'glass_split_view_controller.dart';
@@ -47,11 +48,14 @@ class GlassSplitView extends StatefulWidget {
     required this.detail,
     this.content,
     this.controller,
-    this.sidebarWidth = TabSidebarMetrics.sidebarWidth,
+    this.sidebarWidth = _defaultSidebarWidth,
     this.contentWidth = 320,
     this.regularWidth = TabSidebarMetrics.regularWidth,
     this.mode,
   });
+
+  /// The sidebar panel width measured in the iPad reference.
+  static const double _defaultSidebarWidth = 320;
 
   /// The leading column, usually a list.
   final Widget sidebar;
@@ -65,7 +69,7 @@ class GlassSplitView extends StatefulWidget {
   /// Drives and reports the shown columns; the view makes its own when null.
   final GlassSplitViewController? controller;
 
-  /// The sidebar panel's width.
+  /// The sidebar panel's width. Defaults to 320 pt as measured on iPad.
   final double sidebarWidth;
 
   /// The content column's width.
@@ -122,10 +126,19 @@ class _GlassSplitViewState extends State<GlassSplitView> {
   ];
 
   Widget _column(GlassSplitViewColumn c) => switch (c) {
-    GlassSplitViewColumn.sidebar => widget.sidebar,
+    GlassSplitViewColumn.sidebar => _sidebar(regular: false),
     GlassSplitViewColumn.content => widget.content!,
     GlassSplitViewColumn.detail => widget.detail,
   };
+
+  /// The sidebar, telling a `GlassSidebarList` in it how it shows.
+  Widget _sidebar({required bool regular}) => SidebarColumnScope(
+    regular: regular,
+    next: widget.content != null
+        ? GlassSplitViewColumn.content
+        : GlassSplitViewColumn.detail,
+    child: widget.sidebar,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -167,6 +180,16 @@ class _GlassSplitViewState extends State<GlassSplitView> {
     final showContent = threeColumn && v != GlassSplitViewVisibility.detailOnly;
     final inset = material ? 0.0 : TabSidebarMetrics.sidebarInset;
     final sidebarSlot = widget.sidebarWidth + (material ? 0 : 2 * inset);
+    if (!material && !threeColumn) {
+      // iOS 26 floats the glass sidebar over the detail, which runs
+      // full width under it with its safe area pushed past the panel.
+      return _Overlaid(
+        visible: showSidebar,
+        width: sidebarSlot,
+        sidebar: _sidebarPanel(context, material, inset),
+        detail: widget.detail,
+      );
+    }
     return Row(
       children: [
         _Slot(
@@ -209,7 +232,7 @@ class _GlassSplitViewState extends State<GlassSplitView> {
               end: BorderSide(color: Theme.of(context).dividerColor),
             ),
           ),
-          child: widget.sidebar,
+          child: _sidebar(regular: true),
         ),
       );
     }
@@ -217,7 +240,8 @@ class _GlassSplitViewState extends State<GlassSplitView> {
     return Padding(
       padding: EdgeInsets.only(
         top: pad.top + inset,
-        bottom: pad.bottom + inset,
+        // The panel runs down over the home indicator, as UIKit's does.
+        bottom: inset,
         left: inset,
         right: inset,
       ),
@@ -236,7 +260,7 @@ class _GlassSplitViewState extends State<GlassSplitView> {
                 context: context,
                 removeTop: true,
                 removeBottom: true,
-                child: widget.sidebar,
+                child: _sidebar(regular: true),
               ),
             ),
           ),
@@ -333,5 +357,57 @@ class _Slot extends StatelessWidget {
       ),
     ),
     child: child,
+  );
+}
+
+/// The two-column glass layout: [detail] fills the view and [sidebar]
+/// slides in over its leading edge, with the detail's leading safe-area
+/// inset growing by the sidebar's slot so its content clears the panel.
+class _Overlaid extends StatelessWidget {
+  const _Overlaid({
+    required this.visible,
+    required this.width,
+    required this.sidebar,
+    required this.detail,
+  });
+
+  final bool visible;
+  final double width;
+  final Widget sidebar;
+  final Widget detail;
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    tween: Tween<double>(end: visible ? 1 : 0),
+    duration: TabSidebarMetrics.duration,
+    curve: _curve,
+    builder: (context, t, _) {
+      final mq = MediaQuery.of(context);
+      final rtl = Directionality.of(context) == TextDirection.rtl;
+      final extra = width * t;
+      EdgeInsets grow(EdgeInsets e) => rtl
+          ? e.copyWith(right: e.right + extra)
+          : e.copyWith(left: e.left + extra);
+      return Stack(
+        children: [
+          Positioned.fill(
+            child: MediaQuery(
+              data: mq.copyWith(
+                padding: grow(mq.padding),
+                viewPadding: grow(mq.viewPadding),
+              ),
+              child: detail,
+            ),
+          ),
+          PositionedDirectional(
+            start: -width * (1 - t),
+            top: 0,
+            bottom: 0,
+            width: width,
+            child: t == 0 ? Offstage(child: sidebar) : sidebar,
+          ),
+        ],
+      );
+    },
   );
 }

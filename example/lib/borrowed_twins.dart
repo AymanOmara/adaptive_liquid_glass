@@ -41,6 +41,8 @@ Widget? borrowedTwin(String scene) => switch (scene) {
   'navbarlone' => const _NavBarPhoto(dark: false, lone: true),
   'navbarpills' => const _NavBarPills(dark: false),
   'navbarpillsdark' => const _NavBarPills(dark: true),
+  'navbarpillsflat' => const _NavBarPills(dark: false, flat: true),
+  'navbarpillsflatdark' => const _NavBarPills(dark: true, flat: true),
   _ => null,
 };
 
@@ -642,9 +644,12 @@ class _Photo extends StatelessWidget {
 /// `-controls navbarpills(dark)`: a compose/ellipsis group, a spacer, a
 /// lone share pill, a spacer and a bare avatar item over `photo.png`.
 class _NavBarPills extends StatelessWidget {
-  const _NavBarPills({required this.dark});
+  const _NavBarPills({required this.dark, this.flat = false});
 
   final bool dark;
+
+  /// A flat mid-grey page instead of the photo, to read the capsules' tone.
+  final bool flat;
 
   @override
   Widget build(BuildContext context) {
@@ -671,7 +676,8 @@ class _NavBarPills extends StatelessWidget {
           ),
         ],
       ),
-      body: const _Photo(),
+      backgroundColor: flat ? const Color(0xFF808080) : null,
+      body: flat ? const SizedBox.expand() : const _Photo(),
     );
     return dark ? _dark(context, scaffold) : scaffold;
   }

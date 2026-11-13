@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
+        ButtonStyle,
+        MaterialTapTargetSize,
+        VisualDensity,
         Divider,
         IconButton,
         Icons,
@@ -17,6 +20,7 @@ import '../core/effective_glass_mode.dart';
 import '../core/glass_mode_builder.dart';
 import '../core/glass_render_mode.dart';
 import 'glass_menu_anchor.dart';
+import 'glass_menu_placement.dart';
 import 'glass_menu_controller.dart';
 import 'glass_menu_controller_host.dart';
 import 'glass_menu_item.dart';
@@ -46,6 +50,10 @@ part 'material_menu.dart';
 ///
 /// With [primaryAction] it is SwiftUI's `Menu(primaryAction:)`: a tap runs
 /// the action and a long-press opens the menu.
+///
+/// On Android the button is a Material [IconButton] (48 pt with its tap
+/// target); [materialStyle] restyles it, e.g. [compactMaterialStyle] for a
+/// 32-pt host such as a list row.
 class GlassMenuButton extends StatelessWidget {
   /// Creates a menu button.
   const GlassMenuButton({
@@ -56,7 +64,21 @@ class GlassMenuButton extends StatelessWidget {
     this.controller,
     this.mode,
     this.primaryAction,
+    this.materialStyle,
+    this.placement = GlassMenuPlacement.corner,
   });
+
+  /// A Material [IconButton] style for 32-pt hosts: a 32-pt button with an
+  /// 18-pt icon, no padding and a shrink-wrapped tap target.
+  static const ButtonStyle compactMaterialStyle = ButtonStyle(
+    minimumSize: WidgetStatePropertyAll(Size.square(32)),
+    maximumSize: WidgetStatePropertyAll(Size.square(32)),
+    fixedSize: WidgetStatePropertyAll(Size.square(32)),
+    padding: WidgetStatePropertyAll(EdgeInsets.zero),
+    iconSize: WidgetStatePropertyAll(18),
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    visualDensity: VisualDensity.compact,
+  );
 
   /// The button's icon; defaults to an ellipsis.
   final IconData icon;
@@ -78,6 +100,13 @@ class GlassMenuButton extends StatelessWidget {
   /// opens on a long-press. Null: a tap opens the menu.
   final VoidCallback? primaryAction;
 
+  /// The Material path's [IconButton] style, merged over the theme's (e.g.
+  /// [compactMaterialStyle]). Ignored on the glass paths.
+  final ButtonStyle? materialStyle;
+
+  /// Where the menu opens relative to this button.
+  final GlassMenuPlacement placement;
+
   @override
   Widget build(BuildContext context) => GlassModeBuilder(
     mode: mode,
@@ -88,11 +117,13 @@ class GlassMenuButton extends StatelessWidget {
             items: items,
             controller: controller,
             primaryAction: primaryAction,
+            style: materialStyle,
           )
         : GlassMenuAnchor(
             items: items,
             mode: mode,
             controller: controller,
+            placement: placement,
             builder: (context, open) {
               final button = GlassButton.icon(
                 onPressed: primaryAction ?? open,

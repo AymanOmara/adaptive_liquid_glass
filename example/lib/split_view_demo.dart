@@ -29,8 +29,12 @@ class SplitViewDemo extends StatelessWidget {
   const SplitViewDemo({super.key});
 
   @override
-  Widget build(BuildContext context) =>
-      MaterialApp(debugShowCheckedModeBanner: false, home: const _Home());
+  Widget build(BuildContext context) => MaterialApp(
+    debugShowCheckedModeBanner: false,
+    theme: ThemeData(),
+    darkTheme: ThemeData(brightness: Brightness.dark),
+    home: const _Home(),
+  );
 }
 
 class _Home extends StatefulWidget {
@@ -56,32 +60,38 @@ class _HomeState extends State<_Home> {
   }
 
   Widget _sidebar() => Builder(
-    builder: (context) => ListView(
-      padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
-      children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: Text(
-            'Mailboxes',
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-          ),
+    builder: (context) => Material(
+      type: MaterialType.transparency,
+      child: DefaultTextStyle(
+        style: Theme.of(context).textTheme.bodyMedium!,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Text(
+                'Mailboxes',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              ),
+            ),
+            for (var i = 0; i < _boxes.length; i++)
+              GlassListTile(
+                leading: Icon(_boxes[i].$2),
+                title: Text(_boxes[i].$1),
+                value: _boxes[i].$3 == 0 ? null : '${_boxes[i].$3}',
+                chevron: false,
+                onTap: () {
+                  setState(() => _box = i);
+                  GlassSplitView.of(context).showColumn(
+                    _columns == 3
+                        ? GlassSplitViewColumn.content
+                        : GlassSplitViewColumn.detail,
+                  );
+                },
+              ),
+          ],
         ),
-        for (var i = 0; i < _boxes.length; i++)
-          GlassListTile(
-            leading: Icon(_boxes[i].$2),
-            title: Text(_boxes[i].$1),
-            value: _boxes[i].$3 == 0 ? null : '${_boxes[i].$3}',
-            chevron: false,
-            onTap: () {
-              setState(() => _box = i);
-              GlassSplitView.of(context).showColumn(
-                _columns == 3
-                    ? GlassSplitViewColumn.content
-                    : GlassSplitViewColumn.detail,
-              );
-            },
-          ),
-      ],
+      ),
     ),
   );
 
@@ -154,13 +164,16 @@ class _HomeState extends State<_Home> {
   );
 
   @override
-  Widget build(BuildContext context) => GlassSplitView(
-    controller: _controller,
-    mode: const String.fromEnvironment('MODE') == 'material'
-        ? GlassRenderMode.material
-        : null,
-    sidebar: _sidebar(),
-    content: _columns == 3 ? _content() : null,
-    detail: _detail(),
+  Widget build(BuildContext context) => ColoredBox(
+    color: CupertinoColors.systemGroupedBackground,
+    child: GlassSplitView(
+      controller: _controller,
+      mode: const String.fromEnvironment('MODE') == 'material'
+          ? GlassRenderMode.material
+          : null,
+      sidebar: _sidebar(),
+      content: _columns == 3 ? _content() : null,
+      detail: _detail(),
+    ),
   );
 }

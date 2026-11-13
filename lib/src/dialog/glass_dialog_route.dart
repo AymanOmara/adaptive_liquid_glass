@@ -16,6 +16,7 @@ class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
     required this.confirmation,
     this.title,
     this.message,
+    this.messageSpan,
     this.icon,
     this.content,
     this.platformOrder = false,
@@ -30,6 +31,9 @@ class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
 
   /// See [GlassDialogCard.message].
   final String? message;
+
+  /// See [GlassDialogCard.messageSpan].
+  final InlineSpan? messageSpan;
 
   /// See [GlassDialogCard.icon].
   final Widget? icon;
@@ -88,6 +92,7 @@ class GlassDialogRoute extends PopupRoute<GlassDialogAction> {
           child: GlassDialogCard(
             title: title,
             message: message,
+            messageSpan: messageSpan,
             icon: icon,
             content: content,
             platformOrder: platformOrder,

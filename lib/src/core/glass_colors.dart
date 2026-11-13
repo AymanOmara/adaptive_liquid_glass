@@ -206,6 +206,14 @@ abstract final class GlassColors {
         darkColor: Color(0xF52C2C2E),
       );
 
+  /// The rounded square behind a menu palette's chosen swatch (measured,
+  /// iOS 26.4: 231 on the light menu's 250; dark estimated).
+  static const CupertinoDynamicColor menuPaletteSelection =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0x14000000),
+        darkColor: Color(0x24FFFFFF),
+      );
+
   /// The shadow under an open submenu's card (estimated).
   static const Color menuSubmenuShadow = Color(0x26000000);
 
@@ -273,6 +281,14 @@ abstract final class GlassColors {
   /// A plain list's page (iOS's systemBackground).
   static const CupertinoDynamicColor plainListBackground =
       CupertinoColors.systemBackground;
+
+  /// The hairline between a plain list's rows (both measured, iOS 26.4:
+  /// it is lighter in dark mode than [listSeparator] on a grouped cell).
+  static const CupertinoDynamicColor plainListSeparator =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFFE8E8E8),
+        darkColor: Color(0xFF2A2A2C),
+      );
 
   /// A sidebar list's page (iOS's systemGroupedBackground).
   static const CupertinoDynamicColor sidebarListBackground =

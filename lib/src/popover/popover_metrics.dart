@@ -1,3 +1,5 @@
+import 'package:flutter/painting.dart';
+
 /// iOS 26's popover, measured from SwiftUI's `.popover` (kept a popover on
 /// iPhone with `.presentationCompactAdaptation(.popover)`) and the compact
 /// date picker's calendar on iPhone 17 Pro / iOS 26.4. It opens over its
@@ -9,6 +11,11 @@ abstract final class PopoverMetrics {
   /// The bubble's own padding above and below its content (measured: 16
   /// pt of content padding makes a 68-pt bubble for 17-pt text).
   static const double verticalInset = 8;
+
+  /// The weight of plain text in the bubble: semibold, as SwiftUI's
+  /// iPhone popover draws a plain `Text` (ink ~1.28x regular in the
+  /// popover-iphone-swiftui capture).
+  static const FontWeight textWeight = FontWeight.w600;
 
   /// The closest the bubble comes to the screen's edges.
   static const double margin = 10;

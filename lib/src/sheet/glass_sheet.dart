@@ -22,6 +22,10 @@ import 'sheet_metrics.dart';
 /// floating in from the screen's edges. Towards 1 it becomes the large
 /// detent's sheet: edge to edge, opaque, with the screen's corners at the
 /// bottom.
+///
+/// A glass sheet samples the page behind it: whatever is under a partial
+/// detent shows, blurred, through the sheet's content. Set
+/// [contentSurface] for an opaque sheet at every detent.
 class GlassSheet extends StatelessWidget {
   /// Creates a sheet surface.
   const GlassSheet({
@@ -33,6 +37,7 @@ class GlassSheet extends StatelessWidget {
     this.expansion = 0,
     this.glass,
     this.mode,
+    this.contentSurface,
   });
 
   /// The sheet's content.
@@ -57,6 +62,12 @@ class GlassSheet extends StatelessWidget {
   /// The rendering path; see [GlassRenderMode].
   final GlassRenderMode? mode;
 
+  /// An opaque colour behind the content at every detent. A glass sheet
+  /// samples the page behind it, so at a partial detent the page bleeds
+  /// through its content; with this set the sheet is opaque, as at the
+  /// large detent. Null keeps the glass.
+  final Color? contentSurface;
+
   @override
   Widget build(BuildContext context) {
     final t = expansion.clamp(0.0, 1.0);
@@ -65,7 +76,7 @@ class GlassSheet extends StatelessWidget {
     // The glass keeps one radius: it ends at the large sheet's bottom
     // radius, so the opaque surface (top 42, bottom 62) always covers it.
     final glassRadius = lerpDouble(radius, SheetMetrics.largeBottomRadius, t)!;
-    final opaque = (t * 2).clamp(0.0, 1.0);
+    final opaque = contentSurface != null ? 1.0 : (t * 2).clamp(0.0, 1.0);
     final opaqueShape = RoundedSuperellipseBorder(
       borderRadius: BorderRadius.vertical(
         top: Radius.circular(
@@ -130,7 +141,7 @@ class GlassSheet extends StatelessWidget {
     required bool shader,
   }) {
     final surface = CupertinoDynamicColor.resolve(
-      GlassColors.sheetBackground,
+      contentSurface ?? GlassColors.sheetBackground,
       context,
     );
     return Padding(

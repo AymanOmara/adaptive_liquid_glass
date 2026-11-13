@@ -51,6 +51,11 @@ import 'glass_sheet_route.dart';
 /// there too. [cornerRadius] rounds its top corners; its drag handle
 /// follows `BottomSheetThemeData.dragHandleSize` (Material 3's 32 x 4),
 /// so [grabberSize] does not apply there.
+///
+/// A glass sheet samples the page behind it, so at a partial detent the
+/// page shows, blurred, through the content. [contentSurface] makes the
+/// sheet opaque in that colour at every detent (on the Material path it is
+/// the sheet's background colour).
 Future<T?> showGlassSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
@@ -64,6 +69,7 @@ Future<T?> showGlassSheet<T>({
   double? cornerRadius,
   Size? grabberSize,
   GlassRenderMode? mode,
+  Color? contentSurface,
 }) {
   assert(
     maxHeightFactor == null || (maxHeightFactor > 0 && maxHeightFactor <= 1),
@@ -101,6 +107,7 @@ Future<T?> showGlassSheet<T>({
                 top: Radius.circular(cornerRadius),
               ),
             ),
+      backgroundColor: contentSurface,
       useSafeArea: true,
     );
   }
@@ -117,6 +124,7 @@ Future<T?> showGlassSheet<T>({
       enableDrag: enableDrag,
       maxHeightFactor: maxHeightFactor,
       mode: mode,
+      contentSurface: contentSurface,
       capturedThemes: InheritedTheme.capture(
         from: context,
         to: navigator.context,

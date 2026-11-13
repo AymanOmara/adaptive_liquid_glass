@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../button/glass_button_role.dart';
 import 'glass_dialog_action.dart';
 
 /// A Material dialog button's label for [action]: its label, and its
@@ -24,4 +25,18 @@ Widget materialDialogActionLabel(
       ),
     ],
   );
+}
+
+/// A Material dialog button's style for [action]: its tint, or the
+/// theme's error colour for a destructive action; null otherwise.
+ButtonStyle? materialDialogActionStyle(
+  BuildContext context,
+  GlassDialogAction action,
+) {
+  final colour =
+      action.tint ??
+      (action.role == GlassButtonRole.destructive
+          ? Theme.of(context).colorScheme.error
+          : null);
+  return colour == null ? null : TextButton.styleFrom(foregroundColor: colour);
 }

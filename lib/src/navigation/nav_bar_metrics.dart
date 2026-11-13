@@ -92,8 +92,9 @@ abstract final class NavBarMetrics {
   /// The inline subtitle under the inline title.
   static const double subtitleFontSize = 12;
 
-  /// The subtitle under a large title.
-  static const double largeSubtitleFontSize = 15;
+  /// The subtitle under a large title: 11 pt, from the text's width in
+  /// the gapsubtitle capture.
+  static const double largeSubtitleFontSize = 11;
 
   /// Extra height a large-title subtitle adds below the large title.
   static const double largeSubtitleHeight = 20;

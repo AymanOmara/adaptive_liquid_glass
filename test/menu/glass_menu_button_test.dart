@@ -1,5 +1,6 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/menu/glass_menu_row.dart';
+import 'package:adaptive_liquid_glass/src/menu/menu_metrics.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/cupertino.dart';
@@ -8,33 +9,34 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../api/hosts.dart';
 
-Widget _app(List<String> picks, {Alignment at = Alignment.topRight}) =>
-    MaterialApp(
-      home: Scaffold(
-        body: Align(
-          alignment: at,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: GlassMenuButton(
-              icon: CupertinoIcons.ellipsis,
-              semanticLabel: 'More',
-              items: [
-                GlassMenuItem(
-                  label: 'Copy',
-                  onSelected: () => picks.add('copy'),
-                ),
-                GlassMenuItem(
-                  label: 'Delete',
-                  icon: CupertinoIcons.trash,
-                  destructive: true,
-                  onSelected: () => picks.add('delete'),
-                ),
-              ],
+Widget _app(
+  List<String> picks, {
+  Alignment at = Alignment.topRight,
+  GlassMenuPlacement placement = GlassMenuPlacement.corner,
+}) => MaterialApp(
+  home: Scaffold(
+    body: Align(
+      alignment: at,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: GlassMenuButton(
+          placement: placement,
+          icon: CupertinoIcons.ellipsis,
+          semanticLabel: 'More',
+          items: [
+            GlassMenuItem(label: 'Copy', onSelected: () => picks.add('copy')),
+            GlassMenuItem(
+              label: 'Delete',
+              icon: CupertinoIcons.trash,
+              destructive: true,
+              onSelected: () => picks.add('delete'),
             ),
-          ),
+          ],
         ),
       ),
-    );
+    ),
+  ),
+);
 
 void main() {
   setUp(() => GlassProgram.instance.debugReset(skipLoad: true));
@@ -60,6 +62,54 @@ void main() {
     await t.pumpAndSettle();
     expect(picks, ['delete']);
     expect(find.text('Copy'), findsNothing);
+  }, variant: ios);
+
+  testWidgets('centred: centred on the button, top just above its centre', (
+    t,
+  ) async {
+    shaderEnv();
+    final picks = <String>[];
+    await t.pumpWidget(
+      _app(
+        picks,
+        at: Alignment.topCenter,
+        placement: GlassMenuPlacement.centred,
+      ),
+    );
+    final button = t.getRect(find.bySemanticsLabel('More'));
+    await t.tap(find.bySemanticsLabel('More'));
+    await t.pumpAndSettle();
+    final menu = t.getRect(
+      find.ancestor(of: find.text('Copy'), matching: find.byType(LiquidGlass)),
+    );
+    expect(menu.center.dx, moreOrLessEquals(button.center.dx, epsilon: 0.5));
+    expect(
+      menu.top,
+      moreOrLessEquals(
+        button.center.dy - MenuMetrics.pickerOffset,
+        epsilon: .5,
+      ),
+    );
+    await t.tap(find.text('Copy'));
+    await t.pumpAndSettle();
+    expect(picks, ['copy']);
+  }, variant: ios);
+
+  testWidgets('centred: near a side it stays inside the screen margin', (
+    t,
+  ) async {
+    shaderEnv();
+    await t.pumpWidget(_app([], placement: GlassMenuPlacement.centred));
+    await t.tap(find.bySemanticsLabel('More'));
+    await t.pumpAndSettle();
+    final menu = t.getRect(
+      find.ancestor(of: find.text('Copy'), matching: find.byType(LiquidGlass)),
+    );
+    final screen = t.view.physicalSize / t.view.devicePixelRatio;
+    expect(
+      menu.right,
+      moreOrLessEquals(screen.width - MenuMetrics.screenMargin, epsilon: .5),
+    );
   }, variant: ios);
 
   testWidgets('near the bottom it opens upwards from the bottom corner', (

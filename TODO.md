@@ -212,13 +212,17 @@ capture; Android fonts, haptics, back gestures and physics stay platform-native.
 9- more SwiftUI components (docs/superpowers/notes/component-gap.md):
   ~~keyboard toolbar~~ (done: `GlassKeyboardToolbar`), ~~zoom
   transitions~~ (done: `pushGlassZoom`), ~~TipKit tips~~ (done).
-  Gap list re-checked 2026-11-08: component-gap.md is stale (label, links,
+  Gap list re-checked 2026-11-08: component-gap.md was stale (label, links,
   gauge, colour picker, wheel, picker styles, empty state, cover,
-  disclosure, refresh, tab minimize/sidebar are done). Next, ranked:
+  disclosure, refresh, tab minimize/sidebar are done). The ranking at that
+  point was:
   menu sections/submenus/primaryAction; separate nav-bar pills
   (ToolbarItemGroup, sharedBackgroundVisibility); navigationSubtitle;
   ControlGroup; scroll edge hard/hidden;
   NavigationSplitView (large).
+  2026-11-13: all ranked gaps are implemented. iOS 26.4 comparison captures,
+  date-wheel hit trials and scroll-indicator geometry/timing are recorded in
+  `docs/superpowers/notes/component-gap.md` and its linked measurement notes.
   Candidate from app use (2026-10-10): a sliver pinned under the nav bar
   (the app's PinnedBelowBarSliver). Kept app-side for now: sticky bottom
   action bar, stage tab strip with counts.

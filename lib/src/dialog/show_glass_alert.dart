@@ -41,6 +41,14 @@ import 'material_dialog_action_label.dart';
 /// its place), across the buttons' width: a text field, a picker. An
 /// action's `subtitle` is a second line under its label.
 ///
+/// [messageSpan] is a rich message ([TextSpan]s with bold runs, links)
+/// in [message]'s place: it takes the alert's message style and spacing,
+/// and any style in the span merges over them. Pass one or the other.
+///
+/// [useRootNavigator] (true by default, as [showDialog]'s) pushes the
+/// alert on the root [Navigator], above a tab bar or any shell around a
+/// nested navigator; false pushes it on the nearest one.
+///
 /// [barrierDismissible] lets a tap outside close the alert, completing
 /// with null; null keeps each path's default (iOS's alert stays, as on
 /// iOS; Material's [AlertDialog] closes). [actionOrder] keeps the
@@ -50,16 +58,22 @@ Future<GlassDialogAction?> showGlassAlert({
   required BuildContext context,
   required String title,
   String? message,
+  InlineSpan? messageSpan,
   List<GlassDialogAction>? actions,
   Widget? content,
   Widget? icon,
   bool? barrierDismissible,
   GlassAlertActionOrder actionOrder = GlassAlertActionOrder.given,
+  bool useRootNavigator = true,
   GlassRenderMode? mode,
 }) async {
   assert(
     actions == null || actions.isNotEmpty,
     'An alert needs at least one action.',
+  );
+  assert(
+    message == null || messageSpan == null,
+    'Pass message or messageSpan, not both.',
   );
   final l10n =
       Localizations.of<MaterialLocalizations>(context, MaterialLocalizations) ??
@@ -83,41 +97,44 @@ Future<GlassDialogAction?> showGlassAlert({
               if (a.role != GlassButtonRole.cancel) a,
           ]
         : buttons;
+    final Widget? text = messageSpan != null
+        ? Text.rich(messageSpan)
+        : message == null
+        ? null
+        : Text(message);
     chosen = await showDialog<GlassDialogAction>(
       context: context,
+      useRootNavigator: useRootNavigator,
       barrierDismissible: barrierDismissible ?? true,
       builder: (context) => AlertDialog(
         // Larger text scrolls rather than overflowing the screen.
         scrollable: MediaQuery.textScalerOf(context).scale(1) > 1,
         icon: icon,
         title: Text(title),
-        content: message != null && content != null
+        content: text != null && content != null
             ? Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [Text(message), const SizedBox(height: 16), content],
+                children: [text, const SizedBox(height: 16), content],
               )
-            : content ?? (message == null ? null : Text(message)),
+            : content ?? text,
         actions: [
           for (final a in ordered)
             TextButton(
               onPressed: () => Navigator.of(context).pop(a),
-              style: a.role == GlassButtonRole.destructive
-                  ? TextButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.error,
-                    )
-                  : null,
+              style: materialDialogActionStyle(context, a),
               child: materialDialogActionLabel(context, a),
             ),
         ],
       ),
     );
   } else {
-    final navigator = Navigator.of(context);
+    final navigator = Navigator.of(context, rootNavigator: useRootNavigator);
     chosen = await navigator.push(
       GlassDialogRoute(
         title: title,
         message: message,
+        messageSpan: messageSpan,
         icon: icon,
         content: content,
         actions: buttons,

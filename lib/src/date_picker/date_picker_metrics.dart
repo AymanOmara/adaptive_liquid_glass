@@ -37,6 +37,41 @@ abstract final class DatePickerMetrics {
   /// The month header's size (semibold).
   static const double headerFontSize = 17;
 
+  /// The inline (`.graphical`) calendar's inset above its header
+  /// (measured, `-controls calendargraphicaltime`: the inline calendar
+  /// fills its width, header 16 pt below its top).
+  static const double inlineTop = 16;
+
+  /// The inline calendar's header height (measured: the month button and
+  /// the arrows are 37.67 pt tall).
+  static const double inlineHeaderHeight = 37.67;
+
+  /// The inset of the inline header's month label and of the arrows' ink
+  /// from the calendar's sides (measured: 8 at both ends).
+  static const double inlineInset = 8;
+
+  /// An inline month arrow's tap width (measured: two adjacent 43.33-pt
+  /// buttons, each chevron centred).
+  static const double inlineArrowWidth = 43.33;
+
+  /// The gap between the inline header and the weekday row (measured).
+  static const double inlineWeekdayGap = 16;
+
+  /// The inline weekday row's height (measured).
+  static const double inlineWeekdayHeight = 17.67;
+
+  /// The distance between week rows in the inline calendar (measured: 44
+  /// at width 370; the columns split the full width in seven).
+  static const double inlineRow = 44;
+
+  /// The inline calendar's day circle (measured: 44).
+  static const double inlineSelection = 44;
+
+  /// The opacity of the tinted circle behind a selected day that is not
+  /// today (measured: system blue at 12%, the number in blue; today, when
+  /// selected, takes the solid circle and white number).
+  static const double selectedTintAlpha = 0.12;
+
   /// The inset of `showGlassDatePicker`'s sheet header and content from
   /// the sheet's edges (estimated).
   static const double sheetPadding = 16;

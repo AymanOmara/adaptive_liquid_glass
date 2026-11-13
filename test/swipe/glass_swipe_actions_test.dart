@@ -86,6 +86,8 @@ void main() {
   setUp(() => GlassProgram.instance.debugReset(skipLoad: true));
   tearDown(() => GlassPlatform.instance.debugReset());
 
+  _noFallbackUnderline();
+
   testWidgets('a short swipe left opens the trailing actions', (t) async {
     shaderEnv();
     final log = <String>[];
@@ -765,4 +767,45 @@ void main() {
       expect(_shift(t, 'A'), 0);
     }, variant: ios);
   });
+}
+
+void _noFallbackUnderline() {
+  for (final stacked in [false, true]) {
+    testWidgets('label has no fallback underline (stacked: $stacked)', (
+      t,
+    ) async {
+      // No MaterialApp/Scaffold: nothing above provides a text style.
+      await t.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Center(
+            child: SwipeActionButton(
+              action: GlassSwipeAction(
+                icon: CupertinoIcons.flag_fill,
+                label: 'Flag',
+                onPressed: () {},
+              ),
+              onPressed: () {},
+              stacked: stacked,
+              width: 80,
+              naturalWidth: 80,
+              height: 40,
+              rowOnLeft: true,
+            ),
+          ),
+        ),
+      );
+      final text = t.widget<RichText>(
+        find.descendant(
+          of: find.byType(SwipeActionButton),
+          matching: find.byWidgetPredicate(
+            (w) => w is RichText && w.text.toPlainText() == 'Flag',
+          ),
+        ),
+      );
+      final style = text.text.style!;
+      expect(style.decoration, TextDecoration.none);
+      expect(style.fontSize, SwipeMetrics.label.fontSize);
+    });
+  }
 }

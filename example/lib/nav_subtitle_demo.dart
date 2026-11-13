@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 
 import 'android_glass_toggle.dart';
+import 'launch.dart';
 
 // `navigationSubtitle` and the scroll edge styles. Own entry point:
 // `flutter run -t lib/nav_subtitle_demo.dart --dart-define=PAGE=large`
@@ -12,8 +13,10 @@ import 'android_glass_toggle.dart';
 // `hidden`.
 Future<void> main() async {
   await AdaptiveLiquidGlass.initialize(mode: GlassRenderMode.shader);
+  final args = await LaunchArgs.read();
   // `SIMCTL_CHILD_PAGE=hard xcrun simctl launch ...` also picks the page.
   final page =
+      args.twin ??
       Platform.environment['PAGE'] ??
       const String.fromEnvironment('PAGE', defaultValue: 'large');
   runApp(

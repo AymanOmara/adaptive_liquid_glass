@@ -1,4 +1,5 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/context_menu/context_menu_metrics.dart';
 import 'package:adaptive_liquid_glass/src/menu/glass_menu_panel.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
@@ -54,6 +55,36 @@ void main() {
     await t.pumpAndSettle();
     expect(find.byType(GlassMenuPanel), findsNothing);
     expect(log, ['delete']);
+  }, variant: ios);
+
+  testWidgets('the menu is UIKit\'s 250 wide; the lifted item casts '
+      'its shadow', (t) async {
+    shaderEnv();
+    await t.pumpWidget(_app([]));
+    await t.longPress(find.text('Card'));
+    await t.pumpAndSettle();
+    expect(
+      t.getSize(find.byType(GlassMenuPanel)).width,
+      ContextMenuMetrics.menuWidth,
+    );
+    // Black under the item's bounds, at full strength once lifted, its
+    // blur in screen points whatever the item's lift.
+    final shadows = t
+        .widgetList<DecoratedBox>(find.byType(DecoratedBox))
+        .map((b) => b.decoration)
+        .whereType<BoxDecoration>()
+        .expand((d) => d.boxShadow ?? const <BoxShadow>[])
+        .where(
+          (s) =>
+              (s.color.a - ContextMenuMetrics.previewShadowColor.a).abs() <
+              0.01,
+        );
+    expect(shadows, hasLength(1));
+    expect(shadows.single.offset, Offset.zero);
+    expect(
+      ContextMenuMetrics.previewShadow(scale: 1.13).blurSigma * 1.13,
+      moreOrLessEquals(ContextMenuMetrics.previewShadowSigma, epsilon: 1e-6),
+    );
   }, variant: ios);
 
   testWidgets('the page behind is dimmed, not blurred, as UIKit', (t) async {

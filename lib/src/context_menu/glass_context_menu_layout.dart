@@ -18,23 +18,32 @@ class GlassContextMenuLayout extends SingleChildLayoutDelegate {
 
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
-      constraints.loosen();
+      constraints.loosen().copyWith(
+        maxWidth: (constraints.maxWidth - 2 * ContextMenuMetrics.margin).clamp(
+          0.0,
+          double.infinity,
+        ),
+      );
 
   @override
   Offset getPositionForChild(Size size, Size childSize) {
     const m = ContextMenuMetrics.margin;
-    final x = (preview.center.dx - childSize.width / 2).clamp(
-      m,
-      size.width - m - childSize.width,
-    );
+    final maxX = size.width - m - childSize.width;
+    final x = maxX < m
+        ? (size.width - childSize.width) / 2
+        : (preview.center.dx - childSize.width / 2).clamp(m, maxX);
+    // The menu keeps the lifted item's distance from the safe area's top
+    // and bottom.
+    const v = ContextMenuMetrics.safeMargin;
+    final minY = (padding.top + v).clamp(0.0, size.height);
+    final maxY = size.height - padding.bottom - v - childSize.height;
     final below = preview.bottom + ContextMenuMetrics.gap;
-    final fits = below + childSize.height <= size.height - padding.bottom - m;
-    final y = fits
+    final above = preview.top - ContextMenuMetrics.gap - childSize.height;
+    final y = below <= maxY
         ? below
-        : (preview.top - ContextMenuMetrics.gap - childSize.height).clamp(
-            padding.top + m,
-            size.height,
-          );
+        : above >= minY
+        ? above
+        : maxY.clamp(minY, size.height);
     return Offset(x, y);
   }
 

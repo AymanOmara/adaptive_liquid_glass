@@ -80,7 +80,7 @@ documented there), then score with
 
 ```yaml
 dependencies:
-  adaptive_liquid_glass: ^0.6.0
+  adaptive_liquid_glass: ^0.7.0
 ```
 
 ```dart
@@ -381,6 +381,8 @@ Android. All are in the example app's Gallery (`example/lib/gallery.dart`,
 | `GlassSearchField` | Search capsule with magnifier and clear button | `SearchBar` |
 | `GlassSearchable`, `GlassSearchController`, `GlassSearchSuggestion` | `.searchable`: field with a springing Cancel, suggestions listed in place of the content, scopes; bottom or navigation-bar placement | `SearchAnchor` |
 | `GlassListSection`, `GlassListTile` | Inset-grouped list, like Settings; rows with leading/title/value/trailing | `Card` of `ListTile`s |
+| `GlassSidebarList`, `GlassSidebarSection`, `GlassSidebarItem` | SwiftUI's `.listStyle(.sidebar)`: collapsible sections of icon rows with a selection; platters on iPhone, a rounded fill in an iPad split view's sidebar | `ListTile`s under expandable headers |
+| `GlassPlainList`, `GlassPlainListSection` | SwiftUI's `.listStyle(.plain)`: full-width rows, inset hairlines, sticky headers | `ListTile`s with dividers and subheaders |
 | `GlassDisclosureGroup` | SwiftUI's DisclosureGroup: a list row with a rotating chevron that expands its rows | `ExpansionTile` |
 | `GlassEmptyState` (`+ .search`) | ContentUnavailableView: icon, title, description, actions | plain centred column |
 | `GlassTipView`, `GlassPopoverTip`, `GlassTipController` | TipKit's `TipView` and `.popoverTip`: image, title, message, actions, close; shown once | Material 3 card |
@@ -571,6 +573,16 @@ LiquidGlass(
   child: const Text('Tinted'),
 )
 ```
+
+`Glass.regular.materialSurface(color)` colours only the Android (Material)
+surface, for tinted chrome there while iOS keeps its glass.
+`GlassSurface.colorOf(context, glass: ..., backdrop: ...)` returns the
+opaque colour a glass resolves to, for contrast checks on labels drawn
+over it (exact on Material, an estimate over `backdrop` on glass).
+
+`GlassScrollEdge` is the bars' scroll edge effect on its own: a blurred
+fade at the `top` or `bottom` (`edge: GlassScrollEdgePosition.bottom`) in
+`color` (the page background by default), for custom bars.
 
 ### Tab bar
 
@@ -898,7 +910,24 @@ optional `prefix` and `suffix`, a clear button, an `errorText` under the
 field, and a `semanticLabel` for screen readers. `.password` obscures the
 text and adds an eye button that shows and hides it. Put the search field
 in a `GlassBottomAccessory` slot or a toolbar for iOS 26's bottom search.
-On Android they are Material 3's `TextField` and `SearchBar`.
+On Android they are Material 3's `TextField` and `SearchBar` (styled by
+`InputDecorationTheme` / `SearchBarTheme`); `materialBuilder` wraps or
+replaces that widget, as `GlassNavigationBar`'s does.
+
+Geometry: `contentPadding` replaces the measured insets (single- and
+multi-line) and `minHeight` the 48-pt height (`TextFieldMetrics`), so a
+52-pt composer with 44-pt buttons or a 38-pt form row is reachable.
+`textDirection`, `textAlign` and `style` reach the text only; the capsule
+follows the app's `Directionality`.
+
+```dart
+GlassTextField(
+  minHeight: 52,
+  contentPadding: const EdgeInsetsDirectional.fromSTEB(16, 4, 4, 4),
+  textDirection: TextDirection.ltr, // e.g. a code field in an RTL app
+  suffix: sendButton, // 44 x 44
+)
+```
 
 For SwiftUI's `.searchable` presentation wrap the screen's content (a
 `GlassScaffold` body) in `GlassSearchable`: tapping the field springs a
@@ -953,6 +982,79 @@ of `ListTile`s.
 
 `backgroundColor` and `separatorColor` replace the iOS system platter and
 hairline colours (the background is ignored when `glass` is set).
+
+### Sidebar list
+
+```dart
+GlassSplitView(
+  sidebar: GlassSidebarList<String>(
+    selection: selection,
+    onSelectionChanged: (v) => setState(() => selection = v),
+    sections: const [
+      GlassSidebarSection(
+        header: Text('Library'),
+        items: [
+          GlassSidebarItem(
+            value: 'Inbox',
+            title: Text('Inbox'),
+            icon: Icon(CupertinoIcons.tray),
+            badge: '12',
+          ),
+          GlassSidebarItem(value: 'Sent', title: Text('Sent')),
+        ],
+      ),
+    ],
+  ),
+  detail: MailboxPage(selection),
+)
+```
+
+SwiftUI's `List { Section(isExpanded:) … }.listStyle(.sidebar)`,
+measured on iOS 26.4. Each header carries a disclosure chevron and
+collapses its rows with a spring (at once under Reduce Motion); pass
+`isExpanded` and `onExpansionChanged` to control it. On iPhone the rows
+sit on inset-grouped platters under 17-pt semibold headers, the selected
+row filled; in a side-by-side `GlassSplitView` sidebar the rows sit on
+the column's glass with a rounded selection, and at compact width a
+selection pushes the split view's next column. `layout` forces either
+form. On Android: `ListTile`s under expandable headers.
+
+### Plain list
+
+```dart
+GlassPlainList(
+  sections: [
+    GlassPlainListSection(
+      header: const Text('Mailboxes'),
+      children: [
+        for (final box in boxes)
+          GlassSwipeActions(
+            key: ValueKey(box),
+            trailing: [
+              GlassSwipeAction(
+                icon: CupertinoIcons.trash,
+                label: 'Delete',
+                destructive: true,
+                onPressed: () => delete(box),
+              ),
+            ],
+            child: GlassListTile(title: Text(box), onTap: () => open(box)),
+          ),
+      ],
+    ),
+  ],
+)
+```
+
+SwiftUI's `List` with `.listStyle(.plain)`, like Mail's mailbox list:
+full-width rows on the page background with a hairline under every row
+(16 pt in, or under the title after a leading icon; 16 pt short of the
+end), and section headers that stick to the top while their section
+scrolls under them (`stickyHeaders: false` turns that off). Swipe rows
+work as in any list. `GlassPlainListSection` is a sliver, so it also fits
+a `CustomScrollView` of your own. Measured against SwiftUI on iOS 26.4,
+light and dark. On Android it is `ListTile`s with dividers and Material
+subheaders.
 
 ### Disclosure group
 
@@ -1180,6 +1282,9 @@ The sheet works like SwiftUI's `presentationDetents`:
   fraction of the screen. `enableDrag: false` turns dragging off while
   `isDismissible` still governs a tap outside. `isScrollControlled`
   overrides the Material sheet's own choice.
+- A glass sheet samples the page: below `large` the page shows, blurred,
+  through its content. `contentSurface: color` makes it opaque in that
+  colour at every detent (the bottom sheet's background on Android).
 
 ### Full-screen cover
 
@@ -1273,7 +1378,8 @@ GlassMenuButton(controller: controller, /* ... */)
 ```
 
 On Android it is a Material 3 `MenuAnchor`; gliding is a no-op there, but
-opening and closing still work.
+opening and closing still work. `materialStyle` styles its `IconButton`;
+`GlassMenuButton.compactMaterialStyle` fits a 32-pt host.
 
 `GlassMenuItem.color` tints a row's label and icon on both paths; disabled
 and `destructive` rows keep their own colours.

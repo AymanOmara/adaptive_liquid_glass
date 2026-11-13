@@ -145,8 +145,8 @@ class NavBarContent extends StatelessWidget {
           padding: const EdgeInsetsDirectional.symmetric(
             horizontal: NavBarMetrics.edgeInset,
           ),
-          child: NavigationToolbar(
-            // The toolbar stretches its leading slot to the bar's height.
+          child: _NavBarRow(
+            // The row stretches its leading slot to the bar's height.
             leading: lead == null
                 ? null
                 : Center(
@@ -198,10 +198,93 @@ class NavBarContent extends StatelessWidget {
                     ),
                   ),
             trailing: _trailing(item),
-            middleSpacing: 8,
           ),
         ),
       ),
     );
   }
+}
+
+enum _Slot { leading, middle, trailing }
+
+/// [NavigationToolbar] with UIKit's title placement: the title is centred
+/// on the bar when it fits between the leading and trailing items, and
+/// otherwise sits at the leading side (after the leading item) rather than
+/// against the trailing items.
+class _NavBarRow extends StatelessWidget {
+  const _NavBarRow({this.leading, this.middle, this.trailing});
+
+  final Widget? leading;
+  final Widget? middle;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) => CustomMultiChildLayout(
+    delegate: _NavBarRowLayout(Directionality.of(context)),
+    children: [
+      if (leading != null) LayoutId(id: _Slot.leading, child: leading!),
+      if (middle != null) LayoutId(id: _Slot.middle, child: middle!),
+      if (trailing != null) LayoutId(id: _Slot.trailing, child: trailing!),
+    ],
+  );
+}
+
+class _NavBarRowLayout extends MultiChildLayoutDelegate {
+  _NavBarRowLayout(this.textDirection);
+
+  final TextDirection textDirection;
+
+  static const double _spacing = 8;
+
+  @override
+  void performLayout(Size size) {
+    final rtl = textDirection == TextDirection.rtl;
+    double x(double start, double width) =>
+        rtl ? size.width - start - width : start;
+    var leadingWidth = 0.0;
+    var trailingWidth = 0.0;
+    if (hasChild(_Slot.leading)) {
+      leadingWidth = layoutChild(
+        _Slot.leading,
+        BoxConstraints(
+          maxWidth: size.width,
+          minHeight: size.height,
+          maxHeight: size.height,
+        ),
+      ).width;
+      positionChild(_Slot.leading, Offset(x(0, leadingWidth), 0));
+    }
+    if (hasChild(_Slot.trailing)) {
+      final s = layoutChild(_Slot.trailing, BoxConstraints.loose(size));
+      trailingWidth = s.width;
+      positionChild(
+        _Slot.trailing,
+        Offset(x(size.width - s.width, s.width), (size.height - s.height) / 2),
+      );
+    }
+    if (hasChild(_Slot.middle)) {
+      final startMargin = leadingWidth > 0 ? leadingWidth + _spacing : 0.0;
+      final endMargin = trailingWidth > 0 ? trailingWidth + _spacing : 0.0;
+      final maxWidth = (size.width - startMargin - endMargin).clamp(
+        0.0,
+        size.width,
+      );
+      final s = layoutChild(
+        _Slot.middle,
+        BoxConstraints.loose(Size(maxWidth, size.height)),
+      );
+      var start = (size.width - s.width) / 2;
+      if (start < startMargin || start + s.width > size.width - endMargin) {
+        start = startMargin;
+      }
+      positionChild(
+        _Slot.middle,
+        Offset(x(start, s.width), (size.height - s.height) / 2),
+      );
+    }
+  }
+
+  @override
+  bool shouldRelayout(_NavBarRowLayout oldDelegate) =>
+      oldDelegate.textDirection != textDirection;
 }

@@ -30,6 +30,7 @@ class GlassSheetFrame extends StatefulWidget {
     this.grabberSize,
     this.glass,
     this.mode,
+    this.contentSurface,
   });
 
   /// The sheet's content.
@@ -67,6 +68,9 @@ class GlassSheetFrame extends StatefulWidget {
 
   /// The sheet's glass.
   final Glass? glass;
+
+  /// See [GlassSheet.contentSurface].
+  final Color? contentSurface;
 
   /// The rendering path.
   final GlassRenderMode? mode;
@@ -207,6 +211,7 @@ class _GlassSheetFrameState extends State<GlassSheetFrame>
                   grabberSize: widget.grabberSize,
                   glass: widget.glass,
                   mode: widget.mode,
+                  contentSurface: widget.contentSurface,
                   child: widget.child,
                 ),
               ),
@@ -256,6 +261,7 @@ class _GlassSheetFrameState extends State<GlassSheetFrame>
                 expansion: expansion,
                 glass: widget.glass,
                 mode: widget.mode,
+                contentSurface: widget.contentSurface,
                 child: widget.child,
               ),
             ),
