@@ -1,7 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart' show LongPressGestureRecognizer;
 import 'package:flutter/material.dart'
-    show PopupMenuItem, RelativeRect, showMenu;
+    show
+        PopupMenuDivider,
+        PopupMenuEntry,
+        PopupMenuItem,
+        RelativeRect,
+        showMenu;
 import 'package:flutter/physics.dart' show SpringSimulation;
 import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
@@ -13,6 +18,7 @@ import '../core/glass_render_mode.dart';
 import '../core/liquid_glass_theme.dart';
 import '../core/render_mode_resolver.dart';
 import '../menu/glass_menu_item.dart';
+import '../menu/menu_sections.dart';
 import '../platform/glass_platform.dart';
 import 'context_menu_metrics.dart';
 import 'glass_context_menu_route.dart';
@@ -169,14 +175,7 @@ class _GlassContextMenuState extends State<GlassContextMenu>
           screen.width - at.dx,
           screen.height - at.dy,
         ),
-        items: [
-          for (final item in widget.items)
-            PopupMenuItem(
-              value: item,
-              enabled: item.onSelected != null,
-              child: Text(item.label),
-            ),
-        ],
+        items: _popupItems(widget.items),
       );
     } else {
       final navigator = Navigator.of(context);
@@ -203,7 +202,7 @@ class _GlassContextMenuState extends State<GlassContextMenu>
     final material = _effective() == EffectiveGlassMode.material;
     return Semantics(
       customSemanticsActions: {
-        for (final item in widget.items)
+        for (final item in menuActions(widget.items))
           if (item.onSelected != null)
             CustomSemanticsAction(label: item.label): item.onSelected!,
       },
@@ -235,3 +234,32 @@ class _GlassContextMenuState extends State<GlassContextMenu>
     );
   }
 }
+
+/// The Material popup rows of [items]: a divider between sections, a
+/// section's or submenu's title as a disabled row over its rows (a popup
+/// has no submenus).
+List<PopupMenuEntry<GlassMenuItem>> _popupItems(List<GlassMenuItem> items) {
+  final sections = menuSections(items);
+  return [
+    for (var s = 0; s < sections.length; s++) ...[
+      if (s > 0) const PopupMenuDivider(),
+      if (sections[s].title case final title?) _popupTitle(title),
+      for (final item in sections[s].rows)
+        if (item.isSubmenu) ...[
+          _popupTitle(item.label),
+          ..._popupItems(item.children),
+        ] else
+          PopupMenuItem(
+            value: item,
+            enabled: item.onSelected != null,
+            child: Text(item.label),
+          ),
+    ],
+  ];
+}
+
+PopupMenuItem<GlassMenuItem> _popupTitle(String title) => PopupMenuItem(
+  enabled: false,
+  height: 32,
+  child: Semantics(header: true, child: Text(title)),
+);

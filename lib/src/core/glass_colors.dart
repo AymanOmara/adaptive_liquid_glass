@@ -190,6 +190,25 @@ abstract final class GlassColors {
         darkColor: Color(0x29FFFFFF),
       );
 
+  /// The divider between a glass menu's sections (measured: 201 on the
+  /// light menu's 219, 221 on a submenu's 240; dark estimated).
+  static const CupertinoDynamicColor menuSeparator =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0x15000000),
+        darkColor: Color(0x24FFFFFF),
+      );
+
+  /// An open submenu's card over its receded menu (measured: 240 over a
+  /// mid-grey page, lighter than the menu's 219; dark estimated).
+  static const CupertinoDynamicColor menuSubmenuCard =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xF5F2F2F2),
+        darkColor: Color(0xF52C2C2E),
+      );
+
+  /// The shadow under an open submenu's card (estimated).
+  static const Color menuSubmenuShadow = Color(0x26000000);
+
   // Focus ring
 
   /// The keyboard focus ring around focused glass controls: the system

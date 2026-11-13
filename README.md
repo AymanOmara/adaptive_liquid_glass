@@ -1197,6 +1197,37 @@ opening and closing still work.
 `GlassMenuItem.color` tints a row's label and icon on both paths; disabled
 and `destructive` rows keep their own colours.
 
+#### Sections, submenus and a primary action
+
+```dart
+GlassMenuButton(
+  primaryAction: newDocument, // a tap runs it; a long-press opens the menu
+  items: [
+    GlassMenuItem.section(title: 'Edit', items: [
+      GlassMenuItem(label: 'Copy', icon: CupertinoIcons.doc_on_doc,
+          onSelected: copy),
+    ]),
+    GlassMenuItem.submenu(
+      label: 'Sort By',
+      icon: CupertinoIcons.arrow_up_arrow_down,
+      items: [
+        GlassMenuItem(label: 'Name', onSelected: byName),
+        GlassMenuItem(label: 'Date', onSelected: byDate),
+      ],
+    ),
+  ],
+)
+```
+
+As SwiftUI's `Section`, `Menu` and `Menu(primaryAction:)`. Sections have
+dividers between them and an optional title; rows between sections form
+one of their own. A submenu row has a chevron. Tapping it makes the menu
+recede and shows the submenu over it, as iOS 26 does; its own row or the
+receded menu goes back. Both work in `GlassContextMenu` too. On Material,
+sections get dividers and a title label, and a submenu is a
+`SubmenuButton`. In the context menu's popup, a submenu's rows show under
+its title.
+
 ### Context menu
 
 ```dart
@@ -1208,7 +1239,8 @@ GlassContextMenu(
 ```
 
 A long-press lifts the item over the blurred page and opens the glass menu
-beside it. Assistive tech gets the items as custom actions. On Android the
+beside it. Its items take sections and submenus as the menu button's do.
+Assistive tech gets every action as a custom action, with submenus opened up. On Android the
 long-press opens a Material popup menu.
 
 ### Popover and picker

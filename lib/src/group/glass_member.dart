@@ -360,9 +360,23 @@ class GlassMemberState extends State<GlassMember>
       onPointerDown: press == null
           ? null
           : (e) => press.down(e.localPosition, entry.box?.size ?? Size.zero),
-      onPointerMove: press == null ? null : (e) => press.move(e.localPosition),
-      onPointerUp: press == null ? null : (_) => press.up(),
-      onPointerCancel: press == null ? null : (_) => press.up(),
+      // A press can outlive the member: a long-press that opens a menu
+      // swaps its opener out while the finger is still down.
+      onPointerMove: press == null
+          ? null
+          : (e) {
+              if (mounted) press.move(e.localPosition);
+            },
+      onPointerUp: press == null
+          ? null
+          : (_) {
+              if (mounted) press.up();
+            },
+      onPointerCancel: press == null
+          ? null
+          : (_) {
+              if (mounted) press.up();
+            },
       child: AnimatedBuilder(
         animation: press ?? _noPress,
         builder: (_, child) => Transform(

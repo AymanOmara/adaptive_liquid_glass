@@ -2,6 +2,8 @@
 
 - Navigation bars: a lone trailing action is a 44-pt circle, as SwiftUI's, instead of a 51.5-pt cell.
 - Navigation bars: separate pills, as SwiftUI's `ToolbarItemGroup` / `ToolbarSpacer(.fixed)`: a `GlassToolbarSpacer` in `actions` starts a new capsule 12 pt away (`NavBarMetrics.groupGap`). New `GlassBarItem(sharedBackground: false)` stands apart with no capsule, as `.sharedBackgroundVisibility(.hidden)`. Native and shader paths.
+- Menus: `GlassMenuItem.section` (SwiftUI's `Section`, with an optional title and dividers between sections) and `GlassMenuItem.submenu` (a nested `Menu`: the menu recedes and the submenu's card shows over it, as iOS 26) in `GlassMenuButton`, `GlassMenuAnchor` and `GlassContextMenu`. Measured from SwiftUI (`MenuMetrics`: 1 pt dividers, 15 pt titles, chevrons). Gliding skips titles and dividers. Material: dividers, title labels and `SubmenuButton`; the context menu's popup lists a submenu's rows under its title.
+- `GlassMenuButton.primaryAction`: SwiftUI's `Menu(primaryAction:)`; a tap runs it and a long-press opens the menu, on both paths.
 
 ## 0.6.0 (2026-11-09)
 

@@ -16,6 +16,9 @@ class GlassMenuRow extends StatelessWidget {
     required this.onTap,
     this.choices = false,
     this.highlighted = false,
+    this.icons = true,
+    this.trailing,
+    this.weight = FontWeight.w400,
   });
 
   /// The item shown.
@@ -31,23 +34,43 @@ class GlassMenuRow extends StatelessWidget {
   /// Whether a gliding finger is over the row; see [GlassMenuController].
   final bool highlighted;
 
+  /// Whether the row keeps the icon column: false when no row of its
+  /// section has an icon, and the label starts at
+  /// [MenuMetrics.plainLabelStart], as SwiftUI lays it out.
+  final bool icons;
+
+  /// A glyph at the row's end: a submenu's chevron.
+  final IconData? trailing;
+
+  /// The label's weight: semibold for an open submenu's own row.
+  final FontWeight weight;
+
   @override
   Widget build(BuildContext context) {
     final color = CupertinoDynamicColor.resolve(
-      item.onSelected == null
+      !item.enabled
           ? GlassColors.tertiaryLabel
           : item.destructive
           ? GlassSystemColors.red
           : item.color ?? GlassColors.label,
       context,
     );
-    final style = IOSText.style(MenuMetrics.fontSize, color: color);
+    final style = IOSText.style(
+      MenuMetrics.fontSize,
+      weight: weight,
+      color: color,
+    );
     final scale =
         MediaQuery.textScalerOf(context).scale(MenuMetrics.fontSize) /
         MenuMetrics.fontSize;
     final labelStart = choices
         ? MenuMetrics.checkLabelStart
-        : MenuMetrics.labelStart;
+        : icons
+        ? MenuMetrics.labelStart
+        : MenuMetrics.plainLabelStart;
+    final end = trailing == null
+        ? MenuMetrics.trailingPadding
+        : MenuMetrics.chevronCentreFromEnd + MenuMetrics.chevronSize;
     final marks = [
       if (highlighted)
         Positioned.fill(
@@ -76,11 +99,18 @@ class GlassMenuRow extends StatelessWidget {
           bottom: 0,
           child: Icon(item.icon, size: MenuMetrics.iconSize, color: color),
         ),
+      if (trailing != null)
+        PositionedDirectional(
+          end: MenuMetrics.chevronCentreFromEnd - MenuMetrics.chevronSize / 2,
+          top: 0,
+          bottom: 0,
+          child: Icon(trailing, size: MenuMetrics.chevronSize, color: color),
+        ),
     ];
     return Semantics(
       container: true,
       button: true,
-      enabled: item.onSelected != null,
+      enabled: item.enabled,
       selected: choices ? (item.checked ?? false) : null,
       label: item.semanticLabel ?? item.label,
       onTap: onTap,
@@ -104,7 +134,7 @@ class GlassMenuRow extends StatelessWidget {
                     Padding(
                       padding: EdgeInsetsDirectional.only(
                         start: labelStart,
-                        end: MenuMetrics.trailingPadding,
+                        end: end,
                         top: MenuMetrics.wrappedLabelPadding,
                         bottom: MenuMetrics.wrappedLabelPadding,
                       ),
@@ -120,7 +150,7 @@ class GlassMenuRow extends StatelessWidget {
                     ...marks,
                     PositionedDirectional(
                       start: labelStart,
-                      end: MenuMetrics.trailingPadding,
+                      end: end,
                       top: 0,
                       bottom: 0,
                       child: Align(
