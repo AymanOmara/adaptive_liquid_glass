@@ -3,17 +3,21 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import '../core/glass_motion_constants.dart';
+import '../core/glass_transition.dart';
 import '../core/swiftui_spring.dart';
 import 'glass_entry.dart';
 import 'glass_registry.dart';
 import 'morph_track.dart';
 
-/// Animates `glassId` appearances, removals and identity moves, like
+/// Animates `glassId` appearances (and in-place [GlassTransition.materialize]), removals and identity moves, like
 /// SwiftUI's `glassEffectID` inside a `GlassEffectContainer`.
 ///
 /// Morph rects are in the group's local coordinates (the coordinate space of
 /// the group's backdrop render object).
 class GlassMorphController {
+  /// How much of its frame a materializing glass starts from and returns to.
+  static const double materializeScale = 0.6;
+
   /// Creates the controller and installs registry hooks.
   GlassMorphController({
     required this.vsync,
@@ -47,7 +51,7 @@ class GlassMorphController {
   void markSettled() => _settled = true;
 
   void _onAdded(GlassEntry e) {
-    final id = e.glassId;
+    final id = e.morphKey;
     if (id == null || !_settled || _disposed) return;
     final previous = _tracks[id];
     // A ghost, or an old view frozen at its last rect while it unmounts.
@@ -62,13 +66,17 @@ class GlassMorphController {
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!identical(_tracks[id], track)) return;
       track.from =
-          track.fromOverride ?? from ?? _nearestDrawn(e) ?? _collapsedAt(e);
+          track.fromOverride ??
+          from ??
+          (e.transition == GlassTransition.materialize
+              ? _materialized(_liveRect(e))
+              : _nearestDrawn(e) ?? _collapsedAt(e));
       _run(id, track);
     });
   }
 
   void _onRemoved(GlassEntry e) {
-    final id = e.glassId;
+    final id = e.morphKey;
     if (id == null || _disposed) return;
     final live = _tracks[id];
     // The entry's own animation ends with it.
@@ -97,15 +105,19 @@ class GlassMorphController {
       }
       _finish(id, removeGhost: true); // a stale ghost of an older view
     }
-    final nearest = _nearestDrawn(e);
+    final nearest = e.transition == GlassTransition.materialize
+        ? null
+        : _nearestDrawn(e);
     final track = _tracks[id] = MorphTrack(e, _newController())
       ..ghost = true
       ..from = last
-      ..to = Rect.fromCenter(
-        center: (nearest ?? last).center,
-        width: 0,
-        height: 0,
-      );
+      ..to = e.transition == GlassTransition.materialize
+          ? _materialized(last)
+          : Rect.fromCenter(
+              center: (nearest ?? last).center,
+              width: 0,
+              height: 0,
+            );
     e.morphRect = last;
     // Re-add without hooks so the ghost keeps drawing.
     final hook = registry.onAdded;
@@ -155,6 +167,17 @@ class GlassMorphController {
       }
     }
     return best;
+  }
+
+  /// [r] shrunk about its centre: where a materializing glass starts and
+  /// ends. A glass not laid out yet collapses to nothing.
+  Rect _materialized(Rect? r) {
+    if (r == null) return Rect.zero;
+    return Rect.fromCenter(
+      center: r.center,
+      width: r.width * materializeScale,
+      height: r.height * materializeScale,
+    );
   }
 
   Rect _collapsedAt(GlassEntry e) {

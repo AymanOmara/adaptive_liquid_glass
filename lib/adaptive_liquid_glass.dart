@@ -43,6 +43,7 @@ export 'src/core/glass_effective_path.dart' show GlassEffectivePath;
 export 'src/core/glass_render_mode.dart' show GlassRenderMode;
 export 'src/core/glass_shape.dart' hide concentricRadius;
 export 'src/core/glass_system_colors.dart';
+export 'src/core/glass_transition.dart';
 export 'src/core/glass_variant.dart';
 export 'src/core/liquid_glass_theme.dart';
 export 'src/core/liquid_glass_theme_data.dart';

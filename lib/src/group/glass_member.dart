@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../core/glass.dart';
 import '../core/glass_render_mode.dart';
 import '../core/glass_shape.dart';
+import '../core/glass_transition.dart';
 import '../core/glass_variant.dart';
 import '../core/liquid_glass_theme.dart';
 import '../degraded/degraded_glass.dart';
@@ -33,6 +34,7 @@ class GlassMember extends StatefulWidget {
     required this.shape,
     required this.glassId,
     required this.unionId,
+    this.transition = GlassTransition.matchedGeometry,
     required this.mode,
     this.adaptiveForeground = true,
     this.onPressed,
@@ -50,6 +52,9 @@ class GlassMember extends StatefulWidget {
 
   /// See `LiquidGlass.unionId`.
   final Object? unionId;
+
+  /// See `LiquidGlass.transition`.
+  final GlassTransition transition;
 
   /// See `LiquidGlass.mode`.
   final GlassRenderMode? mode;
@@ -77,6 +82,7 @@ class GlassMemberState extends State<GlassMember>
     glass: widget.glass,
     glassId: widget.glassId,
     unionId: widget.unionId,
+    transition: widget.transition,
   );
 
   /// The registry this member is registered with; null when it is not
@@ -120,7 +126,7 @@ class GlassMemberState extends State<GlassMember>
     super.didChangeDependencies();
     final scope = GlassGroupScope.of(context);
     if (_first) {
-      _fadeIn = scope.settled && widget.glassId != null;
+      _fadeIn = scope.settled && entry.morphKey != null;
       _first = false;
     }
     _settled = scope.settled;
@@ -171,7 +177,8 @@ class GlassMemberState extends State<GlassMember>
       ..shape = widget.shape
       ..glass = widget.glass
       ..glassId = widget.glassId
-      ..unionId = widget.unionId;
+      ..unionId = widget.unionId
+      ..transition = widget.transition;
     _registry?.markNeedsPaint();
   }
 
@@ -184,7 +191,7 @@ class GlassMemberState extends State<GlassMember>
     final last = entry.lastDrawnLocal;
     if (_registry != null &&
         _settled &&
-        entry.glassId != null &&
+        entry.morphKey != null &&
         last != null &&
         entry.box != null) {
       _heldBox = entry.box;
@@ -242,6 +249,7 @@ class GlassMemberState extends State<GlassMember>
           shape: widget.shape,
           glassId: widget.glassId,
           unionId: widget.unionId,
+          transition: widget.transition,
           mode: widget.mode,
           adaptiveForeground: widget.adaptiveForeground,
           onPressed: widget.onPressed,

@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'core/glass.dart';
 import 'core/glass_render_mode.dart';
 import 'core/glass_shape.dart';
+import 'core/glass_transition.dart';
 import 'core/liquid_glass_theme.dart';
 import 'glass_effect.dart';
 import 'group/glass_group.dart';
@@ -37,6 +38,7 @@ class LiquidGlass extends StatelessWidget {
     this.shape = const GlassShape.capsule(),
     this.glassId,
     this.unionId,
+    this.transition = GlassTransition.matchedGeometry,
     this.mode,
     this.padding,
     this.minSize,
@@ -56,6 +58,14 @@ class LiquidGlass extends StatelessWidget {
 
   /// Members with the same id merge into one shape (`glassEffectUnion`).
   final Object? unionId;
+
+  /// How the glass appears and disappears inside a `GlassGroup`
+  /// (`glassEffectTransition`). Defaults to
+  /// [GlassTransition.matchedGeometry], which morphs by [glassId];
+  /// [GlassTransition.materialize] fades it in place and
+  /// [GlassTransition.identity] switches it off. On the Material path
+  /// anything but identity is a short fade.
+  final GlassTransition transition;
 
   /// Rendering mode when not inside a `GlassGroup` (a group's mode wins).
   final GlassRenderMode? mode;
@@ -115,6 +125,7 @@ class LiquidGlass extends StatelessWidget {
       shape: shape,
       glassId: glassId,
       unionId: unionId ?? GlassUnionScope.maybeOf(context),
+      transition: transition,
       mode: mode,
       adaptiveForeground: adaptiveForeground,
       onPressed: onPressed,

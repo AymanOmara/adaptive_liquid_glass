@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 
 import '../core/glass.dart';
 import '../core/glass_shape.dart';
+import '../core/glass_transition.dart';
 import 'glass_press_geometry.dart';
 import 'render_glass_content_fill.dart';
 import 'render_glass_content_glyphs.dart';
@@ -15,6 +16,7 @@ class GlassEntry {
     required this.glass,
     this.glassId,
     this.unionId,
+    this.transition = GlassTransition.matchedGeometry,
   });
 
   /// Shape of the glass.
@@ -28,6 +30,18 @@ class GlassEntry {
 
   /// Union identity (`glassEffectUnion`).
   Object? unionId;
+
+  /// How this entry appears and goes (`glassEffectTransition`).
+  GlassTransition transition;
+
+  /// What the morph controller tracks this entry by; null when it does not
+  /// animate. A `glassId` names the track, and so does the entry itself
+  /// for an in-place `materialize`.
+  Object? get morphKey => switch (transition) {
+    GlassTransition.identity => null,
+    GlassTransition.matchedGeometry => glassId,
+    GlassTransition.materialize => glassId ?? this,
+  };
 
   /// The member's render box; set when its render object is created.
   RenderBox? box;
