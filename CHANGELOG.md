@@ -1,3 +1,8 @@
+## Unreleased
+
+- `GlassTextEditor`: SwiftUI's `TextEditor`, a scrolling multi-line editor in a glass rounded rect (200 pt by default, or its parent's height) that pads itself above the keyboard. Material: a filled `TextField` that expands to its height.
+- `GlassScrollIndicators` and `GlassScrollIndicatorVisibility`: SwiftUI's `.scrollIndicators(_:)`, a UIKit-style indicator that fades after scrolling (Material `Scrollbar` on Android). Indicator metrics are estimates pending SwiftUI captures.
+
 ## 0.6.0 (2026-11-09)
 
 - Navigation bars: an icon-only `leading` button is now a 44-pt circle, as SwiftUI's lone bar button, instead of a 51.5-pt cell (`NavBarMetrics.loneItem`).

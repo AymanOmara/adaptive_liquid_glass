@@ -11,7 +11,8 @@ class SceneDelegate: FlutterSceneDelegate {
     super.scene(scene, willConnectTo: session, options: connectionOptions)
     MotionScenes.installDump()
     // `-motion <id>` (Task 16) takes over before the static host.
-    if !ControlScenes.install(in: window) && !MotionScenes.install(in: window) {
+    if !ControlScenes.install(in: window) && !EditorScenes.install(in: window)
+      && !MotionScenes.install(in: window) {
       LaunchArgs.installReferenceScene(in: window)
     }
     FrameDump.shared?.observeTouches(in: window)
