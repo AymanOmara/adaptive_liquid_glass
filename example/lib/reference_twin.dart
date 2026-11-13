@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'borrowed_twins.dart';
+import 'inspector_safe_area_page_demo.dart';
 import 'new_component_twins.dart';
 import 'system_buttons_twin.dart';
 
@@ -80,7 +81,10 @@ class ReferenceTwin extends StatelessWidget {
         'swipeone' => const _SwipeOne(dark: false),
         'swipeonedark' => const _SwipeOne(dark: true),
         _ =>
-          borrowedTwin(scene) ?? newComponentTwin(scene) ?? const _Controls(),
+          borrowedTwin(scene) ??
+              newComponentTwin(scene) ??
+              inspectorSafeAreaPageTwin(scene) ??
+              const _Controls(),
       },
     ),
   );

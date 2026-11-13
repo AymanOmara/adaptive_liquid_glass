@@ -976,6 +976,23 @@ while indeterminate); the fill defaults to system blue. Geometry
 estimated, not yet measured. On Android: a row of Material dots, and
 Material 3 progress indicators.
 
+### Page view
+
+```dart
+GlassPageView(
+  onPageChanged: (page) => debugPrint('page $page'),
+  children: const [Welcome(), Features(), GetStarted()],
+)
+```
+
+SwiftUI's `TabView` with `.tabViewStyle(.page)`: pages swiped sideways
+over a `GlassPageControl` that follows them, centred above the bottom safe
+area. Tapping or scrubbing the dots moves the pages. `indexDisplayMode`
+is `automatic` (dots with two or more pages), `always` or `never`;
+`GlassPageView.builder` builds pages on demand, and a `controller` reads
+or drives the page. Pages follow the reading direction. The dots' 12-pt
+lift is estimated. On Android: Material dots.
+
 ### Empty state
 
 ```dart
@@ -1050,6 +1067,45 @@ animate; SwiftUI's gauges do not either. Geometry measured against SwiftUI
 on iOS 26.4. On Android it is a
 Material 3 `LinearProgressIndicator` or `CircularProgressIndicator` with
 the labels around it.
+
+### Inspector
+
+```dart
+GlassInspector(
+  isPresented: showDetails,
+  onPresentedChanged: (shown) => setState(() => showDetails = shown),
+  inspector: (context) => const DetailsForm(),
+  child: const NotesList(),
+)
+```
+
+SwiftUI's `.inspector(isPresented:)`. At regular width (700 pt and up) it
+is a trailing column, 320 pt wide, that slides in beside the content
+(on the left in right-to-left text). At compact width it is a glass
+sheet at the large detent, as iOS 26 opens it; pass `detents` for others.
+Swiping or tapping the sheet away calls `onPresentedChanged(false)`, and
+an open inspector moves between sheet and column when the window
+resizes. The column width and timing are estimated. On Android: a
+Material 3 surface column, or a modal bottom sheet.
+
+### Safe-area bar
+
+```dart
+GlassSafeAreaBar(
+  edge: GlassSafeAreaEdge.bottom,
+  bar: GlassButton(onPressed: compose, child: const Text('Compose')),
+  child: ListView(children: rows),
+)
+```
+
+SwiftUI's `.safeAreaBar(edge:)`: a bar on any edge (`top`, `bottom`,
+`start`, `end`) that sits inside the safe area and grows the content's
+safe-area padding by its size, so scroll views start clear of it and
+scroll under it. `alignment` places it along the edge and `spacing`
+adds a gap. Top and bottom bars get iOS 26's scroll edge effect once
+content is beneath them. The bar paints only what it is given, so give it
+glass. Placement measured on iOS 26.4 (bar at the safe edge, inset equal
+to its height).
 
 ### Sheet
 
