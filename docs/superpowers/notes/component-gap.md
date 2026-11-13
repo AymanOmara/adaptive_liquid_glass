@@ -75,11 +75,11 @@ entrypoint (fidelity constants, not stable API).
 | Wheel | `.pickerStyle(.wheel)` | **yes** — `GlassWheelPicker` | med | — | done |
 | Inline | `.pickerStyle(.inline)` | **yes** — `GlassPickerStyle.inline` | med | — | done |
 | NavigationLink | `.pickerStyle(.navigationLink)` | **yes** — `GlassPickerStyle.navigationLink` | med | — | done |
-| Palette | `.pickerStyle(.palette)` | **no** | low | M | verify: macOS-only in SwiftUI; iOS 26 status unclear |
+| Palette | `.pickerStyle(.palette)` | **yes** — `GlassPickerStyle.palette` | low | — | done (63b3518, branch pending merge) |
 | Date compact | `.datePickerStyle(.compact)` | **yes** — `GlassDatePicker` | med | — | capsule → glass calendar popover |
 | Date graphical | `.datePickerStyle(.graphical)` | **yes** — `GlassDatePicker(style: graphical)`, `GlassCalendar` exported | med | — | inline calendar, `showWeekNumbers`; geometry estimated |
 | Date wheel | `.datePickerStyle(.wheel)` | **yes** — `GlassDatePicker(style: wheel)`, `GlassDateWheel` | med | — | columns on one surface; geometry estimated, not measured |
-| Time / range | `hourAndMinute`, `DateRange` graph | **partial** — `pickerMode: time` / `dateAndTime` | med | S | time capsule → wheel popover; no range selection |
+| Time / range | `hourAndMinute`, `DateRange` graph | **yes** — `pickerMode: time` / `dateAndTime`, `GlassDateRangePicker` | med | — | range picker done (63b3518, branch pending merge) |
 
 ### Text & search
 
@@ -87,7 +87,7 @@ entrypoint (fidelity constants, not stable API).
 |---|---|---|---|---|---|
 | TextField | `TextField` | **yes** — `GlassTextField` | high | — | prefix/suffix, clear, error, autofill |
 | SecureField | `SecureField` | **yes** — `GlassTextField.password` | med | — | eye reveal |
-| TextEditor | `TextEditor` | **partial** — `GlassTextField` multiline | med | S | multiline field exists; no dedicated scrollable editor with inset glass chrome |
+| TextEditor | `TextEditor` | **yes** — `GlassTextEditor` | med | — | done (71a59a3, branch pending merge) |
 | Searchable | `.searchable` + scopes/suggestions | **yes** — `GlassSearchable` + `GlassSearchController` | high | — | Cancel spring, suggestion platter, scopes, `navigationBar`/`bottom` placement; geometry estimated, not measured |
 | Tab search | `Tab(role: .search)` | **yes** — `GlassTabBar.onSearch` | med | — | circle lens tab |
 | Text input on glass | `GlassForeground` vibrant labels | **yes** — `GlassForeground` | high | — | brightness-sampled label colors |
@@ -107,7 +107,7 @@ entrypoint (fidelity constants, not stable API).
 
 | component | SwiftUI API | we have? | common | effort | notes |
 |---|---|---|---|---|---|
-| Menu | `Menu` pull-down | **partial** — `GlassMenuButton` | high | M | flat items only; no sections/submenus/`primaryAction` (in progress, see §3); glide via `GlassMenuController` |
+| Menu | `Menu` pull-down | **yes** — `GlassMenuButton` + `GlassMenuItem.section` / `.submenu`, `primaryAction` | high | — | done (5c545cd, branch pending merge); submenus use the iOS 26 recede presentation; `GlassContextMenu` gains sections and submenus |
 | Context menu | `.contextMenu` | **partial** — `GlassContextMenu` | med | M | works (lifted preview + glass menu) but "not measured against SwiftUI" per doc comment |
 | Popover | `.popover` | **yes** — `showGlassPopover` / `GlassPopoverAnchor` | med | — | iPhone bubble, no arrow, undimmed; verify: iOS 26 popover-on-iPhone behavior we should re-measure |
 | Alert | `.alert` | **yes** — `showGlassAlert` | high | — | |
@@ -115,7 +115,7 @@ entrypoint (fidelity constants, not stable API).
 | Action sheet | UIKit `UIAlertController` action sheet | **yes** — `showGlassActionSheet` | med | — | |
 | Sheet + detents | `.sheet` + `.presentationDetents` | **yes** — `showGlassSheet` / `GlassSheetDetent` | high | — | medium/large/fraction/height, grabber |
 | Full-screen cover | `.fullScreenCover` | **yes** — `showGlassFullScreenCover` | med | — | done (`GlassFullScreenCoverHandle`, drag configuration) |
-| Inspector | `Inspector` (iOS 17+) | **no** | low | L | trailing detail pane; iPad-pattern mostly |
+| Inspector | `Inspector` (iOS 17+) | **yes** — `GlassInspector` | low | — | done (3213048, branch pending merge) |
 | Glass effect container | `GlassEffectContainer` | **yes** — `GlassGroup` | high | — | spacing merge, shared backdrop |
 | Glass union | `glassEffectUnion` | **yes** — `LiquidGlass.unionId` | med | — | per-member |
 | Glass morph | `glassEffectID` | **yes** — `LiquidGlass.glassId` | med | — | hero morph inside group |
@@ -126,48 +126,63 @@ entrypoint (fidelity constants, not stable API).
 |---|---|---|---|---|---|
 | Inline nav bar | `NavigationStack` bar | **yes** — `GlassNavigationBar` | high | — | leading auto-back, merged actions |
 | Large title | large title + collapse | **yes** — `SliverGlassNavigationBar` | high | — | scroll fade-in, pull stretch |
-| Bar items | `ToolbarItem` in nav bar | **partial** — `GlassNavigationBar.actions` | high | M | we merge actions into one capsule; separate pills (`ToolbarItemGroup`, `sharedBackgroundVisibility`) in progress, see §3 |
+| Bar items | `ToolbarItem` in nav bar | **yes** — `GlassBarItem`, separate trailing pills | high | — | done (9c180ce, branch pending merge); lone trailing item is a 44-pt circle |
 | Bottom toolbar/bottom bar | `.toolbar` bottom bar | **yes** — `GlassToolbar` | med | — | floating capsules, spacers, no top placement |
-| safeAreaBar | `.safeAreaBar` (verify) | **partial** — `GlassScaffold` bar slots | low | S | scaffold covers nav/tab/toolbar/accessory; no generic modifier |
+| safeAreaBar | `.safeAreaBar` | **yes** — `GlassSafeAreaBar` | low | — | done (3213048, branch pending merge) |
 | Bottom accessory | `.tabBarBottomAccessory` (verify name) | **yes** — `GlassBottomAccessory` | med | — | Music mini-player pattern |
 | Tab bar | `TabView` tab bar | **yes** — `GlassTabBar` | high | — | lens press, drag, badges, search tab |
 | Sidebar adaptable | `TabView` `.sidebarAdaptable` | **yes** — `GlassTabBarStyle.sidebarAdaptable` (via `GlassScaffold`) | med | — | done; `GlassTabSidebar` is internal |
 | Tab bar minimize | `.tabBarMinimizeBehavior` | **yes** — `GlassTabBar.minimizeBehavior` / `GlassTabBarMinimizeBehavior` | med | — | done |
-| Page style | `TabView` `.page` style | **partial** — `GlassPageControl` + `PageView` | med | S | dots exist; no page container wiring |
+| Page style | `TabView` `.page` style | **yes** — `GlassPageView` + `GlassPageControl` | med | — | done (3213048, branch pending merge) |
 | Zoom transition | `matchedTransitionSource` / `navigationTransition(.zoom)` | **yes** — `pushGlassZoom`, `GlassZoomSource` | med | — | done |
 | List insetGrouped | `.listStyle(.insetGrouped)` | **yes** — `GlassListSection` | high | — | platter, separators, header/footer, `glass:` variant |
 | List plain | `.listStyle(.plain)` | **partial** — plain `ListView` | med | S | no glass separators/swipe integration tuned for plain |
 | List sidebar | `.listStyle(.sidebar)` | **no** | low | L | tied to sidebarAdaptable |
 | Section | `Section` headers/footers | **yes** — `GlassListSection` header/footer | high | — | list context only |
-| Form | `Form` | **partial** — `GlassListSection` composition | high | S | rows compose well; no dedicated form container (keyboard avoidance, grouped sections API) |
+| Form | `Form` | **yes** — `GlassForm` | high | — | done (2839880, branch pending merge) |
 | DisclosureGroup | `DisclosureGroup` | **yes** — `GlassDisclosureGroup` | high | — | done |
 | Swipe actions | `.swipeActions` | **yes** — `GlassSwipeActions` | high | — | leading+trailing, full swipe, rubber-band |
 | Pull to refresh | `.refreshable` | **yes** — `GlassRefresh`, `SliverGlassRefresh` | high | — | done |
-| GroupBox | `GroupBox` | **partial** — `GlassListSection(glass:)` | low | S | labelled glass platter covers most uses |
-| Scroll edge effects | `scrollEdgeEffectStyle` (verify name) | **partial** — `GlassScrollEdgeStyle` | high | M | uniform + progressive; progressive needs Impeller, no blur on native path |
-| Scroll indicators | `.scrollIndicators` | **no** | low | S | thin overlay indicator; Flutter default usually fine |
+| GroupBox | `GroupBox` | **yes** — `GlassGroupBox` | low | — | done (2839880, branch pending merge) |
+| Scroll edge effects | `scrollEdgeEffectStyle` | **yes** — `GlassScrollEdgeStyle` (`uniform`, `progressive`, `hard`, `hidden`) | high | — | `hard`/`hidden` on branch `ayman/blissful-proskuriakova-1cb305` (748e0c1); progressive needs Impeller |
+| Scroll indicators | `.scrollIndicators` | **yes** — `GlassScrollIndicators` / `GlassScrollIndicatorVisibility` | low | — | done (71a59a3, branch pending merge) |
 
 ## 3. Remaining gaps (ranked)
 
-Refreshed 2026-11-09 against `lib/adaptive_liquid_glass.dart`. Done since the
-Oct 2026 pass, with public API: `GlassLabel`, `GlassLink`/`GlassShareLink`,
-`GlassGauge`, `GlassColorPicker`, `GlassWheelPicker`, `GlassPickerStyle`
-(`menu`/`inline`/`navigationLink`), `GlassEmptyState`,
-`showGlassFullScreenCover`, `GlassDisclosureGroup`, `GlassRefresh` /
-`SliverGlassRefresh`, `GlassTabBar.minimizeBehavior` and
-`GlassTabBarStyle.sidebarAdaptable`, `GlassKeyboardToolbar`, `pushGlassZoom`,
-and TipKit tips (`GlassTipView`, `GlassPopoverTip`, `GlassTipController`).
-Also done earlier: `GlassSearchable`, `GlassDatePicker` styles, `PhotosPicker`.
+Refreshed 2026-11-13. Every row below is built and merged into `main`
+(2026-11-13).
 
-Next, ranked:
+| # | gap | public API | status / branch |
+|---|---|---|---|
+| 1 | Menu sections / submenus / `primaryAction` | `GlassMenuItem.section`, `.submenu`, `GlassMenuButton.primaryAction` | committed 5c545cd |
+| 2 | Separate nav-bar pills | `GlassBarItem` | committed 9c180ce |
+| 3 | `navigationSubtitle` | nav-bar subtitle | committed 748e0c1, `ayman/blissful-proskuriakova-1cb305` |
+| 4 | `glassEffectTransition` | `GlassTransition` (`matchedGeometry`, `materialize`, `identity`) | committed b1ecfd0 + 43e9eed, `ayman/dazzling-wilbur-3bef58`; no screenshots |
+| 5 | `ControlGroup` | `GlassControlGroup` | committed 27d5b95, `ayman/optimistic-kalam-74e479`; 4 tests pass, no screenshots |
+| 6 | Scroll edge `hard` / `hidden` | `GlassScrollEdgeStyle.hard` / `.hidden` | committed 748e0c1 (same branch as 3) |
+| 7 | `NavigationSplitView` | `GlassSplitView`, `GlassSplitViewColumn`, `GlassSplitViewVisibility`, `GlassSplitViewController` | committed 064cb32, `ayman/dazzling-edison-1baeee`; analyze/screenshots pending |
 
-1. **Menu sections / submenus / `primaryAction`** — M, high. *In progress in another session.* `GlassMenuButton` is flat items only.
-2. **Separate nav-bar pills** (`ToolbarItemGroup`, `sharedBackgroundVisibility`) — M, high. *In progress in another session.* Actions currently merge into one capsule.
-3. **`navigationSubtitle`** — S, med.
-4. ~~**`glassEffectTransition`**~~ — done: `GlassTransition` (`matchedGeometry`, `materialize`, `identity`) on `LiquidGlass(transition:)` / `.glassEffect`.
-5. **`ControlGroup`** — S, low-med.
-6. **Scroll edge `hard` / `hidden`** — S, med. `GlassScrollEdgeStyle` has only `uniform` and `progressive`.
-7. **`NavigationSplitView`** — L, med (iPad pattern).
+Also built in parallel (rows updated above): `GlassInspector`,
+`GlassSafeAreaBar`, `GlassPageView` (3213048); `GlassPickerStyle.palette`,
+`GlassDateRangePicker` (63b3518); `GlassForm`, `GlassGroupBox` (2839880);
+`GlassTextEditor`, `GlassScrollIndicators` (71a59a3).
 
-Other open rows in the tables above: `List sidebar`, `Inspector`, `Palette`
-picker, `Form` container, plain-list glass separators, `Scroll indicators`.
+Still open: `List sidebar` (a demo image exists, no widget), plain-list glass
+separators.
+
+## 4. Visuals (iOS Simulator)
+
+Captured by the sessions that built each component; files in
+`docs/superpowers/notes/images/`. Missing: subtitle, scroll edge, transition,
+control group and split view (screenshots not yet produced).
+
+| component | image |
+|---|---|
+| GlassInspector | ![](images/native-inspector-iphone.png) ([video](images/native-inspector-toggle-iphone.mp4)) |
+| GlassSafeAreaBar | ![](images/native-safeareabar-iphone.png) |
+| GlassPageView | ![](images/native-pagestyle-iphone.png) |
+| Picker palette | ![](images/picker-palettestandalone-swiftui.png) ![](images/picker-palettemenu-open-swiftui.png) |
+| GlassForm | ![](images/listform-native-form.png) |
+| GlassGroupBox | ![](images/listform-native-groupbox.png) |
+| Plain list | ![](images/listform-native-plain.png) |
+| List sidebar | ![](images/listform-native-sidebar.png) |
