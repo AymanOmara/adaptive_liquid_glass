@@ -67,10 +67,11 @@ abstract final class NavBarMetrics {
   /// The inline title's blur-and-fade in (~14 frames on iOS 26.4).
   static const Duration inlineFade = Duration(milliseconds: 230);
 
-  // Scroll edge. Estimated, not measured: iOS 26's soft edge is matched by
-  // eye.
+  // Scroll edge. The soft edge is matched by eye; the hard edge's sigma and
+  // tint are measured from gap-edge-hard-swiftui.png (iOS 26.4).
 
-  /// The uniform scroll edge blur's sigma.
+  /// The uniform scroll edge blur's sigma: a vertical ink-profile fit of
+  /// the hard edge's blurred rows gives ~12 px at 3x, i.e. 4 pt.
   static const double edgeBlurSigma = 4;
 
   /// How far down the edge the uniform blur reaches, as a share of the
@@ -84,8 +85,10 @@ abstract final class NavBarMetrics {
   /// edge's bottom.
   static const double edgeProgressiveFalloff = 1.2;
 
-  /// The `hard` scroll edge's background tint opacity (estimated by eye).
-  static const double edgeHardTintAlpha = 0.7;
+  /// The `hard` scroll edge's background tint opacity. Measured: a blurred
+  /// row under the hard edge keeps ~9% of the ink of the same row blurred
+  /// alone (teal 0.912, cyan 0.907 for sigma 4 pt, ±0.01 over 3–7 pt).
+  static const double edgeHardTintAlpha = 0.91;
 
   // Subtitle (`navigationSubtitle`). Estimated by eye from iOS 26.
 

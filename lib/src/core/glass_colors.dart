@@ -369,6 +369,28 @@ abstract final class GlassColors {
         darkColor: Color(0xFF30D158),
       );
 
+  /// iOS 26's purple (measured light from the gap-edge SwiftUI capture;
+  /// dark from Apple's iOS 26 palette).
+  static const CupertinoDynamicColor systemPurple =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFFCB30E0),
+        darkColor: Color(0xFFDB34F2),
+      );
+
+  /// iOS 26's cyan (measured light; dark from Apple's palette).
+  static const CupertinoDynamicColor systemCyan =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFF00C0E8),
+        darkColor: Color(0xFF3CD3FE),
+      );
+
+  /// iOS 26's teal (measured light; dark from Apple's palette).
+  static const CupertinoDynamicColor systemTeal =
+      CupertinoDynamicColor.withBrightness(
+        color: Color(0xFF00C3D0),
+        darkColor: Color(0xFF00D2E0),
+      );
+
   // Text (iOS's semantic label colours, shared by components)
 
   /// Primary text: titles, values, glyphs.

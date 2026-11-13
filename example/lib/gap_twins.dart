@@ -49,19 +49,20 @@ Widget? gapTwin(String scene) {
 }
 
 /// SwiftUI's `.red, .pink, .purple, .indigo, .blue, .cyan, .teal, .green,
-/// .mint, .yellow, .orange, .brown`.
+/// .mint, .yellow, .orange, .brown`: iOS 26 values where the package has
+/// them, CupertinoColors (iOS 18) otherwise.
 const _gapColors = [
-  CupertinoColors.systemRed,
+  GlassSystemColors.red,
   CupertinoColors.systemPink,
-  CupertinoColors.systemPurple,
+  GlassSystemColors.purple,
   CupertinoColors.systemIndigo,
-  CupertinoColors.systemBlue,
-  CupertinoColors.systemCyan,
-  CupertinoColors.systemTeal,
-  CupertinoColors.systemGreen,
+  GlassSystemColors.blue,
+  GlassSystemColors.cyan,
+  GlassSystemColors.teal,
+  GlassSystemColors.green,
   CupertinoColors.systemMint,
   CupertinoColors.systemYellow,
-  CupertinoColors.systemOrange,
+  GlassSystemColors.orange,
   CupertinoColors.systemBrown,
 ];
 
@@ -413,13 +414,9 @@ class _SplitState extends State<_Split> {
                 color: CupertinoColors.black,
               ),
             ),
-            PositionedDirectional(
-              end: 4,
-              child: GlassButton.icon(
-                onPressed: _controller.toggleSidebar,
-                style: GlassButtonStyle.plain,
-                icon: CupertinoIcons.sidebar_left,
-                semanticLabel: 'Hide Sidebar',
+            const PositionedDirectional(
+              end: 18.5,
+              child: GlassSplitViewSidebarButton(
                 foregroundColor: CupertinoColors.black,
               ),
             ),
@@ -462,9 +459,9 @@ class _SplitState extends State<_Split> {
           ),
         ),
         child: SizedBox.expand(
+          // Only the gradient ignores the safe area, as SwiftUI's
+          // `.ignoresSafeArea()`: the title centres below the bar.
           child: SafeArea(
-            top: false,
-            bottom: false,
             child: Center(
               child: Text(
                 name,

@@ -362,7 +362,8 @@ class _Slot extends StatelessWidget {
 
 /// The two-column glass layout: [detail] fills the view and [sidebar]
 /// slides in over its leading edge, with the detail's leading safe-area
-/// inset growing by the sidebar's slot so its content clears the panel.
+/// inset growing by the sidebar's slot so its content clears the panel,
+/// and its top inset by TabSidebarMetrics.splitDetailTopInset.
 class _Overlaid extends StatelessWidget {
   const _Overlaid({
     required this.visible,
@@ -385,9 +386,13 @@ class _Overlaid extends StatelessWidget {
       final mq = MediaQuery.of(context);
       final rtl = Directionality.of(context) == TextDirection.rtl;
       final extra = width * t;
-      EdgeInsets grow(EdgeInsets e) => rtl
-          ? e.copyWith(right: e.right + extra)
-          : e.copyWith(left: e.left + extra);
+      // The detail also drops below the top margin the floating panel
+      // keeps, so its bar lines up with the sidebar's.
+      EdgeInsets grow(EdgeInsets e) =>
+          (rtl
+                  ? e.copyWith(right: e.right + extra)
+                  : e.copyWith(left: e.left + extra))
+              .copyWith(top: e.top + TabSidebarMetrics.splitDetailTopInset);
       return Stack(
         children: [
           Positioned.fill(

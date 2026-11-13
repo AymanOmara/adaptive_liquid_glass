@@ -1,3 +1,12 @@
+## 0.7.1 (2026-11-14)
+
+- Glass nested inside a `LiquidGlass`'s content (a `GlassButton` on a glass dialog card) now draws its own capsule and rim on iOS 26 instead of merging into the card and rendering feathered or bare. Inside an explicit `GlassGroup` it still joins the group.
+- `GlassControlGroup` outside a bar draws SwiftUI's standalone capsule: 32 pt high, `systemFill` grey, white glyphs. It used to draw a 44-pt glass capsule. Inside a bar it stays glass.
+- `GlassScrollEdgeStyle.hard`: the tint is 0.91 opacity and the blur sigma 4 pt, both measured from SwiftUI, so rows under the edge keep ~9% of their ink as on iOS 26. The native path still draws no blur.
+- `GlassSystemColors.purple`, `.cyan`, `.teal` give the iOS 26 values in light and dark (#CB30E0/#DB34F2, #00C0E8/#3CD3FE, #00C3D0/#00D2E0). `CupertinoColors` still carries the iOS 18 ones.
+- New `GlassSplitViewSidebarButton`: the sidebar toggle at SwiftUI's size (26-pt `sidebar.left`), with Hide/Show Sidebar semantics.
+- `GlassSplitView`: beside the floating sidebar, the detail lays out 8.33 pt lower (`TabSidebarMetrics.splitDetailTopInset`), so its bar title lines up with SwiftUI's.
+
 ## 0.7.0 (2026-11-13)
 
 - `showGlassAlert` / `showGlassConfirmationDialog`: `useRootNavigator`, true by default as `showDialog`'s. **Behaviour change:** the glass path now pushes on the root navigator (it used the nearest one), so an alert opened inside a nested navigator (a go_router `StatefulShellRoute` branch) covers a floating tab bar instead of sitting under it. Pass `false` for the old placement.

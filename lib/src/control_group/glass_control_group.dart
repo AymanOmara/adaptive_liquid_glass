@@ -10,6 +10,7 @@ import '../group/glass_group.dart';
 import '../group/glass_union_scope.dart';
 import '../menu/glass_menu_button.dart';
 import '../menu/glass_menu_item.dart';
+import 'control_group_member_scope.dart';
 import 'control_group_metrics.dart';
 
 /// Related glass buttons in one capsule, like SwiftUI's `ControlGroup`.
@@ -31,7 +32,10 @@ import 'control_group_metrics.dart';
 /// `.controlGroupStyle(.menu)`: one button that opens the members as a
 /// pull-down menu.
 ///
-/// Sizes are the toolbar's grouped items (measured, `ControlGroupMetrics`).
+/// In a toolbar or navigation bar the members are the toolbar's grouped
+/// glass items (measured, `ControlGroupMetrics`). Elsewhere the group is
+/// what SwiftUI draws outside a bar: a 32-pt grey `systemFill` capsule
+/// with white glyphs and no glass (measured, `ControlGroupMetrics`).
 /// On the Material path the buttons sit in a Material 3 segmented surface.
 class GlassControlGroup extends StatelessWidget {
   /// Creates a capsule of [children], usually icon-only `GlassButton`s.
@@ -88,9 +92,13 @@ class GlassControlGroup extends StatelessWidget {
       mode: mode,
       builder: (context, effective) {
         final material = effective == EffectiveGlassMode.material;
+        // A bar (toolbar, navigation bar) sets its item metrics; there the
+        // group stays a glass capsule.
+        final inBar = GlassButtonMetricsScope.maybeOf(context) != null;
+        final standalone = !material && !inBar;
         final row = <Widget>[];
         for (var i = 0; i < members.length; i++) {
-          if (i > 0 && dividers) row.add(_divider(context, material));
+          if (i > 0 && dividers) row.add(_divider(context, standalone));
           row.add(members[i]);
         }
         final content = Row(mainAxisSize: MainAxisSize.min, children: row);
@@ -102,6 +110,26 @@ class GlassControlGroup extends StatelessWidget {
               shape: const StadiumBorder(),
               clipBehavior: Clip.antiAlias,
               child: content,
+            ),
+          );
+        }
+        if (standalone) {
+          return Semantics(
+            container: true,
+            child: GlassButtonMetricsScope(
+              metrics: ControlGroupMetrics.standaloneItem,
+              child: ControlGroupMemberScope(
+                child: DecoratedBox(
+                  decoration: ShapeDecoration(
+                    shape: const StadiumBorder(),
+                    color: CupertinoDynamicColor.resolve(
+                      ControlGroupMetrics.standaloneFill,
+                      context,
+                    ),
+                  ),
+                  child: content,
+                ),
+              ),
             ),
           );
         }
@@ -119,9 +147,11 @@ class GlassControlGroup extends StatelessWidget {
     );
   }
 
-  Widget _divider(BuildContext context, bool material) => Container(
+  Widget _divider(BuildContext context, bool standalone) => Container(
     width: ControlGroupMetrics.dividerWidth,
-    height: ControlGroupMetrics.dividerHeight,
+    height: standalone
+        ? ControlGroupMetrics.standaloneDividerHeight
+        : ControlGroupMetrics.dividerHeight,
     color: CupertinoDynamicColor.resolve(GlassColors.stepperDivider, context),
   );
 }

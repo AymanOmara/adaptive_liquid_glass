@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 
+import '../control_group/control_group_member_scope.dart';
+import '../control_group/control_group_metrics.dart';
 import '../core/effective_glass_mode.dart';
 import '../core/glass.dart';
 import '../core/glass_colors.dart';
@@ -9,6 +11,7 @@ import '../core/glass_shape.dart';
 import '../core/glass_system_colors.dart';
 import '../foreground/glass_foreground.dart';
 import '../foreground/glass_label_style.dart';
+import '../interaction/glass_pressable.dart';
 import '../liquid_glass.dart';
 import 'glass_button_glyph_effect.dart';
 import 'glass_button_metrics.dart';
@@ -179,6 +182,8 @@ class GlassButton extends StatelessWidget {
     mode: mode,
     builder: (context, effective) => effective == EffectiveGlassMode.material
         ? MaterialGlassButton(button: this, size: resolvedSize(context))
+        : _isGlass && ControlGroupMemberScope.of(context)
+        ? _member(context)
         : _isGlass
         ? _glass(context)
         : SystemStyleButton(
@@ -325,6 +330,59 @@ class GlassButton extends StatelessWidget {
       ),
     );
     return button;
+  }
+
+  /// A member of a standalone `GlassControlGroup`: no glass, the group's
+  /// white glyph on its grey capsule (measured).
+  Widget _member(BuildContext context) {
+    final m =
+        GlassButtonMetricsScope.maybeOf(context) ??
+        glassButtonMetrics(resolvedSize(context));
+    final scale =
+        MediaQuery.textScalerOf(context).scale(m.fontSize) / m.fontSize;
+    final color = foregroundColor != null
+        ? CupertinoDynamicColor.resolve(foregroundColor!, context)
+        : role == GlassButtonRole.destructive
+        ? CupertinoDynamicColor.resolve(GlassSystemColors.red, context)
+        : ControlGroupMetrics.standaloneForeground;
+    final height = m.iconOnlyHeight * scale;
+    Widget content = ExcludeSemantics(
+      excluding: semanticLabel != null,
+      child: DefaultTextStyle.merge(
+        style: TextStyle(fontSize: m.fontSize, color: color),
+        maxLines: 1,
+        child: IconTheme.merge(
+          data: IconThemeData(size: m.iconSize, color: color),
+          child: _content(m),
+        ),
+      ),
+    );
+    if (!active || loading) content = Opacity(opacity: 0.5, child: content);
+    return MergeSemantics(
+      child: Semantics(
+        label: semanticLabel,
+        value: loading ? loadingLabel : null,
+        button: active ? null : true,
+        enabled: active ? null : false,
+        child: GlassPressable(
+          onPressed: active && !loading ? effectiveOnPressed : null,
+          child: ConstrainedBox(
+            constraints: _iconOnly
+                ? BoxConstraints.tightFor(
+                    width: height + m.iconOnlyExtraWidth * scale,
+                    height: height,
+                  )
+                : BoxConstraints(minHeight: height),
+            child: Padding(
+              padding: _iconOnly
+                  ? EdgeInsets.zero
+                  : EdgeInsetsDirectional.symmetric(horizontal: m.padding),
+              child: Center(widthFactor: 1, heightFactor: 1, child: content),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _content(GlassButtonMetrics m) {

@@ -9,6 +9,7 @@ import 'glass_effect.dart';
 import 'group/glass_group.dart';
 import 'group/glass_group_scope.dart';
 import 'group/glass_member.dart';
+import 'group/glass_member_content.dart';
 import 'group/glass_union_scope.dart';
 import 'shader/glass_program.dart';
 
@@ -120,6 +121,12 @@ class LiquidGlass extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resolved = glass ?? LiquidGlassTheme.of(context).defaultGlass;
+    // Glass in the content of glass that made its own group is layered on
+    // it, not merged with it, so it makes its own group too (see
+    // GlassMemberContent). In an explicit GlassGroup it joins as usual.
+    final scope = GlassGroupScope.maybeOf(context);
+    final own =
+        scope == null || GlassMemberContent.isInsideMemberOf(context, scope);
     final member = GlassMember(
       glass: onPressed == null ? resolved : pressableGlass(resolved),
       shape: shape,
@@ -129,11 +136,14 @@ class LiquidGlass extends StatelessWidget {
       mode: mode,
       adaptiveForeground: adaptiveForeground,
       onPressed: onPressed,
-      child: _sized(
-        padding == null ? child : Padding(padding: padding!, child: child),
+      child: GlassMemberContent.wrap(
+        isolating: own,
+        child: _sized(
+          padding == null ? child : Padding(padding: padding!, child: child),
+        ),
       ),
     );
-    return GlassGroupScope.maybeOf(context) == null
+    return own
         ? ImplicitGlassGroup(
             child: GlassGroup(mode: mode, child: member),
           )

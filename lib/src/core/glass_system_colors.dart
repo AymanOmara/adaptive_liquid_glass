@@ -5,7 +5,8 @@ import 'glass_colors.dart';
 /// iOS 26's system colours, as SwiftUI draws them.
 ///
 /// Flutter's `CupertinoColors` still has the iOS 18 values (red #FF3B30,
-/// blue #007AFF, orange #FF9500). The light values here are measured from
+/// blue #007AFF, orange #FF9500, purple #AF52DE, cyan #32ADE6, teal
+/// #30B0C7). The light values here are measured from
 /// SwiftUI on iOS 26.4 (`tool/reference/controls.json`); the dark values
 /// are Apple's iOS 26 palette (the measured dark blue agrees).
 ///
@@ -29,4 +30,13 @@ abstract final class GlassSystemColors {
 
   /// iOS 26's green: a toggle that is on.
   static const CupertinoDynamicColor green = GlassColors.systemGreen;
+
+  /// iOS 26's purple.
+  static const CupertinoDynamicColor purple = GlassColors.systemPurple;
+
+  /// iOS 26's cyan.
+  static const CupertinoDynamicColor cyan = GlassColors.systemCyan;
+
+  /// iOS 26's teal.
+  static const CupertinoDynamicColor teal = GlassColors.systemTeal;
 }

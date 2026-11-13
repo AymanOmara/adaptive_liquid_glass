@@ -1,5 +1,6 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -97,4 +98,58 @@ void main() {
     await t.pumpWidget(_app(mode: GlassRenderMode.shader));
     expect(find.byType(LiquidGlass), findsOneWidget);
   });
+
+  testWidgets('glass: the detail sits 8.33 pt below the top safe area', (
+    t,
+  ) async {
+    _size(t, const Size(1000, 700));
+    late EdgeInsets pad;
+    await t.pumpWidget(
+      MaterialApp(
+        home: GlassSplitView(
+          mode: GlassRenderMode.shader,
+          sidebar: const Text('Side'),
+          detail: Builder(
+            builder: (context) {
+              pad = MediaQuery.paddingOf(context);
+              return const SizedBox();
+            },
+          ),
+        ),
+      ),
+    );
+    await t.pumpAndSettle();
+    // Measured: SwiftUI's detail title is centred 31.5 pt down, 8.3 below a
+    // bar at the top (gap-split-swiftui.png).
+    expect(pad.top, moreOrLessEquals(8.33, epsilon: 0.01));
+  });
+
+  testWidgets('sidebar button: toolbar-sized glyph, toggles the sidebar', (
+    t,
+  ) async {
+    _size(t, const Size(1000, 700));
+    final c = GlassSplitViewController();
+    addTearDown(c.dispose);
+    await t.pumpWidget(
+      MaterialApp(
+        home: GlassSplitView(
+          controller: c,
+          mode: GlassRenderMode.shader,
+          sidebar: const Align(
+            alignment: Alignment.topRight,
+            child: GlassSplitViewSidebarButton(mode: GlassRenderMode.shader),
+          ),
+          detail: const Text('Detail'),
+        ),
+      ),
+    );
+    await t.pumpAndSettle();
+    // A bar item's 26-pt icon: SwiftUI's glyph is ~24.5 x 19 pt of ink.
+    final icon = t.widget<Icon>(find.byIcon(CupertinoIcons.sidebar_left));
+    expect(icon.size ?? IconTheme.of(t.element(find.byType(Icon))).size, 26);
+    expect(find.bySemanticsLabel('Hide Sidebar'), findsOneWidget);
+    await t.tap(find.byType(GlassSplitViewSidebarButton));
+    await t.pumpAndSettle();
+    expect(c.visibility, GlassSplitViewVisibility.detailOnly);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 }

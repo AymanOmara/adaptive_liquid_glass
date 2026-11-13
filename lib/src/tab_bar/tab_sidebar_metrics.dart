@@ -32,6 +32,13 @@ abstract final class TabSidebarMetrics {
   /// See [sidebarWidth].
   static const double sidebarInset = 10;
 
+  /// How far below the top safe area a split view's detail lays out beside
+  /// the floating sidebar, so its bar lines up with the sidebar's own:
+  /// SwiftUI's detail title is centred 31.5 pt down on iPadOS 26.4 with the
+  /// status bar hidden, against 23.2 pt for a bar at the top
+  /// (gap-split-swiftui.png).
+  static const double splitDetailTopInset = 8.33;
+
   /// The sidebar's corner radius.
   static const double sidebarRadius = 26;
 

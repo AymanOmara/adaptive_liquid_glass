@@ -137,6 +137,7 @@ export 'src/sheet/show_glass_sheet.dart';
 export 'src/split_view/glass_split_view.dart';
 export 'src/split_view/glass_split_view_column.dart';
 export 'src/split_view/glass_split_view_controller.dart';
+export 'src/split_view/glass_split_view_sidebar_button.dart';
 export 'src/stepper/glass_stepper.dart';
 export 'src/swipe/glass_swipe_action.dart';
 export 'src/swipe/glass_swipe_actions.dart';

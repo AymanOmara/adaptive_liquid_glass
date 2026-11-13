@@ -7,6 +7,7 @@ import 'borrowed_twins.dart';
 import 'gap_twins.dart';
 import 'inspector_safe_area_page_demo.dart';
 import 'list_form_twins.dart';
+import 'nested_glass_twin.dart';
 import 'new_component_twins.dart';
 import 'plain_list_demo.dart';
 import 'system_buttons_twin.dart';
@@ -91,6 +92,7 @@ class ReferenceTwin extends StatelessWidget {
         'swipeonedark' => const _SwipeOne(dark: true),
         _ =>
           gapTwin(scene) ??
+              nestedGlassTwin(scene) ??
               borrowedTwin(scene) ??
               newComponentTwin(scene) ??
               listFormTwin(scene) ??

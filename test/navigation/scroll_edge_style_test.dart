@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
 import 'package:adaptive_liquid_glass/src/core/glass_environment.dart';
 import 'package:adaptive_liquid_glass/src/navigation/glass_scroll_edge.dart';
@@ -160,7 +162,11 @@ void main() {
         .map((d) => d.decoration)
         .whereType<BoxDecoration>();
     expect(boxes.any((d) => d.gradient != null), isFalse);
-    expect(boxes.any((d) => d.color != null), isTrue);
+    // Measured from gap-edge-hard-swiftui.png: a 0.91 tint over a 4 pt blur.
+    final tint = boxes.firstWhere((d) => d.color != null).color!;
+    expect(tint.a, moreOrLessEquals(0.91, epsilon: 0.01));
+    final blur = t.widget<BackdropFilter>(find.byType(BackdropFilter));
+    expect(blur.filter, ImageFilter.blur(sigmaX: 4, sigmaY: 4));
     // The blur reaches the edge's bottom: no fade hides its end.
     expect(t.getSize(find.byType(BackdropFilter)).height, 100);
   }, variant: ios);

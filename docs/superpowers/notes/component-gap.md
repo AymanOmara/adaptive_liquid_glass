@@ -158,9 +158,9 @@ Refreshed 2026-11-13. Every row below has an implementation in this checkout.
 | 2 | Separate nav-bar pills | `GlassBarItem` | done (9c180ce) |
 | 3 | `navigationSubtitle` | nav-bar subtitle | done (748e0c1); screenshots in §4 |
 | 4 | `glassEffectTransition` | `GlassTransition` (`matchedGeometry`, `materialize`, `identity`) | done (b1ecfd0 + 43e9eed); visible and hidden comparison captures in §4 |
-| 5 | `ControlGroup` | `GlassControlGroup` | done (27d5b95); 4 tests passed; showcase captures in §4 show the same scene (`-twin gapcontrolgroup`); the Flutter capsule is 44 pt glass vs SwiftUI's smaller grey one |
-| 6 | Scroll edge `hard` / `hidden` | `GlassScrollEdgeStyle.hard` / `.hidden` | done (748e0c1, with 3); scrolled comparison captures in §4 |
-| 7 | `NavigationSplitView` | `GlassSplitView`, `GlassSplitViewColumn`, `GlassSplitViewVisibility`, `GlassSplitViewController` | done (064cb32); analyze clean (deprecation infos only), 6 tests passed on the original implementation; refreshed iPad captures in §4 |
+| 5 | `ControlGroup` | `GlassControlGroup` | done (27d5b95); 4 tests passed; showcase captures in §4 show the same scene (`-twin gapcontrolgroup`); outside a bar it now draws SwiftUI's standalone capsule: 32 pt high, `systemFill` grey, white glyphs (measured from gap-controlgroup-swiftui.png). Remaining: SwiftUI items hug their glyph (about glyph + 22.4 pt), Flutter uses a fixed 34.33 pt per item, so the chevron pair is ~4 pt narrower and B/I/U ~9 pt wider |
+| 6 | Scroll edge `hard` / `hidden` | `GlassScrollEdgeStyle.hard` / `.hidden` | done (748e0c1, with 3); scrolled comparison captures in §4. The hard edge's tint is 0.91 opacity and its blur sigma 4 pt, both fitted to gap-edge-hard-swiftui.png: the rows under the edge keep 8.2–8.5% of their ink in Flutter (shader mode) against 8.7–9.0% in SwiftUI. The native path still draws no blur, on purpose (platform-view flicker); the 0.91 tint hides most content there anyway |
+| 7 | `NavigationSplitView` | `GlassSplitView`, `GlassSplitViewColumn`, `GlassSplitViewVisibility`, `GlassSplitViewController` | done (064cb32); analyze clean (deprecation infos only), 6 tests passed on the original implementation; refreshed iPad captures in §4. New `GlassSplitViewSidebarButton`: a 26-pt `sidebar.left` glyph, ink 25×19.5 pt as SwiftUI's (was 15.5×12). The detail now sits `TabSidebarMetrics.splitDetailTopInset` (8.33 pt) lower, so its bar title centres 31.0 pt down against SwiftUI's 31.5 (was 22.5). Remaining: the detail body text centres 8 pt higher than SwiftUI's (618.75 vs 626.75 pt); the body's top inset is 54.7 pt and SwiftUI's is about 70 pt, and the cause is not yet isolated |
 
 Also built in parallel (rows updated above): `GlassInspector`,
 `GlassSafeAreaBar`, `GlassPageView` (3213048); `GlassPickerStyle.palette`,
@@ -187,11 +187,11 @@ all are full-resolution device captures. Exceptions are noted per row.
 | Nav subtitle (large) — Flutter / SwiftUI | ![](images/gap-subtitle-flutter.png) ![](images/gap-subtitle-swiftui.png) |
 | Navigation split view (iPad) — Flutter / SwiftUI | ![](images/gap-split-flutter.png) ![](images/gap-split-swiftui.png) |
 | Sidebar list (dark, Flutter / SwiftUI) | ![](images/gap-sidebar-dark-flutter.png) ![](images/listform-native-sidebardark.png) |
-| Hard scroll edge (Flutter / SwiftUI) | ![](images/gap-edge-hard-flutter.png) ![](images/gap-edge-hard-swiftui.png) |
+| Hard scroll edge (Flutter `-mode shader` / SwiftUI) | ![](images/gap-edge-hard-flutter.png) ![](images/gap-edge-hard-swiftui.png) |
 | Hidden scroll edge (Flutter / SwiftUI) | ![](images/gap-edge-hidden-flutter.png) ![](images/gap-edge-hidden-swiftui.png) |
 | Glass transition, visible (Flutter / SwiftUI) | ![](images/gap-transition-flutter.png) ![](images/gap-transition-swiftui.png) |
 | Glass transition, hidden (Flutter / SwiftUI) | ![](images/gap-transition-hidden-flutter.png) ![](images/gap-transition-hidden-swiftui.png) |
-| Control group (Flutter / SwiftUI) — same scene; capsule size/fill differ | ![](images/gap-controlgroup-flutter.png) ![](images/gap-controlgroup-swiftui.png) |
+| Control group (Flutter / SwiftUI) — same scene; item widths differ slightly | ![](images/gap-controlgroup-flutter.png) ![](images/gap-controlgroup-swiftui.png) |
 | Sidebar split, iPad light (Flutter / SwiftUI) | ![](images/sidebar-ipad-flutter.png) ![](images/sidebar-ipad-swiftui.png) |
 | Sidebar split, iPad dark (Flutter / SwiftUI) | ![](images/sidebar-ipad-dark-flutter.png) ![](images/sidebar-ipad-dark-swiftui.png) |
 | Photo navbar pills, light (Flutter / SwiftUI) | ![](images/navbar-pills-photo-flutter.png) ![](images/navbar-pills-photo-swiftui.png) |

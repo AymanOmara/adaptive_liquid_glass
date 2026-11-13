@@ -1,4 +1,6 @@
 import 'package:adaptive_liquid_glass/adaptive_liquid_glass.dart';
+import 'package:adaptive_liquid_glass/src/button/glass_button_metrics_scope.dart';
+import 'package:adaptive_liquid_glass/src/control_group/control_group_metrics.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/cupertino.dart';
@@ -26,13 +28,33 @@ void main() {
   setUp(() => GlassProgram.instance.debugReset(skipLoad: true));
   tearDown(() => GlassPlatform.instance.debugReset());
 
-  testWidgets('two buttons make a 107.67 x 44 capsule; taps work', (t) async {
+  testWidgets('standalone: a 32-pt grey capsule, no glass; taps work', (
+    t,
+  ) async {
     shaderEnv();
     var taps = 0;
     await t.pumpWidget(plainHost(_group(onTap: () => taps++)));
     final size = t.getSize(find.byType(GlassControlGroup));
-    expect(size.height, 44);
-    expect(size.width, closeTo(107.67 + 1, 0.5));
+    expect(size.height, 32);
+    expect(size.width, closeTo(2 * 34.33 + 1, 0.5));
+    expect(find.byType(LiquidGlass), findsNothing);
+    final box = t.widget<DecoratedBox>(
+      find
+          .descendant(
+            of: find.byType(GlassControlGroup),
+            matching: find.byType(DecoratedBox),
+          )
+          .first,
+    );
+    expect((box.decoration as ShapeDecoration).color!.toARGB32(), 0x33787880);
+    final icon = t.widget<RichText>(
+      find.descendant(
+        of: find.byIcon(CupertinoIcons.chevron_up),
+        matching: find.byType(RichText),
+      ),
+    );
+    expect(icon.text.style!.color, const Color(0xFFFFFFFF));
+    expect(icon.text.style!.fontSize, 20);
     await t.tap(find.bySemanticsLabel('Previous'));
     expect(taps, 1);
   }, variant: ios);
@@ -42,8 +64,24 @@ void main() {
     await t.pumpWidget(plainHost(_group(dividers: false)));
     expect(
       t.getSize(find.byType(GlassControlGroup)).width,
-      closeTo(107.67, 0.5),
+      closeTo(2 * 34.33, 0.5),
     );
+  }, variant: ios);
+
+  testWidgets('in a bar: the 107.67 x 44 glass capsule', (t) async {
+    shaderEnv();
+    await t.pumpWidget(
+      plainHost(
+        GlassButtonMetricsScope(
+          metrics: ControlGroupMetrics.item,
+          child: _group(dividers: false),
+        ),
+      ),
+    );
+    final size = t.getSize(find.byType(GlassControlGroup));
+    expect(size.height, 44);
+    expect(size.width, closeTo(107.67, 0.5));
+    expect(find.byType(LiquidGlass), findsWidgets);
   }, variant: ios);
 
   testWidgets('menu style is one button that opens the items', (t) async {
