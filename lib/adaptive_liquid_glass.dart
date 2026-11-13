@@ -74,6 +74,8 @@ export 'src/layer/glass_overlay_content.dart';
 export 'src/link/glass_link.dart';
 export 'src/link/glass_share_link.dart';
 export 'src/liquid_glass.dart' show LiquidGlass;
+export 'src/list/glass_form.dart';
+export 'src/list/glass_group_box.dart';
 export 'src/list/glass_list_section.dart';
 export 'src/list/glass_list_tile.dart';
 export 'src/menu/glass_menu_button.dart';

@@ -1,3 +1,9 @@
+## Unreleased
+
+- `GlassForm`: SwiftUI's `Form`, a scrolling column of grouped sections on the grouped background, measured from iOS 26 (the first platter 42.33 pt below the safe top under a header, 35 pt between sections, 76 pt across a footer and a header). The keyboard replaces the bottom safe area. Material: 24-pt gaps on the surface colour.
+- `GlassGroupBox`: SwiftUI's `GroupBox`, an 8-pt rounded platter with 16-pt padding and an optional label and icon; nested boxes alternate fills as SwiftUI's do. Material: a filled `Card`.
+- Lists: a `GlassSwipeActions` row whose tile has a leading now insets its separator under the title, as a plain row with a leading does.
+
 ## 0.6.0 (2026-11-09)
 
 - Navigation bars: an icon-only `leading` button is now a 44-pt circle, as SwiftUI's lone bar button, instead of a 51.5-pt cell (`NavBarMetrics.loneItem`).
