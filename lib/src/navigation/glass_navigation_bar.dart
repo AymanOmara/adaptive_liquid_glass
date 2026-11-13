@@ -8,6 +8,7 @@ import '../platform/glass_platform.dart';
 import 'glass_scroll_edge.dart';
 import 'glass_scroll_edge_style.dart';
 import 'nav_bar_content.dart';
+import 'nav_bar_material_title.dart';
 import 'nav_bar_metrics.dart';
 import 'nav_bar_status_style.dart';
 
@@ -38,6 +39,7 @@ class GlassNavigationBar extends StatefulWidget implements PreferredSizeWidget {
   const GlassNavigationBar({
     super.key,
     this.title,
+    this.subtitle,
     this.leading,
     this.automaticallyImplyLeading = true,
     this.actions = const [],
@@ -48,6 +50,10 @@ class GlassNavigationBar extends StatefulWidget implements PreferredSizeWidget {
 
   /// The centred title.
   final Widget? title;
+
+  /// A line under the title, as SwiftUI's `navigationSubtitle`. On the
+  /// Material path it sits under the title in the [AppBar]'s title.
+  final Widget? subtitle;
 
   /// Defaults to a `GlassBackButton` when the route can pop. An icon-only
   /// `GlassButton` here is a 44-pt circle, as SwiftUI's lone bar button.
@@ -102,7 +108,7 @@ class GlassNavigationBar extends StatefulWidget implements PreferredSizeWidget {
 
   // Only what the caller set: every style is left null for AppBarTheme.
   AppBar _materialBar() => AppBar(
-    title: title,
+    title: materialTitle(title, subtitle),
     leading: leading,
     automaticallyImplyLeading: automaticallyImplyLeading,
     actions: actions,
@@ -166,6 +172,7 @@ class _GlassNavigationBarState extends State<GlassNavigationBar> {
                 leading: widget.leading,
                 automaticallyImplyLeading: widget.automaticallyImplyLeading,
                 title: widget.title,
+                subtitle: widget.subtitle,
                 actions: widget.actions,
                 mode: widget.mode,
               ),

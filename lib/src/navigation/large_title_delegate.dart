@@ -31,7 +31,9 @@ class LargeTitleDelegate extends SliverPersistentHeaderDelegate {
   /// The text scale applied to the large title.
   final double scale;
 
-  double get _titleHeight => NavBarMetrics.largeTitleHeight * scale;
+  double get _titleHeight =>
+      NavBarMetrics.largeTitleHeight * scale +
+      (bar.subtitle == null ? 0 : NavBarMetrics.largeSubtitleHeight);
 
   @override
   double get minExtent => top + NavBarMetrics.barHeight;
@@ -99,7 +101,31 @@ class LargeTitleDelegate extends SliverPersistentHeaderDelegate {
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    child: bar.largeTitle,
+                                    child: bar.subtitle == null
+                                        ? bar.largeTitle
+                                        : Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              bar.largeTitle,
+                                              DefaultTextStyle(
+                                                style: TextStyle(
+                                                  fontSize: NavBarMetrics
+                                                      .largeSubtitleFontSize,
+                                                  fontWeight: FontWeight.w400,
+                                                  color:
+                                                      CupertinoDynamicColor.resolve(
+                                                        GlassColors
+                                                            .secondaryLabel,
+                                                        context,
+                                                      ),
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                child: bar.subtitle!,
+                                              ),
+                                            ],
+                                          ),
                                   ),
                                 ),
                               ),
@@ -130,6 +156,7 @@ class LargeTitleDelegate extends SliverPersistentHeaderDelegate {
                   leading: bar.leading,
                   automaticallyImplyLeading: bar.automaticallyImplyLeading,
                   title: bar.title ?? bar.largeTitle,
+                  subtitle: bar.subtitle,
                   titleOpacity: shrinkOffset > NavBarMetrics.inlineThreshold
                       ? 1.0
                       : 0.0,

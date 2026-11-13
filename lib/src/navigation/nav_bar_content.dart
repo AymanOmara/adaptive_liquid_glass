@@ -19,6 +19,7 @@ class NavBarContent extends StatelessWidget {
     this.leading,
     this.automaticallyImplyLeading = true,
     this.title,
+    this.subtitle,
     this.titleOpacity = 1,
     this.titleFade,
     this.actions = const [],
@@ -33,6 +34,9 @@ class NavBarContent extends StatelessWidget {
 
   /// The inline title.
   final Widget? title;
+
+  /// The subtitle under the inline title.
+  final Widget? subtitle;
 
   /// The inline title's opacity.
   final double titleOpacity;
@@ -114,7 +118,28 @@ class NavBarContent extends StatelessWidget {
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          child: title!,
+                          child: subtitle == null
+                              ? title!
+                              : Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    title!,
+                                    DefaultTextStyle(
+                                      style: TextStyle(
+                                        fontSize:
+                                            NavBarMetrics.subtitleFontSize,
+                                        fontWeight: FontWeight.w400,
+                                        color: CupertinoDynamicColor.resolve(
+                                          GlassColors.secondaryLabel,
+                                          context,
+                                        ),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      child: subtitle!,
+                                    ),
+                                  ],
+                                ),
                         ),
                       ),
                     ),

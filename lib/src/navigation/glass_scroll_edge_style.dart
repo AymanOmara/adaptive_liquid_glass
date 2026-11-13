@@ -7,7 +7,8 @@
 /// )
 /// ```
 ///
-/// Both fade the page background in towards the top. Neither blurs on the
+/// [uniform] and [progressive] fade the page background in towards the top;
+/// [hard] cuts it off sharply and [hidden] draws nothing. None blurs on the
 /// native path, where the page's glass is UIKit views Flutter cannot blur
 /// in place.
 enum GlassScrollEdgeStyle {
@@ -19,4 +20,13 @@ enum GlassScrollEdgeStyle {
   /// back to [uniform] without them (Skia, web) and until its shader has
   /// loaded.
   progressive,
+
+  /// A sharp edge, as SwiftUI's `scrollEdgeEffectStyle(.hard)`: an even blur
+  /// and background tint under the bar with a crisp lower boundary and no
+  /// fade.
+  hard,
+
+  /// No scroll edge effect, as `scrollEdgeEffectStyle(.hidden)`: content
+  /// scrolls under the bar untouched.
+  hidden,
 }

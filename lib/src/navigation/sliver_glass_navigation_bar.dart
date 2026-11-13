@@ -7,6 +7,7 @@ import '../core/glass_render_mode.dart';
 import 'glass_large_title_scroll_view.dart';
 import 'glass_scroll_edge_style.dart';
 import 'large_title_delegate.dart';
+import 'nav_bar_material_title.dart';
 import 'nav_bar_metrics.dart';
 
 /// iOS 26's large-title navigation bar for a `CustomScrollView`.
@@ -33,6 +34,7 @@ class SliverGlassNavigationBar extends StatelessWidget {
     super.key,
     required this.largeTitle,
     this.title,
+    this.subtitle,
     this.leading,
     this.automaticallyImplyLeading = true,
     this.actions = const [],
@@ -46,6 +48,10 @@ class SliverGlassNavigationBar extends StatelessWidget {
 
   /// The inline title; defaults to [largeTitle].
   final Widget? title;
+
+  /// A line under the large title (and under the inline title once it has
+  /// collapsed), as SwiftUI's `navigationSubtitle`.
+  final Widget? subtitle;
 
   /// Defaults to a `GlassBackButton` when the route can pop. An icon-only
   /// `GlassButton` here is a 44-pt circle, as SwiftUI's lone bar button.
@@ -85,7 +91,7 @@ class SliverGlassNavigationBar extends StatelessWidget {
     builder: (context, effective) {
       if (effective == EffectiveGlassMode.material) {
         final bar = SliverAppBar.large(
-          title: title ?? largeTitle,
+          title: materialTitle(title ?? largeTitle, subtitle),
           leading: leading,
           automaticallyImplyLeading: automaticallyImplyLeading,
           actions: actions,
