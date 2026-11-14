@@ -6,6 +6,7 @@ import 'package:adaptive_liquid_glass/src/native/native_glass_layer.dart';
 import 'package:adaptive_liquid_glass/src/platform/glass_platform.dart';
 import 'package:adaptive_liquid_glass/src/shader/glass_program.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'native_glass_layer_test.dart' show host, iosEnv, mockNative;
@@ -57,6 +58,36 @@ void main() {
     expect(shapes, hasLength(29));
     expect(shapes.map((s) => s['id']).toSet(), hasLength(29));
     expect(shapes.every((s) => !s.containsKey('opacity')), isTrue);
+  }, variant: ios);
+
+  testWidgets('a batch built outside a frame (runApp) still draws', (
+    t,
+  ) async {
+    iosEnv();
+    mockNative(t);
+    late StateSetter show;
+    var chips = false;
+    await t.pumpWidget(
+      host(
+        StatefulBuilder(
+          builder: (context, setState) {
+            show = setState;
+            return Align(
+              child: GlassBatch(child: chips ? _chips(3) : const SizedBox()),
+            );
+          },
+        ),
+      ),
+    );
+    // runApp builds the first tree outside any frame (scheduler idle):
+    // glass joining the batch then must not setState during that build.
+    show(() => chips = true);
+    expect(SchedulerBinding.instance.schedulerPhase, SchedulerPhase.idle);
+    t.binding.buildOwner!.buildScope(t.binding.rootElement!);
+    expect(t.takeException(), isNull);
+    await settle(t);
+    expect(t.takeException(), isNull);
+    expect(find.byType(UiKitView), findsOneWidget);
   }, variant: ios);
 
   testWidgets('batched shapes are local to the batch view', (t) async {

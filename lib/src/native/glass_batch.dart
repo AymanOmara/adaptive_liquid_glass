@@ -77,20 +77,17 @@ class _GlassBatchState extends State<GlassBatch> {
   bool _hasClients = false;
 
   void _onClients() {
-    void update() {
-      if (!mounted || _hasClients == _batch.hasClients) return;
-      setState(() => _hasClients = _batch.hasClients);
-    }
-
-    // Groups join while building and leave while unmounting.
-    if (SchedulerBinding.instance.schedulerPhase ==
-        SchedulerPhase.persistentCallbacks) {
-      SchedulerBinding.instance
-        ..addPostFrameCallback((_) => update())
-        ..ensureVisualUpdate();
-    } else {
-      update();
-    }
+    // Groups join while building, leave while unmounting and are given
+    // back while painting, so this always runs inside some build or frame
+    // phase. A build can also happen outside a frame (runApp builds the
+    // first tree with the scheduler idle), so the phase alone can't tell:
+    // always defer the rebuild to after the current frame.
+    SchedulerBinding.instance
+      ..addPostFrameCallback((_) {
+        if (!mounted || _hasClients == _batch.hasClients) return;
+        setState(() => _hasClients = _batch.hasClients);
+      })
+      ..ensureVisualUpdate();
   }
 
   @override

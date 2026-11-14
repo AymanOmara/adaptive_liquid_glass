@@ -1,3 +1,7 @@
+## Unreleased
+
+- A `GlassBatch` built in the app's first frame (the tree `runApp` builds outside a frame) no longer calls `setState` during build. Before, it threw and then drew no batched glass on iOS 26.
+
 ## 0.7.1 (2026-11-14)
 
 - Glass nested inside a `LiquidGlass`'s content (a `GlassButton` on a glass dialog card) now draws its own capsule and rim on iOS 26 instead of merging into the card and rendering feathered or bare. Inside an explicit `GlassGroup` it still joins the group.
