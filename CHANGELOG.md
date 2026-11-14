@@ -1,4 +1,4 @@
-## Unreleased
+## 0.7.2 (2026-11-14)
 
 - A `GlassBatch` built in the app's first frame (the tree `runApp` builds outside a frame) no longer calls `setState` during build. Before, it threw and then drew no batched glass on iOS 26.
 
