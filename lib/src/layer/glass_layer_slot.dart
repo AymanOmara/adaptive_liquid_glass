@@ -11,6 +11,7 @@ import '../shader/reused_shader.dart';
 import 'glass_layer.dart';
 import 'glass_layer_plan.dart';
 import 'paint_chain.dart';
+import '../native/shader_glass_keep_out.dart';
 
 /// A group's place in its route's shared glass layer: the overlay child of
 /// the group's `OverlayPortal`, painted after the whole route. The first
@@ -149,6 +150,12 @@ class RenderGlassLayerSlot extends RenderBox {
         toGlobal: toGlobal,
       );
       box.debugLastFrame = frame;
+      ShaderGlassKeepOut.instance.report(
+        box,
+        frame == null
+            ? null
+            : MatrixUtils.transformRect(toGlobal, frame.localBounds),
+      );
       final content = MatrixUtils.transformRect(
         toGlobal,
         Offset.zero & box.size,

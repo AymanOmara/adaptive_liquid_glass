@@ -6,6 +6,7 @@ import '../group/glass_group_scope.dart';
 import '../group/glass_registry.dart';
 import '../layer/glass_layer.dart';
 import 'native_glass_layer.dart';
+import 'shader_glass_keep_out.dart';
 
 /// Draws the native glass of the ungrouped `LiquidGlass` widgets below it
 /// in one platform view, on iOS 26+.
@@ -107,11 +108,7 @@ class _GlassBatchState extends State<GlassBatch> {
       fit: StackFit.passthrough,
       clipBehavior: Clip.none,
       children: [
-        Positioned(
-          left: -kNativeOverhang,
-          top: -kNativeOverhang,
-          right: -kNativeOverhang,
-          bottom: -kNativeOverhang,
+        NativeOverhangSlot(
           child: _hasClients
               ? NativeGlassView(
                   spacing: 0,

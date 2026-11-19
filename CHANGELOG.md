@@ -1,3 +1,7 @@
+## 0.7.3 (2026-11-19)
+
+- Shader glass (a `GlassTabBar`) next to native glass (a floating `LiquidGlass` button) no longer turns grey on iOS 26. The native view's 24-pt overhang overlapped the bar. iOS then moved that part of the bar into an overlay with no backdrop. Native glass now trims its overhang on any side that would cover shader glass.
+
 ## 0.7.2 (2026-11-14)
 
 - A `GlassBatch` built in the app's first frame (the tree `runApp` builds outside a frame) no longer calls `setState` during build. Before, it threw and then drew no batched glass on iOS 26.

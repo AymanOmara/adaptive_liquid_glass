@@ -11,6 +11,7 @@ import 'glass_frame_uniforms.dart';
 import 'glass_group_frame.dart';
 import 'glass_program.dart';
 import 'reused_shader.dart';
+import '../native/shader_glass_keep_out.dart';
 
 /// See [GlassBackdrop].
 class RenderGlassBackdrop extends RenderProxyBox {
@@ -107,6 +108,7 @@ class RenderGlassBackdrop extends RenderProxyBox {
   @override
   void detach() {
     _sharedLayer?.removeClient(this);
+    ShaderGlassKeepOut.instance.report(this, null);
     _registry.removeListener(_onChange);
     GlassProgram.instance.program.removeListener(markNeedsPaint);
     super.detach();
@@ -147,6 +149,12 @@ class RenderGlassBackdrop extends RenderProxyBox {
     }
     final frame = _buildFrame();
     debugLastFrame = frame;
+    ShaderGlassKeepOut.instance.report(
+      this,
+      frame == null
+          ? null
+          : MatrixUtils.transformRect(getTransformTo(null), frame.localBounds),
+    );
     final program = GlassProgram.instance.program.value;
     if (frame == null ||
         program == null ||

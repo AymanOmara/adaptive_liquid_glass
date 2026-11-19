@@ -11,6 +11,7 @@ import '../group/glass_group_scope.dart';
 import '../group/glass_press_geometry.dart';
 import '../group/glass_registry.dart';
 import 'glass_batch.dart';
+import 'shader_glass_keep_out.dart';
 
 /// How far the native view extends past the group on each side.
 const double kNativeOverhang = 24;
@@ -273,11 +274,7 @@ class _NativeGlassLayerState extends State<NativeGlassLayer>
       fit: StackFit.passthrough,
       clipBehavior: Clip.none,
       children: [
-        Positioned(
-          left: -kNativeOverhang,
-          top: -kNativeOverhang,
-          right: -kNativeOverhang,
-          bottom: -kNativeOverhang,
+        NativeOverhangSlot(
           child: _batch != null
               ? const SizedBox.shrink()
               : NativeGlassView(
